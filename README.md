@@ -1,16 +1,9 @@
-# Open Z80 Emulator (WIP)
+# SUZUKI PLAN - Z80 Emulator (WIP)
 
-Z80 is a CPU that is upwardly compatible with Intel 8080, announced by Zilog in 1976. Its advanced design, such as the ability to perform 16-bit operations with register pairs while using an 8-bit CPU, is worth using in the modern era, and it has been used in the modern era that has passed nearly half a century.
+Z80は、嶋正利ら元インテル社のメンバーがザイログ社にスピンアウトして開発した8bit CPUで、1976年に発表され、1980年代のコンピュータやゲーム機に広く使われていました。それは、単なる過去の遺物ではなく、現代でもリアルタイムシステムなど、処理実行時間の正確さが求められる組み込みシステムで利用され続けています。
 
-This repo. provides the emulator of Z80 for C++ by signle header.
+SUZUKI PLAN - Z80 Emulatorは、Z80を用いたプログラムやエミュレータの開発を支援する目的で、以下の設計指針に基づき開発したエミュレータです。
 
-## About
-
-- Z80 Emulator
-- 1 header (you need embed only [z80.hpp](z80.hpp) in your project)
-
-## Interface
-
-### constructor
-
-
+- 簡単にエミュレータ実装できること（1ヘッダー形式で提供することで実現）
+- 自由度の高いライセンスであること（MITライセンスを採用）
+- 可読性が高くカスタマイズし易い実装であること

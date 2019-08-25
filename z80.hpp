@@ -30,6 +30,8 @@ class Z80
         unsigned short IY;
         unsigned char R;
         unsigned char I;
+        unsigned char IFF;
+        int interruptMode;
         bool isHalt;
     };
 
@@ -88,14 +90,14 @@ class Z80
         return result;
     }
 
-    static inline int nop(Z80* ctx)
+    static inline int NOP(Z80* ctx)
     {
         ctx->log("[%04X] NOP", ctx->reg.PC);
         ctx->reg.PC++;
         return 4;
     }
 
-    static inline int halt(Z80* ctx)
+    static inline int HALT(Z80* ctx)
     {
         ctx->log("[%04X] HALT", ctx->reg.PC);
         ctx->reg.isHalt = true;
@@ -103,12 +105,51 @@ class Z80
         return 4;
     }
 
+    static inline int DI(Z80* ctx)
+    {
+        ctx->log("[%04X] DI", ctx->reg.PC);
+        ctx->reg.IFF = 1;
+        ctx->reg.PC++;
+        return 4;
+    }
+
+    static inline int EI(Z80* ctx)
+    {
+        ctx->log("[%04X] EI", ctx->reg.PC);
+        ctx->reg.IFF = 1;
+        ctx->reg.PC++;
+        return 4;
+    }
+
+    static inline int IM(Z80* ctx)
+    {
+        unsigned char mode = ctx->read(ctx->reg.PC + 1);
+        switch (mode) {
+            case 0b01000110:
+                ctx->log("[%04X] IM 0", ctx->reg.PC);
+                ctx->reg.interruptMode = 0;
+                break;
+            case 0b01010110:
+                ctx->log("[%04X] IM 1", ctx->reg.PC);
+                ctx->reg.interruptMode = 1;
+                break;
+            case 0b01011110:
+                ctx->log("[%04X] IM 2", ctx->reg.PC);
+                ctx->reg.interruptMode = 2;
+                break;
+            default:
+                ctx->log("unknown IM: $%02X", mode);
+                return -1;
+        }
+        ctx->reg.PC += 2;
+        return 8;
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
   public: // API functions
     Z80(std::function<unsigned char(unsigned short addr)> read,
-        std::function<void(unsigned short addr,
-                           unsigned char value)> write,
+        std::function<void(unsigned short addr, unsigned char value)> write,
         std::function<unsigned char(unsigned char port)> in,
         std::function<void(unsigned char port, unsigned char value)> out,
         bool isDebug = false)
@@ -120,8 +161,11 @@ class Z80
         this->isDebug = isDebug;
         ::memset(&reg, 0, sizeof(reg));
         ::memset(&opSet1, 0, sizeof(opSet1));
-        opSet1[0b00000000] = nop;
-        opSet1[0b01110110] = halt;
+        opSet1[0b00000000] = NOP;
+        opSet1[0b01110110] = HALT;
+        opSet1[0b11110011] = DI;
+        opSet1[0b11111011] = EI;
+        opSet1[0b11101101] = IM;
     }
 
     ~Z80() {}
@@ -135,7 +179,12 @@ class Z80
                 log("detected an unimplement operand: $%02X", operandNumber);
                 return false;
             }
-            clock -= op(this);
+            int consume = op(this);
+            if (consume < 0) {
+                log("detected an invalid operand: $%02X", operandNumber);
+                return false;
+            }
+            clock -= consume;
         }
         return true;
     }
