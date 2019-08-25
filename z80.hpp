@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <time.h>
 #include <functional>
 
 class Z80
@@ -28,6 +30,7 @@ class Z80
         unsigned short IY;
         unsigned char R;
         unsigned char I;
+        bool isHalt;
     };
 
   private: // Internal variables
@@ -36,21 +39,21 @@ class Z80
     std::function<unsigned char(unsigned char port)> in;
     std::function<void(unsigned char port, unsigned char value)> out;
     struct Register reg;
+    bool isDebug;
 
-  public: // Constructor and Destructor
-    Z80(std::function<unsigned char(unsigned short addr)> read,
-        std::function<void(unsigned short addr, unsigned char value)> write,
-        std::function<unsigned char(unsigned char port)> in,
-        std::function<void(unsigned char port, unsigned char value)> out)
+  public: // utility functions
+    inline void log(const char* format, ...)
     {
-        this->read = read;
-        this->write = write;
-        this->in = in;
-        this->out = out;
-        ::memset(&reg, 0, sizeof(reg));
+        if (!isDebug) return;
+        char buf[1024];
+        va_list args;
+        va_start(args, format);
+        vsprintf(buf, format, args);
+        va_end(args);
+        time_t t1 = time(NULL);
+        struct tm* t2 = localtime(&t1);
+        fprintf(stderr, "%04d.%02d.%02d %02d:%02d:%02d %s\n", t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour, t2->tm_min, t2->tm_sec, buf);
     }
-
-    ~Z80() {}
 
   private: // Internal functions
     inline unsigned short getAF(RegisterPair* pair)
@@ -85,22 +88,56 @@ class Z80
         return result;
     }
 
-    inline int nop()
+    static inline int nop(Z80* ctx)
     {
-        reg.PC++;
+        ctx->log("[%04X] NOP", ctx->reg.PC);
+        ctx->reg.PC++;
         return 4;
     }
 
-  public: // API functions
-    void execute(int clock)
+    static inline int halt(Z80* ctx)
     {
-        while (0 < clock) {
-            unsigned char op = read(reg.PC);
-            switch (op) {
-                case 0b00000000: clock -= nop(); break;
-                default: puts("TODO: unimplemented"); exit(-1);
+        ctx->log("[%04X] HALT", ctx->reg.PC);
+        ctx->reg.isHalt = true;
+        ctx->reg.PC++;
+        return 4;
+    }
+
+    int (*opSet1[256])(Z80* ctx);
+
+  public: // API functions
+    Z80(std::function<unsigned char(unsigned short addr)> read,
+        std::function<void(unsigned short addr,
+                           unsigned char value)> write,
+        std::function<unsigned char(unsigned char port)> in,
+        std::function<void(unsigned char port, unsigned char value)> out,
+        bool isDebug = false)
+    {
+        this->read = read;
+        this->write = write;
+        this->in = in;
+        this->out = out;
+        this->isDebug = isDebug;
+        ::memset(&reg, 0, sizeof(reg));
+        ::memset(&opSet1, 0, sizeof(opSet1));
+        opSet1[0b00000000] = nop;
+        opSet1[0b01110110] = halt;
+    }
+
+    ~Z80() {}
+
+    bool execute(int clock)
+    {
+        while (0 < clock && !reg.isHalt) {
+            int operandNumber = read(reg.PC);
+            int (*op)(Z80*) = opSet1[operandNumber];
+            if (!op) {
+                log("detected an unimplement operand: $%02X", operandNumber);
+                return false;
             }
+            clock -= op(this);
         }
+        return true;
     }
 
     void executeTick4MHz()

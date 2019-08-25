@@ -5,7 +5,6 @@ unsigned char IO[0x100];
 
 unsigned char readByte(unsigned short addr)
 {
-    printf("read from $%04X: $%02X\n", addr, RAM[addr]);
     return RAM[addr];
 }
 
@@ -26,7 +25,7 @@ void outPort(unsigned char port, unsigned char value)
 
 int main()
 {
-    Z80 z80(readByte, writeByte, inPort, outPort);
-    z80.executeTick4MHz();
+    Z80 z80(readByte, writeByte, inPort, outPort, true);
+    z80.execute(32);
     return 0;
 }
