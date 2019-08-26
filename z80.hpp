@@ -1,3 +1,5 @@
+// SUZUKI PLAN - Z80 Emulator
+// Copyright 2019, SUZUKI PLAN. (MIT License)
 #ifndef INCLUDE_Z80_HPP
 #define INCLUDE_Z80_HPP
 #include <stdio.h>
