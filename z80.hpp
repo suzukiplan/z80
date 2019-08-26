@@ -164,6 +164,17 @@ class Z80
         return -1;
     }
 
+    // operand of first byte is 0b11111101
+    static inline int OP_11111101(Z80* ctx)
+    {
+        const char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        if ((op2 & 0b11000111) == 0b01000110) {
+            return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
+        }
+        ctx->log("detected an unknown operand: 11111101 - $%02X", op2);
+        return -1;
+    }
+
     inline unsigned char* getRegisterPointer(unsigned char r)
     {
         switch (r) {
@@ -256,6 +267,7 @@ class Z80
         return 7;
     }
 
+    // Load Reg. r with location (IX+d)
     inline int LD_R_IX(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -263,6 +275,20 @@ class Z80
         unsigned char n = CB.read(CB.arg, (reg.IX + d) & 0xFFFF);
         if (debugStream) {
             log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IX, d, n);
+        }
+        if (rp) *rp = n;
+        reg.PC += 3;
+        return 19;
+    }
+
+    // Load Reg. r with location (IY+d)
+    inline int LD_R_IY(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned char n = CB.read(CB.arg, (reg.IY + d) & 0xFFFF);
+        if (debugStream) {
+            log("[%04X] LD %s, (IY<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IY, d, n);
         }
         if (rp) *rp = n;
         reg.PC += 3;
@@ -293,6 +319,7 @@ class Z80
         opSet1[0b11111011] = EI;
         opSet1[0b11101101] = IM;
         opSet1[0b11011101] = OP_11011101;
+        opSet1[0b11111101] = OP_11111101;
     }
 
     ~Z80() {}

@@ -44,6 +44,9 @@ int main()
     mmu.RAM[4] = 0b11011101; // LD E, (IX+4)
     mmu.RAM[5] = 0b01011110;
     mmu.RAM[6] = 4;
+    mmu.RAM[7] = 0b11111101; // LD H, (IY+4)
+    mmu.RAM[8] = 0b01100110;
+    mmu.RAM[9] = 4;
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う
@@ -55,9 +58,10 @@ int main()
     z80.reg.pair.A = 0x12;
     z80.reg.pair.B = 0x34;
     z80.reg.pair.L = 0x01;
+    z80.reg.IY = 1;
 
     // 約32Hz実行
-    printf("executed %dHz\n", z80.execute(32));
+    printf("executed %dHz\n", z80.execute(64));
 
     // ログにレジスタダンプを表示
     z80.registerDump();
