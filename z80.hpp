@@ -190,6 +190,22 @@ class Z80
         }
     }
 
+    inline char* registerPairDump(unsigned char ptn)
+    {
+        static char BC[16];
+        static char DE[16];
+        static char HL[16];
+        static char SP[16];
+        static char unknown[2] = "?";
+        switch (ptn & 0b11) {
+            case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
+            case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
+            case 0b10: sprintf(HL, "HL<$%02X%02X>", reg.pair.H, reg.pair.L); return HL;
+            case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
+            default: return unknown;
+        }
+    }
+
     // Load Reg. r1 with Reg. r2
     inline int LD_R1_R2(unsigned char r1, unsigned char r2)
     {
@@ -213,6 +229,19 @@ class Z80
         }
         if (rp) *rp = n;
         reg.PC += 2;
+        return 7;
+    }
+
+    // Load Reg. r with location (HL)
+    inline int LD_R_HL(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        unsigned char n = CB.read(CB.arg, getHL(&reg.pair));
+        if (debugStream) {
+            log("[%04X] LD %s, (%s) = $%02X", reg.PC, registerDump(r), registerPairDump(0b10), n);
+        }
+        if (rp) *rp = n;
+        reg.PC += 1;
         return 7;
     }
 
@@ -250,10 +279,12 @@ class Z80
             int (*op)(Z80*) = opSet1[operandNumber];
             int consume = -1;
             if (NULL == op) {
-                if ((operandNumber & 0b11000000) == 0b01000000) {
-                    consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11000111) == 0b00000110) {
+                if ((operandNumber & 0b11000111) == 0b00000110) {
                     consume = LD_R_N((operandNumber & 0b00111000) >> 3);
+                } else if ((operandNumber & 0b11000111) == 0b01000110) {
+                    consume = LD_R_HL((operandNumber & 0b00111000) >> 3);
+                } else if ((operandNumber & 0b11000000) == 0b01000000) {
+                    consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
                 }
             } else {
                 consume = op(this);

@@ -40,6 +40,7 @@ int main()
     mmu.RAM[0] = 0b01000111; // LD B, A
     mmu.RAM[1] = 0b00001110; // LD C, $56
     mmu.RAM[2] = 0x56;
+    mmu.RAM[3] = 0b01010110; // LD D, (HL)
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う
@@ -50,6 +51,7 @@ int main()
     // レジスタ初期値を設定（未設定時は0）
     z80.reg.pair.A = 0x12;
     z80.reg.pair.B = 0x34;
+    z80.reg.pair.L = 0x01;
 
     // 32Hz実行
     z80.execute(32);
