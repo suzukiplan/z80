@@ -38,6 +38,7 @@ int main()
 {
     // MMUインスタンスを作成
     MMU mmu;
+    mmu.RAM[0] = 0b01000111; // LD B, A
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う
@@ -45,7 +46,13 @@ int main()
     // - デバッグ出力設定: 省略するかNULLを指定するとデバッグ出力しない（ここでは、標準出力を指定）
     Z80 z80(readByte, writeByte, inPort, outPort, &mmu, stdout);
 
+    z80.reg.pair.A = 0x12;
+    z80.reg.pair.B = 0x34;
+
     // 32Hz実行
     z80.execute(32);
+
+    // レジスタダンプを表示
+    z80.registerDump();
     return 0;
 }

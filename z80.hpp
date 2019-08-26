@@ -35,23 +35,24 @@ class Z80
         unsigned char IFF;
         int interruptMode;
         bool isHalt;
-    };
+    } reg;
 
   private: // Internal variables
     struct Callback {
         std::function<unsigned char(void* arg, unsigned short addr)> read;
-        std::function<void(void* arg, unsigned short addr, unsigned char value)> write;
+        std::function<void(void* arg, unsigned short addr, unsigned char value)>
+            write;
         std::function<unsigned char(void* arg, unsigned char port)> in;
         std::function<void(void* arg, unsigned char port, unsigned char value)> out;
         void* arg;
     } CB;
-    struct Register reg;
     FILE* debugStream;
 
   public: // utility functions
     inline void log(const char* format, ...)
     {
-        if (!debugStream) return;
+        if (!debugStream)
+            return;
         char buf[1024];
         va_list args;
         va_start(args, format);
@@ -59,7 +60,9 @@ class Z80
         va_end(args);
         time_t t1 = time(NULL);
         struct tm* t2 = localtime(&t1);
-        fprintf(debugStream, "%04d.%02d.%02d %02d:%02d:%02d %s\n", t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour, t2->tm_min, t2->tm_sec, buf);
+        fprintf(debugStream, "%04d.%02d.%02d %02d:%02d:%02d %s\n",
+                t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour,
+                t2->tm_min, t2->tm_sec, buf);
     }
 
   private: // Internal functions
@@ -150,6 +153,55 @@ class Z80
         return 8;
     }
 
+    inline unsigned char* getRegisterPointer(unsigned char r)
+    {
+        switch (r) {
+            case 0b111: return &reg.pair.A;
+            case 0b000: return &reg.pair.B;
+            case 0b001: return &reg.pair.C;
+            case 0b010: return &reg.pair.D;
+            case 0b011: return &reg.pair.E;
+            case 0b100: return &reg.pair.H;
+            case 0b101: return &reg.pair.L;
+        }
+        log("detected an unknown register number: $%02X", r);
+        return NULL;
+    }
+
+    inline char* registerDump(unsigned char r)
+    {
+        static char A[16];
+        static char B[16];
+        static char C[16];
+        static char D[16];
+        static char E[16];
+        static char H[16];
+        static char L[16];
+        static char unknown[2] = "?";
+        switch (r) {
+            case 0b111: sprintf(A, "A<$%02X>", reg.pair.A); return A;
+            case 0b000: sprintf(B, "B<$%02X>", reg.pair.B); return B;
+            case 0b001: sprintf(C, "C<$%02X>", reg.pair.C); return C;
+            case 0b010: sprintf(D, "D<$%02X>", reg.pair.D); return D;
+            case 0b011: sprintf(E, "E<$%02X>", reg.pair.E); return E;
+            case 0b100: sprintf(H, "H<$%02X>", reg.pair.H); return H;
+            case 0b101: sprintf(L, "L<$%02X>", reg.pair.L); return L;
+            default: return unknown;
+        }
+    }
+
+    inline int LD_R1_R2(unsigned char r1, unsigned char r2)
+    {
+        unsigned char* r1p = getRegisterPointer(r1);
+        unsigned char* r2p = getRegisterPointer(r2);
+        if (debugStream) {
+            log("[%04X] LD %s, %s", reg.PC, registerDump(r1), registerDump(r2));
+        }
+        if (r1p && r2p) *r1p = *r2p;
+        reg.PC += 1;
+        return 4;
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
   public: // API functions
@@ -182,11 +234,14 @@ class Z80
         while (0 < clock && !reg.isHalt) {
             int operandNumber = CB.read(CB.arg, reg.PC);
             int (*op)(Z80*) = opSet1[operandNumber];
-            if (!op) {
-                log("detected an unimplement operand: $%02X", operandNumber);
-                return false;
+            int consume = -1;
+            if (NULL == op) {
+                if ((operandNumber & 0b11000000) == 0b01000000) {
+                    consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
+                }
+            } else {
+                consume = op(this);
             }
-            int consume = op(this);
             if (consume < 0) {
                 log("detected an invalid operand: $%02X", operandNumber);
                 return false;
@@ -196,14 +251,16 @@ class Z80
         return true;
     }
 
-    void executeTick4MHz()
-    {
-        execute(4194304 / 60);
-    }
+    void executeTick4MHz() { execute(4194304 / 60); }
 
-    void executeTick8MHz()
+    void executeTick8MHz() { execute(8388608 / 60); }
+
+    void registerDump()
     {
-        execute(8388608 / 60);
+        log("===== REGISTER DUMP : START =====");
+        log("%s %s %s %s %s %s %s", registerDump(0b111), registerDump(0b000), registerDump(0b001), registerDump(0b010), registerDump(0b011), registerDump(0b100), registerDump(0b101));
+        log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
+        log("===== REGISTER DUMP : END =====");
     }
 };
 
