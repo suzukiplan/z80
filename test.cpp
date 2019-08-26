@@ -56,8 +56,8 @@ int main()
     z80.reg.pair.B = 0x34;
     z80.reg.pair.L = 0x01;
 
-    // 32Hz実行
-    z80.execute(32);
+    // 約32Hz実行
+    printf("executed %dHz\n", z80.execute(32));
 
     // ログにレジスタダンプを表示
     z80.registerDump();

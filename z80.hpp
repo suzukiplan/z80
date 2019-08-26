@@ -297,8 +297,9 @@ class Z80
 
     ~Z80() {}
 
-    bool execute(int clock)
+    int execute(int clock)
     {
+        int executed = 0;
         while (0 < clock && !reg.isHalt) {
             int operandNumber = CB.read(CB.arg, reg.PC);
             int (*op)(Z80*) = opSet1[operandNumber];
@@ -321,8 +322,9 @@ class Z80
                 return false;
             }
             clock -= consume;
+            executed += consume;
         }
-        return true;
+        return executed;
     }
 
     void executeTick4MHz() { execute(4194304 / 60); }
