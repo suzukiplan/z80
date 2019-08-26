@@ -46,13 +46,14 @@ int main()
     // - デバッグ出力設定: 省略するかNULLを指定するとデバッグ出力しない（ここでは、標準出力を指定）
     Z80 z80(readByte, writeByte, inPort, outPort, &mmu, stdout);
 
+    // レジスタ初期値を設定（未設定時は0）
     z80.reg.pair.A = 0x12;
     z80.reg.pair.B = 0x34;
 
     // 32Hz実行
     z80.execute(32);
 
-    // レジスタダンプを表示
+    // ログにレジスタダンプを表示
     z80.registerDump();
     return 0;
 }
