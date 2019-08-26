@@ -10,8 +10,7 @@ class MMU
 };
 
 // CPUからメモリ読み込み要求発生時のコールバック
-unsigned char
-readByte(void* arg, unsigned short addr)
+unsigned char readByte(void* arg, unsigned short addr)
 {
     return ((MMU*)arg)->RAM[addr];
 }
