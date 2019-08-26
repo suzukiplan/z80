@@ -295,6 +295,19 @@ class Z80
         return 19;
     }
 
+    // Load location (HL) with Reg. r
+    inline int LD_HL_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        unsigned short addr = getHL(&reg.pair);
+        if (debugStream) {
+            log("[%04X] LD (%s), %s", reg.PC, registerPairDump(0b10), registerDump(r));
+        }
+        CB.write(CB.arg, addr, *rp);
+        reg.PC += 1;
+        return 7;
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
   public: // API functions
@@ -333,7 +346,9 @@ class Z80
             int consume = -1;
             if (NULL == op) {
                 // execute an operand that register type has specified in the first byte.
-                if ((operandNumber & 0b11000111) == 0b00000110) {
+                if ((operandNumber & 0b11111000) == 0b01110000) {
+                    consume = LD_HL_R(operandNumber & 0b00000111);
+                } else if ((operandNumber & 0b11000111) == 0b00000110) {
                     consume = LD_R_N((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000111) == 0b01000110) {
                     consume = LD_R_HL((operandNumber & 0b00111000) >> 3);
