@@ -153,6 +153,17 @@ class Z80
         return 8;
     }
 
+    // operand of first byte is 0b11011101
+    static inline int OP_11011101(Z80* ctx)
+    {
+        const char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        if ((op2 & 0b11000111) == 0b01000110) {
+            return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
+        }
+        ctx->log("detected an unknown operand: 0b11011101 - $%02X", op2);
+        return -1;
+    }
+
     inline unsigned char* getRegisterPointer(unsigned char r)
     {
         switch (r) {
@@ -245,6 +256,19 @@ class Z80
         return 7;
     }
 
+    inline int LD_R_IX(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned char n = CB.read(CB.arg, (reg.IX + d) & 0xFFFF);
+        if (debugStream) {
+            log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IX, d, n);
+        }
+        if (rp) *rp = n;
+        reg.PC += 3;
+        return 19;
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
   public: // API functions
@@ -268,6 +292,7 @@ class Z80
         opSet1[0b11110011] = DI;
         opSet1[0b11111011] = EI;
         opSet1[0b11101101] = IM;
+        opSet1[0b11011101] = OP_11011101;
     }
 
     ~Z80() {}
@@ -279,6 +304,7 @@ class Z80
             int (*op)(Z80*) = opSet1[operandNumber];
             int consume = -1;
             if (NULL == op) {
+                // execute an operand that register type has specified in the first byte.
                 if ((operandNumber & 0b11000111) == 0b00000110) {
                     consume = LD_R_N((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000111) == 0b01000110) {
@@ -287,6 +313,7 @@ class Z80
                     consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
                 }
             } else {
+                // execute an operand that the first byte is fixed.
                 consume = op(this);
             }
             if (consume < 0) {
