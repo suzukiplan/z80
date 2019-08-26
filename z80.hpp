@@ -190,6 +190,7 @@ class Z80
         }
     }
 
+    // Load Reg. r1 with Reg. r2
     inline int LD_R1_R2(unsigned char r1, unsigned char r2)
     {
         unsigned char* r1p = getRegisterPointer(r1);
@@ -200,6 +201,19 @@ class Z80
         if (r1p && r2p) *r1p = *r2p;
         reg.PC += 1;
         return 4;
+    }
+
+    // Load Reg. r with value n
+    inline int LD_R_N(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        unsigned char n = CB.read(CB.arg, reg.PC + 1);
+        if (debugStream) {
+            log("[%04X] LD %s, $%02X", reg.PC, registerDump(r), n);
+        }
+        if (rp) *rp = n;
+        reg.PC += 2;
+        return 7;
     }
 
     int (*opSet1[256])(Z80* ctx);
@@ -238,6 +252,8 @@ class Z80
             if (NULL == op) {
                 if ((operandNumber & 0b11000000) == 0b01000000) {
                     consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
+                } else if ((operandNumber & 0b11000111) == 0b00000110) {
+                    consume = LD_R_N((operandNumber & 0b00111000) >> 3);
                 }
             } else {
                 consume = op(this);
