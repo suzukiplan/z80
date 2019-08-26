@@ -22,6 +22,10 @@ make
 
 > 現状NOPしか動かしていません^^;
 
+## How to use
+
+[test.cpp](test.cpp)の実装を参照。
+
 ## License
 
 [MIT](LICENSE.txt)
