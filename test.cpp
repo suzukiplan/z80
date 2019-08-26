@@ -1,31 +1,51 @@
 #include "z80.hpp"
 
-unsigned char RAM[0x10000];
-unsigned char IO[0x100];
-
-unsigned char readByte(unsigned short addr)
+// 利用プログラム側でMMUを実装します。
+// ミニマムでは 64KB の RAM と 256バイト の I/O ポートが必要です。
+class MMU
 {
-    return RAM[addr];
+  public:
+    unsigned char RAM[0x10000];
+    unsigned char IO[0x100];
+};
+
+// CPUからメモリ読み込み要求発生時のコールバック
+unsigned char
+readByte(void* arg, unsigned short addr)
+{
+    return ((MMU*)arg)->RAM[addr];
 }
 
-void writeByte(unsigned short addr, unsigned char value)
+// CPUからメモリ書き込み要求発生時のコールバック
+void writeByte(void* arg, unsigned short addr, unsigned char value)
 {
-    RAM[addr] = value;
+    ((MMU*)arg)->RAM[addr] = value;
 }
 
-unsigned char inPort(unsigned char port)
+// 入力命令（IN）発生時のコールバック
+unsigned char inPort(void* arg, unsigned char port)
 {
-    return IO[port];
+    return ((MMU*)arg)->IO[port];
 }
 
-void outPort(unsigned char port, unsigned char value)
+// 出力命令（OUT）発生時のコールバック
+void outPort(void* arg, unsigned char port, unsigned char value)
 {
-    IO[port] = value;
+    ((MMU*)arg)->IO[port] = value;
 }
 
 int main()
 {
-    Z80 z80(readByte, writeByte, inPort, outPort, true);
+    // MMUインスタンスを作成
+    MMU mmu;
+
+    // CPUインスタンスを作成
+    // コールバック、コールバック引数、デバッグ出力設定を行う
+    // - コールバック引数: コールバックに渡す任意の引数（ここでは、MMUインスタンスのポインタを指定）
+    // - デバッグ出力設定: 省略するかNULLを指定するとデバッグ出力しない（ここでは、標準出力を指定）
+    Z80 z80(readByte, writeByte, inPort, outPort, &mmu, stdout);
+
+    // 32Hz実行
     z80.execute(32);
     return 0;
 }

@@ -36,17 +36,20 @@ class Z80
     };
 
   private: // Internal variables
-    std::function<unsigned char(unsigned short addr)> read;
-    std::function<void(unsigned short addr, unsigned char value)> write;
-    std::function<unsigned char(unsigned char port)> in;
-    std::function<void(unsigned char port, unsigned char value)> out;
+    struct Callback {
+        std::function<unsigned char(void* arg, unsigned short addr)> read;
+        std::function<void(void* arg, unsigned short addr, unsigned char value)> write;
+        std::function<unsigned char(void* arg, unsigned char port)> in;
+        std::function<void(void* arg, unsigned char port, unsigned char value)> out;
+        void* arg;
+    } CB;
     struct Register reg;
-    bool isDebug;
+    FILE* debugStream;
 
   public: // utility functions
     inline void log(const char* format, ...)
     {
-        if (!isDebug) return;
+        if (!debugStream) return;
         char buf[1024];
         va_list args;
         va_start(args, format);
@@ -54,7 +57,7 @@ class Z80
         va_end(args);
         time_t t1 = time(NULL);
         struct tm* t2 = localtime(&t1);
-        fprintf(stderr, "%04d.%02d.%02d %02d:%02d:%02d %s\n", t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour, t2->tm_min, t2->tm_sec, buf);
+        fprintf(debugStream, "%04d.%02d.%02d %02d:%02d:%02d %s\n", t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour, t2->tm_min, t2->tm_sec, buf);
     }
 
   private: // Internal functions
@@ -123,7 +126,7 @@ class Z80
 
     static inline int IM(Z80* ctx)
     {
-        unsigned char mode = ctx->read(ctx->reg.PC + 1);
+        unsigned char mode = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
         switch (mode) {
             case 0b01000110:
                 ctx->log("[%04X] IM 0", ctx->reg.PC);
@@ -148,17 +151,19 @@ class Z80
     int (*opSet1[256])(Z80* ctx);
 
   public: // API functions
-    Z80(std::function<unsigned char(unsigned short addr)> read,
-        std::function<void(unsigned short addr, unsigned char value)> write,
-        std::function<unsigned char(unsigned char port)> in,
-        std::function<void(unsigned char port, unsigned char value)> out,
-        bool isDebug = false)
+    Z80(std::function<unsigned char(void* arg, unsigned short addr)> read,
+        std::function<void(void* arg, unsigned short addr, unsigned char value)> write,
+        std::function<unsigned char(void* arg, unsigned char port)> in,
+        std::function<void(void* arg, unsigned char port, unsigned char value)> out,
+        void* arg,
+        FILE* debugStream = NULL)
     {
-        this->read = read;
-        this->write = write;
-        this->in = in;
-        this->out = out;
-        this->isDebug = isDebug;
+        this->CB.read = read;
+        this->CB.write = write;
+        this->CB.in = in;
+        this->CB.out = out;
+        this->CB.arg = arg;
+        this->debugStream = debugStream;
         ::memset(&reg, 0, sizeof(reg));
         ::memset(&opSet1, 0, sizeof(opSet1));
         opSet1[0b00000000] = NOP;
@@ -173,7 +178,7 @@ class Z80
     bool execute(int clock)
     {
         while (0 < clock && !reg.isHalt) {
-            int operandNumber = read(reg.PC);
+            int operandNumber = CB.read(CB.arg, reg.PC);
             int (*op)(Z80*) = opSet1[operandNumber];
             if (!op) {
                 log("detected an unimplement operand: $%02X", operandNumber);
