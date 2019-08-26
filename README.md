@@ -41,7 +41,7 @@ make
 2019.07.27 00:21:22 PC<$000C> SP<$0000> IX<$0000> IY<$0001>
 2019.07.27 00:21:22 ===== REGISTER DUMP : END =====
 > 
-executed 67Hz```
+executed 67Hz
 ```
 
 ## How to use
