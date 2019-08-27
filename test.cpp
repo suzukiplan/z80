@@ -1,13 +1,20 @@
 #include <ctype.h>
 #include "z80.hpp"
 
-// 利用プログラム側でMMUを実装します。
+// 利用プログラム側で MMU (Memory Management Unit) を実装します。
 // ミニマムでは 64KB の RAM と 256バイト の I/O ポートが必要です。
 class MMU
 {
   public:
     unsigned char RAM[0x10000];
     unsigned char IO[0x100];
+
+    // コンストラクタで0クリアしておく
+    MMU()
+    {
+        memset(&RAM, 0, sizeof(RAM));
+        memset(&IO, 0, sizeof(IO));
+    }
 };
 
 // CPUからメモリ読み込み要求発生時のコールバック
