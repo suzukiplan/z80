@@ -39,7 +39,7 @@ bool isHexDigit(char c)
 {
     if (isdigit(c)) return true;
     char uc = toupper(c);
-    return 'A' <= uc && uc <= 'Z';
+    return 'A' <= uc && uc <= 'F';
 }
 
 // 16進数文字列を数値に変換（デバッグコマンド用）
