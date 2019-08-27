@@ -116,7 +116,7 @@ class Z80
     static inline int DI(Z80* ctx)
     {
         ctx->log("[%04X] DI", ctx->reg.PC);
-        ctx->reg.IFF = 1;
+        ctx->reg.IFF = 0;
         ctx->reg.PC++;
         return 4;
     }
@@ -401,14 +401,15 @@ class Z80
         this->debugStream = debugStream;
         ::memset(&reg, 0, sizeof(reg));
         ::memset(&opSet1, 0, sizeof(opSet1));
+        // setup 1 byte operands
         opSet1[0b00000000] = NOP;
+        opSet1[0b00110110] = LD_HL_N;
         opSet1[0b01110110] = HALT;
+        opSet1[0b11011101] = OP_IX;
+        opSet1[0b11101101] = IM;
         opSet1[0b11110011] = DI;
         opSet1[0b11111011] = EI;
-        opSet1[0b11101101] = IM;
-        opSet1[0b11011101] = OP_IX;
         opSet1[0b11111101] = OP_IY;
-        opSet1[0b00110110] = LD_HL_N;
     }
 
     ~Z80() {}
