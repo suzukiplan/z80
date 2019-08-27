@@ -147,7 +147,5 @@ int main()
         printf("> ");
     }
     printf("executed %dHz\n", clocks);
-
-    // ログにレジスタダンプを表示
     return 0;
 }
