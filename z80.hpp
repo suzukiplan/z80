@@ -179,6 +179,17 @@ class Z80
         return -1;
     }
 
+    // Load location (HL) with value n
+    static inline int LD_HL_N(Z80* ctx)
+    {
+        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned short hl = ctx->getHL(&ctx->reg.pair);
+        ctx->log("[%04X] LD (HL<$%04X>), $%02X", ctx->reg.PC, hl, n);
+        ctx->CB.write(ctx->CB.arg, hl, n);
+        ctx->reg.PC += 2;
+        return 10;
+    }
+
     inline unsigned char* getRegisterPointer(unsigned char r)
     {
         switch (r) {
@@ -365,6 +376,7 @@ class Z80
         opSet1[0b11101101] = IM;
         opSet1[0b11011101] = OP_IX;
         opSet1[0b11111101] = OP_IY;
+        opSet1[0b00110110] = LD_HL_N;
     }
 
     ~Z80() {}
