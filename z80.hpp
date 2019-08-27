@@ -157,7 +157,9 @@ class Z80
     static inline int OP_IX(Z80* ctx)
     {
         const char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        if ((op2 & 0b11000111) == 0b01000110) {
+        if (op2 == 0b00110110) {
+            return ctx->LD_IX_N();
+        } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IX_R(op2 & 0b00000111);
@@ -170,7 +172,9 @@ class Z80
     static inline int OP_IY(Z80* ctx)
     {
         const char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        if ((op2 & 0b11000111) == 0b01000110) {
+        if (op2 == 0b00110110) {
+            return ctx->LD_IY_N();
+        } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IY_R(op2 & 0b00000111);
@@ -348,6 +352,34 @@ class Z80
         }
         if (rp) CB.write(CB.arg, addr, *rp);
         reg.PC += 3;
+        return 19;
+    }
+
+    // Load location (IX+d) with value n
+    inline int LD_IX_N()
+    {
+        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned char n = CB.read(CB.arg, reg.PC + 3);
+        unsigned short addr = reg.IX + d;
+        if (debugStream) {
+            log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
+        }
+        CB.write(CB.arg, addr, n);
+        reg.PC += 4;
+        return 19;
+    }
+
+    // Load location (IY+d) with value n
+    inline int LD_IY_N()
+    {
+        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned char n = CB.read(CB.arg, reg.PC + 3);
+        unsigned short addr = reg.IY + d;
+        if (debugStream) {
+            log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
+        }
+        CB.write(CB.arg, addr, n);
+        reg.PC += 4;
         return 19;
     }
 
