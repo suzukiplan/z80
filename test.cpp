@@ -34,6 +34,7 @@ void outPort(void* arg, unsigned char port, unsigned char value)
     ((MMU*)arg)->IO[port] = value;
 }
 
+// 16進数文字列かチェック（デバッグコマンド用）
 bool isHexDigit(char c)
 {
     if (isdigit(c)) return true;
@@ -41,6 +42,7 @@ bool isHexDigit(char c)
     return 'A' <= uc && uc <= 'Z';
 }
 
+// 16進数文字列を数値に変換（デバッグコマンド用）
 int hexToInt(const char* cp)
 {
     int result = 0;
@@ -74,6 +76,8 @@ int main()
 {
     // MMUインスタンスを作成
     MMU mmu;
+
+    // ハンドアセンブルで検証用プログラムをRAMに展開
     mmu.RAM[0x0000] = 0b01000111; // LD B, A
     mmu.RAM[0x0001] = 0b00001110; // LD C, $56
     mmu.RAM[0x0002] = 0x56;
@@ -85,6 +89,12 @@ int main()
     mmu.RAM[0x0008] = 0b01100110;
     mmu.RAM[0x0009] = 4;
     mmu.RAM[0x000A] = 0b01110000; // LD (HL), B
+    mmu.RAM[0x000B] = 0b11011101; // LD (IX+7), A
+    mmu.RAM[0x000C] = 0b01110111;
+    mmu.RAM[0x000D] = 7;
+    mmu.RAM[0x000E] = 0b11111101; // LD (IY+7), C
+    mmu.RAM[0x000F] = 0b01110001;
+    mmu.RAM[0x0010] = 7;
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う
