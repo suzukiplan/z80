@@ -37,6 +37,11 @@ class Z80
         bool isHalt;
     } reg;
 
+    void setPV(bool on)
+    {
+        on ? reg.pair.F |= 0b00000100 : reg.pair.F &= 0b11111011;
+    }
+
   private: // Internal variables
     struct Callback {
         std::function<unsigned char(void* arg, unsigned short addr)> read;
@@ -137,21 +142,44 @@ class Z80
             case 0b01000110:
                 ctx->log("[%04X] IM 0", ctx->reg.PC);
                 ctx->reg.interruptMode = 0;
-                break;
+                ctx->reg.PC += 2;
+                return 8;
             case 0b01010110:
                 ctx->log("[%04X] IM 1", ctx->reg.PC);
                 ctx->reg.interruptMode = 1;
-                break;
+                ctx->reg.PC += 2;
+                return 8;
             case 0b01011110:
                 ctx->log("[%04X] IM 2", ctx->reg.PC);
                 ctx->reg.interruptMode = 2;
-                break;
+                ctx->reg.PC += 2;
+                return 8;
+            case 0b01010111:
+                ctx->log("[%04X] LD A<$%02X>, I<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.I);
+                ctx->reg.pair.A = ctx->reg.I;
+                ctx->setPV(ctx->reg.IFF ? true : false);
+                ctx->reg.PC += 2;
+                return 9;
+            case 0b01000111:
+                ctx->log("[%04X] LD I<$%02X>, A<$%02X>", ctx->reg.PC, ctx->reg.I, ctx->reg.pair.A);
+                ctx->reg.I = ctx->reg.pair.A;
+                ctx->reg.PC += 2;
+                return 9;
+            case 0b01011111:
+                ctx->log("[%04X] LD A<$%02X>, R<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.R);
+                ctx->reg.pair.A = ctx->reg.R;
+                ctx->setPV(ctx->reg.IFF ? true : false);
+                ctx->reg.PC += 2;
+                return 9;
+            case 0b01001111:
+                ctx->log("[%04X] LD R<$%02X>, A<$%02X>", ctx->reg.PC, ctx->reg.R, ctx->reg.pair.A);
+                ctx->reg.R = ctx->reg.pair.A;
+                ctx->reg.PC += 2;
+                return 9;
             default:
                 ctx->log("unknown IM: $%02X", mode);
                 return -1;
         }
-        ctx->reg.PC += 2;
-        return 8;
     }
 
     // operand of using IX (first byte is 0b11011101)
@@ -530,6 +558,8 @@ class Z80
         log("===== REGISTER DUMP : START =====");
         log("%s %s %s %s %s %s %s", registerDump(0b111), registerDump(0b000), registerDump(0b001), registerDump(0b010), registerDump(0b011), registerDump(0b100), registerDump(0b101));
         log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
+        log("R<$%02X> I<$%02X> IFF<$%02X>", reg.R, reg.I, reg.IFF);
+        log("isHalt: %s, interruptMode: %d", reg.isHalt ? "YES" : "NO", reg.interruptMode);
         log("===== REGISTER DUMP : END =====");
     }
 };
