@@ -147,9 +147,23 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 
 ### 4. Execute
 
-```
+```c++
     // when executing about 1234Hz
     int actualExecuteClocks = z80.execute(1234);
+```
+
+### 5. If implement quick save/load
+
+Save the member variable `reg` when quick saving:
+
+```c++
+    fwrite(fp, sizeof(z80.reg), 1, &z80.reg);
+```
+
+Extract to the member variable `reg` when quick loading:
+
+```c++
+    fread(fp, sizeof(z80.reg), 1, &z80.reg);
 ```
 
 ## License
