@@ -51,8 +51,9 @@ class Z80
   public: // utility functions
     inline void log(const char* format, ...)
     {
-        if (!debugStream)
+        if (!debugStream) {
             return;
+        }
         char buf[1024];
         va_list args;
         va_start(args, format);

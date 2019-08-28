@@ -3,7 +3,7 @@
 The Z80 was an 8-bit CPU developed by Zylog corporation, announced in 1976, and widely used in computers and game consoles in the 1980s.
 It is not just a relic of the past, but continues to be used in embedded systems that require accuracy in processing execution time, such as real-time systems.
 
-"SUZUKI PLAN - Z80 Emulator" is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80.
+__SUZUKI PLAN - Z80 Emulator__ is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80.
 
 __(THREE EASY GUIDELINES)__
 
