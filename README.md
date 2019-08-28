@@ -157,13 +157,13 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 Save the member variable `reg` when quick saving:
 
 ```c++
-    fwrite(fp, sizeof(z80.reg), 1, &z80.reg);
+    fwrite(&z80.reg, sizeof(z80.reg), 1, fp);
 ```
 
 Extract to the member variable `reg` when quick loading:
 
 ```c++
-    fread(fp, sizeof(z80.reg), 1, &z80.reg);
+    fread(&z80.reg, sizeof(z80.reg), 1, fp);
 ```
 
 ## License
