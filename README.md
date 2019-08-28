@@ -8,8 +8,8 @@ It is not just a relic of the past, but continues to be used in embedded systems
 __(THREE EASY GUIDELINES)__
 
 - Make emulator implementation `EASY` & simple (Realized by providing single header: [z80.hpp](z80.hpp))
--Provide under the license that `EASY` to adopt in various programs ([MIT](LICENSE.txt))
--Highly readable and `EASILY` customizable (priority for readability over performance)
+- Provide under the license that `EASY` to adopt in various programs ([MIT](LICENSE.txt))
+- Highly readable and `EASILY` customizable (priority for readability over performance)
 
 > Since I do not have deep knowledge about Z80 myself, I'm implementing it with reference to the information on the following site.
 > 
