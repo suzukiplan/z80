@@ -80,6 +80,78 @@ executed 67Hz
 
 See the [test.cpp](test.cpp) implementation.
 
+### 1. include
+
+```c++
+#include "z80.hpp"
+```
+
+### 2. Implement MMU & access callback
+
+```c++
+class MMU
+{
+  public:
+    unsigned char RAM[0x10000]; // 64KB memory (minimum)
+    unsigned char IO[0x100]; // 256bytes port
+
+    MMU()
+    {
+        memset(&RAM, 0, sizeof(RAM));
+        memset(&IO, 0, sizeof(IO));
+    }
+};
+
+// memory read request per 1 byte from CPU
+unsigned char readByte(void* arg, unsigned short addr)
+{
+    // NOTE: implement switching procedure here if your MMU has bank switch feature
+    return ((MMU*)arg)->RAM[addr];
+}
+
+// memory write request per 1 byte from CPU
+void writeByte(void* arg, unsigned short addr, unsigned char value)
+{
+    // NOTE: implement switching procedure here if your MMU has bank switch feature
+    ((MMU*)arg)->RAM[addr] = value;
+}
+
+// IN operand request from CPU
+unsigned char inPort(void* arg, unsigned char port)
+{
+    return ((MMU*)arg)->IO[port];
+}
+
+// OUT operand request from CPU
+void outPort(void* arg, unsigned char port, unsigned char value)
+{
+    ((MMU*)arg)->IO[port] = value;
+}
+```
+
+### 3. Make Z80 instance
+
+```c++
+    MMU mmu;
+    /**
+     * readByte: callback of memory read request
+     * writeByte: callback of memory write request
+     * inPort: callback of input request
+     * outPort: callback of output request
+     * &mmu: 1st argument of the callbacks
+     * stdout: stream for output debug info (disassembly, etc)
+     *         (!) specify NULL or omit when release build
+     */
+    Z80 z80(readByte, writeByte, inPort, outPort, &mmu, stdout);
+```
+
+### 4. Execute
+
+```
+    // when executing about 1234Hz
+    int actualExecuteClocks = z80.execute(1234);
+```
+
 ## License
 
 [MIT](LICENSE.txt)
