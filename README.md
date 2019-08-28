@@ -1,16 +1,19 @@
 # SUZUKI PLAN - Z80 Emulator (WIP)
 
-Z80は、嶋正利ら元インテル社のメンバーがザイログ社にスピンアウトして開発した8bit CPUで、1976年に発表され、1980年代のコンピュータやゲーム機に広く使われていました。それは、単なる過去の遺物ではなく、現代でもリアルタイムシステムなど、処理実行時間の正確さが求められる組み込みシステムで利用され続けています。
+The Z80 was an 8-bit CPU developed by Zylog corporation, announced in 1976, and widely used in computers and game consoles in the 1980s.
+It is not just a relic of the past, but continues to be used in embedded systems that require accuracy in processing execution time, such as real-time systems.
 
-SUZUKI PLAN - Z80 Emulatorは、Z80を用いたプログラムやエミュレータの開発を支援する目的で、以下の設計指針に基づき開発中のエミュレータです。
+"SUZUKI PLAN - Z80 Emulator" is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80.
 
-- 簡単にエミュレータ実装できること（1ヘッダー形式で提供することで実現）
-- 自由度の高いライセンスであること（MITライセンスを採用）
-- 可読性が高くカスタマイズし易い実装であること（パフォーマンスより可読性を優先）
+__(THREE EASY GUIDELINES)__
 
-なお、私自身Z80について深い知見がある訳ではないので、以下サイトの情報を参考に実装中です。
+- Make emulator implementation `EASY` & simple (Realized by providing single header: [z80.hpp](z80.hpp))
+-Provide under the license that `EASY` to adopt in various programs ([MIT](LICENSE.txt))
+-Highly readable and `EASILY` customizable (priority for readability over performance)
 
-- [山本研究所](http://www.yamamo10.jp/yamamoto/index.html) の [8ビット CPU Z80](http://www.yamamo10.jp/yamamoto/comp/Z80/index.php)記載情報
+> Since I do not have deep knowledge about Z80 myself, I'm implementing it with reference to the information on the following site.
+> 
+> - [8ビット CPU Z80](http://www.yamamo10.jp/yamamoto/comp/Z80/index.php) of [山本研究所](http://www.yamamo10.jp/yamamoto/index.html)
 
 ## WIP status
 
@@ -75,7 +78,7 @@ executed 67Hz
 
 ## How to use
 
-[test.cpp](test.cpp)の実装を参照。
+See the [test.cpp](test.cpp) implementation.
 
 ## License
 
