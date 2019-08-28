@@ -37,10 +37,21 @@ class Z80
         bool isHalt;
     } reg;
 
-    void setPV(bool on)
-    {
-        on ? reg.pair.F |= 0b00000100 : reg.pair.F &= 0b11111011;
-    }
+    // flag setter
+    inline void setFlagS(bool on) { on ? reg.pair.F |= 0b10000000 : reg.pair.F &= 0b01111111; }
+    inline void setFlagZ(bool on) { on ? reg.pair.F |= 0b01000000 : reg.pair.F &= 0b10111111; }
+    inline void setFlagH(bool on) { on ? reg.pair.F |= 0b00010000 : reg.pair.F &= 0b11101111; }
+    inline void setFlagPV(bool on) { on ? reg.pair.F |= 0b00000100 : reg.pair.F &= 0b11111011; }
+    inline void setFlagN(bool on) { on ? reg.pair.F |= 0b00000010 : reg.pair.F &= 0b11111101; }
+    inline void setFlagC(bool on) { on ? reg.pair.F |= 0b00000001 : reg.pair.F &= 0b11111110; }
+
+    // flag checker
+    inline bool isFlagS() { return reg.pair.F & 0b10000000; }
+    inline bool isFlagZ() { return reg.pair.F & 0b01000000; }
+    inline bool isFlagH() { return reg.pair.F & 0b00010000; }
+    inline bool isFlagPV() { return reg.pair.F & 0b00000100; }
+    inline bool isFlagN() { return reg.pair.F & 0b00000010; }
+    inline bool isFlagC() { return reg.pair.F & 0b00000001; }
 
   private: // Internal variables
     struct Callback {
@@ -157,7 +168,7 @@ class Z80
             case 0b01010111:
                 ctx->log("[%04X] LD A<$%02X>, I<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.I);
                 ctx->reg.pair.A = ctx->reg.I;
-                ctx->setPV(ctx->reg.IFF ? true : false);
+                ctx->setFlagPV(ctx->reg.IFF ? true : false);
                 ctx->reg.PC += 2;
                 return 9;
             case 0b01000111:
@@ -168,7 +179,7 @@ class Z80
             case 0b01011111:
                 ctx->log("[%04X] LD A<$%02X>, R<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.R);
                 ctx->reg.pair.A = ctx->reg.R;
-                ctx->setPV(ctx->reg.IFF ? true : false);
+                ctx->setFlagPV(ctx->reg.IFF ? true : false);
                 ctx->reg.PC += 2;
                 return 9;
             case 0b01001111:
