@@ -491,6 +491,39 @@ class Z80
         return 19;
     }
 
+    // Load Reg. pair rp with value nn.
+    inline int LD_RP_NN(unsigned char rp)
+    {
+        unsigned char* rH;
+        unsigned char* rL;
+        switch (rp) {
+            case 0b00:
+                rH = &reg.pair.B;
+                rL = &reg.pair.C;
+                break;
+            case 0b01:
+                rH = &reg.pair.D;
+                rL = &reg.pair.E;
+                break;
+            case 0b10:
+                rH = &reg.pair.H;
+                rL = &reg.pair.L;
+                break;
+            default:
+                log("invalid register pair has specified: $%02X", rp);
+                return -1;
+        }
+        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
+        if (debugStream) {
+            log("[%04X] LD %s, $%02X%02X", reg.PC, registerPairDump(rp), nH, nL);
+        }
+        *rH = nH;
+        *rL = nL;
+        reg.PC += 3;
+        return 10;
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
   public: // API functions
@@ -541,6 +574,8 @@ class Z80
                     consume = LD_HL_R(operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11000111) == 0b00000110) {
                     consume = LD_R_N((operandNumber & 0b00111000) >> 3);
+                } else if ((operandNumber & 0b11001111) == 0b00000001) {
+                    consume = LD_RP_NN((operandNumber & 0b00110000) >> 4);
                 } else if ((operandNumber & 0b11000111) == 0b01000110) {
                     consume = LD_R_HL((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000000) == 0b01000000) {

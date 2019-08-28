@@ -130,6 +130,9 @@ int main()
     mmu.RAM[0x002A] = 0b01011111;
     mmu.RAM[0x002B] = 0b11101101; // LD R, A
     mmu.RAM[0x002C] = 0b01001111;
+    mmu.RAM[0x002D] = 0b00000001; // LD BC, $ABCD
+    mmu.RAM[0x002E] = 0xCD;
+    mmu.RAM[0x002F] = 0xAB;
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う
