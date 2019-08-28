@@ -195,6 +195,37 @@ class Z80
         return 10;
     }
 
+    static inline int LD_A_BC(Z80* ctx)
+    {
+        unsigned short addr = ctx->getBC(&ctx->reg.pair);
+        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        ctx->log("[%04X] LD A, (BC<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
+        ctx->reg.pair.A = n;
+        ctx->reg.PC++;
+        return 7;
+    }
+
+    static inline int LD_A_DE(Z80* ctx)
+    {
+        unsigned short addr = ctx->getDE(&ctx->reg.pair);
+        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        ctx->log("[%04X] LD A, (DE<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
+        ctx->reg.pair.A = n;
+        ctx->reg.PC++;
+        return 7;
+    }
+
+    static inline int LD_A_NN(Z80* ctx)
+    {
+        unsigned short addr = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        addr += ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2) << 8;
+        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC, addr, n);
+        ctx->reg.pair.A = n;
+        ctx->reg.PC += 3;
+        return 13;
+    }
+
     inline unsigned char* getRegisterPointer(unsigned char r)
     {
         switch (r) {
@@ -404,7 +435,10 @@ class Z80
         ::memset(&opSet1, 0, sizeof(opSet1));
         // setup 1 byte operands
         opSet1[0b00000000] = NOP;
+        opSet1[0b00001010] = LD_A_BC;
+        opSet1[0b00011010] = LD_A_DE;
         opSet1[0b00110110] = LD_HL_N;
+        opSet1[0b00111010] = LD_A_NN;
         opSet1[0b01110110] = HALT;
         opSet1[0b11011101] = OP_IX;
         opSet1[0b11101101] = IM;

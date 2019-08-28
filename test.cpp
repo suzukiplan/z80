@@ -112,6 +112,11 @@ int main()
     mmu.RAM[0x0018] = 0b00110110;
     mmu.RAM[0x0019] = 9;
     mmu.RAM[0x001A] = 200;
+    mmu.RAM[0x001B] = 0b00001010; // LD A, (BC)
+    mmu.RAM[0x001C] = 0b00011010; // LD A, (DE)
+    mmu.RAM[0x001D] = 0b00111010; // LD A, ($1234)
+    mmu.RAM[0x001E] = 0x34;
+    mmu.RAM[0x001F] = 0x12;
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う
