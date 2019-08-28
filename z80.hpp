@@ -33,6 +33,7 @@ class Z80
         unsigned char R;
         unsigned char I;
         unsigned char IFF;
+        unsigned char reserved;
         int interruptMode;
         bool isHalt;
     } reg;
