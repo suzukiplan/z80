@@ -199,6 +199,8 @@ class Z80
         const char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
         if (op2 == 0b00110110) {
             return ctx->LD_IX_N();
+        } else if (op2 == 0b00100001) {
+            return ctx->LD_IX_NN();
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -214,6 +216,8 @@ class Z80
         const char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
         if (op2 == 0b00110110) {
             return ctx->LD_IY_N();
+        } else if (op2 == 0b00100001) {
+            return ctx->LD_IY_NN();
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -522,6 +526,26 @@ class Z80
         *rL = nL;
         reg.PC += 3;
         return 10;
+    }
+
+    inline int LD_IX_NN()
+    {
+        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        log("[%04X] LD IX, $%02X%02X", reg.PC, nH, nL);
+        reg.IX = (nH << 8) + nL;
+        reg.PC += 4;
+        return 14;
+    }
+
+    inline int LD_IY_NN()
+    {
+        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        log("[%04X] LD IY, $%02X%02X", reg.PC, nH, nL);
+        reg.IY = (nH << 8) + nL;
+        reg.PC += 4;
+        return 14;
     }
 
     int (*opSet1[256])(Z80* ctx);
