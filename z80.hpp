@@ -207,6 +207,8 @@ class Z80
             return ctx->LD_IX_N();
         } else if (op2 == 0b00101010) {
             return ctx->LD_IX_ADDR();
+        } else if (op2 == 0b00100010) {
+            return ctx->LD_ADDR_IX();
         } else if (op2 == 0b00100001) {
             return ctx->LD_IX_NN();
         } else if ((op2 & 0b11000111) == 0b01000110) {
@@ -226,6 +228,8 @@ class Z80
             return ctx->LD_IY_N();
         } else if (op2 == 0b00101010) {
             return ctx->LD_IY_ADDR();
+        } else if (op2 == 0b00100010) {
+            return ctx->LD_ADDR_IY();
         } else if (op2 == 0b00100001) {
             return ctx->LD_IY_NN();
         } else if ((op2 & 0b11000111) == 0b01000110) {
@@ -685,6 +689,34 @@ class Z80
         unsigned char h = CB.read(CB.arg, addr + 1);
         log("[%04X] LD IY<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IY, nH, nL, h, l);
         reg.IY = (h << 8) + l;
+        reg.PC += 4;
+        return 20;
+    }
+
+    inline int LD_ADDR_IX()
+    {
+        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned short addr = (nH << 8) + nL;
+        log("[%04X] LD ($%04X), IX<$%04X>", reg.PC, addr, reg.IX);
+        unsigned char l = reg.IX & 0x00FF;
+        unsigned char h = (reg.IX & 0xFF00) >> 8;
+        CB.write(CB.arg, addr, l);
+        CB.write(CB.arg, addr + 1, h);
+        reg.PC += 4;
+        return 20;
+    }
+
+    inline int LD_ADDR_IY()
+    {
+        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned short addr = (nH << 8) + nL;
+        log("[%04X] LD ($%04X), IY<$%04X>", reg.PC, addr, reg.IY);
+        unsigned char l = reg.IY & 0x00FF;
+        unsigned char h = (reg.IY & 0xFF00) >> 8;
+        CB.write(CB.arg, addr, l);
+        CB.write(CB.arg, addr + 1, h);
         reg.PC += 4;
         return 20;
     }
