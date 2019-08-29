@@ -92,28 +92,46 @@ class Z80
         return result;
     }
 
-    inline unsigned short getBC(RegisterPair* pair)
+    inline unsigned short getBC()
     {
-        unsigned short result = pair->B;
+        unsigned short result = reg.pair.B;
         result <<= 8;
-        result |= pair->C;
+        result |= reg.pair.C;
         return result;
     }
 
-    inline unsigned short getDE(RegisterPair* pair)
+    inline void setBC(unsigned short value)
     {
-        unsigned short result = pair->D;
+        reg.pair.B = (value & 0xFF00) >> 8;
+        reg.pair.C = (value & 0x00FF);
+    }
+
+    inline unsigned short getDE()
+    {
+        unsigned short result = reg.pair.D;
         result <<= 8;
-        result |= pair->E;
+        result |= reg.pair.E;
         return result;
     }
 
-    inline unsigned short getHL(RegisterPair* pair)
+    inline void setDE(unsigned short value)
     {
-        unsigned short result = pair->H;
+        reg.pair.D = (value & 0xFF00) >> 8;
+        reg.pair.E = (value & 0x00FF);
+    }
+
+    inline unsigned short getHL()
+    {
+        unsigned short result = reg.pair.H;
         result <<= 8;
-        result |= pair->L;
+        result |= reg.pair.L;
         return result;
+    }
+
+    inline void setHL(unsigned short value)
+    {
+        reg.pair.H = (value & 0xFF00) >> 8;
+        reg.pair.L = (value & 0x00FF);
     }
 
     static inline int NOP(Z80* ctx)
@@ -188,6 +206,14 @@ class Z80
                 ctx->reg.R = ctx->reg.pair.A;
                 ctx->reg.PC += 2;
                 return 9;
+            case 0b10100000:
+                return ctx->LDI();
+            case 0b10110000:
+                return ctx->LDIR();
+            case 0b10101000:
+                return ctx->LDD();
+            case 0b10111000:
+                return ctx->LDDR();
             default:
                 if ((mode & 0b11001111) == 0b01001011) {
                     return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
@@ -249,7 +275,7 @@ class Z80
     static inline int LD_HL_N(Z80* ctx)
     {
         unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        unsigned short hl = ctx->getHL(&ctx->reg.pair);
+        unsigned short hl = ctx->getHL();
         ctx->log("[%04X] LD (HL<$%04X>), $%02X", ctx->reg.PC, hl, n);
         ctx->CB.write(ctx->CB.arg, hl, n);
         ctx->reg.PC += 2;
@@ -259,7 +285,7 @@ class Z80
     // Load Acc. wth location (BC)
     static inline int LD_A_BC(Z80* ctx)
     {
-        unsigned short addr = ctx->getBC(&ctx->reg.pair);
+        unsigned short addr = ctx->getBC();
         unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
         ctx->log("[%04X] LD A, (BC<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
         ctx->reg.pair.A = n;
@@ -270,7 +296,7 @@ class Z80
     // Load Acc. wth location (DE)
     static inline int LD_A_DE(Z80* ctx)
     {
-        unsigned short addr = ctx->getDE(&ctx->reg.pair);
+        unsigned short addr = ctx->getDE();
         unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
         ctx->log("[%04X] LD A, (DE<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
         ctx->reg.pair.A = n;
@@ -293,7 +319,7 @@ class Z80
     // Load location (BC) wtih Acc.
     static inline int LD_BC_A(Z80* ctx)
     {
-        unsigned short addr = ctx->getBC(&ctx->reg.pair);
+        unsigned short addr = ctx->getBC();
         unsigned char n = ctx->reg.pair.A;
         ctx->log("[%04X] LD (BC<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
         ctx->CB.write(ctx->CB.arg, addr, n);
@@ -304,7 +330,7 @@ class Z80
     // Load location (DE) wtih Acc.
     static inline int LD_DE_A(Z80* ctx)
     {
-        unsigned short addr = ctx->getDE(&ctx->reg.pair);
+        unsigned short addr = ctx->getDE();
         unsigned char n = ctx->reg.pair.A;
         ctx->log("[%04X] LD (DE<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
         ctx->CB.write(ctx->CB.arg, addr, n);
@@ -332,7 +358,7 @@ class Z80
         unsigned short addr = (nH << 8) + nL;
         unsigned char l = ctx->CB.read(ctx->CB.arg, addr);
         unsigned char h = ctx->CB.read(ctx->CB.arg, addr + 1);
-        ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%02X%02X", ctx->reg.PC, ctx->getHL(&ctx->reg.pair), addr, h, l);
+        ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%02X%02X", ctx->reg.PC, ctx->getHL(), addr, h, l);
         ctx->reg.pair.L = l;
         ctx->reg.pair.H = h;
         ctx->reg.PC += 3;
@@ -355,7 +381,7 @@ class Z80
     // Load SP with HL.
     static inline int LD_SP_HL(Z80* ctx)
     {
-        unsigned short value = ctx->getHL(&ctx->reg.pair);
+        unsigned short value = ctx->getHL();
         ctx->log("[%04X] LD %s, HL<$%04X>", ctx->reg.PC, ctx->registerPairDump(0b11), value);
         ctx->reg.SP = value;
         ctx->reg.PC++;
@@ -445,7 +471,7 @@ class Z80
     inline int LD_R_HL(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char n = CB.read(CB.arg, getHL(&reg.pair));
+        unsigned char n = CB.read(CB.arg, getHL());
         if (debugStream) {
             log("[%04X] LD %s, (%s) = $%02X", reg.PC, registerDump(r), registerPairDump(0b10), n);
         }
@@ -486,7 +512,7 @@ class Z80
     inline int LD_HL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned short addr = getHL(&reg.pair);
+        unsigned short addr = getHL();
         if (debugStream) {
             log("[%04X] LD (%s), %s", reg.PC, registerPairDump(0b10), registerDump(r));
         }
@@ -753,6 +779,102 @@ class Z80
         reg.SP = value;
         reg.PC += 2;
         return 10;
+    }
+
+    // Load location (DE) with Loacation (HL), increment DE, HL, decrement BC
+    inline int LDI()
+    {
+        log("[%04X] LDI ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+        unsigned short bc = getBC();
+        unsigned short de = getDE();
+        unsigned short hl = getHL();
+        unsigned char n = CB.read(CB.arg, hl);
+        CB.write(CB.arg, de, n);
+        de++;
+        hl++;
+        bc--;
+        setBC(bc);
+        setDE(de);
+        setHL(hl);
+        setFlagH(true);
+        setFlagPV(bc != 1);
+        setFlagN(false);
+        reg.PC += 2;
+        return 16;
+    }
+
+    // Load location (DE) with Loacation (HL), increment DE, HL, decrement BC and repeat until BC=0.
+    inline int LDIR()
+    {
+        int clocks = 0;
+        log("[%04X] LDIR ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+        unsigned short bc = getBC();
+        unsigned short de = getDE();
+        unsigned short hl = getHL();
+        do {
+            unsigned char n = CB.read(CB.arg, hl);
+            CB.write(CB.arg, de, n);
+            de++;
+            hl++;
+            bc--;
+            clocks += 21;
+        } while (0 != bc);
+        setBC(bc);
+        setDE(de);
+        setHL(hl);
+        setFlagH(false);
+        setFlagPV(false);
+        setFlagN(false);
+        reg.PC += 2;
+        return clocks - 5;
+    }
+
+    // Load location (DE) with Loacation (HL), decrement DE, HL, decrement BC
+    inline int LDD()
+    {
+        log("[%04X] LDD ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+        unsigned short bc = getBC();
+        unsigned short de = getDE();
+        unsigned short hl = getHL();
+        unsigned char n = CB.read(CB.arg, hl);
+        CB.write(CB.arg, de, n);
+        de--;
+        hl--;
+        bc--;
+        setBC(bc);
+        setDE(de);
+        setHL(hl);
+        setFlagH(true);
+        setFlagPV(bc != 1);
+        setFlagN(false);
+        reg.PC += 2;
+        return 16;
+    }
+
+    // Load location (DE) with Loacation (HL), decrement DE, HL, decrement BC and repeat until BC=0.
+    inline int LDDR()
+    {
+        int clocks = 0;
+        log("[%04X] LDDR ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+        unsigned short bc = getBC();
+        unsigned short de = getDE();
+        unsigned short hl = getHL();
+        do {
+            unsigned char n = CB.read(CB.arg, hl);
+            CB.write(CB.arg, de, n);
+            de--;
+            hl--;
+            bc--;
+            clocks += 21;
+        } while (0 != bc);
+        setBC(bc);
+        setDE(de);
+        setHL(hl);
+        setFlagH(false);
+        setFlagPV(false);
+        setFlagN(false);
+        reg.PC += 2;
+        return clocks - 5;
     }
 
     int (*opSet1[256])(Z80* ctx);

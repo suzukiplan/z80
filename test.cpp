@@ -26,6 +26,10 @@ unsigned char readByte(void* arg, unsigned short addr)
 // CPUからメモリ書き込み要求発生時のコールバック
 void writeByte(void* arg, unsigned short addr, unsigned char value)
 {
+    if (addr < 0x2000) {
+        // 0x2000以下は検証プログラム用ROM扱いにする（CPUからの書き込みは禁止しておく）
+        return;
+    }
     ((MMU*)arg)->RAM[addr] = value;
 }
 
@@ -177,6 +181,20 @@ int main()
     mmu.RAM[addr++] = 0b11111001;
     mmu.RAM[addr++] = 0b11111101; // LD SP, IY
     mmu.RAM[addr++] = 0b11111001;
+    mmu.RAM[addr++] = 0b11101101; // LDI
+    mmu.RAM[addr++] = 0b10100000;
+    mmu.RAM[addr++] = 0b00000001; // LD BC, $0100
+    mmu.RAM[addr++] = 0x00;
+    mmu.RAM[addr++] = 0x01;
+    mmu.RAM[addr++] = 0b11101101; // LDIR
+    mmu.RAM[addr++] = 0b10110000;
+    mmu.RAM[addr++] = 0b11101101; // LDD
+    mmu.RAM[addr++] = 0b10101000;
+    mmu.RAM[addr++] = 0b00000001; // LD BC, $0100
+    mmu.RAM[addr++] = 0x00;
+    mmu.RAM[addr++] = 0x01;
+    mmu.RAM[addr++] = 0b11101101; // LDDR
+    mmu.RAM[addr++] = 0b10111000;
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う
@@ -214,7 +232,7 @@ int main()
                 }
             }
             addr &= 0xFFFF;
-            z80.log("[%04X] %02X %02X %02X %02X - %02X %02X %02X %02X", addr,
+            z80.log("[%04X] %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X", addr,
                     mmu.RAM[addr],
                     mmu.RAM[(addr + 1) & 0xFFFF],
                     mmu.RAM[(addr + 2) & 0xFFFF],
@@ -222,7 +240,15 @@ int main()
                     mmu.RAM[(addr + 4) & 0xFFFF],
                     mmu.RAM[(addr + 5) & 0xFFFF],
                     mmu.RAM[(addr + 6) & 0xFFFF],
-                    mmu.RAM[(addr + 7) & 0xFFFF]);
+                    mmu.RAM[(addr + 7) & 0xFFFF],
+                    mmu.RAM[(addr + 8) & 0xFFFF],
+                    mmu.RAM[(addr + 9) & 0xFFFF],
+                    mmu.RAM[(addr + 10) & 0xFFFF],
+                    mmu.RAM[(addr + 11) & 0xFFFF],
+                    mmu.RAM[(addr + 12) & 0xFFFF],
+                    mmu.RAM[(addr + 13) & 0xFFFF],
+                    mmu.RAM[(addr + 14) & 0xFFFF],
+                    mmu.RAM[(addr + 15) & 0xFFFF]);
         } else if ('\r' == cmd[0] || '\n' == cmd[0]) {
             break;
         }
