@@ -20,8 +20,8 @@ __(THREE EASY GUIDELINES)__
 - [x] 3.1 8bit load instructions
 - [x] 3.2 16bit load instructions
 - [x] 3.3 block load instructions
-- [ ] __3.4 exchange instructions__ <sup>*inprogress*</sup>
-- [ ] 4. stack instructions
+- [x] 3.4 exchange instructions
+- [ ] __4. stack instructions__ <sup>*inprogress*</sup>
 - [ ] 5.1 left rotate instructions
 - [ ] 5.2 right rotate instructions
 - [ ] 5.3 left shift instructions

@@ -301,6 +301,8 @@ class Z80
             return ctx->LD_IX_NN();
         } else if (op2 == 0b11111001) {
             return ctx->LD_SP_IX();
+        } else if (op2 == 0b11100011) {
+            return ctx->EX_SP_IX();
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -324,6 +326,8 @@ class Z80
             return ctx->LD_IY_NN();
         } else if (op2 == 0b11111001) {
             return ctx->LD_SP_IY();
+        } else if (op2 == 0b11100011) {
+            return ctx->EX_SP_IY();
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -1016,6 +1020,36 @@ class Z80
         setFlagN(false);
         reg.PC += 2;
         return clocks - 5;
+    }
+
+    // Exchange stack top with IX
+    inline int EX_SP_IX()
+    {
+        unsigned char l = CB.read(CB.arg, reg.SP);
+        unsigned char h = CB.read(CB.arg, reg.SP + 1);
+        unsigned char i = (reg.IX & 0xFF00) >> 8;
+        unsigned char x = reg.IX & 0x00FF;
+        log("[%04X] EX (SP<$%04X>) = $%02X%02X, IX<$%04X>", reg.PC, reg.SP, h, l, reg.IX);
+        CB.write(CB.arg, reg.SP, x);
+        CB.write(CB.arg, reg.SP + 1, i);
+        reg.IX = (h << 8) + l;
+        reg.PC += 2;
+        return 23;
+    }
+
+    // Exchange stack top with IY
+    inline int EX_SP_IY()
+    {
+        unsigned char l = CB.read(CB.arg, reg.SP);
+        unsigned char h = CB.read(CB.arg, reg.SP + 1);
+        unsigned char i = (reg.IY & 0xFF00) >> 8;
+        unsigned char y = reg.IY & 0x00FF;
+        log("[%04X] EX (SP<$%04X>) = $%02X%02X, IY<$%04X>", reg.PC, reg.SP, h, l, reg.IY);
+        CB.write(CB.arg, reg.SP, y);
+        CB.write(CB.arg, reg.SP + 1, i);
+        reg.IY = (h << 8) + l;
+        reg.PC += 2;
+        return 23;
     }
 
     int (*opSet1[256])(Z80* ctx);
