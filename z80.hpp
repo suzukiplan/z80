@@ -203,6 +203,8 @@ class Z80
         const char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
         if (op2 == 0b00110110) {
             return ctx->LD_IX_N();
+        } else if (op2 == 0b00101010) {
+            return ctx->LD_IX_ADDR();
         } else if (op2 == 0b00100001) {
             return ctx->LD_IX_NN();
         } else if ((op2 & 0b11000111) == 0b01000110) {
@@ -220,6 +222,8 @@ class Z80
         const char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
         if (op2 == 0b00110110) {
             return ctx->LD_IY_N();
+        } else if (op2 == 0b00101010) {
+            return ctx->LD_IY_ADDR();
         } else if (op2 == 0b00100001) {
             return ctx->LD_IY_NN();
         } else if ((op2 & 0b11000111) == 0b01000110) {
@@ -602,6 +606,34 @@ class Z80
                 log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
+        reg.PC += 4;
+        return 20;
+    }
+
+    // Load IX with location (nn)
+    inline int LD_IX_ADDR()
+    {
+        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned short addr = (nH << 8) + nL;
+        unsigned char l = CB.read(CB.arg, addr);
+        unsigned char h = CB.read(CB.arg, addr + 1);
+        log("[%04X] LD IX<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IX, nH, nL, h, l);
+        reg.IX = (h << 8) + l;
+        reg.PC += 4;
+        return 20;
+    }
+
+    // Load IY with location (nn)
+    inline int LD_IY_ADDR()
+    {
+        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned short addr = (nH << 8) + nL;
+        unsigned char l = CB.read(CB.arg, addr);
+        unsigned char h = CB.read(CB.arg, addr + 1);
+        log("[%04X] LD IY<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IY, nH, nL, h, l);
+        reg.IY = (h << 8) + l;
         reg.PC += 4;
         return 20;
     }
