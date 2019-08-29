@@ -202,7 +202,7 @@ class Z80
     // operand of using IX (first byte is 0b11011101)
     static inline int OP_IX(Z80* ctx)
     {
-        const char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
         if (op2 == 0b00110110) {
             return ctx->LD_IX_N();
         } else if (op2 == 0b00101010) {
@@ -211,6 +211,8 @@ class Z80
             return ctx->LD_ADDR_IX();
         } else if (op2 == 0b00100001) {
             return ctx->LD_IX_NN();
+        } else if (op2 == 0b11111001) {
+            return ctx->LD_SP_IX();
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -223,7 +225,7 @@ class Z80
     // operand of using IY (first byte is 0b11111101)
     static inline int OP_IY(Z80* ctx)
     {
-        const char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
         if (op2 == 0b00110110) {
             return ctx->LD_IY_N();
         } else if (op2 == 0b00101010) {
@@ -232,6 +234,8 @@ class Z80
             return ctx->LD_ADDR_IY();
         } else if (op2 == 0b00100001) {
             return ctx->LD_IY_NN();
+        } else if (op2 == 0b11111001) {
+            return ctx->LD_SP_IY();
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -346,6 +350,16 @@ class Z80
         ctx->CB.write(ctx->CB.arg, addr + 1, ctx->reg.pair.H);
         ctx->reg.PC += 3;
         return 16;
+    }
+
+    // Load SP with HL.
+    static inline int LD_SP_HL(Z80* ctx)
+    {
+        unsigned short value = ctx->getHL(&ctx->reg.pair);
+        ctx->log("[%04X] LD %s, HL<$%04X>", ctx->reg.PC, ctx->registerPairDump(0b11), value);
+        ctx->reg.SP = value;
+        ctx->reg.PC++;
+        return 6;
     }
 
     inline unsigned char* getRegisterPointer(unsigned char r)
@@ -721,6 +735,26 @@ class Z80
         return 20;
     }
 
+    // Load SP with IX.
+    inline int LD_SP_IX()
+    {
+        unsigned short value = reg.IX;
+        log("[%04X] LD %s, IX<$%04X>", reg.PC, registerPairDump(0b11), value);
+        reg.SP = value;
+        reg.PC += 2;
+        return 10;
+    }
+
+    // Load SP with IY.
+    inline int LD_SP_IY()
+    {
+        unsigned short value = reg.IY;
+        log("[%04X] LD %s, IY<$%04X>", reg.PC, registerPairDump(0b11), value);
+        reg.SP = value;
+        reg.PC += 2;
+        return 10;
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
   public: // API functions
@@ -754,6 +788,7 @@ class Z80
         opSet1[0b11011101] = OP_IX;
         opSet1[0b11101101] = IM;
         opSet1[0b11110011] = DI;
+        opSet1[0b11111001] = LD_SP_HL;
         opSet1[0b11111011] = EI;
         opSet1[0b11111101] = OP_IY;
     }

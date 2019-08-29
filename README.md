@@ -18,8 +18,8 @@ __(THREE EASY GUIDELINES)__
 ## WIP status
 
 - [x] 3.1 8bit load instructions
-- [ ] 3.2 16bit load instructions <sup>*inprogress*</sup>
-- [ ] 3.3 block load instructions
+- [x] 3.2 16bit load instructions
+- [ ] __3.3 block load instructions__ <sup>*inprogress*</sup>
 - [ ] 3.4 exchange instructions
 - [ ] 4. stack instructions
 - [ ] 5.1 left rotate instructions
