@@ -494,7 +494,7 @@ class Z80
 
     static inline int EXX(Z80* ctx)
     {
-        ctx->log("[%04X] EXX");
+        ctx->log("[%04X] EXX", ctx->reg.PC);
         unsigned short bc = ctx->getBC();
         unsigned short bc2 = ctx->getBC2();
         unsigned short de = ctx->getDE();
@@ -509,6 +509,26 @@ class Z80
         ctx->setHL2(hl);
         ctx->reg.PC++;
         return 4;
+    }
+
+    static inline int PUSH_AF(Z80* ctx)
+    {
+        ctx->log("[%04X] PUSH AF<$%02X%02X> <SP:$%04X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.SP);
+        ctx->CB.write(ctx->CB.arg, --ctx->reg.SP, ctx->reg.pair.A);
+        ctx->CB.write(ctx->CB.arg, --ctx->reg.SP, ctx->reg.pair.F);
+        ctx->reg.PC++;
+        return 11;
+    }
+
+    static inline int POP_AF(Z80* ctx)
+    {
+        ctx->log("[%04X] POP AF <SP:$%04X> ", ctx->reg.PC, ctx->reg.SP);
+        unsigned char l = ctx->CB.read(ctx->CB.arg, ctx->reg.SP++);
+        unsigned char h = ctx->CB.read(ctx->CB.arg, ctx->reg.SP++);
+        ctx->reg.pair.F = l;
+        ctx->reg.pair.A = h;
+        ctx->reg.PC++;
+        return 10;
     }
 
     inline unsigned char* getRegisterPointer(unsigned char r)
@@ -1107,7 +1127,7 @@ class Z80
         *l = CB.read(CB.arg, reg.SP++);
         *h = CB.read(CB.arg, reg.SP++);
         reg.PC++;
-        return 11;
+        return 10;
     }
 
     int (*opSet1[256])(Z80* ctx);
@@ -1146,7 +1166,9 @@ class Z80
         opSet1[0b11100011] = EX_SP_HL;
         opSet1[0b11101011] = EX_DE_HL;
         opSet1[0b11101101] = IM;
+        opSet1[0b11110001] = POP_AF;
         opSet1[0b11110011] = DI;
+        opSet1[0b11110101] = PUSH_AF;
         opSet1[0b11111001] = LD_SP_HL;
         opSet1[0b11111011] = EI;
         opSet1[0b11111101] = OP_IY;
