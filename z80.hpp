@@ -1052,6 +1052,64 @@ class Z80
         return 23;
     }
 
+    // Push Reg. on Stack.
+    inline int PUSH_RP(unsigned char rp)
+    {
+        log("[%04X] PUSH %s <SP:$%04X>", reg.PC, registerPairDump(rp), reg.SP);
+        unsigned char l;
+        unsigned char h;
+        switch (rp) {
+            case 0b00:
+                h = reg.pair.B;
+                l = reg.pair.C;
+                break;
+            case 0b01:
+                h = reg.pair.D;
+                l = reg.pair.E;
+                break;
+            case 0b10:
+                h = reg.pair.H;
+                l = reg.pair.L;
+                break;
+            default:
+                log("invalid register pair has specified: $%02X", rp);
+                return -1;
+        }
+        CB.write(CB.arg, --reg.SP, h);
+        CB.write(CB.arg, --reg.SP, l);
+        reg.PC++;
+        return 11;
+    }
+
+    // Push Reg. on Stack.
+    inline int POP_RP(unsigned char rp)
+    {
+        log("[%04X] POP %s <SP:$%04X>", reg.PC, registerPairDump(rp), reg.SP);
+        unsigned char* l;
+        unsigned char* h;
+        switch (rp) {
+            case 0b00:
+                h = &reg.pair.B;
+                l = &reg.pair.C;
+                break;
+            case 0b01:
+                h = &reg.pair.D;
+                l = &reg.pair.E;
+                break;
+            case 0b10:
+                h = &reg.pair.H;
+                l = &reg.pair.L;
+                break;
+            default:
+                log("invalid register pair has specified: $%02X", rp);
+                return -1;
+        }
+        *l = CB.read(CB.arg, reg.SP++);
+        *h = CB.read(CB.arg, reg.SP++);
+        reg.PC++;
+        return 11;
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
   public: // API functions
@@ -1111,6 +1169,10 @@ class Z80
                     consume = LD_R_N((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11001111) == 0b00000001) {
                     consume = LD_RP_NN((operandNumber & 0b00110000) >> 4);
+                } else if ((operandNumber & 0b11001111) == 0b11000101) {
+                    consume = PUSH_RP((operandNumber & 0b00110000) >> 4);
+                } else if ((operandNumber & 0b11001111) == 0b11000001) {
+                    consume = POP_RP((operandNumber & 0b00110000) >> 4);
                 } else if ((operandNumber & 0b11000111) == 0b01000110) {
                     consume = LD_R_HL((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000000) == 0b01000000) {

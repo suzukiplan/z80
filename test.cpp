@@ -183,16 +183,16 @@ int main()
     mmu.RAM[addr++] = 0b11111001;
     mmu.RAM[addr++] = 0b11101101; // LDI
     mmu.RAM[addr++] = 0b10100000;
-    mmu.RAM[addr++] = 0b00000001; // LD BC, $0100
+    mmu.RAM[addr++] = 0b00000001; // LD BC, $0005
+    mmu.RAM[addr++] = 0x05;
     mmu.RAM[addr++] = 0x00;
-    mmu.RAM[addr++] = 0x01;
     mmu.RAM[addr++] = 0b11101101; // LDIR
     mmu.RAM[addr++] = 0b10110000;
     mmu.RAM[addr++] = 0b11101101; // LDD
     mmu.RAM[addr++] = 0b10101000;
-    mmu.RAM[addr++] = 0b00000001; // LD BC, $0100
+    mmu.RAM[addr++] = 0b00000001; // LD BC, $0005
+    mmu.RAM[addr++] = 0x05;
     mmu.RAM[addr++] = 0x00;
-    mmu.RAM[addr++] = 0x01;
     mmu.RAM[addr++] = 0b11101101; // LDDR
     mmu.RAM[addr++] = 0b10111000;
     mmu.RAM[addr++] = 0b11101011; // EX DE, HL
@@ -203,6 +203,17 @@ int main()
     mmu.RAM[addr++] = 0b11100011;
     mmu.RAM[addr++] = 0b11111101; // EX (SP), IY
     mmu.RAM[addr++] = 0b11100011;
+    mmu.RAM[addr++] = 0b00110001; // LD SP, $0000
+    mmu.RAM[addr++] = 0x00;
+    mmu.RAM[addr++] = 0x00;
+    mmu.RAM[addr++] = 0b00000001; // LD BC, $ABCD
+    mmu.RAM[addr++] = 0xCD;
+    mmu.RAM[addr++] = 0xAB;
+    mmu.RAM[addr++] = 0b11000101; // PUSH BC
+    mmu.RAM[addr++] = 0b00000001; // LD BC, $1234
+    mmu.RAM[addr++] = 0x34;
+    mmu.RAM[addr++] = 0x12;
+    mmu.RAM[addr++] = 0b11000001; // POP BC
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う
