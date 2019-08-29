@@ -84,12 +84,32 @@ class Z80
     }
 
   private: // Internal functions
-    inline unsigned short getAF(RegisterPair* pair)
+    inline unsigned short getAF()
     {
-        unsigned short result = pair->A;
+        unsigned short result = reg.pair.A;
         result <<= 8;
-        result |= pair->F;
+        result |= reg.pair.F;
         return result;
+    }
+
+    inline void setAF(unsigned short value)
+    {
+        reg.pair.A = (value & 0xFF00) >> 8;
+        reg.pair.F = (value & 0x00FF);
+    }
+
+    inline unsigned short getAF2()
+    {
+        unsigned short result = reg.back.A;
+        result <<= 8;
+        result |= reg.back.F;
+        return result;
+    }
+
+    inline void setAF2(unsigned short value)
+    {
+        reg.back.A = (value & 0xFF00) >> 8;
+        reg.back.F = (value & 0x00FF);
     }
 
     inline unsigned short getBC()
@@ -106,6 +126,20 @@ class Z80
         reg.pair.C = (value & 0x00FF);
     }
 
+    inline unsigned short getBC2()
+    {
+        unsigned short result = reg.back.B;
+        result <<= 8;
+        result |= reg.back.C;
+        return result;
+    }
+
+    inline void setBC2(unsigned short value)
+    {
+        reg.back.B = (value & 0xFF00) >> 8;
+        reg.back.C = (value & 0x00FF);
+    }
+
     inline unsigned short getDE()
     {
         unsigned short result = reg.pair.D;
@@ -120,6 +154,20 @@ class Z80
         reg.pair.E = (value & 0x00FF);
     }
 
+    inline unsigned short getDE2()
+    {
+        unsigned short result = reg.back.D;
+        result <<= 8;
+        result |= reg.back.E;
+        return result;
+    }
+
+    inline void setDE2(unsigned short value)
+    {
+        reg.back.D = (value & 0xFF00) >> 8;
+        reg.back.E = (value & 0x00FF);
+    }
+
     inline unsigned short getHL()
     {
         unsigned short result = reg.pair.H;
@@ -132,6 +180,20 @@ class Z80
     {
         reg.pair.H = (value & 0xFF00) >> 8;
         reg.pair.L = (value & 0x00FF);
+    }
+
+    inline unsigned short getHL2()
+    {
+        unsigned short result = reg.back.H;
+        result <<= 8;
+        result |= reg.back.L;
+        return result;
+    }
+
+    inline void setHL2(unsigned short value)
+    {
+        reg.back.H = (value & 0xFF00) >> 8;
+        reg.back.L = (value & 0x00FF);
     }
 
     static inline int NOP(Z80* ctx)
@@ -388,6 +450,49 @@ class Z80
         return 6;
     }
 
+    // Exchange H and L with D and E
+    static inline int EX_DE_HL(Z80* ctx)
+    {
+        unsigned short de = ctx->getDE();
+        unsigned short hl = ctx->getHL();
+        ctx->log("[%04X] EX %s, %s", ctx->reg.PC, ctx->registerPairDump(0b01), ctx->registerPairDump(0b10));
+        ctx->setDE(hl);
+        ctx->setHL(de);
+        ctx->reg.PC++;
+        return 4;
+    }
+
+    // Exchange A and F with A' and F'
+    static inline int EX_AF_AF2(Z80* ctx)
+    {
+        unsigned short af = ctx->getAF();
+        unsigned short af2 = ctx->getAF2();
+        ctx->log("[%04X] EX AF<$%02X%02X>, AF'<$%02X%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.back.A, ctx->reg.back.F);
+        ctx->setAF(af2);
+        ctx->setAF2(af);
+        ctx->reg.PC++;
+        return 4;
+    }
+
+    static inline int EXX(Z80* ctx)
+    {
+        ctx->log("[%04X] EXX");
+        unsigned short bc = ctx->getBC();
+        unsigned short bc2 = ctx->getBC2();
+        unsigned short de = ctx->getDE();
+        unsigned short de2 = ctx->getDE2();
+        unsigned short hl = ctx->getHL();
+        unsigned short hl2 = ctx->getHL2();
+        ctx->setBC(bc2);
+        ctx->setBC2(bc);
+        ctx->setDE(de2);
+        ctx->setDE2(de);
+        ctx->setHL(hl2);
+        ctx->setHL2(hl);
+        ctx->reg.PC++;
+        return 4;
+    }
+
     inline unsigned char* getRegisterPointer(unsigned char r)
     {
         switch (r) {
@@ -421,6 +526,28 @@ class Z80
             case 0b011: sprintf(E, "E<$%02X>", reg.pair.E); return E;
             case 0b100: sprintf(H, "H<$%02X>", reg.pair.H); return H;
             case 0b101: sprintf(L, "L<$%02X>", reg.pair.L); return L;
+            default: return unknown;
+        }
+    }
+
+    inline char* registerDump2(unsigned char r)
+    {
+        static char A[16];
+        static char B[16];
+        static char C[16];
+        static char D[16];
+        static char E[16];
+        static char H[16];
+        static char L[16];
+        static char unknown[2] = "?";
+        switch (r) {
+            case 0b111: sprintf(A, "A'<$%02X>", reg.back.A); return A;
+            case 0b000: sprintf(B, "B'<$%02X>", reg.back.B); return B;
+            case 0b001: sprintf(C, "C'<$%02X>", reg.back.C); return C;
+            case 0b010: sprintf(D, "D'<$%02X>", reg.back.D); return D;
+            case 0b011: sprintf(E, "E'<$%02X>", reg.back.E); return E;
+            case 0b100: sprintf(H, "H'<$%02X>", reg.back.H); return H;
+            case 0b101: sprintf(L, "L'<$%02X>", reg.back.L); return L;
             default: return unknown;
         }
     }
@@ -895,9 +1022,10 @@ class Z80
         this->debugStream = debugStream;
         ::memset(&reg, 0, sizeof(reg));
         ::memset(&opSet1, 0, sizeof(opSet1));
-        // setup 1 byte operands
+        // setup the operands that detectable in single byte
         opSet1[0b00000000] = NOP;
         opSet1[0b00000010] = LD_BC_A;
+        opSet1[0b00001000] = EX_AF_AF2;
         opSet1[0b00001010] = LD_A_BC;
         opSet1[0b00010010] = LD_DE_A;
         opSet1[0b00011010] = LD_A_DE;
@@ -907,7 +1035,9 @@ class Z80
         opSet1[0b00110010] = LD_NN_A;
         opSet1[0b00111010] = LD_A_NN;
         opSet1[0b01110110] = HALT;
+        opSet1[0b11011001] = EXX;
         opSet1[0b11011101] = OP_IX;
+        opSet1[0b11101011] = EX_DE_HL;
         opSet1[0b11101101] = IM;
         opSet1[0b11110011] = DI;
         opSet1[0b11111001] = LD_SP_HL;
@@ -958,7 +1088,8 @@ class Z80
     void registerDump()
     {
         log("===== REGISTER DUMP : START =====");
-        log("%s %s %s %s %s %s %s", registerDump(0b111), registerDump(0b000), registerDump(0b001), registerDump(0b010), registerDump(0b011), registerDump(0b100), registerDump(0b101));
+        log("PAIR: %s %s %s %s %s %s %s", registerDump(0b111), registerDump(0b000), registerDump(0b001), registerDump(0b010), registerDump(0b011), registerDump(0b100), registerDump(0b101));
+        log("BACK: %s %s %s %s %s %s %s", registerDump2(0b111), registerDump2(0b000), registerDump2(0b001), registerDump2(0b010), registerDump2(0b011), registerDump2(0b100), registerDump2(0b101));
         log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
         log("R<$%02X> I<$%02X> IFF<$%02X>", reg.R, reg.I, reg.IFF);
         log("isHalt: %s, interruptMode: %d", reg.isHalt ? "YES" : "NO", reg.interruptMode);
