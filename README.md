@@ -5,7 +5,7 @@ It is not just a relic of the past, but continues to be used in embedded systems
 
 __SUZUKI PLAN - Z80 Emulator__ is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80:
 
-__(FOUR EASY GUIDELINES)__
+__(FOUR EASY GUIDELINES FOR EASILY)__
 
 1. Make emulator implementation `EASY` & simple (Realized by providing single header: [z80.hpp](z80.hpp))
 2. `EASILY` debugging the Z80 programs (Realized by having dynamic disassemble feature)
