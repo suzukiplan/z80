@@ -3,13 +3,14 @@
 The Z80 was an 8-bit CPU developed by Zilog corporation, released in 1976, and widely used in computers and game consoles in the 1980s.
 It is not just a relic of the past, but continues to be used in embedded systems that require accuracy in processing execution time, such as real-time systems.
 
-__SUZUKI PLAN - Z80 Emulator__ is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80.
+__SUZUKI PLAN - Z80 Emulator__ is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80:
 
-__(THREE EASY GUIDELINES)__
+__(FOUR EASY GUIDELINES)__
 
-- Make emulator implementation `EASY` & simple (Realized by providing single header: [z80.hpp](z80.hpp))
-- Provide under the license that `EASY` to adopt in various programs ([MIT](LICENSE.txt))
-- Highly readable and `EASILY` customizable (priority for readability over performance)
+1. Make emulator implementation `EASY` & simple (Realized by providing single header: [z80.hpp](z80.hpp))
+2. `EASILY` debugging the Z80 programs (Realized by having dynamic disassemble feature)
+3. Highly readable and `EASILY` customizable (priority for readability over performance)
+4. Provide under the license that `EASY` to adopt in various programs ([MIT](LICENSE.txt))
 
 > Since I do not have deep knowledge about Z80 myself, I'm implementing it with reference to the information on the following site.
 > 
