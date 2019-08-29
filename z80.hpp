@@ -474,6 +474,20 @@ class Z80
         return 4;
     }
 
+    static inline int EX_SP_HL(Z80* ctx)
+    {
+        unsigned char l = ctx->CB.read(ctx->CB.arg, ctx->reg.SP);
+        unsigned char h = ctx->CB.read(ctx->CB.arg, ctx->reg.SP + 1);
+        unsigned short hl = ctx->getHL();
+        ctx->log("[%04X] EX (SP<$%04X>) = $%02X%02X, HL<$%04X>", ctx->reg.PC, ctx->reg.SP, h, l, hl);
+        ctx->CB.write(ctx->CB.arg, ctx->reg.SP, ctx->reg.pair.L);
+        ctx->CB.write(ctx->CB.arg, ctx->reg.SP + 1, ctx->reg.pair.H);
+        ctx->reg.pair.L = l;
+        ctx->reg.pair.H = h;
+        ctx->reg.PC++;
+        return 19;
+    }
+
     static inline int EXX(Z80* ctx)
     {
         ctx->log("[%04X] EXX");
@@ -1037,6 +1051,7 @@ class Z80
         opSet1[0b01110110] = HALT;
         opSet1[0b11011001] = EXX;
         opSet1[0b11011101] = OP_IX;
+        opSet1[0b11100011] = EX_SP_HL;
         opSet1[0b11101011] = EX_DE_HL;
         opSet1[0b11101101] = IM;
         opSet1[0b11110011] = DI;
