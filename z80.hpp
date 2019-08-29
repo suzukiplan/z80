@@ -329,6 +329,19 @@ class Z80
         return 16;
     }
 
+    // Load location (nn) with HL.
+    static inline int LD_ADDR_HL(Z80* ctx)
+    {
+        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned short addr = (nH << 8) + nL;
+        ctx->log("[%04X] LD ($%04X), %s", ctx->reg.PC, addr, ctx->registerPairDump(0b10));
+        ctx->CB.write(ctx->CB.arg, addr, ctx->reg.pair.L);
+        ctx->CB.write(ctx->CB.arg, addr + 1, ctx->reg.pair.H);
+        ctx->reg.PC += 3;
+        return 16;
+    }
+
     inline unsigned char* getRegisterPointer(unsigned char r)
     {
         switch (r) {
@@ -662,6 +675,7 @@ class Z80
         opSet1[0b00001010] = LD_A_BC;
         opSet1[0b00010010] = LD_DE_A;
         opSet1[0b00011010] = LD_A_DE;
+        opSet1[0b00100010] = LD_ADDR_HL;
         opSet1[0b00101010] = LD_HL_ADDR;
         opSet1[0b00110110] = LD_HL_N;
         opSet1[0b00110010] = LD_NN_A;
