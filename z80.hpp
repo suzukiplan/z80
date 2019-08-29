@@ -189,6 +189,9 @@ class Z80
                 ctx->reg.PC += 2;
                 return 9;
             default:
+                if ((mode & 0b11001111) == 0b01001011) {
+                    return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
+                }
                 ctx->log("unknown IM: $%02X", mode);
                 return -1;
         }
@@ -514,6 +517,8 @@ class Z80
     // Load Reg. pair rp with value nn.
     inline int LD_RP_NN(unsigned char rp)
     {
+        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
         unsigned char* rH;
         unsigned char* rL;
         switch (rp) {
@@ -529,12 +534,16 @@ class Z80
                 rH = &reg.pair.H;
                 rL = &reg.pair.L;
                 break;
+            case 0b11:
+                // SP is not managed in pair structure, so calculate directly
+                log("[%04X] LD SP<$%04X>, $%02X%02X", reg.PC, reg.SP, nH, nL);
+                reg.SP = (nH << 8) + nL;
+                reg.PC += 3;
+                return 10;
             default:
                 log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
         if (debugStream) {
             log("[%04X] LD %s, $%02X%02X", reg.PC, registerPairDump(rp), nH, nL);
         }
@@ -562,6 +571,39 @@ class Z80
         reg.IY = (nH << 8) + nL;
         reg.PC += 4;
         return 14;
+    }
+
+    // Load Reg. pair rp with location (nn)
+    inline int LD_RP_ADDR(unsigned char rp)
+    {
+        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned short addr = (nH << 8) + nL;
+        unsigned char l = CB.read(CB.arg, addr);
+        unsigned char h = CB.read(CB.arg, addr + 1);
+        log("[%04X] LD %s, ($%02X%02X) = $%02X%02X", reg.PC, registerPairDump(rp), nH, nL, h, l);
+        switch (rp) {
+            case 0b00:
+                reg.pair.B = h;
+                reg.pair.C = l;
+                break;
+            case 0b01:
+                reg.pair.D = h;
+                reg.pair.E = l;
+                break;
+            case 0b10:
+                reg.pair.H = h;
+                reg.pair.L = l;
+                break;
+            case 0b11:
+                reg.SP = (h << 8) + l;
+                break;
+            default:
+                log("invalid register pair has specified: $%02X", rp);
+                return -1;
+        }
+        reg.PC += 4;
+        return 20;
     }
 
     int (*opSet1[256])(Z80* ctx);

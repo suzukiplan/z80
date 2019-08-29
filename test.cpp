@@ -145,6 +145,10 @@ int main()
     mmu.RAM[addr++] = 0b00101010; // LD HL, ($1234)
     mmu.RAM[addr++] = 0x34;
     mmu.RAM[addr++] = 0x12;
+    mmu.RAM[addr++] = 0b11101101; // LD SP, ($0011)
+    mmu.RAM[addr++] = 0b01111011;
+    mmu.RAM[addr++] = 0x11;
+    mmu.RAM[addr++] = 0x00;
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う
