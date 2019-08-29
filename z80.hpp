@@ -191,6 +191,8 @@ class Z80
             default:
                 if ((mode & 0b11001111) == 0b01001011) {
                     return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
+                } else if ((mode & 0b11001111) == 0b01000011) {
+                    return ctx->LD_ADDR_RP((mode & 0b00110000) >> 4);
                 }
                 ctx->log("unknown IM: $%02X", mode);
                 return -1;
@@ -619,6 +621,42 @@ class Z80
                 log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
+        reg.PC += 4;
+        return 20;
+    }
+
+    // Load location (nn) with Reg. pair rp.
+    inline int LD_ADDR_RP(unsigned char rp)
+    {
+        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned short addr = (nH << 8) + nL;
+        log("[%04X] LD ($%04X), %s", reg.PC, addr, registerPairDump(rp));
+        unsigned char l;
+        unsigned char h;
+        switch (rp) {
+            case 0b00:
+                h = reg.pair.B;
+                l = reg.pair.C;
+                break;
+            case 0b01:
+                h = reg.pair.D;
+                l = reg.pair.E;
+                break;
+            case 0b10:
+                h = reg.pair.H;
+                l = reg.pair.L;
+                break;
+            case 0b11:
+                h = (reg.SP & 0xFF00) >> 8;
+                l = reg.SP & 0x00FF;
+                break;
+            default:
+                log("invalid register pair has specified: $%02X", rp);
+                return -1;
+        }
+        CB.write(CB.arg, addr, l);
+        CB.write(CB.arg, addr + 1, h);
         reg.PC += 4;
         return 20;
     }
