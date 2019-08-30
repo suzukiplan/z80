@@ -216,6 +216,14 @@ int main()
     mmu.RAM[addr++] = 0b11000001; // POP BC
     mmu.RAM[addr++] = 0b11110101; // PUSH AF
     mmu.RAM[addr++] = 0b11110001; // POP AF
+    mmu.RAM[addr++] = 0b11011101; // PUSH IX
+    mmu.RAM[addr++] = 0b11100101;
+    mmu.RAM[addr++] = 0b11111101; // PUSH IY
+    mmu.RAM[addr++] = 0b11100101;
+    mmu.RAM[addr++] = 0b11011101; // POP IX
+    mmu.RAM[addr++] = 0b11100001;
+    mmu.RAM[addr++] = 0b11111101; // POP IY
+    mmu.RAM[addr++] = 0b11100001;
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う

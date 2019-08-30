@@ -325,6 +325,10 @@ class Z80
             return ctx->LD_SP_IX();
         } else if (op2 == 0b11100011) {
             return ctx->EX_SP_IX();
+        } else if (op2 == 0b11100101) {
+            return ctx->PUSH_IX();
+        } else if (op2 == 0b11100001) {
+            return ctx->POP_IX();
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -350,6 +354,10 @@ class Z80
             return ctx->LD_SP_IY();
         } else if (op2 == 0b11100011) {
             return ctx->EX_SP_IY();
+        } else if (op2 == 0b11100101) {
+            return ctx->PUSH_IY();
+        } else if (op2 == 0b11100001) {
+            return ctx->POP_IY();
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -544,9 +552,10 @@ class Z80
 
     static inline int POP_AF(Z80* ctx)
     {
-        ctx->log("[%04X] POP AF <SP:$%04X> ", ctx->reg.PC, ctx->reg.SP);
+        unsigned short sp = ctx->reg.SP;
         unsigned char l = ctx->CB.read(ctx->CB.arg, ctx->reg.SP++);
         unsigned char h = ctx->CB.read(ctx->CB.arg, ctx->reg.SP++);
+        ctx->log("[%04X] POP AF <SP:$%04X> = $%02X%02X", ctx->reg.PC, sp, h, l);
         ctx->reg.pair.F = l;
         ctx->reg.pair.A = h;
         ctx->reg.PC++;
@@ -1126,7 +1135,7 @@ class Z80
     // Push Reg. on Stack.
     inline int POP_RP(unsigned char rp)
     {
-        log("[%04X] POP %s <SP:$%04X>", reg.PC, registerPairDump(rp), reg.SP);
+        unsigned short sp = reg.SP;
         unsigned char* l;
         unsigned char* h;
         switch (rp) {
@@ -1146,10 +1155,59 @@ class Z80
                 log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
+        log("[%04X] POP %s <SP:$%04X> = $%02X%02X", reg.PC, registerPairDump(rp), sp, *h, *l);
         *l = CB.read(CB.arg, reg.SP++);
         *h = CB.read(CB.arg, reg.SP++);
         reg.PC++;
         return 10;
+    }
+
+    // Push Reg. IX on Stack.
+    inline int PUSH_IX()
+    {
+        log("[%04X] PUSH IX<$%04X> <SP:$%04X>", reg.PC, reg.IX, reg.SP);
+        unsigned char h = (reg.IX & 0xFF00) >> 8;
+        unsigned char l = reg.IX & 0x00FF;
+        CB.write(CB.arg, --reg.SP, h);
+        CB.write(CB.arg, --reg.SP, l);
+        reg.PC += 2;
+        return 15;
+    }
+
+    // Pop Reg. IX from Stack.
+    inline int POP_IX()
+    {
+        unsigned short sp = reg.SP;
+        unsigned char l = CB.read(CB.arg, reg.SP++);
+        unsigned char h = CB.read(CB.arg, reg.SP++);
+        log("[%04X] POP IX <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
+        reg.IX = (h << 8) + l;
+        reg.PC += 2;
+        return 14;
+    }
+
+    // Push Reg. IY on Stack.
+    inline int PUSH_IY()
+    {
+        log("[%04X] PUSH IY<$%04X> <SP:$%04X>", reg.PC, reg.IY, reg.SP);
+        unsigned char h = (reg.IY & 0xFF00) >> 8;
+        unsigned char l = reg.IY & 0x00FF;
+        CB.write(CB.arg, --reg.SP, h);
+        CB.write(CB.arg, --reg.SP, l);
+        reg.PC += 2;
+        return 15;
+    }
+
+    // Pop Reg. IY from Stack.
+    inline int POP_IY()
+    {
+        unsigned short sp = reg.SP;
+        unsigned char l = CB.read(CB.arg, reg.SP++);
+        unsigned char h = CB.read(CB.arg, reg.SP++);
+        log("[%04X] POP IY <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
+        reg.IY = (h << 8) + l;
+        reg.PC += 2;
+        return 14;
     }
 
     int (*opSet1[256])(Z80* ctx);
