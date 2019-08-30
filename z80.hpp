@@ -562,6 +562,36 @@ class Z80
         return 10;
     }
 
+    static inline int RLCA(Z80* ctx)
+    {
+        unsigned char c = ctx->isFlagC() ? 1 : 0;
+        unsigned char a7 = ctx->reg.pair.A & 0x80 ? 1 : 0;
+        ctx->log("[%04X] RLCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
+        ctx->reg.pair.A &= 0b01111111;
+        ctx->reg.pair.A <<= 1;
+        ctx->reg.pair.A |= a7; // differ with RLA
+        ctx->setFlagC(a7 ? true : false);
+        ctx->setFlagH(false);
+        ctx->setFlagN(false);
+        ctx->reg.PC++;
+        return 4;
+    }
+
+    static inline int RLA(Z80* ctx)
+    {
+        unsigned char c = ctx->isFlagC() ? 1 : 0;
+        unsigned char a7 = ctx->reg.pair.A & 0x80 ? 1 : 0;
+        ctx->log("[%04X] RLCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
+        ctx->reg.pair.A &= 0b01111111;
+        ctx->reg.pair.A <<= 1;
+        ctx->reg.pair.A |= c; // differ with RLCA
+        ctx->setFlagC(a7 ? true : false);
+        ctx->setFlagH(false);
+        ctx->setFlagN(false);
+        ctx->reg.PC++;
+        return 4;
+    }
+
     inline unsigned char* getRegisterPointer(unsigned char r)
     {
         switch (r) {
@@ -1231,9 +1261,11 @@ class Z80
         // setup the operands that detectable in single byte
         opSet1[0b00000000] = NOP;
         opSet1[0b00000010] = LD_BC_A;
+        opSet1[0b00000111] = RLCA;
         opSet1[0b00001000] = EX_AF_AF2;
         opSet1[0b00001010] = LD_A_BC;
         opSet1[0b00010010] = LD_DE_A;
+        opSet1[0b00010111] = RLA;
         opSet1[0b00011010] = LD_A_DE;
         opSet1[0b00100010] = LD_ADDR_HL;
         opSet1[0b00101010] = LD_HL_ADDR;
@@ -1301,8 +1333,8 @@ class Z80
     void registerDump()
     {
         log("===== REGISTER DUMP : START =====");
-        log("PAIR: %s %s %s %s %s %s %s", registerDump(0b111), registerDump(0b000), registerDump(0b001), registerDump(0b010), registerDump(0b011), registerDump(0b100), registerDump(0b101));
-        log("BACK: %s %s %s %s %s %s %s", registerDump2(0b111), registerDump2(0b000), registerDump2(0b001), registerDump2(0b010), registerDump2(0b011), registerDump2(0b100), registerDump2(0b101));
+        log("PAIR: %s %s %s %s %s %s %s F<$%02X>", registerDump(0b111), registerDump(0b000), registerDump(0b001), registerDump(0b010), registerDump(0b011), registerDump(0b100), registerDump(0b101), reg.pair.F);
+        log("BACK: %s %s %s %s %s %s %s F'<$%02X>", registerDump2(0b111), registerDump2(0b000), registerDump2(0b001), registerDump2(0b010), registerDump2(0b011), registerDump2(0b100), registerDump2(0b101), reg.back.F);
         log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
         log("R<$%02X> I<$%02X> IFF<$%02X>", reg.R, reg.I, reg.IFF);
         log("isHalt: %s, interruptMode: %d", reg.isHalt ? "YES" : "NO", reg.interruptMode);
