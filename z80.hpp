@@ -581,7 +581,7 @@ class Z80
     {
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         unsigned char a7 = ctx->reg.pair.A & 0x80 ? 1 : 0;
-        ctx->log("[%04X] RLCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
+        ctx->log("[%04X] RLA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
         ctx->reg.pair.A &= 0b01111111;
         ctx->reg.pair.A <<= 1;
         ctx->reg.pair.A |= c; // differ with RLCA
