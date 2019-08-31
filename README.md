@@ -18,6 +18,8 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 
 ## WIP status
 
+### 1. Implementation
+
 - [x] 3.1 8bit load instructions
 - [x] 3.2 16bit load instructions
 - [x] 3.3 block load instructions
@@ -44,6 +46,10 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [ ] 11. binary decimal
 
 > Reference: [http://www.yamamo10.jp/yamamoto/comp/Z80/instructions/index.php](http://www.yamamo10.jp/yamamoto/comp/Z80/instructions/index.php)
+
+### 2. Testing
+
+_Considering good system test method..._
 
 ## How to test
 
