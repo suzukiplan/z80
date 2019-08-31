@@ -385,4 +385,16 @@ static void extractProgram(MMU& mmu)
     PG = 0b11001011;
     PG = 0x12;
     PG = 0b00100110;
+    PG = 0b11001011; // SRA A
+    PG = 0b00101111;
+    PG = 0b11001011; // SRA (HL)
+    PG = 0b00101110;
+    PG = 0b11011101; // SRA (IX+$12)
+    PG = 0b11001011;
+    PG = 0x12;
+    PG = 0b00101110;
+    PG = 0b11111101; // SRA (IY+$34)
+    PG = 0b11001011;
+    PG = 0x12;
+    PG = 0b00101110;
 }
