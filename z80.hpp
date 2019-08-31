@@ -1648,7 +1648,7 @@ class Z80
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
-        reg.PC += 2;
+        reg.PC += 4;
         return consumeClock(23);
     }
 
@@ -1659,7 +1659,7 @@ class Z80
         unsigned char n = CB.read(CB.arg, addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        log("[%04X] RR (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (IY+d)
@@ -1670,7 +1670,7 @@ class Z80
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
-        reg.PC += 2;
+        reg.PC += 4;
         return consumeClock(23);
     }
 
