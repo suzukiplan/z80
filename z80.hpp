@@ -388,7 +388,11 @@ class Z80
     static inline int OP_R(Z80* ctx)
     {
         unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        if ((op2 & 0b11111000) == 0b00000000) {
+        if (op2 == 0b00000110) {
+            return ctx->RLC_HL();
+        } else if (op2 == 0b00010110) {
+            return ctx->RL_HL();
+        } else if ((op2 & 0b11111000) == 0b00000000) {
             return ctx->RLC_R(op2 & 0b00000111);
         } else if ((op2 & 0b11111000) == 0b00010000) {
             return ctx->RL_R(op2 & 0b00000111);
@@ -1270,6 +1274,7 @@ class Z80
         return 14;
     }
 
+    // Rotate register Left Circular
     inline int RLC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1293,6 +1298,7 @@ class Z80
         return 4;
     }
 
+    // Rotate Left register
     inline int RL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1314,6 +1320,50 @@ class Z80
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
         return 4;
+    }
+
+    // Rotate memory (HL) Left Circular
+    inline int RLC_HL()
+    {
+        unsigned short addr = getHL();
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n7 = n & 0x80 ? 1 : 0;
+        log("[%04X] RLC (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b01111111;
+        n <<= 1;
+        n |= n7; // differ with RL (HL)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 2;
+        return 15;
+    }
+
+    // Rotate Left memory
+    inline int RL_HL()
+    {
+        unsigned short addr = getHL();
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n7 = n & 0x80 ? 1 : 0;
+        log("[%04X] RLC (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b01111111;
+        n <<= 1;
+        n |= c; // differ with RLC (HL)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 2;
+        return 8;
     }
 
     int (*opSet1[256])(Z80* ctx);
