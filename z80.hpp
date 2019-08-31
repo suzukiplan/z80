@@ -358,6 +358,7 @@ class Z80
                 case 0b00001110: return ctx->RRC_IX(op3);
                 case 0b00010110: return ctx->RL_IX(op3);
                 case 0b00011110: return ctx->RR_IX(op3);
+                case 0b00100110: return ctx->SLA_IX(op3);
             }
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -396,6 +397,7 @@ class Z80
                 case 0b00001110: return ctx->RRC_IY(op3);
                 case 0b00010110: return ctx->RL_IY(op3);
                 case 0b00011110: return ctx->RR_IY(op3);
+                case 0b00100110: return ctx->SLA_IY(op3);
             }
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -418,6 +420,8 @@ class Z80
             return ctx->RRC_HL();
         } else if (op2 == 0b00011110) {
             return ctx->RR_HL();
+        } else if (op2 == 0b00100110) {
+            return ctx->SLA_HL();
         } else if ((op2 & 0b11111000) == 0b00000000) {
             return ctx->RLC_R(op2 & 0b00000111);
         } else if ((op2 & 0b11111000) == 0b00010000) {
@@ -426,6 +430,8 @@ class Z80
             return ctx->RRC_R(op2 & 0b00000111);
         } else if ((op2 & 0b11111000) == 0b00011000) {
             return ctx->RR_R(op2 & 0b00000111);
+        } else if ((op2 & 0b11111000) == 0b00100000) {
+            return ctx->SLA_R(op2 & 0b00000111);
         }
         ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
         return -1;
@@ -1362,6 +1368,29 @@ class Z80
         return consumeClock(8);
     }
 
+    // Shift operand register left Arithmetic
+    inline int SLA_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char r7 = *rp & 0x80 ? 1 : 0;
+        log("[%04X] SLA %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        *rp &= 0b01111111;
+        *rp <<= 1;
+        setFlagC(r7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((*rp & 0x80) != 0);
+        setFlagZ(*rp == 0);
+        setFlagPV(isEvenNumberBits(*rp));
+        reg.PC += 2;
+        return consumeClock(8);
+    }
+
     // Rotate register Right Circular
     inline int RRC_R(unsigned char r)
     {
@@ -1443,6 +1472,27 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (HL)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 2;
+        return consumeClock(15);
+    }
+
+    // Shift operand location (HL) left Arithmetic
+    inline int SLA_HL()
+    {
+        unsigned short addr = getHL();
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n7 = n & 0x80 ? 1 : 0;
+        log("[%04X] SLA (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b01111111;
+        n <<= 1;
         CB.write(CB.arg, addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
@@ -1564,6 +1614,27 @@ class Z80
         return consumeClock(23);
     }
 
+    // Shift operand location (IX+d) left Arithmetic
+    inline int SLA_IX(unsigned char d)
+    {
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n7 = n & 0x80 ? 1 : 0;
+        log("[%04X] SLA (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b01111111;
+        n <<= 1;
+        CB.write(CB.arg, addr, n);
+        setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 4;
+        return consumeClock(23);
+    }
+
     // Rotate Right memory
     inline int RR_IX(unsigned char d)
     {
@@ -1641,6 +1712,27 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (IY+d)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 4;
+        return consumeClock(23);
+    }
+
+    // Shift operand location (IY+d) left Arithmetic
+    inline int SLA_IY(unsigned char d)
+    {
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n7 = n & 0x80 ? 1 : 0;
+        log("[%04X] SLA (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b01111111;
+        n <<= 1;
         CB.write(CB.arg, addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
