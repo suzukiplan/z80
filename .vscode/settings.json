@@ -1,4 +1,5 @@
 {
+    "clang.cxxflags": ["-std=c++14"],
     "files.associations": {
         "functional": "cpp",
         "complex": "cpp",
