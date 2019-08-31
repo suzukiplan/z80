@@ -346,6 +346,13 @@ class Z80
             return ctx->PUSH_IX();
         } else if (op2 == 0b11100001) {
             return ctx->POP_IX();
+        } else if (op2 == 0b11001011) {
+            unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+            unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
+            switch (op4) {
+                case 0b00000110: return ctx->RLC_IX(op3);
+                case 0b00010110: return ctx->RL_IX(op3);
+            }
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -375,6 +382,13 @@ class Z80
             return ctx->PUSH_IY();
         } else if (op2 == 0b11100001) {
             return ctx->POP_IY();
+        } else if (op2 == 0b11001011) {
+            unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+            unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
+            switch (op4) {
+                case 0b00000110: return ctx->RLC_IY(op3);
+                case 0b00010110: return ctx->RL_IY(op3);
+            }
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -1364,6 +1378,94 @@ class Z80
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
         return 8;
+    }
+
+    // Rotate memory (IX+d) Left Circular
+    inline int RLC_IX(unsigned char d)
+    {
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n7 = n & 0x80 ? 1 : 0;
+        log("[%04X] RLC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b01111111;
+        n <<= 1;
+        n |= n7; // differ with RL (IX+d)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 4;
+        return 23;
+    }
+
+    // Rotate Left memory
+    inline int RL_IX(unsigned char d)
+    {
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n7 = n & 0x80 ? 1 : 0;
+        log("[%04X] RLC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b01111111;
+        n <<= 1;
+        n |= c; // differ with RLC (IX+d)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 4;
+        return 23;
+    }
+
+    // Rotate memory (IY+d) Left Circular
+    inline int RLC_IY(unsigned char d)
+    {
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n7 = n & 0x80 ? 1 : 0;
+        log("[%04X] RLC (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b01111111;
+        n <<= 1;
+        n |= n7; // differ with RL (IX+d)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 4;
+        return 23;
+    }
+
+    // Rotate Left memory
+    inline int RL_IY(unsigned char d)
+    {
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n7 = n & 0x80 ? 1 : 0;
+        log("[%04X] RLC (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b01111111;
+        n <<= 1;
+        n |= c; // differ with RLC (IX+d)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 2;
+        return 23;
     }
 
     int (*opSet1[256])(Z80* ctx);

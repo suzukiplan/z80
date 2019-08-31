@@ -23,8 +23,8 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 3.3 block load instructions
 - [x] 3.4 exchange instructions
 - [x] 4. stack instructions
-- [ ] __5.1 left rotate instructions__ <sup>*inprogress*</sup>
-- [ ] 5.2 right rotate instructions
+- [x] 5.1 left rotate instructions
+- [ ] __5.2 right rotate instructions__ <sup>*inprogress*</sup>
 - [ ] 5.3 left shift instructions
 - [ ] 5.4 right shift instructions
 - [ ] 6.1 8bit arithmetic (ADD) instructions
