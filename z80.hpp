@@ -28,10 +28,10 @@
 #define INCLUDE_Z80_HPP
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <limits.h>
 #include <time.h>
-#include <functional>
 
 class Z80
 {
@@ -81,10 +81,10 @@ class Z80
 
   private: // Internal variables
     struct Callback {
-        std::function<unsigned char(void* arg, unsigned short addr)> read;
-        std::function<void(void* arg, unsigned short addr, unsigned char value)> write;
-        std::function<unsigned char(void* arg, unsigned char port)> in;
-        std::function<void(void* arg, unsigned char port, unsigned char value)> out;
+        unsigned char (*read)(void* arg, unsigned short addr);
+        void (*write)(void* arg, unsigned short addr, unsigned char value);
+        unsigned char (*in)(void* arg, unsigned char port);
+        void (*out)(void* arg, unsigned char port, unsigned char value);
         void (*debugMessage)(void* arg, const char* message);
         void (*consumeClock)(void* arg, int clock);
         void (*breakPoint)(void* arg);
@@ -1573,10 +1573,10 @@ class Z80
     }
 
   public: // API functions
-    Z80(std::function<unsigned char(void* arg, unsigned short addr)> read,
-        std::function<void(void* arg, unsigned short addr, unsigned char value)> write,
-        std::function<unsigned char(void* arg, unsigned char port)> in,
-        std::function<void(void* arg, unsigned char port, unsigned char value)> out,
+    Z80(unsigned char (*read)(void* arg, unsigned short addr),
+        void (*write)(void* arg, unsigned short addr, unsigned char value),
+        unsigned char (*in)(void* arg, unsigned char port),
+        void (*out)(void* arg, unsigned char port, unsigned char value),
         void* arg)
     {
         this->CB.read = read;
