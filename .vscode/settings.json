@@ -58,5 +58,6 @@
         "unordered_map": "cpp",
         "utility": "cpp",
         "vector": "cpp"
-    }
+    },
+    "C_Cpp.default.cppStandard": "c++14"
 }
