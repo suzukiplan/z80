@@ -83,11 +83,102 @@ int hexToInt(const char* cp)
     return result;
 }
 
+static void extractProgram(MMU& mmu);
+
 int main()
 {
     // MMUインスタンスを作成
     MMU mmu;
+    extractProgram(mmu);
 
+    // CPUインスタンスを作成
+    // コールバック、コールバック引数、デバッグ出力設定を行う
+    // コールバック引数: コールバックに渡す任意の引数（ここでは、MMUインスタンスのポインタを指定）
+    Z80 z80(readByte, writeByte, inPort, outPort, &mmu);
+
+    // デバッグメッセージを標準出力
+    z80.setDebugMessage([](void* arg, const char* message) -> void {
+        time_t t1 = time(NULL);
+        struct tm* t2 = localtime(&t1);
+        printf("%04d.%02d.%02d %02d:%02d:%02d %s\n",
+               t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour,
+               t2->tm_min, t2->tm_sec, message);
+    });
+
+    /*
+    // Use break point:
+    z80.setBreakPoint(0x008E, [](void* arg) -> void {
+        printf("Detect break point! (PUSH ENTER TO CONTINUE)");
+        char buf[80];
+        fgets(buf, sizeof(buf), stdin);
+    });
+    */
+
+    /*
+    // You can detect the timing of clock consume by following:
+    z80.setConsumeClockCallback([](void* arg, int clock) -> void {
+        printf("consumed: %dHz\n", clock);
+    });
+    */
+
+    // レジスタ初期値を設定（未設定時は0）
+    z80.reg.pair.A = 0x12;
+    z80.reg.pair.B = 0x34;
+    z80.reg.pair.L = 0x01;
+    z80.reg.IY = 1;
+
+    // ステップ実行
+    char cmd[1024];
+    int clocks = 0;
+    printf("> ");
+    while (fgets(cmd, sizeof(cmd), stdin)) {
+        if (isdigit(cmd[0])) {
+            // 数字が入力されたらそのクロック数CPUを実行
+            int hz = atoi(cmd);
+            hz = z80.execute(hz);
+            if (hz < 0) break;
+            clocks += hz;
+        } else if ('R' == toupper(cmd[0])) {
+            // レジスタダンプ
+            z80.registerDump();
+        } else if ('M' == toupper(cmd[0])) {
+            // メモリダンプ
+            int addr = 0;
+            for (char* cp = &cmd[1]; *cp; cp++) {
+                if (isHexDigit(*cp)) {
+                    addr = hexToInt(cp);
+                    break;
+                }
+            }
+            addr &= 0xFFFF;
+            z80.log("[%04X] %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X", addr,
+                    mmu.RAM[addr],
+                    mmu.RAM[(addr + 1) & 0xFFFF],
+                    mmu.RAM[(addr + 2) & 0xFFFF],
+                    mmu.RAM[(addr + 3) & 0xFFFF],
+                    mmu.RAM[(addr + 4) & 0xFFFF],
+                    mmu.RAM[(addr + 5) & 0xFFFF],
+                    mmu.RAM[(addr + 6) & 0xFFFF],
+                    mmu.RAM[(addr + 7) & 0xFFFF],
+                    mmu.RAM[(addr + 8) & 0xFFFF],
+                    mmu.RAM[(addr + 9) & 0xFFFF],
+                    mmu.RAM[(addr + 10) & 0xFFFF],
+                    mmu.RAM[(addr + 11) & 0xFFFF],
+                    mmu.RAM[(addr + 12) & 0xFFFF],
+                    mmu.RAM[(addr + 13) & 0xFFFF],
+                    mmu.RAM[(addr + 14) & 0xFFFF],
+                    mmu.RAM[(addr + 15) & 0xFFFF]);
+        } else if ('\r' == cmd[0] || '\n' == cmd[0]) {
+            break;
+        }
+        printf("> ");
+    }
+    printf("executed %dHz\n", clocks);
+    return 0;
+}
+
+static void extractProgram(MMU& mmu)
+{
     // ハンドアセンブルで検証用プログラムをRAMに展開
     unsigned short addr = 0;
     mmu.RAM[addr++] = 0b01000111; // LD B, A
@@ -265,89 +356,4 @@ int main()
     mmu.RAM[addr++] = 0b00001110;
     mmu.RAM[addr++] = 0b11001011; // RR (HL)
     mmu.RAM[addr++] = 0b00011110;
-
-    // CPUインスタンスを作成
-    // コールバック、コールバック引数、デバッグ出力設定を行う
-    // コールバック引数: コールバックに渡す任意の引数（ここでは、MMUインスタンスのポインタを指定）
-    Z80 z80(readByte, writeByte, inPort, outPort, &mmu);
-
-    // デバッグメッセージを標準出力
-    z80.setDebugMessage([](void* arg, const char* message) -> void {
-        time_t t1 = time(NULL);
-        struct tm* t2 = localtime(&t1);
-        printf("%04d.%02d.%02d %02d:%02d:%02d %s\n",
-               t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour,
-               t2->tm_min, t2->tm_sec, message);
-    });
-
-    /*
-    // Use break point:
-    z80.setBreakPoint(0x008E, [](void* arg) -> void {
-        printf("Detect break point! (PUSH ENTER TO CONTINUE)");
-        char buf[80];
-        fgets(buf, sizeof(buf), stdin);
-    });
-    */
-
-    /*
-    // You can detect the timing of clock consume by following:
-    z80.setConsumeClockCallback([](void* arg, int clock) -> void {
-        printf("consumed: %dHz\n", clock);
-    });
-    */
-
-    // レジスタ初期値を設定（未設定時は0）
-    z80.reg.pair.A = 0x12;
-    z80.reg.pair.B = 0x34;
-    z80.reg.pair.L = 0x01;
-    z80.reg.IY = 1;
-
-    // ステップ実行
-    char cmd[1024];
-    int clocks = 0;
-    printf("> ");
-    while (fgets(cmd, sizeof(cmd), stdin)) {
-        if (isdigit(cmd[0])) {
-            // 数字が入力されたらそのクロック数CPUを実行
-            int hz = atoi(cmd);
-            hz = z80.execute(hz);
-            if (hz < 0) break;
-            clocks += hz;
-        } else if ('R' == toupper(cmd[0])) {
-            // レジスタダンプ
-            z80.registerDump();
-        } else if ('M' == toupper(cmd[0])) {
-            // メモリダンプ
-            int addr = 0;
-            for (char* cp = &cmd[1]; *cp; cp++) {
-                if (isHexDigit(*cp)) {
-                    addr = hexToInt(cp);
-                    break;
-                }
-            }
-            addr &= 0xFFFF;
-            z80.log("[%04X] %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X", addr,
-                    mmu.RAM[addr],
-                    mmu.RAM[(addr + 1) & 0xFFFF],
-                    mmu.RAM[(addr + 2) & 0xFFFF],
-                    mmu.RAM[(addr + 3) & 0xFFFF],
-                    mmu.RAM[(addr + 4) & 0xFFFF],
-                    mmu.RAM[(addr + 5) & 0xFFFF],
-                    mmu.RAM[(addr + 6) & 0xFFFF],
-                    mmu.RAM[(addr + 7) & 0xFFFF],
-                    mmu.RAM[(addr + 8) & 0xFFFF],
-                    mmu.RAM[(addr + 9) & 0xFFFF],
-                    mmu.RAM[(addr + 10) & 0xFFFF],
-                    mmu.RAM[(addr + 11) & 0xFFFF],
-                    mmu.RAM[(addr + 12) & 0xFFFF],
-                    mmu.RAM[(addr + 13) & 0xFFFF],
-                    mmu.RAM[(addr + 14) & 0xFFFF],
-                    mmu.RAM[(addr + 15) & 0xFFFF]);
-        } else if ('\r' == cmd[0] || '\n' == cmd[0]) {
-            break;
-        }
-        printf("> ");
-    }
-    printf("executed %dHz\n", clocks);
-    return 0;
 }
