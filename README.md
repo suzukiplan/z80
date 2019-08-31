@@ -161,7 +161,7 @@ You can detect the timing of clock consume by following:
 
 ```c++
     z80.setConsumeClockCallback([](void* arg, int clock) -> void {
-        printf("consume %d Hz\n", clock);
+        printf("consumed: %dHz\n", clock);
     });
 ```
 
