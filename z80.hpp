@@ -357,7 +357,9 @@ class Z80
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
             switch (op4) {
                 case 0b00000110: return ctx->RLC_IX(op3);
+                case 0b00001110: return ctx->RRC_IX(op3);
                 case 0b00010110: return ctx->RL_IX(op3);
+                case 0b00011110: return ctx->RR_IX(op3);
             }
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -393,7 +395,9 @@ class Z80
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
             switch (op4) {
                 case 0b00000110: return ctx->RLC_IY(op3);
+                case 0b00001110: return ctx->RRC_IY(op3);
                 case 0b00010110: return ctx->RL_IY(op3);
+                case 0b00011110: return ctx->RR_IY(op3);
             }
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -1518,6 +1522,28 @@ class Z80
         return consumeClock(23);
     }
 
+    // Rotate memory (IX+d) Right Circular
+    inline int RRC_IX(unsigned char d)
+    {
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n0 = n & 0x01;
+        log("[%04X] RRC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b11111110;
+        n >>= 1;
+        n |= n0 ? 0x80 : 0; // differ with RR (IX+d)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n0 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 4;
+        return consumeClock(23);
+    }
+
     // Rotate Left memory
     inline int RL_IX(unsigned char d)
     {
@@ -1531,6 +1557,28 @@ class Z80
         n |= c; // differ with RLC (IX+d)
         CB.write(CB.arg, addr, n);
         setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 4;
+        return consumeClock(23);
+    }
+
+    // Rotate Right memory
+    inline int RR_IX(unsigned char d)
+    {
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n0 = n & 0x01;
+        log("[%04X] RR (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b11111110;
+        n >>= 1;
+        n |= c ? 0x80 : 0; // differ with RRC (IX+d)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
@@ -1562,6 +1610,28 @@ class Z80
         return consumeClock(23);
     }
 
+    // Rotate memory (IY+d) Right Circular
+    inline int RRC_IY(unsigned char d)
+    {
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n0 = n & 0x01;
+        log("[%04X] RRC (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b11111110;
+        n >>= 1;
+        n |= n0 ? 0x80 : 0; // differ with RR (IX+d)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n0 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 4;
+        return consumeClock(23);
+    }
+
     // Rotate Left memory
     inline int RL_IY(unsigned char d)
     {
@@ -1575,6 +1645,28 @@ class Z80
         n |= c; // differ with RLC (IY+d)
         CB.write(CB.arg, addr, n);
         setFlagC(n7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 2;
+        return consumeClock(23);
+    }
+
+    // Rotate Right memory
+    inline int RR_IY(unsigned char d)
+    {
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n0 = n & 0x01;
+        log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b11111110;
+        n >>= 1;
+        n |= c ? 0x80 : 0; // differ with RRC (IY+d)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);

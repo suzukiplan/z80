@@ -338,11 +338,11 @@ static void extractProgram(MMU& mmu)
     mmu.RAM[addr++] = 0b11001011;
     mmu.RAM[addr++] = 0x34;
     mmu.RAM[addr++] = 0b00010110;
-    mmu.RAM[addr++] = 0b11011101; // RLC (IY+$56)
+    mmu.RAM[addr++] = 0b11111101; // RLC (IY+$56)
     mmu.RAM[addr++] = 0b11001011;
     mmu.RAM[addr++] = 0x56;
     mmu.RAM[addr++] = 0b00000110;
-    mmu.RAM[addr++] = 0b11011101; // RL (IY+$78)
+    mmu.RAM[addr++] = 0b11111101; // RL (IY+$78)
     mmu.RAM[addr++] = 0b11001011;
     mmu.RAM[addr++] = 0x78;
     mmu.RAM[addr++] = 0b00010110;
@@ -355,5 +355,21 @@ static void extractProgram(MMU& mmu)
     mmu.RAM[addr++] = 0b11001011; // RRC (HL)
     mmu.RAM[addr++] = 0b00001110;
     mmu.RAM[addr++] = 0b11001011; // RR (HL)
+    mmu.RAM[addr++] = 0b00011110;
+    mmu.RAM[addr++] = 0b11011101; // RRC (IX+$12)
+    mmu.RAM[addr++] = 0b11001011;
+    mmu.RAM[addr++] = 0x12;
+    mmu.RAM[addr++] = 0b00001110;
+    mmu.RAM[addr++] = 0b11011101; // RR (IX+$34)
+    mmu.RAM[addr++] = 0b11001011;
+    mmu.RAM[addr++] = 0x34;
+    mmu.RAM[addr++] = 0b00011110;
+    mmu.RAM[addr++] = 0b11111101; // RRC (IY+$56)
+    mmu.RAM[addr++] = 0b11001011;
+    mmu.RAM[addr++] = 0x56;
+    mmu.RAM[addr++] = 0b00001110;
+    mmu.RAM[addr++] = 0b11111101; // RR (IY+$78)
+    mmu.RAM[addr++] = 0b11001011;
+    mmu.RAM[addr++] = 0x78;
     mmu.RAM[addr++] = 0b00011110;
 }

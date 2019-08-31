@@ -24,8 +24,8 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 3.4 exchange instructions
 - [x] 4. stack instructions
 - [x] 5.1 left rotate instructions
-- [ ] __5.2 right rotate instructions__ <sup>*inprogress*</sup>
-- [ ] 5.3 left shift instructions
+- [x] 5.2 right rotate instructions
+- [ ] __5.3 left shift instructions__ <sup>*inprogress*</sup>
 - [ ] 5.4 right shift instructions
 - [ ] 6.1 8bit arithmetic (ADD) instructions
 - [ ] 6.1 8bit arithmetic (DEC) instructions
