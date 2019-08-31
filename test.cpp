@@ -255,6 +255,8 @@ int main()
     mmu.RAM[addr++] = 0b11001011;
     mmu.RAM[addr++] = 0x78;
     mmu.RAM[addr++] = 0b00000110;
+    mmu.RAM[addr++] = 0b00001111; // RRCA
+    mmu.RAM[addr++] = 0b00011111; // RRA
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う

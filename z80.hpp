@@ -625,6 +625,21 @@ class Z80
         return 4;
     }
 
+    static inline int RRCA(Z80* ctx)
+    {
+        unsigned char c = ctx->isFlagC() ? 1 : 0;
+        unsigned char a0 = ctx->reg.pair.A & 0x01;
+        ctx->log("[%04X] RRCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
+        ctx->reg.pair.A &= 0b11111110;
+        ctx->reg.pair.A >>= 1;
+        ctx->reg.pair.A |= a0 ? 0x80 : 0; // differ with RRA
+        ctx->setFlagC(a0 ? true : false);
+        ctx->setFlagH(false);
+        ctx->setFlagN(false);
+        ctx->reg.PC++;
+        return 4;
+    }
+
     static inline int RLA(Z80* ctx)
     {
         unsigned char c = ctx->isFlagC() ? 1 : 0;
@@ -634,6 +649,21 @@ class Z80
         ctx->reg.pair.A <<= 1;
         ctx->reg.pair.A |= c; // differ with RLCA
         ctx->setFlagC(a7 ? true : false);
+        ctx->setFlagH(false);
+        ctx->setFlagN(false);
+        ctx->reg.PC++;
+        return 4;
+    }
+
+    static inline int RRA(Z80* ctx)
+    {
+        unsigned char c = ctx->isFlagC() ? 1 : 0;
+        unsigned char a0 = ctx->reg.pair.A & 0x01;
+        ctx->log("[%04X] RRA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
+        ctx->reg.pair.A &= 0b11111110;
+        ctx->reg.pair.A >>= 1;
+        ctx->reg.pair.A |= c ? 0x80 : 0x00; // differ with RLCA
+        ctx->setFlagC(a0 ? true : false);
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->reg.PC++;
@@ -1492,9 +1522,11 @@ class Z80
         opSet1[0b00000111] = RLCA;
         opSet1[0b00001000] = EX_AF_AF2;
         opSet1[0b00001010] = LD_A_BC;
+        opSet1[0b00001111] = RRCA;
         opSet1[0b00010010] = LD_DE_A;
         opSet1[0b00010111] = RLA;
         opSet1[0b00011010] = LD_A_DE;
+        opSet1[0b00011111] = RRA;
         opSet1[0b00100010] = LD_ADDR_HL;
         opSet1[0b00101010] = LD_HL_ADDR;
         opSet1[0b00110110] = LD_HL_N;
