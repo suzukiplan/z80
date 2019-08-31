@@ -177,9 +177,9 @@ int main()
     return 0;
 }
 
+// ハンドアセンブルした検証用プログラムをRAMに展開
 static void extractProgram(MMU& mmu)
 {
-    // ハンドアセンブルで検証用プログラムをRAMに展開
     unsigned short addr = 0;
     mmu.RAM[addr++] = 0b01000111; // LD B, A
     mmu.RAM[addr++] = 0b00001110; // LD C, $56
