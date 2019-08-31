@@ -155,7 +155,7 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 
 ## How to use (OPTIONAL)
 
-### If need detect clock consumeing
+### If need detect clock consuming
 
 You can detect the timing of clock consume by following:
 
