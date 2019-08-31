@@ -155,6 +155,21 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 
 ## Optional features
 
+### Dynamic disassble (for debug)
+
+You can acquire the debug messages with `setDebugMessage`.
+Debug message contains dynamic disassembly results step by step.
+
+```c++
+    z80.setDebugMessage([](void* arg, const char* message) -> void {
+        time_t t1 = time(NULL);
+        struct tm* t2 = localtime(&t1);
+        printf("%04d.%02d.%02d %02d:%02d:%02d %s\n",
+               t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour,
+               t2->tm_min, t2->tm_sec, message);
+    });
+```
+
 ### Use break point
 
 If you want to execute processing just before executing an instruction of specific program counter value _(in this ex: $008E)_, you can set a breakpoint as follows:

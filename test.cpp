@@ -264,9 +264,17 @@ int main()
 
     // CPUインスタンスを作成
     // コールバック、コールバック引数、デバッグ出力設定を行う
-    // - コールバック引数: コールバックに渡す任意の引数（ここでは、MMUインスタンスのポインタを指定）
-    // - デバッグ出力設定: 省略するかNULLを指定するとデバッグ出力しない（ここでは、標準出力を指定）
-    Z80 z80(readByte, writeByte, inPort, outPort, &mmu, stdout);
+    // コールバック引数: コールバックに渡す任意の引数（ここでは、MMUインスタンスのポインタを指定）
+    Z80 z80(readByte, writeByte, inPort, outPort, &mmu);
+
+    // デバッグメッセージを標準出力
+    z80.setDebugMessage([](void* arg, const char* message) -> void {
+        time_t t1 = time(NULL);
+        struct tm* t2 = localtime(&t1);
+        printf("%04d.%02d.%02d %02d:%02d:%02d %s\n",
+               t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour,
+               t2->tm_min, t2->tm_sec, message);
+    });
 
     /*
     // Use break point:
@@ -280,7 +288,7 @@ int main()
     /*
     // You can detect the timing of clock consume by following:
     z80.setConsumeClockCallback([](void* arg, int clock) -> void {
-        printf("consume %d Hz\n", clock);
+        printf("consumed: %dHz\n", clock);
     });
     */
 

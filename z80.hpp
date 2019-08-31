@@ -85,17 +85,17 @@ class Z80
         std::function<void(void* arg, unsigned short addr, unsigned char value)> write;
         std::function<unsigned char(void* arg, unsigned char port)> in;
         std::function<void(void* arg, unsigned char port, unsigned char value)> out;
-        void (*consumeClock)(void*, int);
-        void (*breakPoint)(void*);
+        void (*debugMessage)(void* arg, const char* message);
+        void (*consumeClock)(void* arg, int clock);
+        void (*breakPoint)(void* arg);
         void* arg;
         unsigned short breakPointAddress;
     } CB;
-    FILE* debugStream;
 
   public: // utility functions
     inline void log(const char* format, ...)
     {
-        if (!debugStream) {
+        if (!CB.debugMessage) {
             return;
         }
         char buf[1024];
@@ -103,11 +103,7 @@ class Z80
         va_start(args, format);
         vsprintf(buf, format, args);
         va_end(args);
-        time_t t1 = time(NULL);
-        struct tm* t2 = localtime(&t1);
-        fprintf(debugStream, "%04d.%02d.%02d %02d:%02d:%02d %s\n",
-                t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour,
-                t2->tm_min, t2->tm_sec, buf);
+        CB.debugMessage(CB.arg, buf);
     }
 
   private: // Internal functions
@@ -764,9 +760,7 @@ class Z80
     {
         unsigned char* r1p = getRegisterPointer(r1);
         unsigned char* r2p = getRegisterPointer(r2);
-        if (debugStream) {
-            log("[%04X] LD %s, %s", reg.PC, registerDump(r1), registerDump(r2));
-        }
+        log("[%04X] LD %s, %s", reg.PC, registerDump(r1), registerDump(r2));
         if (r1p && r2p) *r1p = *r2p;
         reg.PC += 1;
         return consumeClock(4);
@@ -777,9 +771,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char n = CB.read(CB.arg, reg.PC + 1);
-        if (debugStream) {
-            log("[%04X] LD %s, $%02X", reg.PC, registerDump(r), n);
-        }
+        log("[%04X] LD %s, $%02X", reg.PC, registerDump(r), n);
         if (rp) *rp = n;
         reg.PC += 2;
         return consumeClock(7);
@@ -790,9 +782,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char n = CB.read(CB.arg, getHL());
-        if (debugStream) {
-            log("[%04X] LD %s, (%s) = $%02X", reg.PC, registerDump(r), registerPairDump(0b10), n);
-        }
+        log("[%04X] LD %s, (%s) = $%02X", reg.PC, registerDump(r), registerPairDump(0b10), n);
         if (rp) *rp = n;
         reg.PC += 1;
         return consumeClock(7);
@@ -804,9 +794,7 @@ class Z80
         unsigned char* rp = getRegisterPointer(r);
         unsigned char d = CB.read(CB.arg, reg.PC + 2);
         unsigned char n = CB.read(CB.arg, (reg.IX + d) & 0xFFFF);
-        if (debugStream) {
-            log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IX, d, n);
-        }
+        log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IX, d, n);
         if (rp) *rp = n;
         reg.PC += 3;
         return consumeClock(19);
@@ -818,9 +806,7 @@ class Z80
         unsigned char* rp = getRegisterPointer(r);
         unsigned char d = CB.read(CB.arg, reg.PC + 2);
         unsigned char n = CB.read(CB.arg, (reg.IY + d) & 0xFFFF);
-        if (debugStream) {
-            log("[%04X] LD %s, (IY<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IY, d, n);
-        }
+        log("[%04X] LD %s, (IY<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IY, d, n);
         if (rp) *rp = n;
         reg.PC += 3;
         return consumeClock(19);
@@ -831,9 +817,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned short addr = getHL();
-        if (debugStream) {
-            log("[%04X] LD (%s), %s", reg.PC, registerPairDump(0b10), registerDump(r));
-        }
+        log("[%04X] LD (%s), %s", reg.PC, registerPairDump(0b10), registerDump(r));
         if (rp) CB.write(CB.arg, addr, *rp);
         reg.PC += 1;
         return consumeClock(7);
@@ -845,9 +829,7 @@ class Z80
         unsigned char* rp = getRegisterPointer(r);
         unsigned char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        if (debugStream) {
-            log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC, reg.IX, d, registerDump(r));
-        }
+        log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC, reg.IX, d, registerDump(r));
         if (rp) CB.write(CB.arg, addr, *rp);
         reg.PC += 3;
         return consumeClock(19);
@@ -859,9 +841,7 @@ class Z80
         unsigned char* rp = getRegisterPointer(r);
         unsigned char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        if (debugStream) {
-            log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC, reg.IY, d, registerDump(r));
-        }
+        log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC, reg.IY, d, registerDump(r));
         if (rp) CB.write(CB.arg, addr, *rp);
         reg.PC += 3;
         return consumeClock(19);
@@ -873,9 +853,7 @@ class Z80
         unsigned char d = CB.read(CB.arg, reg.PC + 2);
         unsigned char n = CB.read(CB.arg, reg.PC + 3);
         unsigned short addr = reg.IX + d;
-        if (debugStream) {
-            log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
-        }
+        log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
         CB.write(CB.arg, addr, n);
         reg.PC += 4;
         return consumeClock(19);
@@ -887,9 +865,7 @@ class Z80
         unsigned char d = CB.read(CB.arg, reg.PC + 2);
         unsigned char n = CB.read(CB.arg, reg.PC + 3);
         unsigned short addr = reg.IY + d;
-        if (debugStream) {
-            log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
-        }
+        log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
         CB.write(CB.arg, addr, n);
         reg.PC += 4;
         return consumeClock(19);
@@ -925,9 +901,7 @@ class Z80
                 log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        if (debugStream) {
-            log("[%04X] LD %s, $%02X%02X", reg.PC, registerPairDump(rp), nH, nL);
-        }
+        log("[%04X] LD %s, $%02X%02X", reg.PC, registerPairDump(rp), nH, nL);
         *rH = nH;
         *rL = nL;
         reg.PC += 3;
@@ -1564,23 +1538,10 @@ class Z80
 
     int (*opSet1[256])(Z80* ctx);
 
-  public: // API functions
-    Z80(std::function<unsigned char(void* arg, unsigned short addr)> read,
-        std::function<void(void* arg, unsigned short addr, unsigned char value)> write,
-        std::function<unsigned char(void* arg, unsigned char port)> in,
-        std::function<void(void* arg, unsigned char port, unsigned char value)> out,
-        void* arg,
-        FILE* debugStream = NULL)
+    // setup the operands or operand groups that detectable in fixed single byte
+    void setupOpSet1()
     {
-        this->CB.read = read;
-        this->CB.write = write;
-        this->CB.in = in;
-        this->CB.out = out;
-        this->CB.arg = arg;
-        this->debugStream = debugStream;
-        ::memset(&reg, 0, sizeof(reg));
         ::memset(&opSet1, 0, sizeof(opSet1));
-        // setup the operands that detectable in single byte
         opSet1[0b00000000] = NOP;
         opSet1[0b00000010] = LD_BC_A;
         opSet1[0b00000111] = RLCA;
@@ -1611,7 +1572,28 @@ class Z80
         opSet1[0b11111101] = OP_IY;
     }
 
+  public: // API functions
+    Z80(std::function<unsigned char(void* arg, unsigned short addr)> read,
+        std::function<void(void* arg, unsigned short addr, unsigned char value)> write,
+        std::function<unsigned char(void* arg, unsigned char port)> in,
+        std::function<void(void* arg, unsigned char port, unsigned char value)> out,
+        void* arg)
+    {
+        this->CB.read = read;
+        this->CB.write = write;
+        this->CB.in = in;
+        this->CB.out = out;
+        this->CB.arg = arg;
+        ::memset(&reg, 0, sizeof(reg));
+        setupOpSet1();
+    }
+
     ~Z80() {}
+
+    void setDebugMessage(void (*debugMessage)(void*, const char*))
+    {
+        CB.debugMessage = debugMessage;
+    }
 
     void setBreakPoint(unsigned short addr, void (*breakPoint)(void*))
     {
