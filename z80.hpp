@@ -1,5 +1,6 @@
 /**
  * SUZUKI PLAN - Z80 Emulator
+ * -----------------------------------------------------------------------------
  * The MIT License (MIT)
  * 
  * Copyright (c) 2019 Yoji Suzuki.
@@ -21,6 +22,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
+ * -----------------------------------------------------------------------------
  */
 #ifndef INCLUDE_Z80_HPP
 #define INCLUDE_Z80_HPP
@@ -218,6 +220,21 @@ class Z80
         reg.back.L = (value & 0x00FF);
     }
 
+    inline bool isEvenNumberBits(unsigned char value)
+    {
+        int on = 0;
+        int off = 0;
+        value & 0b10000000 ? on++ : off++;
+        value & 0b01000000 ? on++ : off++;
+        value & 0b00100000 ? on++ : off++;
+        value & 0b00010000 ? on++ : off++;
+        value & 0b00001000 ? on++ : off++;
+        value & 0b00000100 ? on++ : off++;
+        value & 0b00000010 ? on++ : off++;
+        value & 0b00000001 ? on++ : off++;
+        return (on & 1) == 0;
+    }
+
     static inline int NOP(Z80* ctx)
     {
         ctx->log("[%04X] NOP", ctx->reg.PC);
@@ -364,6 +381,19 @@ class Z80
             return ctx->LD_IY_R(op2 & 0b00000111);
         }
         ctx->log("detected an unknown operand: 11111101 - $%02X", op2);
+        return -1;
+    }
+
+    // operand of using other register (first byte is 0b11001011)
+    static inline int OP_R(Z80* ctx)
+    {
+        unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        if ((op2 & 0b11111000) == 0b00000000) {
+            return ctx->RLC_R(op2 & 0b00000111);
+        } else if ((op2 & 0b11111000) == 0b00010000) {
+            return ctx->RL_R(op2 & 0b00000111);
+        }
+        ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
         return -1;
     }
 
@@ -1240,6 +1270,52 @@ class Z80
         return 14;
     }
 
+    inline int RLC_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char r7 = *rp & 0x80 ? 1 : 0;
+        log("[%04X] RLC %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        *rp &= 0b01111111;
+        *rp <<= 1;
+        *rp |= r7; // differ with RL
+        setFlagC(r7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((*rp & 0x80) != 0);
+        setFlagZ(*rp == 0);
+        setFlagPV(isEvenNumberBits(*rp));
+        reg.PC += 2;
+        return 4;
+    }
+
+    inline int RL_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char r7 = *rp & 0x80 ? 1 : 0;
+        log("[%04X] RL %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        *rp &= 0b01111111;
+        *rp <<= 1;
+        *rp |= c; // differ with RLC
+        setFlagC(r7 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((*rp & 0x80) != 0);
+        setFlagZ(*rp == 0);
+        setFlagPV(isEvenNumberBits(*rp));
+        reg.PC += 2;
+        return 4;
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
   public: // API functions
@@ -1273,6 +1349,7 @@ class Z80
         opSet1[0b00110010] = LD_NN_A;
         opSet1[0b00111010] = LD_A_NN;
         opSet1[0b01110110] = HALT;
+        opSet1[0b11001011] = OP_R;
         opSet1[0b11011001] = EXX;
         opSet1[0b11011101] = OP_IX;
         opSet1[0b11100011] = EX_SP_HL;

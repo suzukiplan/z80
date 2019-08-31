@@ -4,4 +4,3 @@ all:
 	rm z80.hpp.bak
 	clang test.cpp -lstdc++
 	./a.out
-
