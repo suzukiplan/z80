@@ -77,11 +77,9 @@ make
 executed 67Hz
 ```
 
-## How to use (BASIC)
+## Minimum usage
 
-See the [test.cpp](test.cpp) implementation.
-
-### 1. include
+### 1. Include
 
 ```c++
 #include "z80.hpp"
@@ -140,10 +138,8 @@ void outPort(void* arg, unsigned char port, unsigned char value)
      * inPort: callback of input request
      * outPort: callback of output request
      * &mmu: 1st argument of the callbacks
-     * stdout: stream for output debug info (disassembly, etc)
-     *         (!) specify NULL or omit when release build
      */
-    Z80 z80(readByte, writeByte, inPort, outPort, &mmu, stdout);
+    Z80 z80(readByte, writeByte, inPort, outPort, &mmu);
 ```
 
 ### 4. Execute
