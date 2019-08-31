@@ -151,7 +151,7 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 
 ## Optional features
 
-### Dynamic disassble (for debug)
+### Dynamic disassemble (for debug)
 
 You can acquire the debug messages with `setDebugMessage`.
 Debug message contains dynamic disassembly results step by step.
