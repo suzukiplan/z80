@@ -86,7 +86,9 @@ class Z80
         std::function<unsigned char(void* arg, unsigned char port)> in;
         std::function<void(void* arg, unsigned char port, unsigned char value)> out;
         void (*consumeClock)(void*, int);
+        void (*breakPoint)(void*);
         void* arg;
+        unsigned short breakPointAddress;
     } CB;
     FILE* debugStream;
 
@@ -1611,6 +1613,12 @@ class Z80
 
     ~Z80() {}
 
+    void setBreakPoint(unsigned short addr, void (*breakPoint)(void*))
+    {
+        CB.breakPointAddress = addr;
+        CB.breakPoint = breakPoint;
+    }
+
     void setConsumeClockCallback(void (*consumeClock)(void*, int))
     {
         CB.consumeClock = consumeClock;
@@ -1620,6 +1628,11 @@ class Z80
     {
         int executed = 0;
         while (0 < clock && !reg.isHalt) {
+            if (CB.breakPoint) {
+                if (CB.breakPointAddress == reg.PC) {
+                    CB.breakPoint(CB.arg);
+                }
+            }
             int operandNumber = CB.read(CB.arg, reg.PC);
             int (*op)(Z80*) = opSet1[operandNumber];
             int consume = -1;

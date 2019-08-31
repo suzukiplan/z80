@@ -153,11 +153,23 @@ void outPort(void* arg, unsigned char port, unsigned char value)
     int actualExecuteClocks = z80.execute(1234);
 ```
 
-## How to use (OPTIONAL)
+## Optional features
 
-### If need detect clock consuming
+### Use break point
 
-You can detect the timing of clock consume by following:
+If you want to execute processing just before executing an instruction of specific program counter value _(in this ex: $008E)_, you can set a breakpoint as follows:
+
+```c++
+    z80.setBreakPoint(0x008E, [](void* arg) -> void {
+        printf("Detect break point! (PUSH ENTER TO CONTINUE)");
+        char buf[80];
+        fgets(buf, sizeof(buf), stdin);
+    });
+```
+
+### Detect clock consuming
+
+If you want to implement stricter synchronization, you can capture the CPU clock consumption timing as follows:
 
 ```c++
     z80.setConsumeClockCallback([](void* arg, int clock) -> void {

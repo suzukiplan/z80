@@ -269,6 +269,15 @@ int main()
     Z80 z80(readByte, writeByte, inPort, outPort, &mmu, stdout);
 
     /*
+    // Use break point:
+    z80.setBreakPoint(0x008E, [](void* arg) -> void {
+        printf("Detect break point! (PUSH ENTER TO CONTINUE)");
+        char buf[80];
+        fgets(buf, sizeof(buf), stdin);
+    });
+    */
+
+    /*
     // You can detect the timing of clock consume by following:
     z80.setConsumeClockCallback([](void* arg, int clock) -> void {
         printf("consume %d Hz\n", clock);
