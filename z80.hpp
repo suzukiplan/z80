@@ -410,6 +410,10 @@ class Z80
             return ctx->RLC_R(op2 & 0b00000111);
         } else if ((op2 & 0b11111000) == 0b00010000) {
             return ctx->RL_R(op2 & 0b00000111);
+        } else if ((op2 & 0b11111000) == 0b00001000) {
+            return ctx->RRC_R(op2 & 0b00000111);
+        } else if ((op2 & 0b11111000) == 0b00011000) {
+            return ctx->RR_R(op2 & 0b00000111);
         }
         ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
         return -1;
@@ -1363,7 +1367,55 @@ class Z80
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
+        return 8;
+    }
+
+    // Rotate register Right Circular
+    inline int RRC_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char r0 = *rp & 0x01;
+        log("[%04X] RRC %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        *rp &= 0b11111110;
+        *rp >>= 1;
+        *rp |= r0 ? 0x80 : 0; // differ with RR
+        setFlagC(r0 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((*rp & 0x80) != 0);
+        setFlagZ(*rp == 0);
+        setFlagPV(isEvenNumberBits(*rp));
+        reg.PC += 2;
         return 4;
+    }
+
+    // Rotate Right register
+    inline int RR_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char r0 = *rp & 0x01;
+        log("[%04X] RR %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        *rp &= 0b11111110;
+        *rp >>= 1;
+        *rp |= c ? 0x80 : 0; // differ with RRC
+        setFlagC(r0 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((*rp & 0x80) != 0);
+        setFlagZ(*rp == 0);
+        setFlagPV(isEvenNumberBits(*rp));
+        reg.PC += 2;
+        return 8;
     }
 
     // Rotate memory (HL) Left Circular
@@ -1395,7 +1447,7 @@ class Z80
         unsigned char n = CB.read(CB.arg, addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] RLC (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        log("[%04X] RL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (HL)
@@ -1439,7 +1491,7 @@ class Z80
         unsigned char n = CB.read(CB.arg, addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] RLC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        log("[%04X] RL (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (IX+d)
@@ -1483,10 +1535,10 @@ class Z80
         unsigned char n = CB.read(CB.arg, addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] RLC (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
-        n |= c; // differ with RLC (IX+d)
+        n |= c; // differ with RLC (IY+d)
         CB.write(CB.arg, addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
