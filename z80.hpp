@@ -63,6 +63,7 @@ class Z80
         bool isHalt;
     } reg;
 
+  private: // Internal functions & variables
     // flag setter
     inline void setFlagS(bool on) { on ? reg.pair.F |= 0b10000000 : reg.pair.F &= 0b01111111; }
     inline void setFlagZ(bool on) { on ? reg.pair.F |= 0b01000000 : reg.pair.F &= 0b10111111; }
@@ -79,7 +80,6 @@ class Z80
     inline bool isFlagN() { return reg.pair.F & 0b00000010; }
     inline bool isFlagC() { return reg.pair.F & 0b00000001; }
 
-  private: // Internal variables
     struct Callback {
         unsigned char (*read)(void* arg, unsigned short addr);
         void (*write)(void* arg, unsigned short addr, unsigned char value);
@@ -92,7 +92,6 @@ class Z80
         unsigned short breakPointAddress;
     } CB;
 
-  public: // utility functions
     inline void log(const char* format, ...)
     {
         if (!CB.debugMessage) {
@@ -106,7 +105,6 @@ class Z80
         CB.debugMessage(CB.arg, buf);
     }
 
-  private: // Internal functions
     inline unsigned short getAF()
     {
         unsigned short result = reg.pair.A;

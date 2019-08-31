@@ -151,23 +151,23 @@ int main()
                 }
             }
             addr &= 0xFFFF;
-            z80.log("[%04X] %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X", addr,
-                    mmu.RAM[addr],
-                    mmu.RAM[(addr + 1) & 0xFFFF],
-                    mmu.RAM[(addr + 2) & 0xFFFF],
-                    mmu.RAM[(addr + 3) & 0xFFFF],
-                    mmu.RAM[(addr + 4) & 0xFFFF],
-                    mmu.RAM[(addr + 5) & 0xFFFF],
-                    mmu.RAM[(addr + 6) & 0xFFFF],
-                    mmu.RAM[(addr + 7) & 0xFFFF],
-                    mmu.RAM[(addr + 8) & 0xFFFF],
-                    mmu.RAM[(addr + 9) & 0xFFFF],
-                    mmu.RAM[(addr + 10) & 0xFFFF],
-                    mmu.RAM[(addr + 11) & 0xFFFF],
-                    mmu.RAM[(addr + 12) & 0xFFFF],
-                    mmu.RAM[(addr + 13) & 0xFFFF],
-                    mmu.RAM[(addr + 14) & 0xFFFF],
-                    mmu.RAM[(addr + 15) & 0xFFFF]);
+            printf("[%04X] %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X\n", addr,
+                   mmu.RAM[addr],
+                   mmu.RAM[(addr + 1) & 0xFFFF],
+                   mmu.RAM[(addr + 2) & 0xFFFF],
+                   mmu.RAM[(addr + 3) & 0xFFFF],
+                   mmu.RAM[(addr + 4) & 0xFFFF],
+                   mmu.RAM[(addr + 5) & 0xFFFF],
+                   mmu.RAM[(addr + 6) & 0xFFFF],
+                   mmu.RAM[(addr + 7) & 0xFFFF],
+                   mmu.RAM[(addr + 8) & 0xFFFF],
+                   mmu.RAM[(addr + 9) & 0xFFFF],
+                   mmu.RAM[(addr + 10) & 0xFFFF],
+                   mmu.RAM[(addr + 11) & 0xFFFF],
+                   mmu.RAM[(addr + 12) & 0xFFFF],
+                   mmu.RAM[(addr + 13) & 0xFFFF],
+                   mmu.RAM[(addr + 14) & 0xFFFF],
+                   mmu.RAM[(addr + 15) & 0xFFFF]);
         } else if ('\r' == cmd[0] || '\n' == cmd[0]) {
             break;
         }
