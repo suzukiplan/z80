@@ -159,7 +159,7 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 
 You can detect the timing of clock consume by following:
 
-```
+```c++
     z80.setConsumeClockCallback([](void* arg, int clock) -> void {
         printf("consume %d Hz\n", clock);
     });
