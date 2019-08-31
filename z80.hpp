@@ -1986,8 +1986,10 @@ class Z80
     void registerDump()
     {
         log("===== REGISTER DUMP : START =====");
-        log("PAIR: %s %s %s %s %s %s %s F<$%02X>", registerDump(0b111), registerDump(0b000), registerDump(0b001), registerDump(0b010), registerDump(0b011), registerDump(0b100), registerDump(0b101), reg.pair.F);
-        log("BACK: %s %s %s %s %s %s %s F'<$%02X>", registerDump2(0b111), registerDump2(0b000), registerDump2(0b001), registerDump2(0b010), registerDump2(0b011), registerDump2(0b100), registerDump2(0b101), reg.back.F);
+        log("PAIR: %s %s %s %s %s %s %s", registerDump(0b111), registerDump(0b000), registerDump(0b001), registerDump(0b010), registerDump(0b011), registerDump(0b100), registerDump(0b101));
+        log("PAIR: F<$%02X> ... S:%s, Z:%s, H:%s, P/V:%s, N:%s, C:%s", reg.pair.F, reg.pair.F & 0x80 ? "ON" : "OFF", reg.pair.F & 0x40 ? "ON" : "OFF", reg.pair.F & 0x10 ? "ON" : "OFF", reg.pair.F & 0x04 ? "ON" : "OFF", reg.pair.F & 0x02 ? "ON" : "OFF", reg.pair.F & 0x01 ? "ON" : "OFF");
+        log("BACK: %s %s %s %s %s %s %s", registerDump2(0b111), registerDump2(0b000), registerDump2(0b001), registerDump2(0b010), registerDump2(0b011), registerDump2(0b100), registerDump2(0b101), reg.back.F);
+        log("BACK: F'<$%02X> ... S:%s, Z:%s, H:%s, P/V:%s, N:%s, C:%s", reg.back.F, reg.back.F & 0x80 ? "ON" : "OFF", reg.back.F & 0x40 ? "ON" : "OFF", reg.back.F & 0x10 ? "ON" : "OFF", reg.back.F & 0x04 ? "ON" : "OFF", reg.back.F & 0x02 ? "ON" : "OFF", reg.back.F & 0x01 ? "ON" : "OFF");
         log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
         log("R<$%02X> I<$%02X> IFF<$%02X>", reg.R, reg.I, reg.IFF);
         log("isHalt: %s, interruptMode: %d", reg.isHalt ? "YES" : "NO", reg.interruptMode);
