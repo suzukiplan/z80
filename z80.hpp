@@ -412,6 +412,10 @@ class Z80
             return ctx->RLC_HL();
         } else if (op2 == 0b00010110) {
             return ctx->RL_HL();
+        } else if (op2 == 0b00001110) {
+            return ctx->RRC_HL();
+        } else if (op2 == 0b00011110) {
+            return ctx->RR_HL();
         } else if ((op2 & 0b11111000) == 0b00000000) {
             return ctx->RLC_R(op2 & 0b00000111);
         } else if ((op2 & 0b11111000) == 0b00010000) {
@@ -1445,7 +1449,51 @@ class Z80
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return consumeClock(8);
+        return consumeClock(15);
+    }
+
+    // Rotate memory (HL) Right Circular
+    inline int RRC_HL()
+    {
+        unsigned short addr = getHL();
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n0 = n & 0x01;
+        log("[%04X] RRC (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b11111110;
+        n >>= 1;
+        n |= n0 ? 0x80 : 0; // differ with RR (HL)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n0 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 2;
+        return consumeClock(15);
+    }
+
+    // Rotate Right memory
+    inline int RR_HL()
+    {
+        unsigned short addr = getHL();
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char n0 = n & 0x01;
+        log("[%04X] RR (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        n &= 0b11111110;
+        n >>= 1;
+        n |= c ? 0x80 : 0; // differ with RRC (HL)
+        CB.write(CB.arg, addr, n);
+        setFlagC(n0 ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS((n & 0x80) != 0);
+        setFlagZ(n == 0);
+        setFlagPV(isEvenNumberBits(n));
+        reg.PC += 2;
+        return consumeClock(15);
     }
 
     // Rotate memory (IX+d) Left Circular
