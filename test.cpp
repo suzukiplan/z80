@@ -268,6 +268,13 @@ int main()
     // - デバッグ出力設定: 省略するかNULLを指定するとデバッグ出力しない（ここでは、標準出力を指定）
     Z80 z80(readByte, writeByte, inPort, outPort, &mmu, stdout);
 
+    /*
+    // You can detect the timing of clock consume by following:
+    z80.setConsumeClockCallback([](void* arg, int clock) -> void {
+        printf("consume %d Hz\n", clock);
+    });
+    */
+
     // レジスタ初期値を設定（未設定時は0）
     z80.reg.pair.A = 0x12;
     z80.reg.pair.B = 0x34;

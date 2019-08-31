@@ -77,7 +77,7 @@ make
 executed 67Hz
 ```
 
-## How to use
+## How to use (BASIC)
 
 See the [test.cpp](test.cpp) implementation.
 
@@ -153,7 +153,19 @@ void outPort(void* arg, unsigned char port, unsigned char value)
     int actualExecuteClocks = z80.execute(1234);
 ```
 
-### 5. If implement quick save/load
+## How to use (OPTIONAL)
+
+### If need detect clock consumeing
+
+You can detect the timing of clock consume by following:
+
+```
+    z80.setConsumeClockCallback([](void* arg, int clock) -> void {
+        printf("consume %d Hz\n", clock);
+    });
+```
+
+### If implement quick save/load
 
 Save the member variable `reg` when quick saving:
 

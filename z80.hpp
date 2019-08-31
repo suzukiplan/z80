@@ -50,6 +50,7 @@ class Z80
     struct Register {
         struct RegisterPair pair;
         struct RegisterPair back;
+        unsigned long consumeClockCounter;
         unsigned short PC;
         unsigned short SP;
         unsigned short IX;
@@ -81,10 +82,10 @@ class Z80
   private: // Internal variables
     struct Callback {
         std::function<unsigned char(void* arg, unsigned short addr)> read;
-        std::function<void(void* arg, unsigned short addr, unsigned char value)>
-            write;
+        std::function<void(void* arg, unsigned short addr, unsigned char value)> write;
         std::function<unsigned char(void* arg, unsigned char port)> in;
         std::function<void(void* arg, unsigned char port, unsigned char value)> out;
+        void (*consumeClock)(void*, int);
         void* arg;
     } CB;
     FILE* debugStream;
@@ -235,11 +236,18 @@ class Z80
         return (on & 1) == 0;
     }
 
+    inline int consumeClock(int hz)
+    {
+        reg.consumeClockCounter += hz;
+        if (CB.consumeClock) CB.consumeClock(CB.arg, hz);
+        return hz;
+    }
+
     static inline int NOP(Z80* ctx)
     {
         ctx->log("[%04X] NOP", ctx->reg.PC);
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     static inline int HALT(Z80* ctx)
@@ -247,7 +255,7 @@ class Z80
         ctx->log("[%04X] HALT", ctx->reg.PC);
         ctx->reg.isHalt = true;
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     static inline int DI(Z80* ctx)
@@ -255,7 +263,7 @@ class Z80
         ctx->log("[%04X] DI", ctx->reg.PC);
         ctx->reg.IFF = 0;
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     static inline int EI(Z80* ctx)
@@ -263,7 +271,7 @@ class Z80
         ctx->log("[%04X] EI", ctx->reg.PC);
         ctx->reg.IFF = 1;
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     static inline int IM(Z80* ctx)
@@ -274,39 +282,39 @@ class Z80
                 ctx->log("[%04X] IM 0", ctx->reg.PC);
                 ctx->reg.interruptMode = 0;
                 ctx->reg.PC += 2;
-                return 8;
+                return ctx->consumeClock(8);
             case 0b01010110:
                 ctx->log("[%04X] IM 1", ctx->reg.PC);
                 ctx->reg.interruptMode = 1;
                 ctx->reg.PC += 2;
-                return 8;
+                return ctx->consumeClock(8);
             case 0b01011110:
                 ctx->log("[%04X] IM 2", ctx->reg.PC);
                 ctx->reg.interruptMode = 2;
                 ctx->reg.PC += 2;
-                return 8;
+                return ctx->consumeClock(8);
             case 0b01010111:
                 ctx->log("[%04X] LD A<$%02X>, I<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.I);
                 ctx->reg.pair.A = ctx->reg.I;
                 ctx->setFlagPV(ctx->reg.IFF ? true : false);
                 ctx->reg.PC += 2;
-                return 9;
+                return ctx->consumeClock(9);
             case 0b01000111:
                 ctx->log("[%04X] LD I<$%02X>, A<$%02X>", ctx->reg.PC, ctx->reg.I, ctx->reg.pair.A);
                 ctx->reg.I = ctx->reg.pair.A;
                 ctx->reg.PC += 2;
-                return 9;
+                return ctx->consumeClock(9);
             case 0b01011111:
                 ctx->log("[%04X] LD A<$%02X>, R<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.R);
                 ctx->reg.pair.A = ctx->reg.R;
                 ctx->setFlagPV(ctx->reg.IFF ? true : false);
                 ctx->reg.PC += 2;
-                return 9;
+                return ctx->consumeClock(9);
             case 0b01001111:
                 ctx->log("[%04X] LD R<$%02X>, A<$%02X>", ctx->reg.PC, ctx->reg.R, ctx->reg.pair.A);
                 ctx->reg.R = ctx->reg.pair.A;
                 ctx->reg.PC += 2;
-                return 9;
+                return ctx->consumeClock(9);
             case 0b10100000:
                 return ctx->LDI();
             case 0b10110000:
@@ -427,7 +435,7 @@ class Z80
         ctx->log("[%04X] LD (HL<$%04X>), $%02X", ctx->reg.PC, hl, n);
         ctx->CB.write(ctx->CB.arg, hl, n);
         ctx->reg.PC += 2;
-        return 10;
+        return ctx->consumeClock(10);
     }
 
     // Load Acc. wth location (BC)
@@ -438,7 +446,7 @@ class Z80
         ctx->log("[%04X] LD A, (BC<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
         ctx->reg.pair.A = n;
         ctx->reg.PC++;
-        return 7;
+        return ctx->consumeClock(7);
     }
 
     // Load Acc. wth location (DE)
@@ -449,7 +457,7 @@ class Z80
         ctx->log("[%04X] LD A, (DE<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
         ctx->reg.pair.A = n;
         ctx->reg.PC++;
-        return 7;
+        return ctx->consumeClock(7);
     }
 
     // Load Acc. wth location (nn)
@@ -461,7 +469,7 @@ class Z80
         ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC, addr, n);
         ctx->reg.pair.A = n;
         ctx->reg.PC += 3;
-        return 13;
+        return ctx->consumeClock(13);
     }
 
     // Load location (BC) wtih Acc.
@@ -472,7 +480,7 @@ class Z80
         ctx->log("[%04X] LD (BC<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
         ctx->CB.write(ctx->CB.arg, addr, n);
         ctx->reg.PC++;
-        return 7;
+        return ctx->consumeClock(7);
     }
 
     // Load location (DE) wtih Acc.
@@ -483,7 +491,7 @@ class Z80
         ctx->log("[%04X] LD (DE<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
         ctx->CB.write(ctx->CB.arg, addr, n);
         ctx->reg.PC++;
-        return 7;
+        return ctx->consumeClock(7);
     }
 
     // Load location (nn) with Acc.
@@ -495,7 +503,7 @@ class Z80
         ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC, addr, n);
         ctx->CB.write(ctx->CB.arg, addr, n);
         ctx->reg.PC += 3;
-        return 13;
+        return ctx->consumeClock(13);
     }
 
     // Load HL with location (nn).
@@ -510,7 +518,7 @@ class Z80
         ctx->reg.pair.L = l;
         ctx->reg.pair.H = h;
         ctx->reg.PC += 3;
-        return 16;
+        return ctx->consumeClock(16);
     }
 
     // Load location (nn) with HL.
@@ -523,7 +531,7 @@ class Z80
         ctx->CB.write(ctx->CB.arg, addr, ctx->reg.pair.L);
         ctx->CB.write(ctx->CB.arg, addr + 1, ctx->reg.pair.H);
         ctx->reg.PC += 3;
-        return 16;
+        return ctx->consumeClock(16);
     }
 
     // Load SP with HL.
@@ -533,7 +541,7 @@ class Z80
         ctx->log("[%04X] LD %s, HL<$%04X>", ctx->reg.PC, ctx->registerPairDump(0b11), value);
         ctx->reg.SP = value;
         ctx->reg.PC++;
-        return 6;
+        return ctx->consumeClock(6);
     }
 
     // Exchange H and L with D and E
@@ -545,7 +553,7 @@ class Z80
         ctx->setDE(hl);
         ctx->setHL(de);
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     // Exchange A and F with A' and F'
@@ -557,7 +565,7 @@ class Z80
         ctx->setAF(af2);
         ctx->setAF2(af);
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     static inline int EX_SP_HL(Z80* ctx)
@@ -571,7 +579,7 @@ class Z80
         ctx->reg.pair.L = l;
         ctx->reg.pair.H = h;
         ctx->reg.PC++;
-        return 19;
+        return ctx->consumeClock(19);
     }
 
     static inline int EXX(Z80* ctx)
@@ -590,7 +598,7 @@ class Z80
         ctx->setHL(hl2);
         ctx->setHL2(hl);
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     static inline int PUSH_AF(Z80* ctx)
@@ -599,7 +607,7 @@ class Z80
         ctx->CB.write(ctx->CB.arg, --ctx->reg.SP, ctx->reg.pair.A);
         ctx->CB.write(ctx->CB.arg, --ctx->reg.SP, ctx->reg.pair.F);
         ctx->reg.PC++;
-        return 11;
+        return ctx->consumeClock(11);
     }
 
     static inline int POP_AF(Z80* ctx)
@@ -611,7 +619,7 @@ class Z80
         ctx->reg.pair.F = l;
         ctx->reg.pair.A = h;
         ctx->reg.PC++;
-        return 10;
+        return ctx->consumeClock(10);
     }
 
     static inline int RLCA(Z80* ctx)
@@ -626,7 +634,7 @@ class Z80
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     static inline int RRCA(Z80* ctx)
@@ -641,7 +649,7 @@ class Z80
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     static inline int RLA(Z80* ctx)
@@ -656,7 +664,7 @@ class Z80
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     static inline int RRA(Z80* ctx)
@@ -671,7 +679,7 @@ class Z80
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->reg.PC++;
-        return 4;
+        return ctx->consumeClock(4);
     }
 
     inline unsigned char* getRegisterPointer(unsigned char r)
@@ -759,7 +767,7 @@ class Z80
         }
         if (r1p && r2p) *r1p = *r2p;
         reg.PC += 1;
-        return 4;
+        return consumeClock(4);
     }
 
     // Load Reg. r with value n
@@ -772,7 +780,7 @@ class Z80
         }
         if (rp) *rp = n;
         reg.PC += 2;
-        return 7;
+        return consumeClock(7);
     }
 
     // Load Reg. r with location (HL)
@@ -785,7 +793,7 @@ class Z80
         }
         if (rp) *rp = n;
         reg.PC += 1;
-        return 7;
+        return consumeClock(7);
     }
 
     // Load Reg. r with location (IX+d)
@@ -799,7 +807,7 @@ class Z80
         }
         if (rp) *rp = n;
         reg.PC += 3;
-        return 19;
+        return consumeClock(19);
     }
 
     // Load Reg. r with location (IY+d)
@@ -813,7 +821,7 @@ class Z80
         }
         if (rp) *rp = n;
         reg.PC += 3;
-        return 19;
+        return consumeClock(19);
     }
 
     // Load location (HL) with Reg. r
@@ -826,7 +834,7 @@ class Z80
         }
         if (rp) CB.write(CB.arg, addr, *rp);
         reg.PC += 1;
-        return 7;
+        return consumeClock(7);
     }
 
     // 	Load location (IX+d) with Reg. r
@@ -840,7 +848,7 @@ class Z80
         }
         if (rp) CB.write(CB.arg, addr, *rp);
         reg.PC += 3;
-        return 19;
+        return consumeClock(19);
     }
 
     // 	Load location (IY+d) with Reg. r
@@ -854,7 +862,7 @@ class Z80
         }
         if (rp) CB.write(CB.arg, addr, *rp);
         reg.PC += 3;
-        return 19;
+        return consumeClock(19);
     }
 
     // Load location (IX+d) with value n
@@ -868,7 +876,7 @@ class Z80
         }
         CB.write(CB.arg, addr, n);
         reg.PC += 4;
-        return 19;
+        return consumeClock(19);
     }
 
     // Load location (IY+d) with value n
@@ -882,7 +890,7 @@ class Z80
         }
         CB.write(CB.arg, addr, n);
         reg.PC += 4;
-        return 19;
+        return consumeClock(19);
     }
 
     // Load Reg. pair rp with value nn.
@@ -910,7 +918,7 @@ class Z80
                 log("[%04X] LD SP<$%04X>, $%02X%02X", reg.PC, reg.SP, nH, nL);
                 reg.SP = (nH << 8) + nL;
                 reg.PC += 3;
-                return 10;
+                return consumeClock(10);
             default:
                 log("invalid register pair has specified: $%02X", rp);
                 return -1;
@@ -921,7 +929,7 @@ class Z80
         *rH = nH;
         *rL = nL;
         reg.PC += 3;
-        return 10;
+        return consumeClock(10);
     }
 
     inline int LD_IX_NN()
@@ -931,7 +939,7 @@ class Z80
         log("[%04X] LD IX, $%02X%02X", reg.PC, nH, nL);
         reg.IX = (nH << 8) + nL;
         reg.PC += 4;
-        return 14;
+        return consumeClock(14);
     }
 
     inline int LD_IY_NN()
@@ -941,7 +949,7 @@ class Z80
         log("[%04X] LD IY, $%02X%02X", reg.PC, nH, nL);
         reg.IY = (nH << 8) + nL;
         reg.PC += 4;
-        return 14;
+        return consumeClock(14);
     }
 
     // Load Reg. pair rp with location (nn)
@@ -974,7 +982,7 @@ class Z80
                 return -1;
         }
         reg.PC += 4;
-        return 20;
+        return consumeClock(20);
     }
 
     // Load location (nn) with Reg. pair rp.
@@ -1010,7 +1018,7 @@ class Z80
         CB.write(CB.arg, addr, l);
         CB.write(CB.arg, addr + 1, h);
         reg.PC += 4;
-        return 20;
+        return consumeClock(20);
     }
 
     // Load IX with location (nn)
@@ -1024,7 +1032,7 @@ class Z80
         log("[%04X] LD IX<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IX, nH, nL, h, l);
         reg.IX = (h << 8) + l;
         reg.PC += 4;
-        return 20;
+        return consumeClock(20);
     }
 
     // Load IY with location (nn)
@@ -1038,7 +1046,7 @@ class Z80
         log("[%04X] LD IY<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IY, nH, nL, h, l);
         reg.IY = (h << 8) + l;
         reg.PC += 4;
-        return 20;
+        return consumeClock(20);
     }
 
     inline int LD_ADDR_IX()
@@ -1052,7 +1060,7 @@ class Z80
         CB.write(CB.arg, addr, l);
         CB.write(CB.arg, addr + 1, h);
         reg.PC += 4;
-        return 20;
+        return consumeClock(20);
     }
 
     inline int LD_ADDR_IY()
@@ -1066,7 +1074,7 @@ class Z80
         CB.write(CB.arg, addr, l);
         CB.write(CB.arg, addr + 1, h);
         reg.PC += 4;
-        return 20;
+        return consumeClock(20);
     }
 
     // Load SP with IX.
@@ -1076,7 +1084,7 @@ class Z80
         log("[%04X] LD %s, IX<$%04X>", reg.PC, registerPairDump(0b11), value);
         reg.SP = value;
         reg.PC += 2;
-        return 10;
+        return consumeClock(10);
     }
 
     // Load SP with IY.
@@ -1086,7 +1094,7 @@ class Z80
         log("[%04X] LD %s, IY<$%04X>", reg.PC, registerPairDump(0b11), value);
         reg.SP = value;
         reg.PC += 2;
-        return 10;
+        return consumeClock(10);
     }
 
     // Load location (DE) with Loacation (HL), increment DE, HL, decrement BC
@@ -1108,7 +1116,7 @@ class Z80
         setFlagPV(bc != 1);
         setFlagN(false);
         reg.PC += 2;
-        return 16;
+        return consumeClock(16);
     }
 
     // Load location (DE) with Loacation (HL), increment DE, HL, decrement BC and repeat until BC=0.
@@ -1126,6 +1134,7 @@ class Z80
             hl++;
             bc--;
             clocks += 21;
+            consumeClock(0 != bc ? 21 : 16);
         } while (0 != bc);
         setBC(bc);
         setDE(de);
@@ -1156,7 +1165,7 @@ class Z80
         setFlagPV(bc != 1);
         setFlagN(false);
         reg.PC += 2;
-        return 16;
+        return consumeClock(16);
     }
 
     // Load location (DE) with Loacation (HL), decrement DE, HL, decrement BC and repeat until BC=0.
@@ -1174,6 +1183,7 @@ class Z80
             hl--;
             bc--;
             clocks += 21;
+            consumeClock(0 != bc ? 21 : 16);
         } while (0 != bc);
         setBC(bc);
         setDE(de);
@@ -1197,7 +1207,7 @@ class Z80
         CB.write(CB.arg, reg.SP + 1, i);
         reg.IX = (h << 8) + l;
         reg.PC += 2;
-        return 23;
+        return consumeClock(23);
     }
 
     // Exchange stack top with IY
@@ -1212,7 +1222,7 @@ class Z80
         CB.write(CB.arg, reg.SP + 1, i);
         reg.IY = (h << 8) + l;
         reg.PC += 2;
-        return 23;
+        return consumeClock(23);
     }
 
     // Push Reg. on Stack.
@@ -1241,7 +1251,7 @@ class Z80
         CB.write(CB.arg, --reg.SP, h);
         CB.write(CB.arg, --reg.SP, l);
         reg.PC++;
-        return 11;
+        return consumeClock(11);
     }
 
     // Push Reg. on Stack.
@@ -1271,7 +1281,7 @@ class Z80
         *l = CB.read(CB.arg, reg.SP++);
         *h = CB.read(CB.arg, reg.SP++);
         reg.PC++;
-        return 10;
+        return consumeClock(10);
     }
 
     // Push Reg. IX on Stack.
@@ -1283,7 +1293,7 @@ class Z80
         CB.write(CB.arg, --reg.SP, h);
         CB.write(CB.arg, --reg.SP, l);
         reg.PC += 2;
-        return 15;
+        return consumeClock(15);
     }
 
     // Pop Reg. IX from Stack.
@@ -1295,7 +1305,7 @@ class Z80
         log("[%04X] POP IX <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
         reg.IX = (h << 8) + l;
         reg.PC += 2;
-        return 14;
+        return consumeClock(14);
     }
 
     // Push Reg. IY on Stack.
@@ -1307,7 +1317,7 @@ class Z80
         CB.write(CB.arg, --reg.SP, h);
         CB.write(CB.arg, --reg.SP, l);
         reg.PC += 2;
-        return 15;
+        return consumeClock(15);
     }
 
     // Pop Reg. IY from Stack.
@@ -1319,7 +1329,7 @@ class Z80
         log("[%04X] POP IY <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
         reg.IY = (h << 8) + l;
         reg.PC += 2;
-        return 14;
+        return consumeClock(14);
     }
 
     // Rotate register Left Circular
@@ -1343,7 +1353,7 @@ class Z80
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return 4;
+        return consumeClock(4);
     }
 
     // Rotate Left register
@@ -1367,7 +1377,7 @@ class Z80
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return 8;
+        return consumeClock(8);
     }
 
     // Rotate register Right Circular
@@ -1391,7 +1401,7 @@ class Z80
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return 4;
+        return consumeClock(4);
     }
 
     // Rotate Right register
@@ -1415,7 +1425,7 @@ class Z80
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return 8;
+        return consumeClock(8);
     }
 
     // Rotate memory (HL) Left Circular
@@ -1437,7 +1447,7 @@ class Z80
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return 15;
+        return consumeClock(15);
     }
 
     // Rotate Left memory
@@ -1459,7 +1469,7 @@ class Z80
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return 8;
+        return consumeClock(8);
     }
 
     // Rotate memory (IX+d) Left Circular
@@ -1481,7 +1491,7 @@ class Z80
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return 23;
+        return consumeClock(23);
     }
 
     // Rotate Left memory
@@ -1503,7 +1513,7 @@ class Z80
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return 23;
+        return consumeClock(23);
     }
 
     // Rotate memory (IY+d) Left Circular
@@ -1525,7 +1535,7 @@ class Z80
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return 23;
+        return consumeClock(23);
     }
 
     // Rotate Left memory
@@ -1547,7 +1557,7 @@ class Z80
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return 23;
+        return consumeClock(23);
     }
 
     int (*opSet1[256])(Z80* ctx);
@@ -1600,6 +1610,11 @@ class Z80
     }
 
     ~Z80() {}
+
+    void setConsumeClockCallback(void (*consumeClock)(void*, int))
+    {
+        CB.consumeClock = consumeClock;
+    }
 
     int execute(int clock)
     {
