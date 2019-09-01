@@ -497,6 +497,8 @@ class Z80
             return ctx->SRA_R(op2 & 0b00000111);
         } else if ((op2 & 0b11111000) == 0b00111000) {
             return ctx->SRL_R(op2 & 0b00000111);
+        } else if ((op2 & 0b11000111) == 0b01000110) {
+            return ctx->BIT_HN((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11000000) == 0b01000000) {
             return ctx->BIT_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
         }
@@ -2812,6 +2814,7 @@ class Z80
         return ctx->consumeClock(4);
     }
 
+    // Test BIT b of register r
     inline int BIT_R(unsigned char r, unsigned char bit)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2830,6 +2833,29 @@ class Z80
             case 5: n = *rp & 0b00100000; break;
             case 6: n = *rp & 0b01000000; break;
             case 7: n = *rp & 0b10000000; break;
+        }
+        setFlagZ(n ? false : true);
+        setFlagH(true);
+        setFlagN(false);
+        reg.PC += 2;
+        return consumeClock(8);
+    }
+
+    // Test BIT b of lacation (HL)
+    inline int BIT_HN(unsigned char bit)
+    {
+        unsigned short addr = getHL();
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] BIT (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
+        switch (bit) {
+            case 0: n &= 0b00000001; break;
+            case 1: n &= 0b00000010; break;
+            case 2: n &= 0b00000100; break;
+            case 3: n &= 0b00001000; break;
+            case 4: n &= 0b00010000; break;
+            case 5: n &= 0b00100000; break;
+            case 6: n &= 0b01000000; break;
+            case 7: n &= 0b10000000; break;
         }
         setFlagZ(n ? false : true);
         setFlagH(true);
