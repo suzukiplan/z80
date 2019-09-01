@@ -167,7 +167,7 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 
 ### Dynamic disassemble (for debug)
 
-You can acquire the debug messages with `setDebugMessage`.
+You can acquire the debug messages ([example](test-result.txt)) with `setDebugMessage`.
 Debug message contains dynamic disassembly results step by step.
 
 ```c++
