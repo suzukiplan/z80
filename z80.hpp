@@ -2387,6 +2387,7 @@ class Z80
                 }
             }
             // execute program counter & consume 4Hz (same as NOP)
+            log("[%04X] NOP <HALT>", reg.PC);
             reg.PC++;
             clock -= consumeClock(4);
             executed += 4;
