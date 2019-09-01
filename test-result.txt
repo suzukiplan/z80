@@ -150,12 +150,14 @@
 [0150] SCF <C:ON -> ON>
 [0151] BIT A<$A2> of bit-0
 [0153] BIT (HL<$FFFD>) = $0B of bit-3
+[0155] BIT (IX+d<$0235>) = $00 of bit-4
+[0159] BIT (IY+d<$ABFF>) = $00 of bit-5
 ===== REGISTER DUMP : START =====
 PAIR: A<$A2> B<$AB> C<$CD> D<$00> E<$00> H<$FF> L<$FD>
-PAIR: F<$91> ... S:ON, Z:OFF, H:ON, P/V:OFF, N:OFF, C:ON
+PAIR: F<$D1> ... S:ON, Z:ON, H:ON, P/V:OFF, N:OFF, C:ON
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$0E> L'<$DD> F'<$00>
-PC<$0155> SP<$0000> IX<$0223> IY<$ABCB>
+PC<$015D> SP<$0000> IX<$0223> IY<$ABCB>
 R<$00> I<$00> IFF<$00>
 isHalt: NO, interruptMode: 0
-executed: 2095Hz
+executed: 2111Hz
 ===== REGISTER DUMP : END =====

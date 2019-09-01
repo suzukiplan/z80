@@ -553,4 +553,12 @@ static void extractProgram(MMU& mmu)
     PG = 0b01000111;
     PG = 0b11001011; // BIT 3, (HL)
     PG = 0b01011110;
+    PG = 0b11011101; // BIT 4, (IX+$12)
+    PG = 0b11001011;
+    PG = 0x12;
+    PG = 0b01100110;
+    PG = 0b11111101; // BIT 5, (IY+$34)
+    PG = 0b11001011;
+    PG = 0x34;
+    PG = 0b01101110;
 }
