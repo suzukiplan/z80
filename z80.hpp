@@ -358,6 +358,8 @@ class Z80
             return ctx->INC_IX();
         } else if (op2 == 0b10010110) {
             return ctx->SUB_A_IX();
+        } else if (op2 == 0b10011110) {
+            return ctx->SBC_A_IX();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -407,6 +409,8 @@ class Z80
             return ctx->INC_IY();
         } else if (op2 == 0b10010110) {
             return ctx->SUB_A_IY();
+        } else if (op2 == 0b10011110) {
+            return ctx->SBC_A_IY();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -2254,6 +2258,75 @@ class Z80
         return consumeClock(19);
     }
 
+    // Substract Resister with carry
+    inline int SBC_A_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        unsigned char c = isFlagC() ? 1 : 0;
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
+        setFlagBySubstract(reg.pair.A, c + *rp);
+        reg.pair.A -= c + *rp;
+        reg.PC += 1;
+        return consumeClock(4);
+    }
+
+    // Substract immediate with carry
+    static inline int SBC_A_N(Z80* ctx)
+    {
+        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char c = ctx->isFlagC() ? 1 : 0;
+        ctx->log("[%04X] SBC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
+        ctx->setFlagBySubstract(ctx->reg.pair.A, c + n);
+        ctx->reg.pair.A -= c + n;
+        ctx->reg.PC += 2;
+        return ctx->consumeClock(7);
+    }
+
+    // Substract memory with carry
+    static inline int SBC_A_HL(Z80* ctx)
+    {
+        unsigned short addr = ctx->getHL();
+        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char c = ctx->isFlagC() ? 1 : 0;
+        ctx->log("[%04X] SBC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
+        ctx->setFlagBySubstract(ctx->reg.pair.A, c + n);
+        ctx->reg.pair.A -= c + n;
+        ctx->reg.PC += 1;
+        return ctx->consumeClock(7);
+    }
+
+    // Substract memory with carry
+    inline int SBC_A_IX()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        log("[%04X] SBC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
+        setFlagBySubstract(reg.pair.A, c + n);
+        reg.pair.A -= c + n;
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
+    // Substract memory with carry
+    inline int SBC_A_IY()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
+        setFlagBySubstract(reg.pair.A, c + n);
+        reg.pair.A -= c + n;
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2280,10 +2353,12 @@ class Z80
         opSet1[0b10000110] = ADD_A_HL;
         opSet1[0b10001110] = ADC_A_HL;
         opSet1[0b10010110] = SUB_A_HL;
+        opSet1[0b10011110] = SBC_A_HL;
         opSet1[0b11000110] = ADD_A_N;
         opSet1[0b11001011] = OP_R;
         opSet1[0b11001110] = ADC_A_N;
         opSet1[0b11010110] = SUB_A_N;
+        opSet1[0b11011110] = SBC_A_N;
         opSet1[0b11011001] = EXX;
         opSet1[0b11011101] = OP_IX;
         opSet1[0b11100011] = EX_SP_HL;
@@ -2367,6 +2442,8 @@ class Z80
                     consume = ADC_A_R(operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11111000) == 0b10010000) {
                     consume = SUB_A_R(operandNumber & 0b00000111);
+                } else if ((operandNumber & 0b11111000) == 0b10011000) {
+                    consume = SBC_A_R(operandNumber & 0b00000111);
                 }
             } else {
                 // execute an operand that the first byte is fixed.
@@ -2415,6 +2492,7 @@ class Z80
         log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
         log("R<$%02X> I<$%02X> IFF<$%02X>", reg.R, reg.I, reg.IFF);
         log("isHalt: %s, interruptMode: %d", reg.isHalt ? "YES" : "NO", reg.interruptMode);
+        log("executed: %dHz", reg.consumeClockCounter);
         log("===== REGISTER DUMP : END =====");
     }
 };
