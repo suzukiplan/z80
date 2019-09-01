@@ -397,4 +397,16 @@ static void extractProgram(MMU& mmu)
     PG = 0b11001011;
     PG = 0x12;
     PG = 0b00101110;
+    PG = 0b11001011; // SRL A
+    PG = 0b00111111;
+    PG = 0b11001011; // SRL (HL)
+    PG = 0b00111110;
+    PG = 0b11011101; // SRL (IX+$12)
+    PG = 0b11001011;
+    PG = 0x12;
+    PG = 0b00111110;
+    PG = 0b11111101; // SRL (IY+$34)
+    PG = 0b11001011;
+    PG = 0x12;
+    PG = 0b00111110;
 }
