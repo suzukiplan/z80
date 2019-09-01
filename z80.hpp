@@ -2788,6 +2788,28 @@ class Z80
         return consumeClock(8);
     }
 
+    //　Complement Carry Flag
+    static inline int CCF(Z80* ctx)
+    {
+        ctx->log("[%04X] CCF <C:%s -> %s>", ctx->reg.PC, ctx->isFlagC() ? "ON" : "OFF", !ctx->isFlagC() ? "ON" : "OFF");
+        ctx->setFlagH(ctx->isFlagC());
+        ctx->setFlagN(false);
+        ctx->setFlagC(!ctx->isFlagC());
+        ctx->reg.PC++;
+        return ctx->consumeClock(4);
+    }
+
+    // Set Carry Flag
+    static inline int SCF(Z80* ctx)
+    {
+        ctx->log("[%04X] SCF <C:%s -> ON>", ctx->reg.PC, ctx->isFlagC() ? "ON" : "OFF");
+        ctx->setFlagH(false);
+        ctx->setFlagN(false);
+        ctx->setFlagC(true);
+        ctx->reg.PC++;
+        return ctx->consumeClock(4);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2811,7 +2833,9 @@ class Z80
         opSet1[0b00110010] = LD_NN_A;
         opSet1[0b00110100] = INC_HL;
         opSet1[0b00110101] = DEC_HL;
+        opSet1[0b00110111] = SCF;
         opSet1[0b00111010] = LD_A_NN;
+        opSet1[0b00111111] = CCF;
         opSet1[0b01110110] = HALT;
         opSet1[0b10000110] = ADD_A_HL;
         opSet1[0b10001110] = ADC_A_HL;

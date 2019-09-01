@@ -547,4 +547,6 @@ static void extractProgram(MMU& mmu)
     PG = 0b00101111; // CPL
     PG = 0b11101101; // NEG
     PG = 0b01000100;
+    PG = 0b00111111; // CCF
+    PG = 0b00110111; // SCF
 }
