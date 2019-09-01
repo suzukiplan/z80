@@ -2587,6 +2587,30 @@ class Z80
         return consumeClock(15);
     }
 
+    inline void setFlagByLogical()
+    {
+        setFlagS(reg.pair.A & 0x80 ? true : false);
+        setFlagZ(reg.pair.A == 0);
+        setFlagH(true);
+        setFlagPV(isEvenNumberBits(reg.pair.A));
+        setFlagN(false);
+        setFlagC(false);
+    }
+
+    inline int AND_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        log("[%04X] AND %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        reg.pair.A &= *rp;
+        setFlagByLogical();
+        reg.PC++;
+        return consumeClock(4);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2724,6 +2748,8 @@ class Z80
                     consume = SUB_A_R(operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11111000) == 0b10011000) {
                     consume = SBC_A_R(operandNumber & 0b00000111);
+                } else if ((operandNumber & 0b11111000) == 0b10100000) {
+                    consume = AND_R(operandNumber & 0b00000111);
                 }
             } else {
                 // execute an operand that the first byte is fixed.
