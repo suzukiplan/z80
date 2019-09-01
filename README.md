@@ -51,6 +51,14 @@ _Considering good system test method..._
 
 ## How to test
 
+### Prerequests
+
+You can test on the any platform/OS (UNIX, Linux, macOS...etc) but needs following middlewares:
+
+- GNU Make
+- clang
+- clang-format
+
 ### Command
 
 ```
