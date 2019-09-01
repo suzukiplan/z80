@@ -15,6 +15,7 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 > Since I do not have deep knowledge about Z80 myself, I'm implementing it with reference to the information on the following site.
 > 
 > - [8ビット CPU Z80](http://www.yamamo10.jp/yamamoto/comp/Z80/index.php) of [山本研究所](http://www.yamamo10.jp/yamamoto/index.html)
+- - [http://mydocuments.g2.xrea.com/html/p6/z80ref.html](Z80 Code Refference) of [Bookworm's Library](http://mydocuments.g2.xrea.com/index.html)
 
 ## WIP status
 
