@@ -440,4 +440,14 @@ static void extractProgram(MMU& mmu)
     PG = 0b11111101; // INC (IY+$34)
     PG = 0b00110100;
     PG = 0x34;
+    PG = 0b10010000; // SUB A, B
+    PG = 0b11010110; // SUB A, 127
+    PG = 0x7F;
+    PG = 0b10010110; // SUB A, (HL)
+    PG = 0b11011101; // SUB A, (IX+$12)
+    PG = 0b10010110;
+    PG = 0x12;
+    PG = 0b11111101; // SUB A, (IY+$34)
+    PG = 0b10010110;
+    PG = 0x34;
 }
