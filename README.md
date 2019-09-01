@@ -8,7 +8,7 @@ __SUZUKI PLAN - Z80 Emulator__ is an emulator under development based on the fol
 __(FOUR EASY GUIDELINES FOR EASILY)__
 
 1. Make emulator implementation `EASY` & simple (Realized by providing single header: [z80.hpp](z80.hpp))
-2. `EASILY` debugging the Z80 programs (Realized by having dynamic disassemble feature)
+2. `EASILY` debugging the Z80 programs (Realized by having [dynamic disassemble feature](#dynamic-disassemble-for-debug))
 3. Highly readable and `EASILY` customizable (priority for readability over performance)
 4. Provide under the license that `EASY` to adopt in various programs ([MIT](LICENSE.txt))
 
