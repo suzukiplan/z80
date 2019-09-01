@@ -429,4 +429,12 @@ static void extractProgram(MMU& mmu)
     PG = 0b11111101; // ACD A, (IY+$34)
     PG = 0b10001110;
     PG = 0x34;
+    PG = 0b00111100; // INC A
+    PG = 0b00110100; // INC (HL)
+    PG = 0b11011101; // INC (IX+$12)
+    PG = 0b00110100;
+    PG = 0x12;
+    PG = 0b11111101; // INC (IY+$34)
+    PG = 0b00110100;
+    PG = 0x34;
 }
