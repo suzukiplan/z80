@@ -352,6 +352,8 @@ class Z80
             return ctx->POP_IX();
         } else if (op2 == 0b10000110) {
             return ctx->ADD_A_IX();
+        } else if (op2 == 0b10001110) {
+            return ctx->ADC_A_IX();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -395,6 +397,8 @@ class Z80
             return ctx->POP_IY();
         } else if (op2 == 0b10000110) {
             return ctx->ADD_A_IY();
+        } else if (op2 == 0b10001110) {
+            return ctx->ADC_A_IY();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -2041,6 +2045,75 @@ class Z80
         return consumeClock(19);
     }
 
+    // Add Resister with carry
+    inline int ADC_A_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        unsigned char c = isFlagC() ? 1 : 0;
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
+        setFlagByAddition(reg.pair.A, c + *rp);
+        reg.pair.A += c + *rp;
+        reg.PC += 1;
+        return consumeClock(4);
+    }
+
+    // Add immediate with carry
+    static inline int ADC_A_N(Z80* ctx)
+    {
+        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char c = ctx->isFlagC() ? 1 : 0;
+        ctx->log("[%04X] ADC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
+        ctx->setFlagByAddition(ctx->reg.pair.A, c + n);
+        ctx->reg.pair.A += c + n;
+        ctx->reg.PC += 2;
+        return ctx->consumeClock(7);
+    }
+
+    // Add memory with carry
+    static inline int ADC_A_HL(Z80* ctx)
+    {
+        unsigned short addr = ctx->getHL();
+        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char c = ctx->isFlagC() ? 1 : 0;
+        ctx->log("[%04X] ADC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
+        ctx->setFlagByAddition(ctx->reg.pair.A, c + n);
+        ctx->reg.pair.A += c + n;
+        ctx->reg.PC += 1;
+        return ctx->consumeClock(7);
+    }
+
+    // Add memory with carry
+    inline int ADC_A_IX()
+    {
+        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        log("[%04X] ADC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
+        setFlagByAddition(reg.pair.A, c + n);
+        reg.pair.A += c + n;
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
+    // Add memory with carry
+    inline int ADC_A_IY()
+    {
+        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char c = isFlagC() ? 1 : 0;
+        log("[%04X] ADC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
+        setFlagByAddition(reg.pair.A, c + n);
+        reg.pair.A += c + n;
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2064,8 +2137,10 @@ class Z80
         opSet1[0b00111010] = LD_A_NN;
         opSet1[0b01110110] = HALT;
         opSet1[0b10000110] = ADD_A_HL;
+        opSet1[0b10001110] = ADC_A_HL;
         opSet1[0b11000110] = ADD_A_N;
         opSet1[0b11001011] = OP_R;
+        opSet1[0b11001110] = ADC_A_N;
         opSet1[0b11011001] = EXX;
         opSet1[0b11011101] = OP_IX;
         opSet1[0b11100011] = EX_SP_HL;
@@ -2143,6 +2218,8 @@ class Z80
                     consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11111000) == 0b10000000) {
                     consume = ADD_A_R(operandNumber & 0b00000111);
+                } else if ((operandNumber & 0b11111000) == 0b10001000) {
+                    consume = ADC_A_R(operandNumber & 0b00000111);
                 }
             } else {
                 // execute an operand that the first byte is fixed.
