@@ -362,6 +362,8 @@ class Z80
             return ctx->SUB_A_IX();
         } else if (op2 == 0b10011110) {
             return ctx->SBC_A_IX();
+        } else if (op2 == 0b00110101) {
+            return ctx->DEC_IX();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -413,6 +415,8 @@ class Z80
             return ctx->SUB_A_IY();
         } else if (op2 == 0b10011110) {
             return ctx->SBC_A_IY();
+        } else if (op2 == 0b00110101) {
+            return ctx->DEC_IY();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -2329,6 +2333,59 @@ class Z80
         return consumeClock(19);
     }
 
+    // Decrement Register
+    inline int DEC_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        log("[%04X] DEC %s", reg.PC, registerDump(r));
+        setFlagBySubstract(*rp, 1);
+        (*rp)--;
+        reg.PC += 1;
+        return consumeClock(4);
+    }
+
+    // Decrement location (HL)
+    static inline int DEC_HL(Z80* ctx)
+    {
+        unsigned short addr = ctx->getHL();
+        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        ctx->log("[%04X] DEC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
+        ctx->setFlagBySubstract(n, 1);
+        ctx->CB.write(ctx->CB.arg, addr, n - 1);
+        ctx->reg.PC += 1;
+        return ctx->consumeClock(11);
+    }
+
+    // Decrement location (IX+d)
+    inline int DEC_IX()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
+        setFlagBySubstract(n, 1);
+        CB.write(CB.arg, addr, n - 1);
+        reg.PC += 3;
+        return consumeClock(23);
+    }
+
+    // Decrement location (IY+d)
+    inline int DEC_IY()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
+        setFlagBySubstract(n, 1);
+        CB.write(CB.arg, addr, n - 1);
+        reg.PC += 3;
+        return consumeClock(23);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2350,6 +2407,7 @@ class Z80
         opSet1[0b00110110] = LD_HL_N;
         opSet1[0b00110010] = LD_NN_A;
         opSet1[0b00110100] = INC_HL;
+        opSet1[0b00110101] = DEC_HL;
         opSet1[0b00111010] = LD_A_NN;
         opSet1[0b01110110] = HALT;
         opSet1[0b10000110] = ADD_A_HL;
@@ -2447,6 +2505,8 @@ class Z80
                     consume = LD_R_HL((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000111) == 0b00000100) {
                     consume = INC_R((operandNumber & 0b00111000) >> 3);
+                } else if ((operandNumber & 0b11000111) == 0b00000101) {
+                    consume = DEC_R((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000000) == 0b01000000) {
                     consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11111000) == 0b10000000) {
