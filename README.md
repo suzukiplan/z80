@@ -55,11 +55,12 @@ _Considering good system test method..._
 
 You can test on the any 32bit/64bit platform/OS (UNIX, Linux, macOS...etc) but needs following middlewares:
 
+- Git
 - GNU Make
 - clang
 - clang-format
 
-### Command
+### Build (UNIX, Linux, macOS)
 
 ```
 git clone https://github.com/suzukiplan/z80.git
