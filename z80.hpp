@@ -356,6 +356,8 @@ class Z80
             return ctx->ADC_A_IX();
         } else if (op2 == 0b00110100) {
             return ctx->INC_IX();
+        } else if (op2 == 0b10010110) {
+            return ctx->SUB_A_IX();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -403,6 +405,8 @@ class Z80
             return ctx->ADC_A_IY();
         } else if (op2 == 0b00110100) {
             return ctx->INC_IY();
+        } else if (op2 == 0b10010110) {
+            return ctx->SUB_A_IY();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -2171,6 +2175,85 @@ class Z80
         return consumeClock(23);
     }
 
+    inline void setFlagBySubstract(unsigned char before, unsigned char substract)
+    {
+        unsigned char result8 = before - substract;
+        unsigned short result16u = before;
+        result16u -= substract;
+        signed short result16s = (signed char)before;
+        result16s += (signed char)substract;
+        setFlagS(result8 & 0x80 ? true : false);
+        setFlagZ(result8 == 0);
+        setFlagH((0x0F & (before & 0xF0) - (substract & 0xF0)) == 0); // TODO: これで正しいのだろうか？
+        setFlagPV(result16s < -128 || 127 < result16s);
+        setFlagN(false);
+        setFlagC(255 < result16u);
+    }
+
+    // Substract Register
+    inline int SUB_A_R(unsigned char r)
+    {
+        log("[%04X] SUB %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        setFlagBySubstract(reg.pair.A, *rp);
+        reg.pair.A -= *rp;
+        reg.PC += 1;
+        return consumeClock(4);
+    }
+
+    // Substract immediate
+    static inline int SUB_A_N(Z80* ctx)
+    {
+        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        ctx->log("[%04X] SUB %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->reg.pair.A -= n;
+        ctx->reg.PC += 2;
+        return ctx->consumeClock(7);
+    }
+
+    // Substract memory
+    static inline int SUB_A_HL(Z80* ctx)
+    {
+        unsigned short addr = ctx->getHL();
+        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        ctx->log("[%04X] SUB %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->reg.pair.A -= n;
+        ctx->reg.PC += 1;
+        return ctx->consumeClock(7);
+    }
+
+    // Substract memory
+    inline int SUB_A_IX()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] SUB %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        setFlagBySubstract(reg.pair.A, n);
+        reg.pair.A -= n;
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
+    // Substract memory
+    inline int SUB_A_IY()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] SUB %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        setFlagBySubstract(reg.pair.A, n);
+        reg.pair.A -= n;
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2196,9 +2279,11 @@ class Z80
         opSet1[0b01110110] = HALT;
         opSet1[0b10000110] = ADD_A_HL;
         opSet1[0b10001110] = ADC_A_HL;
+        opSet1[0b10010110] = SUB_A_HL;
         opSet1[0b11000110] = ADD_A_N;
         opSet1[0b11001011] = OP_R;
         opSet1[0b11001110] = ADC_A_N;
+        opSet1[0b11010110] = SUB_A_N;
         opSet1[0b11011001] = EXX;
         opSet1[0b11011101] = OP_IX;
         opSet1[0b11100011] = EX_SP_HL;
@@ -2280,6 +2365,8 @@ class Z80
                     consume = ADD_A_R(operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11111000) == 0b10001000) {
                     consume = ADC_A_R(operandNumber & 0b00000111);
+                } else if ((operandNumber & 0b11111000) == 0b10010000) {
+                    consume = SUB_A_R(operandNumber & 0b00000111);
                 }
             } else {
                 // execute an operand that the first byte is fixed.
