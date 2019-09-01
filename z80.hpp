@@ -390,6 +390,8 @@ class Z80
             }
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
+        } else if ((op2 & 0b11001111) == 0b00001001) {
+            return ctx->ADD_IX_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IX_R(op2 & 0b00000111);
         }
@@ -443,6 +445,8 @@ class Z80
             }
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
+        } else if ((op2 & 0b11001111) == 0b00001001) {
+            return ctx->ADD_IY_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IY_R(op2 & 0b00000111);
         }
@@ -2439,6 +2443,28 @@ class Z80
         unsigned char c = isFlagC() ? 1 : 0;
         setFlagByAdc16(hl, c + nn);
         setHL(hl + c + nn);
+        reg.PC += 2;
+        return consumeClock(15);
+    }
+
+    // Add register pair to IX
+    inline int ADD_IX_RP(unsigned char rp)
+    {
+        log("[%04X] ADD IX<$%04X>, %s", reg.PC, reg.IX, registerPairDump(rp));
+        unsigned short nn = getRP(rp);
+        setFlagByAdd16(reg.IX, nn);
+        reg.IX += nn;
+        reg.PC += 2;
+        return consumeClock(15);
+    }
+
+    // Add register pair to IY
+    inline int ADD_IY_RP(unsigned char rp)
+    {
+        log("[%04X] ADD IY<$%04X>, %s", reg.PC, reg.IY, registerPairDump(rp));
+        unsigned short nn = getRP(rp);
+        setFlagByAdd16(reg.IY, nn);
+        reg.IY += nn;
         reg.PC += 2;
         return consumeClock(15);
     }

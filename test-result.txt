@@ -120,12 +120,23 @@
 [0118] DEC (IY+d<$0034>) = $FD
 [011B] ADD HL<$FFFD>, BC<$ABCD>
 [011C] ADC HL<$ABCA>, DE<$0000> <C:ON>
+[011E] ADD IX<$5656>, BC<$ABCD>
+===== REGISTER DUMP : START =====
+PAIR: A<$79> B<$AB> C<$CD> D<$00> E<$00> H<$AB> L<$CB>
+PAIR: F<$93> ... S:ON, Z:OFF, H:ON, P/V:OFF, N:ON, C:ON
+BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$0E> L'<$DD> F'<$00>
+PC<$0120> SP<$0000> IX<$0223> IY<$0000>
+R<$00> I<$00> IFF<$00>
+isHalt: NO, interruptMode: 0
+executed: 1809Hz
+===== REGISTER DUMP : END =====
+[0120] ADD IY<$0000>, HL<$ABCB>
 ===== REGISTER DUMP : START =====
 PAIR: A<$79> B<$AB> C<$CD> D<$00> E<$00> H<$AB> L<$CB>
 PAIR: F<$82> ... S:ON, Z:OFF, H:OFF, P/V:OFF, N:ON, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$0E> L'<$DD> F'<$00>
-PC<$011E> SP<$0000> IX<$5656> IY<$0000>
+PC<$0122> SP<$0000> IX<$0223> IY<$ABCB>
 R<$00> I<$00> IFF<$00>
 isHalt: NO, interruptMode: 0
-executed: 1794Hz
+executed: 1824Hz
 ===== REGISTER DUMP : END =====
