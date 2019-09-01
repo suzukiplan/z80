@@ -8,6 +8,7 @@ class MMU
   public:
     unsigned char RAM[0x10000];
     unsigned char IO[0x100];
+    Z80* cpu;
 
     // コンストラクタで0クリアしておく
     MMU()
@@ -85,8 +86,17 @@ int hexToInt(const char* cp)
 
 static void extractProgram(MMU& mmu);
 
-int main()
+int main(int argc, char* argv[])
 {
+    int autoExec = 1;
+    for (int i = 1; i < argc; i++) {
+        if (0 == strcmp(argv[i], "-c")) {
+            autoExec = 0;
+        } else if (0 == strcmp(argv[i], "-a")) {
+            autoExec = 1;
+        }
+    }
+
     // MMUインスタンスを作成
     MMU mmu;
     extractProgram(mmu);
@@ -95,6 +105,7 @@ int main()
     // コールバック、コールバック引数、デバッグ出力設定を行う
     // コールバック引数: コールバックに渡す任意の引数（ここでは、MMUインスタンスのポインタを指定）
     Z80 z80(readByte, writeByte, inPort, outPort, &mmu);
+    mmu.cpu = &z80;
 
     // デバッグメッセージを標準出力
     z80.setDebugMessage([](void* arg, const char* message) -> void {
@@ -117,6 +128,14 @@ int main()
     });
     */
 
+    // autoExecモードの場合はNOPを検出したらレジスタを出力してプログラムを終了
+    if (autoExec) {
+        z80.setBreakOperand(0x00, [](void* arg) -> void {
+            ((MMU*)arg)->cpu->registerDump();
+            exit(0);
+        });
+    }
+
     /*
     // You can detect the timing of clock consume by following:
     z80.setConsumeClockCallback([](void* arg, int clock) -> void {
@@ -130,53 +149,60 @@ int main()
     z80.reg.pair.L = 0x01;
     z80.reg.IY = 1;
 
-    // ステップ実行
-    char cmd[1024];
-    int clocks = 0;
-    printf("> ");
-    while (fgets(cmd, sizeof(cmd), stdin)) {
-        if (isdigit(cmd[0])) {
-            // 数字が入力されたらそのクロック数CPUを実行
-            int hz = atoi(cmd);
-            hz = z80.execute(hz);
-            if (hz < 0) break;
-            clocks += hz;
-        } else if ('R' == toupper(cmd[0])) {
-            // レジスタダンプ
-            z80.registerDump();
-        } else if ('M' == toupper(cmd[0])) {
-            // メモリダンプ
-            int addr = 0;
-            for (char* cp = &cmd[1]; *cp; cp++) {
-                if (isHexDigit(*cp)) {
-                    addr = hexToInt(cp);
-                    break;
-                }
-            }
-            addr &= 0xFFFF;
-            printf("[%04X] %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X\n", addr,
-                   mmu.RAM[addr],
-                   mmu.RAM[(addr + 1) & 0xFFFF],
-                   mmu.RAM[(addr + 2) & 0xFFFF],
-                   mmu.RAM[(addr + 3) & 0xFFFF],
-                   mmu.RAM[(addr + 4) & 0xFFFF],
-                   mmu.RAM[(addr + 5) & 0xFFFF],
-                   mmu.RAM[(addr + 6) & 0xFFFF],
-                   mmu.RAM[(addr + 7) & 0xFFFF],
-                   mmu.RAM[(addr + 8) & 0xFFFF],
-                   mmu.RAM[(addr + 9) & 0xFFFF],
-                   mmu.RAM[(addr + 10) & 0xFFFF],
-                   mmu.RAM[(addr + 11) & 0xFFFF],
-                   mmu.RAM[(addr + 12) & 0xFFFF],
-                   mmu.RAM[(addr + 13) & 0xFFFF],
-                   mmu.RAM[(addr + 14) & 0xFFFF],
-                   mmu.RAM[(addr + 15) & 0xFFFF]);
-        } else if ('\r' == cmd[0] || '\n' == cmd[0]) {
-            break;
+    if (autoExec) {
+        // 通常は面倒なのでNOPを検出するまで実行し続ける
+        while (0 < z80.executeTick4MHz()) {
+            puts("--- proceed 1 frame (1/60sec) of 4MHz ---");
         }
+    } else {
+        // ステップ実行 (細かい命令毎のテスト用)
+        char cmd[1024];
+        int clocks = 0;
         printf("> ");
+        while (fgets(cmd, sizeof(cmd), stdin)) {
+            if (isdigit(cmd[0])) {
+                // 数字が入力されたらそのクロック数CPUを実行
+                int hz = atoi(cmd);
+                hz = z80.execute(hz);
+                if (hz < 0) break;
+                clocks += hz;
+            } else if ('R' == toupper(cmd[0])) {
+                // レジスタダンプ
+                z80.registerDump();
+            } else if ('M' == toupper(cmd[0])) {
+                // メモリダンプ
+                int addr = 0;
+                for (char* cp = &cmd[1]; *cp; cp++) {
+                    if (isHexDigit(*cp)) {
+                        addr = hexToInt(cp);
+                        break;
+                    }
+                }
+                addr &= 0xFFFF;
+                printf("[%04X] %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X - %02X %02X %02X %02X\n", addr,
+                       mmu.RAM[addr],
+                       mmu.RAM[(addr + 1) & 0xFFFF],
+                       mmu.RAM[(addr + 2) & 0xFFFF],
+                       mmu.RAM[(addr + 3) & 0xFFFF],
+                       mmu.RAM[(addr + 4) & 0xFFFF],
+                       mmu.RAM[(addr + 5) & 0xFFFF],
+                       mmu.RAM[(addr + 6) & 0xFFFF],
+                       mmu.RAM[(addr + 7) & 0xFFFF],
+                       mmu.RAM[(addr + 8) & 0xFFFF],
+                       mmu.RAM[(addr + 9) & 0xFFFF],
+                       mmu.RAM[(addr + 10) & 0xFFFF],
+                       mmu.RAM[(addr + 11) & 0xFFFF],
+                       mmu.RAM[(addr + 12) & 0xFFFF],
+                       mmu.RAM[(addr + 13) & 0xFFFF],
+                       mmu.RAM[(addr + 14) & 0xFFFF],
+                       mmu.RAM[(addr + 15) & 0xFFFF]);
+            } else if ('\r' == cmd[0] || '\n' == cmd[0]) {
+                break;
+            }
+            printf("> ");
+        }
+        printf("executed %dHz\n", clocks);
     }
-    printf("executed %dHz\n", clocks);
     return 0;
 }
 
