@@ -828,7 +828,7 @@ class Z80
     inline int LD_R_IX(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned char n = CB.read(CB.arg, (reg.IX + d) & 0xFFFF);
         log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IX, d, n);
         if (rp) *rp = n;
@@ -840,7 +840,7 @@ class Z80
     inline int LD_R_IY(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned char n = CB.read(CB.arg, (reg.IY + d) & 0xFFFF);
         log("[%04X] LD %s, (IY<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IY, d, n);
         if (rp) *rp = n;
@@ -863,7 +863,7 @@ class Z80
     inline int LD_IX_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IX + d;
         log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC, reg.IX, d, registerDump(r));
         if (rp) CB.write(CB.arg, addr, *rp);
@@ -875,7 +875,7 @@ class Z80
     inline int LD_IY_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IY + d;
         log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC, reg.IY, d, registerDump(r));
         if (rp) CB.write(CB.arg, addr, *rp);
@@ -886,7 +886,7 @@ class Z80
     // Load location (IX+d) with value n
     inline int LD_IX_N()
     {
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned char n = CB.read(CB.arg, reg.PC + 3);
         unsigned short addr = reg.IX + d;
         log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
@@ -898,7 +898,7 @@ class Z80
     // Load location (IY+d) with value n
     inline int LD_IY_N()
     {
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned char n = CB.read(CB.arg, reg.PC + 3);
         unsigned short addr = reg.IY + d;
         log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
@@ -1665,7 +1665,7 @@ class Z80
     }
 
     // Rotate memory (IX+d) Left Circular
-    inline int RLC_IX(unsigned char d)
+    inline int RLC_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1687,7 +1687,7 @@ class Z80
     }
 
     // Rotate memory (IX+d) Right Circular
-    inline int RRC_IX(unsigned char d)
+    inline int RRC_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1709,7 +1709,7 @@ class Z80
     }
 
     // Rotate Left memory
-    inline int RL_IX(unsigned char d)
+    inline int RL_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1731,7 +1731,7 @@ class Z80
     }
 
     // Shift operand location (IX+d) left Arithmetic
-    inline int SLA_IX(unsigned char d)
+    inline int SLA_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1752,7 +1752,7 @@ class Z80
     }
 
     // Rotate Right memory
-    inline int RR_IX(unsigned char d)
+    inline int RR_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1774,7 +1774,7 @@ class Z80
     }
 
     // Shift operand location (IX+d) Right Arithmetic
-    inline int SRA_IX(unsigned char d)
+    inline int SRA_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1797,7 +1797,7 @@ class Z80
     }
 
     // Shift operand location (IX+d) Right Logical
-    inline int SRL_IX(unsigned char d)
+    inline int SRL_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1818,7 +1818,7 @@ class Z80
     }
 
     // Rotate memory (IY+d) Left Circular
-    inline int RLC_IY(unsigned char d)
+    inline int RLC_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1840,7 +1840,7 @@ class Z80
     }
 
     // Rotate memory (IY+d) Right Circular
-    inline int RRC_IY(unsigned char d)
+    inline int RRC_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1862,7 +1862,7 @@ class Z80
     }
 
     // Rotate Left memory
-    inline int RL_IY(unsigned char d)
+    inline int RL_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1884,7 +1884,7 @@ class Z80
     }
 
     // Shift operand location (IY+d) left Arithmetic
-    inline int SLA_IY(unsigned char d)
+    inline int SLA_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1905,7 +1905,7 @@ class Z80
     }
 
     // Rotate Right memory
-    inline int RR_IY(unsigned char d)
+    inline int RR_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1927,7 +1927,7 @@ class Z80
     }
 
     // Shift operand location (IY+d) Right Arithmetic
-    inline int SRA_IY(unsigned char d)
+    inline int SRA_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -1950,7 +1950,7 @@ class Z80
     }
 
     // Shift operand location (IY+d) Right Logical
-    inline int SRL_IY(unsigned char d)
+    inline int SRL_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
@@ -2026,7 +2026,7 @@ class Z80
     // Add location (IX+d) to Acc.
     inline int ADD_A_IX()
     {
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
         log("[%04X] ADD %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
@@ -2039,7 +2039,7 @@ class Z80
     // Add location (IY+d) to Acc.
     inline int ADD_A_IY()
     {
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
         log("[%04X] ADD %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
@@ -2093,7 +2093,7 @@ class Z80
     // Add memory with carry
     inline int ADC_A_IX()
     {
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
         unsigned char c = isFlagC() ? 1 : 0;
@@ -2107,7 +2107,7 @@ class Z80
     // Add memory with carry
     inline int ADC_A_IY()
     {
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
         unsigned char c = isFlagC() ? 1 : 0;
@@ -2148,7 +2148,7 @@ class Z80
     // Increment location (IX+d)
     inline int INC_IX()
     {
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
         log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
@@ -2161,7 +2161,7 @@ class Z80
     // Increment location (IY+d)
     inline int INC_IY()
     {
-        unsigned char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
         log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
