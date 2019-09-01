@@ -2379,6 +2379,18 @@ class Z80
             clock -= consume;
             executed += consume;
         }
+        // execute NOP while halt
+        while (0 < clock && reg.isHalt) {
+            if (CB.breakPoint) {
+                if (CB.breakPointAddress == reg.PC) {
+                    CB.breakPoint(CB.arg);
+                }
+            }
+            // execute program counter & consume 4Hz (same as NOP)
+            reg.PC++;
+            clock -= consumeClock(4);
+            executed += 4;
+        }
         return executed;
     }
 
