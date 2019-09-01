@@ -495,4 +495,7 @@ static void extractProgram(MMU& mmu)
     PG = 0b11111101; // DEC (IY+$34)
     PG = 0b00110101;
     PG = 0x34;
+    PG = 0b00001001; // ADD HL, BC
+    PG = 0b11101101; // ADC HL, DE
+    PG = 0b01011010;
 }

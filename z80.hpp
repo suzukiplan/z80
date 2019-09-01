@@ -219,6 +219,16 @@ class Z80
         reg.back.L = (value & 0x00FF);
     }
 
+    inline unsigned short getRP(unsigned char rp)
+    {
+        switch (rp & 0b11) {
+            case 0b00: return (reg.pair.B << 8) + reg.pair.C;
+            case 0b01: return (reg.pair.D << 8) + reg.pair.E;
+            case 0b10: return (reg.pair.H << 8) + reg.pair.L;
+            default: return reg.SP;
+        }
+    }
+
     inline bool isEvenNumberBits(unsigned char value)
     {
         int on = 0;
@@ -326,6 +336,8 @@ class Z80
                     return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
                 } else if ((mode & 0b11001111) == 0b01000011) {
                     return ctx->LD_ADDR_RP((mode & 0b00110000) >> 4);
+                } else if ((mode & 0b11001111) == 0b01001010) {
+                    return ctx->ADC_HL_RP((mode & 0b00110000) >> 4);
                 }
                 ctx->log("unknown IM: $%02X", mode);
                 return -1;
@@ -2386,6 +2398,51 @@ class Z80
         return consumeClock(23);
     }
 
+    inline void setFlagByAdd16(unsigned short before, unsigned short addition)
+    {
+        unsigned int result32u = before;
+        result32u += addition;
+        setFlagH(0x00FF < (before & 0x00FF) + (addition & 0x00FF));
+        setFlagN(true);
+        setFlagC(65535 < result32u);
+    }
+
+    inline void setFlagByAdc16(unsigned short before, unsigned short addition)
+    {
+        unsigned short result16 = before + addition;
+        signed int result32s = (signed short)before;
+        result32s += (signed short)addition;
+        setFlagByAdd16(before, addition);
+        setFlagS(result16 & 0x8000 ? true : false);
+        setFlagZ(result16 == 0);
+        setFlagPV(result32s < -32768 || 32767 < result32s);
+    }
+
+    // Add register pair to H and L
+    inline int ADD_HL_RP(unsigned char rp)
+    {
+        log("[%04X] ADD %s, %s", reg.PC, registerPairDump(0b10), registerPairDump(rp));
+        unsigned short hl = getHL();
+        unsigned short nn = getRP(rp);
+        setFlagByAdd16(hl, nn);
+        setHL(hl + nn);
+        reg.PC++;
+        return consumeClock(11);
+    }
+
+    // Add with carry register pair to HL
+    inline int ADC_HL_RP(unsigned char rp)
+    {
+        log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
+        unsigned short hl = getHL();
+        unsigned short nn = getRP(rp);
+        unsigned char c = isFlagC() ? 1 : 0;
+        setFlagByAdc16(hl, c + nn);
+        setHL(hl + c + nn);
+        reg.PC += 2;
+        return consumeClock(15);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2493,6 +2550,8 @@ class Z80
                 // execute an operand that register type has specified in the first byte.
                 if ((operandNumber & 0b11111000) == 0b01110000) {
                     consume = LD_HL_R(operandNumber & 0b00000111);
+                } else if ((operandNumber & 0b11001111) == 0b00001001) {
+                    consume = ADD_HL_RP((operandNumber & 0b00110000) >> 4);
                 } else if ((operandNumber & 0b11000111) == 0b00000110) {
                     consume = LD_R_N((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11001111) == 0b00000001) {
