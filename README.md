@@ -32,8 +32,8 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 5.4 right shift instructions
 - [x] 6.1 8bit arithmetic instructions
 - [x] 6.2 16bit arithmetic instructions
-- [ ] __7.1 logical operation instructions__ <sup>*inprogress*</sup>
-- [ ] 7.2 bit instructions
+- [x] 7.1 logical operation instructions
+- [ ] __7.2 bit instructions__ <sup>*inprogress*</sup>
 - [ ] 8.1 search
 - [ ] 8.2 compare
 - [ ] 9.0 branch
