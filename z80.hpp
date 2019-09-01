@@ -406,6 +406,8 @@ class Z80
             return ctx->INC_IX_reg();
         } else if (op2 == 0b00101011) {
             return ctx->DEC_IX_reg();
+        } else if (op2 == 0b10100110) {
+            return ctx->AND_IX();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -465,6 +467,8 @@ class Z80
             return ctx->INC_IY_reg();
         } else if (op2 == 0b00101011) {
             return ctx->DEC_IY_reg();
+        } else if (op2 == 0b10100110) {
+            return ctx->AND_IY();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -2630,6 +2634,30 @@ class Z80
         ctx->setFlagByLogical();
         ctx->reg.PC++;
         return ctx->consumeClock(7);
+    }
+
+    inline int AND_IX()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr);
+        reg.pair.A &= n;
+        setFlagByLogical();
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
+    inline int AND_IY()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr);
+        reg.pair.A &= n;
+        setFlagByLogical();
+        reg.PC += 3;
+        return consumeClock(19);
     }
 
     int (*opSet1[256])(Z80* ctx);

@@ -132,12 +132,14 @@
 [012E] AND A<$79>, B<$AB>
 [012F] AND A<$29>, $AA
 [0131] AND A<$28>, (HL<$FFFD>) = $0B
+[0132] AND A<$08>, (IX+d<$0235>) = $10
+[0135] AND A<$00>, (IY+d<$ABFF>) = $10
 ===== REGISTER DUMP : START =====
-PAIR: A<$08> B<$AB> C<$CD> D<$00> E<$00> H<$FF> L<$FD>
-PAIR: F<$10> ... S:OFF, Z:OFF, H:ON, P/V:OFF, N:OFF, C:OFF
+PAIR: A<$00> B<$AB> C<$CD> D<$00> E<$00> H<$FF> L<$FD>
+PAIR: F<$54> ... S:OFF, Z:ON, H:ON, P/V:ON, N:OFF, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$0E> L'<$DD> F'<$00>
-PC<$0132> SP<$0000> IX<$0223> IY<$ABCB>
+PC<$0138> SP<$0000> IX<$0223> IY<$ABCB>
 R<$00> I<$00> IFF<$00>
 isHalt: NO, interruptMode: 0
-executed: 1909Hz
+executed: 1947Hz
 ===== REGISTER DUMP : END =====
