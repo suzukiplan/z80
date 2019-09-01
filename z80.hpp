@@ -362,6 +362,8 @@ class Z80
                     return ctx->LD_ADDR_RP((mode & 0b00110000) >> 4);
                 } else if ((mode & 0b11001111) == 0b01001010) {
                     return ctx->ADC_HL_RP((mode & 0b00110000) >> 4);
+                } else if ((mode & 0b11001111) == 0b01000010) {
+                    return ctx->SBC_HL_RP((mode & 0b00110000) >> 4);
                 }
                 ctx->log("unknown IM: $%02X", mode);
                 return -1;
@@ -2523,6 +2525,34 @@ class Z80
         reg.IY++;
         reg.PC += 2;
         return consumeClock(10);
+    }
+
+    inline void setFlagBySbc16(unsigned short before, unsigned short substract)
+    {
+        unsigned short result16 = before - substract;
+        unsigned int result32u = before;
+        result32u -= substract;
+        signed int result32s = (signed short)before;
+        result32s += (signed short)substract;
+        setFlagH((0x00FF & (before & 0xFF00) - (substract & 0xFF00)) == 0); // TODO: これで正しいのだろうか？
+        setFlagN(false);
+        setFlagC(65535 < result32u);
+        setFlagS(result16 & 0x8000 ? true : false);
+        setFlagZ(result16 == 0);
+        setFlagPV(result32s < -32768 || 32767 < result32s);
+    }
+
+    // Subtract register pair from HL with carry
+    inline int SBC_HL_RP(unsigned char rp)
+    {
+        log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
+        unsigned short hl = getHL();
+        unsigned short nn = getRP(rp);
+        unsigned char c = isFlagC() ? 1 : 0;
+        setFlagBySbc16(hl, c + nn);
+        setHL(hl - c - nn);
+        reg.PC += 2;
+        return consumeClock(15);
     }
 
     int (*opSet1[256])(Z80* ctx);
