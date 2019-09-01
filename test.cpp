@@ -103,6 +103,9 @@ int main()
         printf("%04d.%02d.%02d %02d:%02d:%02d %s\n",
                t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_hour,
                t2->tm_min, t2->tm_sec, message);
+        static FILE* fp;
+        if (!fp) fp = fopen("test-result.txt", "w");
+        fprintf(fp, "%s\n", message);
     });
 
     /*
