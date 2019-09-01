@@ -2315,18 +2315,18 @@ class Z80
 
     ~Z80() {}
 
-    void setDebugMessage(void (*debugMessage)(void*, const char*))
+    void setDebugMessage(void (*debugMessage)(void*, const char*) = NULL)
     {
         CB.debugMessage = debugMessage;
     }
 
-    void setBreakPoint(unsigned short addr, void (*breakPoint)(void*))
+    void setBreakPoint(unsigned short addr, void (*breakPoint)(void*) = NULL)
     {
         CB.breakPointAddress = addr;
         CB.breakPoint = breakPoint;
     }
 
-    void setConsumeClockCallback(void (*consumeClock)(void*, int))
+    void setConsumeClockCallback(void (*consumeClock)(void*, int) = NULL)
     {
         CB.consumeClock = consumeClock;
     }
