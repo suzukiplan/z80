@@ -422,55 +422,40 @@ class Z80
     static inline int OP_IY(Z80* ctx)
     {
         unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        if (op2 == 0b00110110) {
-            return ctx->LD_IY_N();
-        } else if (op2 == 0b00101010) {
-            return ctx->LD_IY_ADDR();
-        } else if (op2 == 0b00100010) {
-            return ctx->LD_ADDR_IY();
-        } else if (op2 == 0b00100001) {
-            return ctx->LD_IY_NN();
-        } else if (op2 == 0b11111001) {
-            return ctx->LD_SP_IY();
-        } else if (op2 == 0b11100011) {
-            return ctx->EX_SP_IY();
-        } else if (op2 == 0b11100101) {
-            return ctx->PUSH_IY();
-        } else if (op2 == 0b11100001) {
-            return ctx->POP_IY();
-        } else if (op2 == 0b10000110) {
-            return ctx->ADD_A_IY();
-        } else if (op2 == 0b10001110) {
-            return ctx->ADC_A_IY();
-        } else if (op2 == 0b00110100) {
-            return ctx->INC_IY();
-        } else if (op2 == 0b10010110) {
-            return ctx->SUB_A_IY();
-        } else if (op2 == 0b10011110) {
-            return ctx->SBC_A_IY();
-        } else if (op2 == 0b00110101) {
-            return ctx->DEC_IY();
-        } else if (op2 == 0b00100011) {
-            return ctx->INC_IY_reg();
-        } else if (op2 == 0b00101011) {
-            return ctx->DEC_IY_reg();
-        } else if (op2 == 0b10100110) {
-            return ctx->AND_IY();
-        } else if (op2 == 0b10110110) {
-            return ctx->OR_IY();
-        } else if (op2 == 0b11001011) {
-            unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
-            unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
-            switch (op4) {
-                case 0b00000110: return ctx->RLC_IY(op3);
-                case 0b00001110: return ctx->RRC_IY(op3);
-                case 0b00010110: return ctx->RL_IY(op3);
-                case 0b00011110: return ctx->RR_IY(op3);
-                case 0b00100110: return ctx->SLA_IY(op3);
-                case 0b00101110: return ctx->SRA_IY(op3);
-                case 0b00111110: return ctx->SRL_IY(op3);
+        switch (op2) {
+            case 0b00100010: return ctx->LD_ADDR_IY();
+            case 0b00100011: return ctx->INC_IY_reg();
+            case 0b00101010: return ctx->LD_IY_ADDR();
+            case 0b00101011: return ctx->DEC_IY_reg();
+            case 0b00110110: return ctx->LD_IY_N();
+            case 0b00100001: return ctx->LD_IY_NN();
+            case 0b00110100: return ctx->INC_IY();
+            case 0b00110101: return ctx->DEC_IY();
+            case 0b10000110: return ctx->ADD_A_IY();
+            case 0b10001110: return ctx->ADC_A_IY();
+            case 0b10010110: return ctx->SUB_A_IY();
+            case 0b10011110: return ctx->SBC_A_IY();
+            case 0b10100110: return ctx->AND_IY();
+            case 0b10110110: return ctx->OR_IY();
+            case 0b11100001: return ctx->POP_IY();
+            case 0b11100011: return ctx->EX_SP_IY();
+            case 0b11100101: return ctx->PUSH_IY();
+            case 0b11111001: return ctx->LD_SP_IY();
+            case 0b11001011: {
+                unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+                unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
+                switch (op4) {
+                    case 0b00000110: return ctx->RLC_IY(op3);
+                    case 0b00001110: return ctx->RRC_IY(op3);
+                    case 0b00010110: return ctx->RL_IY(op3);
+                    case 0b00011110: return ctx->RR_IY(op3);
+                    case 0b00100110: return ctx->SLA_IY(op3);
+                    case 0b00101110: return ctx->SRA_IY(op3);
+                    case 0b00111110: return ctx->SRL_IY(op3);
+                }
             }
-        } else if ((op2 & 0b11000111) == 0b01000110) {
+        }
+        if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11001111) == 0b00001001) {
             return ctx->ADD_IY_RP((op2 & 0b00110000) >> 4);
