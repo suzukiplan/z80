@@ -404,6 +404,8 @@ class Z80
             return ctx->DEC_IX();
         } else if (op2 == 0b00100011) {
             return ctx->INC_IX_reg();
+        } else if (op2 == 0b00101011) {
+            return ctx->DEC_IX_reg();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -461,6 +463,8 @@ class Z80
             return ctx->DEC_IY();
         } else if (op2 == 0b00100011) {
             return ctx->INC_IY_reg();
+        } else if (op2 == 0b00101011) {
+            return ctx->DEC_IY_reg();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -2527,6 +2531,34 @@ class Z80
         return consumeClock(10);
     }
 
+    // Decrement register pair
+    inline int DEC_RP(unsigned char rp)
+    {
+        log("[%04X] DEC %s", reg.PC, registerPairDump(rp));
+        unsigned short nn = getRP(rp);
+        setRP(rp, nn - 1);
+        reg.PC++;
+        return consumeClock(6);
+    }
+
+    // Decrement IX
+    inline int DEC_IX_reg()
+    {
+        log("[%04X] DEC IX<$%04X>", reg.PC, reg.IX);
+        reg.IX--;
+        reg.PC += 2;
+        return consumeClock(10);
+    }
+
+    // Decrement IY
+    inline int DEC_IY_reg()
+    {
+        log("[%04X] DEC IY<$%04X>", reg.PC, reg.IY);
+        reg.IY--;
+        reg.PC += 2;
+        return consumeClock(10);
+    }
+
     inline void setFlagBySbc16(unsigned short before, unsigned short substract)
     {
         unsigned short result16 = before - substract;
@@ -2674,6 +2706,8 @@ class Z80
                     consume = POP_RP((operandNumber & 0b00110000) >> 4);
                 } else if ((operandNumber & 0b11001111) == 0b00000011) {
                     consume = INC_RP((operandNumber & 0b00110000) >> 4);
+                } else if ((operandNumber & 0b11001111) == 0b00001011) {
+                    consume = DEC_RP((operandNumber & 0b00110000) >> 4);
                 } else if ((operandNumber & 0b11000111) == 0b01000110) {
                     consume = LD_R_HL((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000111) == 0b00000100) {

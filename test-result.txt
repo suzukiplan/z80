@@ -126,12 +126,15 @@
 [0123] INC IX<$0223>
 [0125] INC IY<$ABCB>
 [0127] SBC HL<$ABCB>, BC<$ABCE> <C:OFF>
+[0129] DEC BC<$ABCE>
+[012A] DEC IX<$0224>
+[012C] DEC IY<$ABCC>
 ===== REGISTER DUMP : START =====
-PAIR: A<$79> B<$AB> C<$CE> D<$00> E<$00> H<$FF> L<$FD>
+PAIR: A<$79> B<$AB> C<$CD> D<$00> E<$00> H<$FF> L<$FD>
 PAIR: F<$95> ... S:ON, Z:OFF, H:ON, P/V:ON, N:OFF, C:ON
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$0E> L'<$DD> F'<$00>
-PC<$0129> SP<$0000> IX<$0224> IY<$ABCC>
+PC<$012E> SP<$0000> IX<$0223> IY<$ABCB>
 R<$00> I<$00> IFF<$00>
 isHalt: NO, interruptMode: 0
-executed: 1865Hz
+executed: 1891Hz
 ===== REGISTER DUMP : END =====
