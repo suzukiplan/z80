@@ -2621,6 +2621,17 @@ class Z80
         return ctx->consumeClock(7);
     }
 
+    static inline int AND_HL(Z80* ctx)
+    {
+        unsigned short addr = ctx->getHL();
+        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        ctx->log("[%04X] AND %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        ctx->reg.pair.A &= n;
+        ctx->setFlagByLogical();
+        ctx->reg.PC++;
+        return ctx->consumeClock(7);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2649,6 +2660,7 @@ class Z80
         opSet1[0b10001110] = ADC_A_HL;
         opSet1[0b10010110] = SUB_A_HL;
         opSet1[0b10011110] = SBC_A_HL;
+        opSet1[0b10100110] = AND_HL;
         opSet1[0b11000110] = ADD_A_N;
         opSet1[0b11001011] = OP_R;
         opSet1[0b11001110] = ADC_A_N;
