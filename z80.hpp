@@ -408,6 +408,8 @@ class Z80
             return ctx->DEC_IX_reg();
         } else if (op2 == 0b10100110) {
             return ctx->AND_IX();
+        } else if (op2 == 0b10110110) {
+            return ctx->OR_IX();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -469,6 +471,8 @@ class Z80
             return ctx->DEC_IY_reg();
         } else if (op2 == 0b10100110) {
             return ctx->AND_IY();
+        } else if (op2 == 0b10110110) {
+            return ctx->OR_IY();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -2660,6 +2664,65 @@ class Z80
         return consumeClock(19);
     }
 
+    inline int OR_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        log("[%04X] OR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        reg.pair.A |= *rp;
+        setFlagByLogical();
+        reg.PC++;
+        return consumeClock(4);
+    }
+
+    static inline int OR_N(Z80* ctx)
+    {
+        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        ctx->log("[%04X] OR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        ctx->reg.pair.A |= n;
+        ctx->setFlagByLogical();
+        ctx->reg.PC += 2;
+        return ctx->consumeClock(7);
+    }
+
+    static inline int OR_HL(Z80* ctx)
+    {
+        unsigned short addr = ctx->getHL();
+        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        ctx->log("[%04X] OR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        ctx->reg.pair.A |= n;
+        ctx->setFlagByLogical();
+        ctx->reg.PC++;
+        return ctx->consumeClock(7);
+    }
+
+    inline int OR_IX()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr);
+        reg.pair.A |= n;
+        setFlagByLogical();
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
+    inline int OR_IY()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr);
+        reg.pair.A |= n;
+        setFlagByLogical();
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2689,6 +2752,7 @@ class Z80
         opSet1[0b10010110] = SUB_A_HL;
         opSet1[0b10011110] = SBC_A_HL;
         opSet1[0b10100110] = AND_HL;
+        opSet1[0b10110110] = OR_HL;
         opSet1[0b11000110] = ADD_A_N;
         opSet1[0b11001011] = OP_R;
         opSet1[0b11001110] = ADC_A_N;
@@ -2703,6 +2767,7 @@ class Z80
         opSet1[0b11110001] = POP_AF;
         opSet1[0b11110011] = DI;
         opSet1[0b11110101] = PUSH_AF;
+        opSet1[0b11110110] = OR_N;
         opSet1[0b11111001] = LD_SP_HL;
         opSet1[0b11111011] = EI;
         opSet1[0b11111101] = OP_IY;
@@ -2801,6 +2866,8 @@ class Z80
                     consume = SBC_A_R(operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11111000) == 0b10100000) {
                     consume = AND_R(operandNumber & 0b00000111);
+                } else if ((operandNumber & 0b11111000) == 0b10110000) {
+                    consume = OR_R(operandNumber & 0b00000111);
                 }
             } else {
                 // execute an operand that the first byte is fixed.
