@@ -2611,6 +2611,16 @@ class Z80
         return consumeClock(4);
     }
 
+    static inline int AND_N(Z80* ctx)
+    {
+        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        ctx->log("[%04X] AND %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        ctx->reg.pair.A &= n;
+        ctx->setFlagByLogical();
+        ctx->reg.PC += 2;
+        return ctx->consumeClock(7);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2647,6 +2657,7 @@ class Z80
         opSet1[0b11011001] = EXX;
         opSet1[0b11011101] = OP_IX;
         opSet1[0b11100011] = EX_SP_HL;
+        opSet1[0b11100110] = AND_N;
         opSet1[0b11101011] = EX_DE_HL;
         opSet1[0b11101101] = IM;
         opSet1[0b11110001] = POP_AF;

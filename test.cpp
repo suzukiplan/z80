@@ -515,4 +515,6 @@ static void extractProgram(MMU& mmu)
     PG = 0b11111101; // DEC IY
     PG = 0b00101011;
     PG = 0b10100000; // AND B
+    PG = 0b11100110; // AND $AA
+    PG = 0xAA;
 }
