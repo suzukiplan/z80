@@ -502,4 +502,9 @@ static void extractProgram(MMU& mmu)
     PG = 0b00001001;
     PG = 0b11111101; // ADD IY, HL
     PG = 0b00101001;
+    PG = 0b00000011; // INC BC
+    PG = 0b11011101; // INC IX
+    PG = 0b00100011;
+    PG = 0b11111101; // INC IY
+    PG = 0b00100011;
 }

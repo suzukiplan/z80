@@ -229,6 +229,30 @@ class Z80
         }
     }
 
+    inline void setRP(unsigned char rp, unsigned short value)
+    {
+        unsigned char h = (value & 0xFF00) >> 8;
+        unsigned char l = value & 0x00FF;
+        switch (rp & 0b11) {
+            case 0b00: {
+                reg.pair.B = h;
+                reg.pair.C = l;
+                break;
+            }
+            case 0b01: {
+                reg.pair.D = h;
+                reg.pair.E = l;
+                break;
+            }
+            case 0b10: {
+                reg.pair.H = h;
+                reg.pair.L = l;
+                break;
+            }
+            default: reg.SP = value;
+        }
+    }
+
     inline bool isEvenNumberBits(unsigned char value)
     {
         int on = 0;
@@ -376,6 +400,8 @@ class Z80
             return ctx->SBC_A_IX();
         } else if (op2 == 0b00110101) {
             return ctx->DEC_IX();
+        } else if (op2 == 0b00100011) {
+            return ctx->INC_IX_reg();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -431,6 +457,8 @@ class Z80
             return ctx->SBC_A_IY();
         } else if (op2 == 0b00110101) {
             return ctx->DEC_IY();
+        } else if (op2 == 0b00100011) {
+            return ctx->INC_IY_reg();
         } else if (op2 == 0b11001011) {
             unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
             unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
@@ -2469,6 +2497,34 @@ class Z80
         return consumeClock(15);
     }
 
+    // Increment register pair
+    inline int INC_RP(unsigned char rp)
+    {
+        log("[%04X] INC %s", reg.PC, registerPairDump(rp));
+        unsigned short nn = getRP(rp);
+        setRP(rp, nn + 1);
+        reg.PC++;
+        return consumeClock(6);
+    }
+
+    // Increment IX
+    inline int INC_IX_reg()
+    {
+        log("[%04X] INC IX<$%04X>", reg.PC, reg.IX);
+        reg.IX++;
+        reg.PC += 2;
+        return consumeClock(10);
+    }
+
+    // Increment IY
+    inline int INC_IY_reg()
+    {
+        log("[%04X] INC IY<$%04X>", reg.PC, reg.IY);
+        reg.IY++;
+        reg.PC += 2;
+        return consumeClock(10);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -2586,6 +2642,8 @@ class Z80
                     consume = PUSH_RP((operandNumber & 0b00110000) >> 4);
                 } else if ((operandNumber & 0b11001111) == 0b11000001) {
                     consume = POP_RP((operandNumber & 0b00110000) >> 4);
+                } else if ((operandNumber & 0b11001111) == 0b00000011) {
+                    consume = INC_RP((operandNumber & 0b00110000) >> 4);
                 } else if ((operandNumber & 0b11000111) == 0b01000110) {
                     consume = LD_R_HL((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000111) == 0b00000100) {
