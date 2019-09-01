@@ -88,8 +88,10 @@ class Z80
         void (*debugMessage)(void* arg, const char* message);
         void (*consumeClock)(void* arg, int clock);
         void (*breakPoint)(void* arg);
+        void (*breakOperand)(void* arg);
         void* arg;
         unsigned short breakPointAddress;
+        unsigned char breakOperandNumber;
     } CB;
 
     inline void log(const char* format, ...)
@@ -2401,6 +2403,12 @@ class Z80
         CB.breakPoint = breakPoint;
     }
 
+    void setBreakOperand(unsigned char op, void (*breakOperand)(void*) = NULL)
+    {
+        CB.breakOperandNumber = op;
+        CB.breakOperand = breakOperand;
+    }
+
     void setConsumeClockCallback(void (*consumeClock)(void*, int) = NULL)
     {
         CB.consumeClock = consumeClock;
@@ -2416,6 +2424,11 @@ class Z80
                 }
             }
             int operandNumber = CB.read(CB.arg, reg.PC);
+            if (CB.breakOperand) {
+                if (operandNumber == CB.breakOperandNumber) {
+                    CB.breakOperand(CB.arg);
+                }
+            }
             int (*op)(Z80*) = opSet1[operandNumber];
             int consume = -1;
             if (NULL == op) {
@@ -2472,9 +2485,9 @@ class Z80
         return executed;
     }
 
-    void executeTick4MHz() { execute(4194304 / 60); }
+    int executeTick4MHz() { return execute(4194304 / 60); }
 
-    void executeTick8MHz() { execute(8388608 / 60); }
+    int executeTick8MHz() { return execute(8388608 / 60); }
 
     void registerDump()
     {
