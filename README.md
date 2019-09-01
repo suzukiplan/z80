@@ -53,7 +53,7 @@ _Considering good system test method..._
 
 ### Prerequests
 
-You can test on the any platform/OS (UNIX, Linux, macOS...etc) but needs following middlewares:
+You can test on the any 32bit/64bit platform/OS (UNIX, Linux, macOS...etc) but needs following middlewares:
 
 - GNU Make
 - clang
