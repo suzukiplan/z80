@@ -534,4 +534,14 @@ static void extractProgram(MMU& mmu)
     PG = 0b11111101; // OR (IY+$34)
     PG = 0b10110110;
     PG = 0x34;
+    PG = 0b10101000; // XOR B
+    PG = 0b11101110; // XOR $AA
+    PG = 0xAA;
+    PG = 0b10101110; // XOR (HL)
+    PG = 0b11011101; // XOR (IX+$12)
+    PG = 0b10101110;
+    PG = 0x12;
+    PG = 0b11111101; // XOR (IY+$34)
+    PG = 0b10101110;
+    PG = 0x34;
 }
