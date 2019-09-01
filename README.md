@@ -12,7 +12,7 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 3. Highly readable and `EASILY` customizable (priority for readability over performance)
 4. Provide under the license that `EASY` to adopt in various programs ([MIT](LICENSE.txt))
 
-> Since I do not have deep knowledge about Z80 myself, I'm implementing it with reference to the information on the following site.
+> Since I do not have deep knowledge about Z80 myself, I'm implementing it with reference to the information on the following web sites:
 > 
 > - [8ビット CPU Z80](http://www.yamamo10.jp/yamamoto/comp/Z80/index.php) of [山本研究所](http://www.yamamo10.jp/yamamoto/index.html)
 > - [Z80 Code Refference](http://mydocuments.g2.xrea.com/html/p6/z80ref.html) of [Bookworm's Library](http://mydocuments.g2.xrea.com/index.html)
