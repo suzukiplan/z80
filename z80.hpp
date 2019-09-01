@@ -2871,7 +2871,7 @@ class Z80
         setFlagH(true);
         setFlagN(false);
         reg.PC += 2;
-        return consumeClock(8);
+        return consumeClock(12);
     }
 
     // Test BIT b of lacation (IX+d)
@@ -2894,7 +2894,7 @@ class Z80
         setFlagH(true);
         setFlagN(false);
         reg.PC += 4;
-        return consumeClock(8);
+        return consumeClock(20);
     }
 
     // Test BIT b of lacation (IY+d)
@@ -2917,7 +2917,7 @@ class Z80
         setFlagH(true);
         setFlagN(false);
         reg.PC += 4;
-        return consumeClock(8);
+        return consumeClock(20);
     }
 
     int (*opSet1[256])(Z80* ctx);
