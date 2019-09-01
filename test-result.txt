@@ -144,12 +144,14 @@
 [0145] XOR A<$AA>, (HL<$FFFD>) = $0B
 [0146] XOR A<$A1>, (IX+d<$0235>) = $10
 [0149] XOR A<$A1>, (IY+d<$ABFF>) = $10
+[014C] CPL A<$A1>
+[014D] NEG A<$5E>
 ===== REGISTER DUMP : START =====
-PAIR: A<$A1> B<$AB> C<$CD> D<$00> E<$00> H<$FF> L<$FD>
-PAIR: F<$90> ... S:ON, Z:OFF, H:ON, P/V:OFF, N:OFF, C:OFF
+PAIR: A<$A2> B<$AB> C<$CD> D<$00> E<$00> H<$FF> L<$FD>
+PAIR: F<$82> ... S:ON, Z:OFF, H:OFF, P/V:OFF, N:ON, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$0E> L'<$DD> F'<$00>
-PC<$014C> SP<$0000> IX<$0223> IY<$ABCB>
+PC<$014F> SP<$0000> IX<$0223> IY<$ABCB>
 R<$00> I<$00> IFF<$00>
 isHalt: NO, interruptMode: 0
-executed: 2059Hz
+executed: 2071Hz
 ===== REGISTER DUMP : END =====

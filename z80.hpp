@@ -347,14 +347,11 @@ class Z80
                 ctx->reg.R = ctx->reg.pair.A;
                 ctx->reg.PC += 2;
                 return ctx->consumeClock(9);
-            case 0b10100000:
-                return ctx->LDI();
-            case 0b10110000:
-                return ctx->LDIR();
-            case 0b10101000:
-                return ctx->LDD();
-            case 0b10111000:
-                return ctx->LDDR();
+            case 0b10100000: return ctx->LDI();
+            case 0b10110000: return ctx->LDIR();
+            case 0b10101000: return ctx->LDD();
+            case 0b10111000: return ctx->LDDR();
+            case 0b01000100: return ctx->NEG();
             default:
                 if ((mode & 0b11001111) == 0b01001011) {
                     return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
@@ -2577,6 +2574,7 @@ class Z80
         setFlagC(false);
     }
 
+    // AND Register
     inline int AND_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2591,6 +2589,7 @@ class Z80
         return consumeClock(4);
     }
 
+    // AND immediate
     static inline int AND_N(Z80* ctx)
     {
         unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
@@ -2601,6 +2600,7 @@ class Z80
         return ctx->consumeClock(7);
     }
 
+    // AND Memory
     static inline int AND_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
@@ -2612,6 +2612,7 @@ class Z80
         return ctx->consumeClock(7);
     }
 
+    // AND Memory
     inline int AND_IX()
     {
         signed char d = CB.read(CB.arg, reg.PC + 2);
@@ -2624,6 +2625,7 @@ class Z80
         return consumeClock(19);
     }
 
+    // AND Memory
     inline int AND_IY()
     {
         signed char d = CB.read(CB.arg, reg.PC + 2);
@@ -2636,6 +2638,7 @@ class Z80
         return consumeClock(19);
     }
 
+    // OR Register
     inline int OR_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2650,6 +2653,7 @@ class Z80
         return consumeClock(4);
     }
 
+    // OR immediate
     static inline int OR_N(Z80* ctx)
     {
         unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
@@ -2660,6 +2664,7 @@ class Z80
         return ctx->consumeClock(7);
     }
 
+    // OR Memory
     static inline int OR_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
@@ -2671,6 +2676,7 @@ class Z80
         return ctx->consumeClock(7);
     }
 
+    // OR Memory
     inline int OR_IX()
     {
         signed char d = CB.read(CB.arg, reg.PC + 2);
@@ -2683,6 +2689,7 @@ class Z80
         return consumeClock(19);
     }
 
+    // OR Memory
     inline int OR_IY()
     {
         signed char d = CB.read(CB.arg, reg.PC + 2);
@@ -2695,6 +2702,7 @@ class Z80
         return consumeClock(19);
     }
 
+    // XOR Reigster
     inline int XOR_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2709,6 +2717,7 @@ class Z80
         return consumeClock(4);
     }
 
+    // XOR immediate
     static inline int XOR_N(Z80* ctx)
     {
         unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
@@ -2719,6 +2728,7 @@ class Z80
         return ctx->consumeClock(7);
     }
 
+    // XOR Memory
     static inline int XOR_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
@@ -2730,6 +2740,7 @@ class Z80
         return ctx->consumeClock(7);
     }
 
+    // XOR Memory
     inline int XOR_IX()
     {
         signed char d = CB.read(CB.arg, reg.PC + 2);
@@ -2742,6 +2753,7 @@ class Z80
         return consumeClock(19);
     }
 
+    // XOR Memory
     inline int XOR_IY()
     {
         signed char d = CB.read(CB.arg, reg.PC + 2);
@@ -2752,6 +2764,28 @@ class Z80
         setFlagByLogical();
         reg.PC += 3;
         return consumeClock(19);
+    }
+
+    // Complement acc. (1's Comp.)
+    static inline int CPL(Z80* ctx)
+    {
+        ctx->log("[%04X] CPL %s", ctx->reg.PC, ctx->registerDump(0b111));
+        ctx->reg.pair.A = ~ctx->reg.pair.A;
+        ctx->setFlagH(true);
+        ctx->setFlagN(true);
+        ctx->reg.PC++;
+        return ctx->consumeClock(4);
+    }
+
+    // Negate Acc. (2's Comp.)
+    inline int NEG()
+    {
+        log("[%04X] NEG %s", reg.PC, registerDump(0b111));
+        reg.pair.A = ~reg.pair.A;
+        setFlagByAddition(reg.pair.A, 1);
+        reg.pair.A++;
+        reg.PC += 2;
+        return consumeClock(8);
     }
 
     int (*opSet1[256])(Z80* ctx);
@@ -2772,6 +2806,7 @@ class Z80
         opSet1[0b00011111] = RRA;
         opSet1[0b00100010] = LD_ADDR_HL;
         opSet1[0b00101010] = LD_HL_ADDR;
+        opSet1[0b00101111] = CPL;
         opSet1[0b00110110] = LD_HL_N;
         opSet1[0b00110010] = LD_NN_A;
         opSet1[0b00110100] = INC_HL;

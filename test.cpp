@@ -544,4 +544,7 @@ static void extractProgram(MMU& mmu)
     PG = 0b11111101; // XOR (IY+$34)
     PG = 0b10101110;
     PG = 0x34;
+    PG = 0b00101111; // CPL
+    PG = 0b11101101; // NEG
+    PG = 0b01000100;
 }
