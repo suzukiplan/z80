@@ -29,10 +29,8 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 5.2 right rotate instructions
 - [x] 5.3 left shift instructions
 - [x] 5.4 right shift instructions
-- [ ] __6.1 8bit arithmetic (ADD) instructions__ <sup>*inprogress*</sup>
-- [ ] 6.1 8bit arithmetic (DEC) instructions
-- [ ] 6.2 16bit arithmetic (ADD) instructions
-- [ ] 6.2 16bit arithmetic (DEC) instructions
+- [ ] __6.1 8bit arithmetic instructions__ <sup>*inprogress*</sup>
+- [ ] 6.2 16bit arithmetic instructions
 - [ ] 7.1 logical operation instructions
 - [ ] 7.2 bit instructions
 - [ ] 8.1 search
