@@ -34,8 +34,8 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 6.2 16bit arithmetic instructions
 - [x] 7.1 logical operation instructions
 - [x] 7.2 bit instructions
-- [ ] __8.1 search__ <sup>*inprogress*</sup>
-- [ ] 8.2 compare
+- [x] 8.1 search
+- [ ] __8.2 compare__ <sup>*inprogress*</sup>
 - [ ] 9.0 branch
 - [ ] 9.1 jump
 - [ ] 9.2 sub routin
