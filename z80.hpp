@@ -405,6 +405,8 @@ class Z80
                     default: {
                         if ((op4 & 0b11000111) == 0b01000110) {
                             return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
+                        } else if ((op4 & 0b11000111) == 0b11000110) {
+                            return ctx->SET_IX(op3, (op4 & 0b00111000) >> 3);
                         }
                     }
                 }
@@ -459,6 +461,8 @@ class Z80
                     default: {
                         if ((op4 & 0b11000111) == 0b01000110) {
                             return ctx->BIT_IY(op3, (op4 & 0b00111000) >> 3);
+                        } else if ((op4 & 0b11000111) == 0b11000110) {
+                            return ctx->SET_IY(op3, (op4 & 0b00111000) >> 3);
                         }
                     }
                 }
@@ -509,8 +513,12 @@ class Z80
             return ctx->SRL_R(op2 & 0b00000111);
         } else if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->BIT_HN((op2 & 0b00111000) >> 3);
+        } else if ((op2 & 0b11000111) == 0b11000110) {
+            return ctx->SET_HN((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11000000) == 0b01000000) {
             return ctx->BIT_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
+        } else if ((op2 & 0b11000000) == 0b11000000) {
+            return ctx->SET_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
         }
         ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
         return -1;
@@ -2918,6 +2926,92 @@ class Z80
         setFlagN(false);
         reg.PC += 4;
         return consumeClock(20);
+    }
+
+    // SET bit b of register r
+    inline int SET_R(unsigned char r, unsigned char bit)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        log("[%04X] SET %s of bit-%d", reg.PC, registerDump(r), bit);
+        switch (bit) {
+            case 0: *rp |= 0b00000001; break;
+            case 1: *rp |= 0b00000010; break;
+            case 2: *rp |= 0b00000100; break;
+            case 3: *rp |= 0b00001000; break;
+            case 4: *rp |= 0b00010000; break;
+            case 5: *rp |= 0b00100000; break;
+            case 6: *rp |= 0b01000000; break;
+            case 7: *rp |= 0b10000000; break;
+        }
+        reg.PC += 2;
+        return consumeClock(8);
+    }
+
+    // SET bit b of lacation (HL)
+    inline int SET_HN(unsigned char bit)
+    {
+        unsigned short addr = getHL();
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] SET (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
+        switch (bit) {
+            case 0: n |= 0b00000001; break;
+            case 1: n |= 0b00000010; break;
+            case 2: n |= 0b00000100; break;
+            case 3: n |= 0b00001000; break;
+            case 4: n |= 0b00010000; break;
+            case 5: n |= 0b00100000; break;
+            case 6: n |= 0b01000000; break;
+            case 7: n |= 0b10000000; break;
+        }
+        CB.write(CB.arg, addr, n);
+        reg.PC += 2;
+        return consumeClock(15);
+    }
+
+    // SET bit b of lacation (IX+d)
+    inline int SET_IX(signed char d, unsigned char bit)
+    {
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        switch (bit) {
+            case 0: n |= 0b00000001; break;
+            case 1: n |= 0b00000010; break;
+            case 2: n |= 0b00000100; break;
+            case 3: n |= 0b00001000; break;
+            case 4: n |= 0b00010000; break;
+            case 5: n |= 0b00100000; break;
+            case 6: n |= 0b01000000; break;
+            case 7: n |= 0b10000000; break;
+        }
+        CB.write(CB.arg, addr, n);
+        reg.PC += 4;
+        return consumeClock(23);
+    }
+
+    // SET bit b of lacation (IY+d)
+    inline int SET_IY(signed char d, unsigned char bit)
+    {
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        switch (bit) {
+            case 0: n |= 0b00000001; break;
+            case 1: n |= 0b00000010; break;
+            case 2: n |= 0b00000100; break;
+            case 3: n |= 0b00001000; break;
+            case 4: n |= 0b00010000; break;
+            case 5: n |= 0b00100000; break;
+            case 6: n |= 0b01000000; break;
+            case 7: n |= 0b10000000; break;
+        }
+        CB.write(CB.arg, addr, n);
+        reg.PC += 4;
+        return consumeClock(23);
     }
 
     int (*opSet1[256])(Z80* ctx);

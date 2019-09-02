@@ -152,12 +152,16 @@
 [0153] BIT (HL<$FFFD>) = $0B of bit-3
 [0155] BIT (IX+d<$0235>) = $00 of bit-4
 [0159] BIT (IY+d<$ABFF>) = $00 of bit-5
+[015D] SET A<$A2> of bit-0
+[015F] SET (HL<$FFFD>) = $0B of bit-3
+[0161] SET (IX+d<$0235>) = $00 of bit-4
+[0165] SET (IY+d<$ABFF>) = $00 of bit-5
 ===== REGISTER DUMP : START =====
-PAIR: A<$A2> B<$AB> C<$CD> D<$00> E<$00> H<$FF> L<$FD>
+PAIR: A<$A3> B<$AB> C<$CD> D<$00> E<$00> H<$FF> L<$FD>
 PAIR: F<$D1> ... S:ON, Z:ON, H:ON, P/V:OFF, N:OFF, C:ON
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$0E> L'<$DD> F'<$00>
-PC<$015D> SP<$0000> IX<$0223> IY<$ABCB>
+PC<$0169> SP<$0000> IX<$0223> IY<$ABCB>
 R<$00> I<$00> IFF<$00>
 isHalt: NO, interruptMode: 0
-executed: 2139Hz
+executed: 2208Hz
 ===== REGISTER DUMP : END =====
