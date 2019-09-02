@@ -3247,6 +3247,17 @@ class Z80
         return consumeClock(19);
     }
 
+    // Jump
+    static inline int JP_NN(Z80* ctx)
+    {
+        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned short addr = (nH << 8) + nL;
+        ctx->log("[%04X] JP $%04X", ctx->reg.PC, addr);
+        ctx->reg.PC = addr;
+        return ctx->consumeClock(10);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3282,6 +3293,7 @@ class Z80
         opSet1[0b10101110] = XOR_HL;
         opSet1[0b10110110] = OR_HL;
         opSet1[0b10111110] = CP_HL;
+        opSet1[0b11000011] = JP_NN;
         opSet1[0b11000110] = ADD_A_N;
         opSet1[0b11001011] = OP_R;
         opSet1[0b11001110] = ADC_A_N;

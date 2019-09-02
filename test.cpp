@@ -612,4 +612,14 @@ static void extractProgram(MMU& mmu)
     PG = 0b11111101; // CP (IY+$34)
     PG = 0b10111110;
     PG = 0x34;
+    unsigned short jumpAddr = addr + 8;
+    PG = 0b11000011; // JP
+    PG = jumpAddr & 0x00FF;
+    PG = (jumpAddr & 0xFF00) >> 8;
+    PG = 0b01110110; // HALT
+    PG = 0b01110110; // HALT
+    PG = 0b01110110; // HALT
+    PG = 0b01110110; // HALT
+    PG = 0b01110110; // HALT
+    PG = 0b10100111; // AND A
 }
