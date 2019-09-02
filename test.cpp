@@ -595,4 +595,11 @@ static void extractProgram(MMU& mmu)
     PG = 0b10100001;
     PG = 0b11101101; // CPIR
     PG = 0b10110001;
+    PG = 0b00100001; // LD HL, $0020
+    PG = 0x20;
+    PG = 0x00;
+    PG = 0b11101101; // CPD
+    PG = 0b10101001;
+    PG = 0b11101101; // CPDR
+    PG = 0b10111001;
 }
