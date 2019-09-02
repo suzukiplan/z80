@@ -35,9 +35,8 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 7.1 logical operation instructions
 - [x] 7.2 bit instructions
 - [x] 8.1 search
-- [ ] __8.2 compare__ <sup>*inprogress*</sup>
-- [ ] 9.0 branch
-- [ ] 9.1 jump
+- [x] 8.2 compare
+- [ ] __9.1 jump__ <sup>*inprogress*</sup>
 - [ ] 9.2 sub routin
 - [x] 10.1 interrupt
 - [ ] 10.2 input

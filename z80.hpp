@@ -391,6 +391,7 @@ class Z80
             case 0b10100110: return ctx->AND_IX();
             case 0b10101110: return ctx->XOR_IX();
             case 0b10110110: return ctx->OR_IX();
+            case 0b10111110: return ctx->CP_IX();
             case 0b11100001: return ctx->POP_IX();
             case 0b11100011: return ctx->EX_SP_IX();
             case 0b11100101: return ctx->PUSH_IX();
@@ -449,6 +450,7 @@ class Z80
             case 0b10100110: return ctx->AND_IY();
             case 0b10101110: return ctx->XOR_IY();
             case 0b10110110: return ctx->OR_IY();
+            case 0b10111110: return ctx->CP_IY();
             case 0b11100001: return ctx->POP_IY();
             case 0b11100011: return ctx->EX_SP_IY();
             case 0b11100101: return ctx->PUSH_IY();
@@ -3186,6 +3188,65 @@ class Z80
         return hz;
     }
 
+    // Compare Register
+    inline int CP_R(unsigned char r)
+    {
+        log("[%04X] CP %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        setFlagBySubstract(reg.pair.A, *rp);
+        reg.PC += 1;
+        return consumeClock(4);
+    }
+
+    // Compare immediate
+    static inline int CP_N(Z80* ctx)
+    {
+        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        ctx->log("[%04X] CP %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->reg.PC += 2;
+        return ctx->consumeClock(7);
+    }
+
+    // Compare memory
+    static inline int CP_HL(Z80* ctx)
+    {
+        unsigned short addr = ctx->getHL();
+        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        ctx->log("[%04X] CP %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->reg.PC += 1;
+        return ctx->consumeClock(7);
+    }
+
+    // Compare memory
+    inline int CP_IX()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IX + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] CP %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        setFlagBySubstract(reg.pair.A, n);
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
+    // Compare memory
+    inline int CP_IY()
+    {
+        signed char d = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = reg.IY + d;
+        unsigned char n = CB.read(CB.arg, addr);
+        log("[%04X] CP %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        setFlagBySubstract(reg.pair.A, n);
+        reg.PC += 3;
+        return consumeClock(19);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3220,6 +3281,7 @@ class Z80
         opSet1[0b10100110] = AND_HL;
         opSet1[0b10101110] = XOR_HL;
         opSet1[0b10110110] = OR_HL;
+        opSet1[0b10111110] = CP_HL;
         opSet1[0b11000110] = ADD_A_N;
         opSet1[0b11001011] = OP_R;
         opSet1[0b11001110] = ADC_A_N;
@@ -3239,6 +3301,7 @@ class Z80
         opSet1[0b11111001] = LD_SP_HL;
         opSet1[0b11111011] = EI;
         opSet1[0b11111101] = OP_IY;
+        opSet1[0b11111110] = CP_N;
     }
 
   public: // API functions
@@ -3338,6 +3401,8 @@ class Z80
                     consume = OR_R(operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11111000) == 0b10101000) {
                     consume = XOR_R(operandNumber & 0b00000111);
+                } else if ((operandNumber & 0b11111000) == 0b10111000) {
+                    consume = CP_R(operandNumber & 0b00000111);
                 }
             } else {
                 // execute an operand that the first byte is fixed.

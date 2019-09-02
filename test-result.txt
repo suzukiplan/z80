@@ -168,12 +168,17 @@
 [0181] LD HL<$0010>, $0020
 [0184] CPD ... A<$71>, HL<$0020>, BC<$FFEF>
 [0186] CPDR ... A<$71>, HL<$001F>, BC<$FFEE>
+[0188] CP A<$71>, B<$FF>
+[0189] CP A<$71>, $AA
+[018B] CP A<$71>, (HL<$000E>) = $FD
+[018C] CP A<$71>, (IX+d<$0235>) = $00
+[018F] CP A<$71>, (IY+d<$ABFF>) = $00
 ===== REGISTER DUMP : START =====
 PAIR: A<$71> B<$FF> C<$DD> D<$00> E<$00> H<$00> L<$0E>
-PAIR: F<$54> ... S:OFF, Z:ON, H:ON, P/V:ON, N:OFF, C:OFF
+PAIR: F<$10> ... S:OFF, Z:OFF, H:ON, P/V:OFF, N:OFF, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$0E> L'<$DD> F'<$00>
-PC<$0188> SP<$0000> IX<$0223> IY<$ABCB>
+PC<$0192> SP<$0000> IX<$0223> IY<$ABCB>
 R<$00> I<$00> IFF<$00>
 isHalt: NO, interruptMode: 0
-executed: 3008Hz
+executed: 3064Hz
 ===== REGISTER DUMP : END =====

@@ -602,4 +602,14 @@ static void extractProgram(MMU& mmu)
     PG = 0b10101001;
     PG = 0b11101101; // CPDR
     PG = 0b10111001;
+    PG = 0b10111000; // CP B
+    PG = 0b11111110; // CP $AA
+    PG = 0xAA;
+    PG = 0b10111110; // CP (HL)
+    PG = 0b11011101; // CP (IX+$12)
+    PG = 0b10111110;
+    PG = 0x12;
+    PG = 0b11111101; // CP (IY+$34)
+    PG = 0b10111110;
+    PG = 0x34;
 }
