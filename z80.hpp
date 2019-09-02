@@ -352,6 +352,8 @@ class Z80
             case 0b10101000: return ctx->LDD();
             case 0b10111000: return ctx->LDDR();
             case 0b01000100: return ctx->NEG();
+            case 0b10100001: return ctx->CPI();
+            case 0b10110001: return ctx->CPIR();
             default:
                 if ((mode & 0b11001111) == 0b01001011) {
                     return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
@@ -3106,6 +3108,43 @@ class Z80
         CB.write(CB.arg, addr, n);
         reg.PC += 4;
         return consumeClock(23);
+    }
+
+    // Compare location (HL) and A, increment HL and decrement BC
+    inline int CPI()
+    {
+        log("[%04X] CPI ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
+        unsigned short hl = getHL();
+        unsigned short bc = getBC();
+        unsigned char n = CB.read(CB.arg, hl);
+        setFlagBySubstract(reg.pair.A, n);
+        setHL(hl + 1);
+        setBC(bc - 1);
+        reg.PC += 2;
+        return consumeClock(16);
+    }
+
+    // Compare location (HL) and A, increment HL, decrement BC repeat until BC=0.
+    inline int CPIR()
+    {
+        log("[%04X] CPI ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
+        int hz = 0;
+        while (1) {
+            unsigned short hl = getHL();
+            unsigned short bc = getBC();
+            unsigned char n = CB.read(CB.arg, hl);
+            setFlagBySubstract(reg.pair.A, n);
+            setHL(hl + 1);
+            setBC(bc - 1);
+            if (isFlagZ() || 0 == bc) {
+                hz += consumeClock(16);
+                break;
+            } else {
+                hz += consumeClock(21);
+            }
+        }
+        reg.PC += 2;
+        return hz;
     }
 
     int (*opSet1[256])(Z80* ctx);

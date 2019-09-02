@@ -137,12 +137,10 @@ int main(int argc, char* argv[])
         });
     }
 
-    /*
     // You can detect the timing of clock consume by following:
     z80.setConsumeClockCallback([](void* arg, int clock) -> void {
         printf("consumed: %dHz\n", clock);
     });
-    */
 
     // レジスタ初期値を設定（未設定時は0）
     z80.reg.pair.A = 0x12;
@@ -585,4 +583,16 @@ static void extractProgram(MMU& mmu)
     PG = 0b11001011;
     PG = 0x34;
     PG = 0b10101110;
+    PG = 0b00111110; // LD A, $71
+    PG = 0x71;
+    PG = 0b00000001; // LD BC, $FFFF
+    PG = 0xFF;
+    PG = 0xFF;
+    PG = 0b00100001; // LD HL, $0000
+    PG = 0x00;
+    PG = 0x00;
+    PG = 0b11101101; // CPI
+    PG = 0b10100001;
+    PG = 0b11101101; // CPIR
+    PG = 0b10110001;
 }
