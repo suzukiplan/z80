@@ -830,6 +830,23 @@ class Z80
         }
     }
 
+    inline char* conditionDump(unsigned char c)
+    {
+        static char CN[4];
+        switch (c) {
+            case 0b000: strcpy(CN, "NZ"); break;
+            case 0b001: strcpy(CN, "Z"); break;
+            case 0b010: strcpy(CN, "NC"); break;
+            case 0b011: strcpy(CN, "C"); break;
+            case 0b100: strcpy(CN, "PO"); break;
+            case 0b101: strcpy(CN, "PE"); break;
+            case 0b110: strcpy(CN, "P"); break;
+            case 0b111: strcpy(CN, "M"); break;
+            default: strcpy(CN, "??");
+        }
+        return CN;
+    }
+
     inline char* registerDump2(unsigned char r)
     {
         static char A[16];
@@ -3258,6 +3275,33 @@ class Z80
         return ctx->consumeClock(10);
     }
 
+    // Conditional Jump
+    inline int JP_C_NN(unsigned char c)
+    {
+        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = (nH << 8) + nL;
+        log("[%04X] JP %s, $%04X", reg.PC, conditionDump(c), addr);
+        bool jump;
+        switch (c) {
+            case 0b000: jump = isFlagZ() ? false : true; break;
+            case 0b001: jump = isFlagZ() ? true : false; break;
+            case 0b010: jump = isFlagC() ? false : true; break;
+            case 0b011: jump = isFlagC() ? true : false; break;
+            case 0b100: jump = isFlagPV() ? false : true; break;
+            case 0b101: jump = isFlagPV() ? true : false; break;
+            case 0b110: jump = isFlagS() ? false : true; break;
+            case 0b111: jump = isFlagS() ? true : false; break;
+            default: jump = false;
+        }
+        if (jump) {
+            reg.PC = addr;
+        } else {
+            reg.PC += 3;
+        }
+        return consumeClock(10);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3397,6 +3441,8 @@ class Z80
                     consume = INC_R((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000111) == 0b00000101) {
                     consume = DEC_R((operandNumber & 0b00111000) >> 3);
+                } else if ((operandNumber & 0b11000111) == 0b11000010) {
+                    consume = JP_C_NN((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000000) == 0b01000000) {
                     consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11111000) == 0b10000000) {
