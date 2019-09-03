@@ -68,7 +68,7 @@ cd z80
 make
 ```
 
-see the result: [test-result.txt](test-result.txt)
+see the result: [test-result.txt](test-result.txt) or [result of Travis-CI](https://travis-ci.org/suzukiplan/z80)
 
 ## Minimum usage
 

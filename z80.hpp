@@ -3302,6 +3302,26 @@ class Z80
         return consumeClock(10);
     }
 
+    inline char* relativeDump(signed char e)
+    {
+        static char buf[16];
+        if (e < 0) {
+            sprintf(buf, "$%04X - %d = $%04X", reg.PC, -e, reg.PC + e);
+        } else {
+            sprintf(buf, "$%04X + %d = $%04X", reg.PC, e, reg.PC + e);
+        }
+        return buf;
+    }
+
+    // 	Jump Relative to PC+e
+    static inline int JR_E(Z80* ctx)
+    {
+        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        ctx->log("[%04X] JR %s", ctx->reg.PC, ctx->relativeDump(e));
+        ctx->reg.PC += e;
+        return ctx->consumeClock(12);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3316,6 +3336,7 @@ class Z80
         opSet1[0b00001111] = RRCA;
         opSet1[0b00010010] = LD_DE_A;
         opSet1[0b00010111] = RLA;
+        opSet1[0b00011000] = JR_E;
         opSet1[0b00011010] = LD_A_DE;
         opSet1[0b00011111] = RRA;
         opSet1[0b00100010] = LD_ADDR_HL;

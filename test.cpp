@@ -637,4 +637,11 @@ static void extractProgram(MMU& mmu)
     PG = 0b01110110; // HALT
     PG = 0b01110110; // HALT
     PG = 0b10100111; // AND A
+    PG = 0b00011000; // JR +4
+    PG = 2;
+    PG = 0b00011000; // JR +6
+    PG = 2;
+    PG = 0b00011000; // JR -2
+    PG = -4;
+    PG = 0b10100111; // AND A
 }
