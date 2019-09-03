@@ -182,12 +182,17 @@
 [01AB] JR $01AB - 2 = $01A9
 [01A9] JR $01A9 + 4 = $01AD
 [01AD] AND A<$71>, A<$71>
+[01AE] JR C, $01AE - 126 = $0130 <NO>
+[01B0] JR NC, $01B0 + 3 = $01B3 <YES>
+[01B3] JR Z, $01B3 - 126 = $0135 <NO>
+[01B5] JR NZ, $01B5 + 3 = $01B8 <YES>
+[01B8] AND A<$71>, A<$71>
 ===== REGISTER DUMP : START =====
 PAIR: A<$71> B<$FF> C<$DD> D<$00> E<$00> H<$00> L<$0E>
 PAIR: F<$14> ... S:OFF, Z:OFF, H:ON, P/V:ON, N:OFF, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$0E> L'<$DD> F'<$00>
-PC<$01AE> SP<$0000> IX<$0223> IY<$ABCB>
+PC<$01B9> SP<$0000> IX<$0223> IY<$ABCB>
 R<$00> I<$00> IFF<$00>
 isHalt: NO, interruptMode: 0
-executed: 3142Hz
+executed: 3194Hz
 ===== REGISTER DUMP : END =====

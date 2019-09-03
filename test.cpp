@@ -644,4 +644,15 @@ static void extractProgram(MMU& mmu)
     PG = 0b00011000; // JR -2
     PG = -4;
     PG = 0b10100111; // AND A
+    PG = 0b00111000; // JR C, -126
+    PG = 0x80;
+    PG = 0b00110000; // JR C, 3
+    PG = 1;
+    PG = 0b01110110; // HALT
+    PG = 0b00101000; // JR Z, -126
+    PG = 0x80;
+    PG = 0b00100000; // JR NZ, 3
+    PG = 1;
+    PG = 0b01110110; // HALT
+    PG = 0b10100111; // AND A
 }

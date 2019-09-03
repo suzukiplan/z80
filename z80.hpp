@@ -847,6 +847,17 @@ class Z80
         return CN;
     }
 
+    inline char* relativeDump(signed char e)
+    {
+        static char buf[16];
+        if (e < 0) {
+            sprintf(buf, "$%04X - %d = $%04X", reg.PC, -e, reg.PC + e);
+        } else {
+            sprintf(buf, "$%04X + %d = $%04X", reg.PC, e, reg.PC + e);
+        }
+        return buf;
+    }
+
     inline char* registerDump2(unsigned char r)
     {
         static char A[16];
@@ -3302,23 +3313,52 @@ class Z80
         return consumeClock(10);
     }
 
-    inline char* relativeDump(signed char e)
-    {
-        static char buf[16];
-        if (e < 0) {
-            sprintf(buf, "$%04X - %d = $%04X", reg.PC, -e, reg.PC + e);
-        } else {
-            sprintf(buf, "$%04X + %d = $%04X", reg.PC, e, reg.PC + e);
-        }
-        return buf;
-    }
-
-    // 	Jump Relative to PC+e
+    // Jump Relative to PC+e
     static inline int JR_E(Z80* ctx)
     {
         signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
         ctx->log("[%04X] JR %s", ctx->reg.PC, ctx->relativeDump(e));
         ctx->reg.PC += e;
+        return ctx->consumeClock(12);
+    }
+
+    // Jump Relative to PC+e, if carry
+    static inline int JR_C_E(Z80* ctx)
+    {
+        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        bool execute = ctx->isFlagC();
+        ctx->log("[%04X] JR C, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
+        ctx->reg.PC += execute ? e : 2;
+        return ctx->consumeClock(12);
+    }
+
+    // Jump Relative to PC+e, if not carry
+    static inline int JR_NC_E(Z80* ctx)
+    {
+        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        bool execute = !ctx->isFlagC();
+        ctx->log("[%04X] JR NC, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
+        ctx->reg.PC += execute ? e : 2;
+        return ctx->consumeClock(12);
+    }
+
+    // Jump Relative to PC+e, if zero
+    static inline int JR_Z_E(Z80* ctx)
+    {
+        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        bool execute = ctx->isFlagZ();
+        ctx->log("[%04X] JR Z, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
+        ctx->reg.PC += execute ? e : 2;
+        return ctx->consumeClock(12);
+    }
+
+    // Jump Relative to PC+e, if zero
+    static inline int JR_NZ_E(Z80* ctx)
+    {
+        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        bool execute = !ctx->isFlagZ();
+        ctx->log("[%04X] JR NZ, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
+        ctx->reg.PC += execute ? e : 2;
         return ctx->consumeClock(12);
     }
 
@@ -3339,14 +3379,18 @@ class Z80
         opSet1[0b00011000] = JR_E;
         opSet1[0b00011010] = LD_A_DE;
         opSet1[0b00011111] = RRA;
+        opSet1[0b00100000] = JR_NZ_E;
         opSet1[0b00100010] = LD_ADDR_HL;
+        opSet1[0b00101000] = JR_Z_E;
         opSet1[0b00101010] = LD_HL_ADDR;
         opSet1[0b00101111] = CPL;
-        opSet1[0b00110110] = LD_HL_N;
+        opSet1[0b00110000] = JR_NC_E;
         opSet1[0b00110010] = LD_NN_A;
         opSet1[0b00110100] = INC_HL;
         opSet1[0b00110101] = DEC_HL;
+        opSet1[0b00110110] = LD_HL_N;
         opSet1[0b00110111] = SCF;
+        opSet1[0b00111000] = JR_C_E;
         opSet1[0b00111010] = LD_A_NN;
         opSet1[0b00111111] = CCF;
         opSet1[0b01110110] = HALT;
