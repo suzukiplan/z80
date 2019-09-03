@@ -8,4 +8,4 @@ addons:
 
 script:
   - make
-  - sonar-scanner
+  - sonar-scanner -X
