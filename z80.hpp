@@ -3388,6 +3388,20 @@ class Z80
         return consumeClock(8);
     }
 
+    // 	Decrement B and Jump relative if B=0
+    static inline int DJNZ_E(Z80* ctx)
+    {
+        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC, ctx->relativeDump(e), ctx->registerDump(0b00));
+        ctx->reg.pair.B--;
+        if (ctx->reg.pair.B) {
+            ctx->reg.PC += 2;
+        } else {
+            ctx->reg.PC += e;
+        }
+        return ctx->consumeClock(13);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3400,6 +3414,7 @@ class Z80
         opSet1[0b00001000] = EX_AF_AF2;
         opSet1[0b00001010] = LD_A_BC;
         opSet1[0b00001111] = RRCA;
+        opSet1[0b00010000] = DJNZ_E;
         opSet1[0b00010010] = LD_DE_A;
         opSet1[0b00010111] = RLA;
         opSet1[0b00011000] = JR_E;
