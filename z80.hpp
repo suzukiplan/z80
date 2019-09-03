@@ -395,6 +395,7 @@ class Z80
             case 0b11100001: return ctx->POP_IX();
             case 0b11100011: return ctx->EX_SP_IX();
             case 0b11100101: return ctx->PUSH_IX();
+            case 0b11101001: return ctx->JP_IX();
             case 0b11111001: return ctx->LD_SP_IX();
             case 0b11001011: {
                 unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
@@ -454,6 +455,7 @@ class Z80
             case 0b11100001: return ctx->POP_IY();
             case 0b11100011: return ctx->EX_SP_IY();
             case 0b11100101: return ctx->PUSH_IY();
+            case 0b11101001: return ctx->JP_IY();
             case 0b11111001: return ctx->LD_SP_IY();
             case 0b11001011: {
                 unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
@@ -3362,6 +3364,30 @@ class Z80
         return ctx->consumeClock(12);
     }
 
+    // Jump to HL
+    static inline int JP_HL(Z80* ctx)
+    {
+        ctx->log("[%04X] JP %s", ctx->reg.PC, ctx->registerPairDump(0b10));
+        ctx->reg.PC = ctx->getHL();
+        return ctx->consumeClock(8);
+    }
+
+    // Jump to IX
+    inline int JP_IX()
+    {
+        log("[%04X] JP IX<$%04X>", reg.PC, reg.IX);
+        reg.PC = reg.IX;
+        return consumeClock(8);
+    }
+
+    // Jump to IY
+    inline int JP_IY()
+    {
+        log("[%04X] JP IY<$%04X>", reg.PC, reg.IY);
+        reg.PC = reg.IY;
+        return consumeClock(8);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3412,6 +3438,7 @@ class Z80
         opSet1[0b11011101] = OP_IX;
         opSet1[0b11100011] = EX_SP_HL;
         opSet1[0b11100110] = AND_N;
+        opSet1[0b11101001] = JP_HL;
         opSet1[0b11101011] = EX_DE_HL;
         opSet1[0b11101101] = IM;
         opSet1[0b11101110] = XOR_N;

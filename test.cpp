@@ -655,4 +655,24 @@ static void extractProgram(MMU& mmu)
     PG = 1;
     PG = 0b01110110; // HALT
     PG = 0b10100111; // AND A
+    jumpAddr = addr + 4;
+    PG = 0b00100001; // LD HL, jumpAddr
+    PG = jumpAddr & 0x00FF;
+    PG = (jumpAddr & 0xFF00) >> 8;
+    PG = 0b11101001; // JP HL
+    jumpAddr = addr + 6;
+    PG = 0b11011101; // LD IX, jumpAddr
+    PG = 0b00100001;
+    PG = jumpAddr & 0x00FF;
+    PG = (jumpAddr & 0xFF00) >> 8;
+    PG = 0b11011101; // JP IX
+    PG = 0b11101001;
+    jumpAddr = addr + 6;
+    PG = 0b11111101; // LD IY, jumpAddr
+    PG = 0b00100001;
+    PG = jumpAddr & 0x00FF;
+    PG = (jumpAddr & 0xFF00) >> 8;
+    PG = 0b11111101; // JP IY
+    PG = 0b11101001;
+    PG = 0b10100111; // AND A
 }
