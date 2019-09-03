@@ -36,8 +36,8 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 7.2 bit instructions
 - [x] 8.1 search
 - [x] 8.2 compare
-- [ ] __9.1 jump__ <sup>*inprogress*</sup>
-- [ ] 9.2 sub routin
+- [x] 9.1 jump
+- [ ] __9.2 sub routin__ <sup>*inprogress*</sup>
 - [x] 10.1 interrupt
 - [ ] 10.2 input
 - [ ] 10.3 output
