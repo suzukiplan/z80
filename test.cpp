@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     // autoExecモードの場合はNOPを検出したらレジスタを出力してプログラムを終了
     if (autoExec) {
         z80.setBreakOperand(0x00, [](void* arg) -> void {
-            puts("NOP detected!");
+            printf("NOP detected! (PC:$%04X)\n", ((MMU*)arg)->cpu->reg.PC);
             ((MMU*)arg)->cpu->registerDump();
             exit(0);
         });
@@ -685,4 +685,12 @@ static void extractProgram(MMU& mmu)
     PG = 0b01110110; // HALT
     PG = 0b01110110; // HALT
     PG = 0b10100111; // AND A
+    PG = 0b11001101; // CALL $1000
+    PG = 0x00;
+    PG = 0x10;
+    PG = 0b00000000; // NOP
+
+    // サブルーチン1: 何もせずにRET
+    addr = 0x1000;
+    PG = 0b11001001; // RET
 }

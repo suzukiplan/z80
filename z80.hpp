@@ -3392,7 +3392,7 @@ class Z80
     static inline int DJNZ_E(Z80* ctx)
     {
         signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
-        ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC, ctx->relativeDump(e), ctx->registerDump(0b00));
+        ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC, ctx->relativeDump(e), ctx->registerDump(0b000));
         ctx->reg.pair.B--;
         if (ctx->reg.pair.B) {
             ctx->reg.PC += 2;
@@ -3400,6 +3400,35 @@ class Z80
             ctx->reg.PC += e;
         }
         return ctx->consumeClock(13);
+    }
+
+    // Call
+    static inline int CALL_NN(Z80* ctx)
+    {
+        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned short addr = (nH << 8) + nL;
+        ctx->log("[%04X] CALL $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
+        ctx->reg.PC += 3;
+        unsigned char pcL = ctx->reg.PC & 0x00FF;
+        unsigned char pcH = (ctx->reg.PC & 0xFF00) >> 8;
+        ctx->CB.write(ctx->CB.arg, ctx->reg.SP - 1, pcH);
+        ctx->CB.write(ctx->CB.arg, ctx->reg.SP - 2, pcL);
+        ctx->reg.SP -= 2;
+        ctx->reg.PC = addr;
+        return ctx->consumeClock(17);
+    }
+
+    // Return
+    static inline int RET(Z80* ctx)
+    {
+        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.SP);
+        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.SP + 1);
+        unsigned short addr = (nH << 8) + nL;
+        ctx->log("[%04X] RET to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
+        ctx->reg.SP += 2;
+        ctx->reg.PC = addr;
+        return ctx->consumeClock(10);
     }
 
     int (*opSet1[256])(Z80* ctx);
@@ -3445,7 +3474,9 @@ class Z80
         opSet1[0b10111110] = CP_HL;
         opSet1[0b11000011] = JP_NN;
         opSet1[0b11000110] = ADD_A_N;
+        opSet1[0b11001001] = RET;
         opSet1[0b11001011] = OP_R;
+        opSet1[0b11001101] = CALL_NN;
         opSet1[0b11001110] = ADC_A_N;
         opSet1[0b11010110] = SUB_A_N;
         opSet1[0b11011110] = SBC_A_N;
