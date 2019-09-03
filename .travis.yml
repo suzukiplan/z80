@@ -1,11 +1,2 @@
-dist: trusty
-
-addons:
-  sonarcloud:
-    organization: "suzukiplan"
-    token:
-      secure: "xnR7q9bKY/z+sOjWdkOOuxfZOf4pnuEsLF6e7zL0Wovpdjvt+icxUa8bqecuM/bW9XL49n4Q6k7k7NAnI/d5KFO+hxRhlW42jbE2OwHYevdAa1gtJbJLfjrH+ixlfZJ/P32CuuzylKHFa+h0HMp+d8b6u3fFqK6DjWgOcnNAZ0bAbv6ChTNYDu5e2yzP750EAUSijZewIIVlEX/nJXubeexrOKOgoE3xUBT5aNNmyd/pW2uOBtKe3vK6sEjw1qmbw2RDiZtwCy+QSvVVUBOBm/9nwmsgJwr1XpD4PbtscLx/MXCt4cUdkmqw+X5M8CeX+COTF+7Ka2N8KdGAoIL1c28JE60SngWOc4GCZ+02G98xfm2CVpun7cpp25DHvZGU4mGHig746cnx65JXKwzVssVNGO71/uAozSCEaJwhyNYBFWmfu/Zeg45q7NnpH543jfthIIK+BgkDUiWPC3qarKVRt2ave+ZI60KTNlf79RXJ5Wq9niWDgykLkxNQ00EuCehv2uV0A7Pd2G0vM64pHL2pCKrrdJCH3t0tim2sHS2qg6r4UmVZbwIvamsW4FJQhAXpazgU+O9nBBB3t6glhXF3rlNI/gebFmG5SZIXuZobn9tKamOxtRs50NjCh+gD6fHahl1w7Am9Yq1bZ+FLAOO3El8ssRsceXxx5Jz7rGM="
-
 script:
   - make
-  - sonar-scanner -X

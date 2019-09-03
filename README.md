@@ -1,4 +1,4 @@
-# SUZUKI PLAN - Z80 Emulator (WIP) [![Build Status](https://travis-ci.org/suzukiplan/z80.svg?branch=master)](https://travis-ci.org/suzukiplan/z80) [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=suzukiplan_z80&metric=alert_status)](https://sonarcloud.io/dashboard?id=suzukiplan_z80)
+# SUZUKI PLAN - Z80 Emulator (WIP) [![Build Status](https://travis-ci.org/suzukiplan/z80.svg?branch=master)](https://travis-ci.org/suzukiplan/z80)
 
 The Z80 was an 8-bit CPU developed by Zilog corporation, released in 1976, and widely used in computers and game consoles in the 1980s.
 It is not just a relic of the past, but continues to be used in embedded systems that require accuracy in processing execution time, such as real-time systems.
