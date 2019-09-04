@@ -84,6 +84,17 @@ int hexToInt(const char* cp)
     return result;
 }
 
+void fullDumpRAM(MMU* mmu)
+{
+    unsigned char* r = mmu->RAM;
+    char asc[17];
+    asc[16] = 0;
+    for (int addr = 0; addr < 0x10000; addr += 0x10, r += 0x10) {
+        for (int i = 0; i < 0x10; i++) asc[i] = isgraph(r[i]) ? r[i] : '.';
+        printf("[%04X] %02X %02X %02X %02X %02X %02X %02X %02X - %02X %02X %02X %02X %02X %02X %02X %02X : %s\n", addr, r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15], asc);
+    }
+}
+
 static void extractProgram(MMU& mmu);
 
 int main(int argc, char* argv[])
@@ -133,6 +144,7 @@ int main(int argc, char* argv[])
         z80.setBreakOperand(0x00, [](void* arg) -> void {
             printf("NOP detected! (PC:$%04X)\n", ((MMU*)arg)->cpu->reg.PC);
             ((MMU*)arg)->cpu->registerDump();
+            // fullDumpRAM((MMU*)arg);
             exit(0);
         });
     }
