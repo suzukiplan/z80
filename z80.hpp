@@ -3431,6 +3431,68 @@ class Z80
         return ctx->consumeClock(10);
     }
 
+    // Call with condition
+    inline int CALL_C_NN(unsigned char c)
+    {
+        bool execute;
+        switch (c) {
+            case 0b000: execute = isFlagZ() ? false : true; break;
+            case 0b001: execute = isFlagZ() ? true : false; break;
+            case 0b010: execute = isFlagC() ? false : true; break;
+            case 0b011: execute = isFlagC() ? true : false; break;
+            case 0b100: execute = isFlagPV() ? false : true; break;
+            case 0b101: execute = isFlagPV() ? true : false; break;
+            case 0b110: execute = isFlagS() ? false : true; break;
+            case 0b111: execute = isFlagS() ? true : false; break;
+            default: execute = false;
+        }
+        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
+        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
+        unsigned short addr = (nH << 8) + nL;
+        log("[%04X] CALL %s, $%04X (%s) <execute:%s>", reg.PC, conditionDump(c), addr, registerPairDump(0b11), execute ? "YES" : "NO");
+        reg.PC += 3;
+        if (execute) {
+            unsigned char pcL = reg.PC & 0x00FF;
+            unsigned char pcH = (reg.PC & 0xFF00) >> 8;
+            CB.write(CB.arg, reg.SP - 1, pcH);
+            CB.write(CB.arg, reg.SP - 2, pcL);
+            reg.SP -= 2;
+            reg.PC = addr;
+            return consumeClock(17);
+        } else {
+            return consumeClock(10);
+        }
+    }
+
+    // Return with condition
+    inline int RET_C(unsigned char c)
+    {
+        bool execute;
+        switch (c) {
+            case 0b000: execute = isFlagZ() ? false : true; break;
+            case 0b001: execute = isFlagZ() ? true : false; break;
+            case 0b010: execute = isFlagC() ? false : true; break;
+            case 0b011: execute = isFlagC() ? true : false; break;
+            case 0b100: execute = isFlagPV() ? false : true; break;
+            case 0b101: execute = isFlagPV() ? true : false; break;
+            case 0b110: execute = isFlagS() ? false : true; break;
+            case 0b111: execute = isFlagS() ? true : false; break;
+            default: execute = false;
+        }
+        if (!execute) {
+            log("[%04X] RET %s <execute:NO>", reg.PC, conditionDump(c));
+            reg.PC++;
+            return consumeClock(5);
+        }
+        unsigned char nL = CB.read(CB.arg, reg.SP);
+        unsigned char nH = CB.read(CB.arg, reg.SP + 1);
+        unsigned short addr = (nH << 8) + nL;
+        log("[%04X] RET %s to $%04X (%s) <execute:YES>", reg.PC, conditionDump(c), addr, registerPairDump(0b11));
+        reg.SP += 2;
+        reg.PC = addr;
+        return consumeClock(11);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3581,6 +3643,10 @@ class Z80
                     consume = DEC_R((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000111) == 0b11000010) {
                     consume = JP_C_NN((operandNumber & 0b00111000) >> 3);
+                } else if ((operandNumber & 0b11000111) == 0b11000100) {
+                    consume = CALL_C_NN((operandNumber & 0b00111000) >> 3);
+                } else if ((operandNumber & 0b11000111) == 0b11000000) {
+                    consume = RET_C((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000000) == 0b01000000) {
                     consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11111000) == 0b10000000) {
