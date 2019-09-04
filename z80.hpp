@@ -3501,7 +3501,7 @@ class Z80
         unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.SP);
         unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.SP + 1);
         unsigned short addr = (nH << 8) + nL;
-        ctx->log("[%04X] RET to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
+        ctx->log("[%04X] RETI to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
         ctx->reg.SP += 2;
         ctx->reg.PC = addr;
         ctx->reg.IFF1 = ctx->reg.IFF2;
