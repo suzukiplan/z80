@@ -57,8 +57,8 @@ class Z80
         unsigned short IY;
         unsigned char R;
         unsigned char I;
-        unsigned char IFF;
-        unsigned char reserved;
+        unsigned char IFF1;
+        unsigned char IFF2;
         int interruptMode;
         bool isHalt;
     } reg;
@@ -293,7 +293,8 @@ class Z80
     static inline int DI(Z80* ctx)
     {
         ctx->log("[%04X] DI", ctx->reg.PC);
-        ctx->reg.IFF = 0;
+        ctx->reg.IFF1 = 0;
+        ctx->reg.IFF2 = 0;
         ctx->reg.PC++;
         return ctx->consumeClock(4);
     }
@@ -301,7 +302,8 @@ class Z80
     static inline int EI(Z80* ctx)
     {
         ctx->log("[%04X] EI", ctx->reg.PC);
-        ctx->reg.IFF = 1;
+        ctx->reg.IFF1 = 1;
+        ctx->reg.IFF2 = 1;
         ctx->reg.PC++;
         return ctx->consumeClock(4);
     }
@@ -3493,6 +3495,19 @@ class Z80
         return consumeClock(11);
     }
 
+    // Return from interrupt
+    static inline int RETI(Z80* ctx)
+    {
+        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.SP);
+        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.SP + 1);
+        unsigned short addr = (nH << 8) + nL;
+        ctx->log("[%04X] RET to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
+        ctx->reg.SP += 2;
+        ctx->reg.PC = addr;
+        ctx->reg.IFF1 = ctx->reg.IFF2;
+        return ctx->consumeClock(10);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3712,7 +3727,7 @@ class Z80
             isFlagC() ? "ON" : "OFF");
         log("BACK: %s %s %s %s %s %s %s F'<$%02X>", registerDump2(0b111), registerDump2(0b000), registerDump2(0b001), registerDump2(0b010), registerDump2(0b011), registerDump2(0b100), registerDump2(0b101), reg.back.F);
         log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
-        log("R<$%02X> I<$%02X> IFF<$%02X>", reg.R, reg.I, reg.IFF);
+        log("R<$%02X> I<$%02X> IFF1<$%02X> IFF2<$%02X>", reg.R, reg.I, reg.IFF1, reg.IFF2);
         log("isHalt: %s, interruptMode: %d", reg.isHalt ? "YES" : "NO", reg.interruptMode);
         log("executed: %dHz", reg.consumeClockCounter);
         log("===== REGISTER DUMP : END =====");
