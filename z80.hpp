@@ -330,7 +330,7 @@ class Z80
             case 0b01010111:
                 ctx->log("[%04X] LD A<$%02X>, I<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.I);
                 ctx->reg.pair.A = ctx->reg.I;
-                ctx->setFlagPV(ctx->reg.IFF ? true : false);
+                ctx->setFlagPV(ctx->reg.IFF1 ? true : false);
                 ctx->reg.PC += 2;
                 return ctx->consumeClock(9);
             case 0b01000111:
@@ -341,7 +341,7 @@ class Z80
             case 0b01011111:
                 ctx->log("[%04X] LD A<$%02X>, R<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.R);
                 ctx->reg.pair.A = ctx->reg.R;
-                ctx->setFlagPV(ctx->reg.IFF ? true : false);
+                ctx->setFlagPV(ctx->reg.IFF1 ? true : false);
                 ctx->reg.PC += 2;
                 return ctx->consumeClock(9);
             case 0b01001111:
