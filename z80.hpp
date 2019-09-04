@@ -358,6 +358,8 @@ class Z80
             case 0b10110001: return ctx->CPIR();
             case 0b10101001: return ctx->CPD();
             case 0b10111001: return ctx->CPDR();
+            case 0b01001101: return ctx->RETI();
+            case 0b01000101: return ctx->RETN();
             default:
                 if ((mode & 0b11001111) == 0b01001011) {
                     return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
@@ -3496,16 +3498,29 @@ class Z80
     }
 
     // Return from interrupt
-    static inline int RETI(Z80* ctx)
+    inline int RETI()
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.SP);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.SP + 1);
+        unsigned char nL = CB.read(CB.arg, reg.SP);
+        unsigned char nH = CB.read(CB.arg, reg.SP + 1);
         unsigned short addr = (nH << 8) + nL;
-        ctx->log("[%04X] RETI to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
-        ctx->reg.SP += 2;
-        ctx->reg.PC = addr;
-        ctx->reg.IFF1 = ctx->reg.IFF2;
-        return ctx->consumeClock(10);
+        log("[%04X] RETI to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
+        reg.SP += 2;
+        reg.PC = addr;
+        reg.IFF1 = reg.IFF2;
+        return consumeClock(10);
+    }
+
+    // Return from non maskable interrupt
+    inline int RETN()
+    {
+        unsigned char nL = CB.read(CB.arg, reg.SP);
+        unsigned char nH = CB.read(CB.arg, reg.SP + 1);
+        unsigned short addr = (nH << 8) + nL;
+        log("[%04X] RETN to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
+        reg.SP += 2;
+        reg.PC = addr;
+        reg.IFF1 = reg.IFF2;
+        return consumeClock(10);
     }
 
     int (*opSet1[256])(Z80* ctx);
