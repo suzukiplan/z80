@@ -369,6 +369,8 @@ class Z80
                     return ctx->ADC_HL_RP((mode & 0b00110000) >> 4);
                 } else if ((mode & 0b11001111) == 0b01000010) {
                     return ctx->SBC_HL_RP((mode & 0b00110000) >> 4);
+                } else if ((mode & 0b11001111) == 0b01000000) {
+                    return ctx->IN_R_C((mode & 0b00110000) >> 4);
                 }
                 ctx->log("unknown IM: $%02X", mode);
                 return -1;
@@ -3546,6 +3548,21 @@ class Z80
         ctx->reg.pair.A = i;
         ctx->reg.PC += 2;
         return ctx->consumeClock(11);
+    }
+
+    // Input a byte form device (C) to register.
+    inline int IN_R_C(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        unsigned char i = CB.in(CB.arg, reg.pair.C);
+        log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
+        *rp = i;
+        reg.PC += 2;
+        return consumeClock(12);
     }
 
     int (*opSet1[256])(Z80* ctx);
