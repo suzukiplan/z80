@@ -3730,6 +3730,11 @@ class Z80
                     CB.breakPoint(CB.arg);
                 }
             }
+            if (CB.breakOperand) {
+                if (0 == CB.breakOperandNumber) {
+                    CB.breakOperand(CB.arg);
+                }
+            }
             // execute program counter & consume 4Hz (same as NOP)
             log("[%04X] NOP <HALT>", reg.PC);
             CB.read(CB.arg, reg.PC); // NOTE: read and discard
