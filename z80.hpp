@@ -3172,8 +3172,8 @@ class Z80
             unsigned short bc = getBC();
             unsigned char n = CB.read(CB.arg, hl);
             setFlagBySubstract(reg.pair.A, n);
-            setHL(hl + 1);
-            setBC(bc - 1);
+            setHL(++hl);
+            setBC(--bc);
             if (isFlagZ() || 0 == bc) {
                 hz += consumeClock(16);
                 break;
@@ -3209,8 +3209,8 @@ class Z80
             unsigned short bc = getBC();
             unsigned char n = CB.read(CB.arg, hl);
             setFlagBySubstract(reg.pair.A, n);
-            setHL(hl - 1);
-            setBC(bc - 1);
+            setHL(--hl);
+            setBC(--bc);
             if (isFlagZ() || 0 == bc) {
                 hz += consumeClock(16);
                 break;
