@@ -231,6 +231,17 @@ static void extractProgram(MMU& mmu)
     PG = 0x40;
     PG = 0x00;
 
+    addr = 0x0010;
+    PG = 0b11110011; // DI
+    PG = 0b11111011; // EI
+    PG = 0b11101101; // IM 0
+    PG = 0b01000110;
+    PG = 0b11101101; // IM 1
+    PG = 0b01010110;
+    PG = 0b11101101; // IM 2
+    PG = 0b01011110;
+    PG = 0b01110110; // HALT
+
     addr = 0x0040;
     PG = 0b01000111; // LD B, A
     PG = 0b00001110; // LD C, $56

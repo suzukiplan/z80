@@ -24,14 +24,14 @@
 [0070] LD IX, $1234
 [0074] LD IY, $5678
 [0078] LD HL<$0001>, ($1234) = $0000
-[007B] LD SP<$0000>, ($0011) = $0000
+[007B] LD SP<$0000>, ($0011) = $EDFB
 [007F] LD IX<$1234>, ($0002) = $0000
 [0083] LD IY<$5678>, ($0004) = $0000
 [0087] LD ($0010), HL<$0000>
 [008A] LD ($0020), DE<$4000>
 [008E] LD ($0008), IX<$0000>
 [0092] LD ($0018), IY<$0000>
-[0096] LD SP<$0000>, HL<$0000>
+[0096] LD SP<$EDFB>, HL<$0000>
 [0097] LD SP<$0000>, IX<$0000>
 [0099] LD SP<$0000>, IY<$0000>
 [009B] LDI ... BC<$ABCD>, DE<$4000>, HL<$0000>
@@ -206,12 +206,18 @@
 [1002] RET NZ to $021A (SP<$FFFE>) <execute:YES>
 [021A] CALL Z, $1001 (SP<$0000>) <execute:NO>
 [021D] RST from $0010 (SP<$0000>)
+[0010] DI
+[0011] EI
+[0012] IM 0
+[0014] IM 1
+[0016] IM 2
+[0018] HALT
 ===== REGISTER DUMP : START =====
 PAIR: A<$71> B<$00> C<$44> D<$00> E<$00> H<$01> L<$FD>
 PAIR: F<$14> ... S:OFF, Z:OFF, H:ON, P/V:ON, N:OFF, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$40> L'<$00> F'<$00>
-PC<$0010> SP<$FFFE> IX<$0203> IY<$0209>
-R<$00> I<$00> IFF1<$00> IFF2<$00>
-isHalt: NO, interruptMode: 0
-executed: 1372115Hz
+PC<$0019> SP<$FFFE> IX<$0203> IY<$0209>
+R<$00> I<$00> IFF1<$01> IFF2<$01>
+isHalt: YES, interruptMode: 2
+executed: 1372151Hz
 ===== REGISTER DUMP : END =====
