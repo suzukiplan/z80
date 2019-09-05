@@ -205,7 +205,8 @@
 [1001] RET Z <execute:NO>
 [1002] RET NZ to $021A (SP<$FFFE>) <execute:YES>
 [021A] CALL Z, $1001 (SP<$0000>) <execute:NO>
-[021D] RST from $0010 (SP<$0000>)
+[021D] IN A<$71>, ($CD) = $00
+[021F] RST from $0010 (SP<$0000>)
 [0010] DI
 [0011] EI
 [0012] IM 0
@@ -213,11 +214,11 @@
 [0016] IM 2
 [0018] HALT
 ===== REGISTER DUMP : START =====
-PAIR: A<$71> B<$00> C<$44> D<$00> E<$00> H<$01> L<$FD>
+PAIR: A<$00> B<$00> C<$44> D<$00> E<$00> H<$01> L<$FD>
 PAIR: F<$14> ... S:OFF, Z:OFF, H:ON, P/V:ON, N:OFF, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$40> L'<$00> F'<$00>
 PC<$0019> SP<$FFFE> IX<$0203> IY<$0209>
 R<$00> I<$00> IFF1<$01> IFF2<$01>
 isHalt: YES, interruptMode: 2
-executed: 1372151Hz
+executed: 1372162Hz
 ===== REGISTER DUMP : END =====

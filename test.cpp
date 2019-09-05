@@ -725,6 +725,8 @@ static void extractProgram(MMU& mmu)
     PG = 0b11001100; // CALL Z, $1001
     PG = 0x01;
     PG = 0x10;
+    PG = 0b11011011; // IN A, $CD
+    PG = 0xCD;
 
     PG = 0b11010111; // RST from $0010
 

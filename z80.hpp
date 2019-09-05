@@ -3537,6 +3537,17 @@ class Z80
         return consumeClock(12);
     }
 
+    // Input a byte form device n to accu.
+    static inline int IN_A_N(Z80* ctx)
+    {
+        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char i = ctx->CB.in(ctx->CB.arg, n);
+        ctx->log("[%04X] IN %s, ($%02X) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), n, i);
+        ctx->reg.pair.A = i;
+        ctx->reg.PC += 2;
+        return ctx->consumeClock(11);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3585,6 +3596,7 @@ class Z80
         opSet1[0b11001101] = CALL_NN;
         opSet1[0b11001110] = ADC_A_N;
         opSet1[0b11010110] = SUB_A_N;
+        opSet1[0b11011011] = IN_A_N;
         opSet1[0b11011110] = SBC_A_N;
         opSet1[0b11011001] = EXX;
         opSet1[0b11011101] = OP_IX;
