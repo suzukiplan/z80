@@ -3523,6 +3523,20 @@ class Z80
         return consumeClock(10);
     }
 
+    //　Restart
+    inline int RST(unsigned char t)
+    {
+        unsigned short addr = t * 8;
+        unsigned char pcH = (reg.PC & 0xFF00) >> 8;
+        unsigned char pcL = reg.PC & 0x00FF;
+        log("[%04X] RST from $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
+        CB.write(CB.arg, reg.SP - 1, pcH);
+        CB.write(CB.arg, reg.SP - 2, pcL);
+        reg.SP -= 2;
+        reg.PC = addr;
+        return consumeClock(12);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3677,6 +3691,8 @@ class Z80
                     consume = CALL_C_NN((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000111) == 0b11000000) {
                     consume = RET_C((operandNumber & 0b00111000) >> 3);
+                } else if ((operandNumber & 0b11000111) == 0b11000111) {
+                    consume = RST((operandNumber & 0b00111000) >> 3);
                 } else if ((operandNumber & 0b11000000) == 0b01000000) {
                     consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
                 } else if ((operandNumber & 0b11111000) == 0b10000000) {

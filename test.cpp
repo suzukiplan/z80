@@ -714,7 +714,8 @@ static void extractProgram(MMU& mmu)
     PG = 0b11001100; // CALL Z, $1001
     PG = 0x01;
     PG = 0x10;
-    PG = 0b00000000; // NOP
+
+    PG = 0b11010111; // RST from $0010
 
     // サブルーチン1: 何もせずにRET
     addr = 0x1000;
