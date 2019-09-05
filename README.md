@@ -37,9 +37,9 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 8.1 search
 - [x] 8.2 compare
 - [x] 9.1 jump
-- [ ] __9.2 sub routin__ <sup>*inprogress*</sup>
+- [x] 9.2 sub routin
 - [x] 10.1 interrupt
-- [ ] 10.2 input
+- [ ] __10.2 input__ <sup>*inprogress*</sup>
 - [ ] 10.3 output
 - [ ] 11. binary decimal
 
