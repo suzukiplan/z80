@@ -1,215 +1,216 @@
-[0000] LD B<$34>, A<$12>
-[0001] LD C<$00>, $56
-[0003] LD D<$00>, (HL<$0001>) = $0E
-[0004] LD E<$00>, (IX<$0000>+$04) = $DD
-[0007] LD H<$00>, (IY<$0001>+$04) = $5E
-[000A] LD (HL<$5E01>), B<$12>
-[000B] LD (IX<$0000>+$07), A<$12>
-[000E] LD (IY<$0001>+$07), C<$56>
-[0011] LD (HL<$5E01>), $7B
-[0013] LD (IX<$0000>+$09), $64
-[0017] LD (IY<$0001>+$09), $C8
-[001B] LD A, (BC<$1256>) = $00
-[001C] LD A, (DE<$0EDD>) = $00
-[001D] LD A, ($1234) = $00
-[0020] LD (BC<$1256>), A<$00>
-[0021] LD (DE<$0EDD>), A<$00>
-[0022] LD ($5678), A<$00>
-[0025] LD A<$00>, I<$00>
-[0027] LD I<$00>, A<$00>
-[0029] LD A<$00>, R<$00>
-[002B] LD R<$00>, A<$00>
-[002D] LD BC<$1256>, $ABCD
-[0030] LD IX, $1234
-[0034] LD IY, $5678
-[0038] LD HL<$5E01>, ($1234) = $0000
-[003B] LD SP<$0000>, ($0011) = $7B36
-[003F] LD IX<$1234>, ($0002) = $5656
-[0043] LD IY<$5678>, ($0004) = $5EDD
-[0047] LD ($0010), HL<$0000>
-[004A] LD ($0020), DE<$0EDD>
-[004E] LD ($0008), IX<$5656>
-[0052] LD ($0018), IY<$5EDD>
-[0056] LD SP<$7B36>, HL<$0000>
-[0057] LD SP<$0000>, IX<$5656>
-[0059] LD SP<$5656>, IY<$5EDD>
-[005B] LDI ... BC<$ABCD>, DE<$0EDD>, HL<$0000>
-[005D] LD BC<$ABCC>, $0005
-[0060] LDIR ... BC<$0005>, DE<$0EDE>, HL<$0001>
-[0062] LDD ... BC<$0000>, DE<$0EE3>, HL<$0006>
-[0064] LD BC<$FFFF>, $0005
-[0067] LDDR ... BC<$0005>, DE<$0EE2>, HL<$0005>
-[0069] EX DE<$0EDD>, HL<$0000>
-[006A] EX AF<$0000>, AF'<$0000>
-[006B] EXX
-[006C] EX (SP<$5EDD>) = $0000, HL<$0000>
-[006D] EX (SP<$5EDD>) = $0000, IX<$5656>
-[006F] EX (SP<$5EDD>) = $5656, IY<$5EDD>
-[0071] LD SP<$5EDD>, $0000
-[0074] LD BC<$0000>, $ABCD
-[0077] PUSH BC<$ABCD> <SP:$0000>
-[0078] LD BC<$ABCD>, $1234
-[007B] POP BC<$1234> <SP:$FFFE> = $1234
-[007C] PUSH AF<$0000> <SP:$0000>
-[007D] POP AF <SP:$FFFE> = $0000
-[007E] PUSH IX<$0000> <SP:$0000>
-[0080] PUSH IY<$5656> <SP:$FFFE>
-[0082] POP IX <SP:$FFFC> = $5656
-[0084] POP IY <SP:$FFFE> = $0000
-[0086] LD A<$00>, $AA
-[0088] RLCA <A:$AA, C:OFF>
-[0089] RLA <A:$55, C:ON>
-[008A] RLC A<$AB> <C:OFF>
-[008C] RL A<$57> <C:ON>
-[008E] LD HL<$0000>, $FFFD
-[0091] RLC (HL<$FFFD>) = $56 <C:OFF>
-[0093] RL (HL<$FFFD>) = $AC <C:OFF>
-[0095] RLC (IX+d<$5668>) = $00 <C:ON>
-[0099] RL (IX+d<$568A>) = $00 <C:OFF>
-[009D] RLC (IY+d<$0056>) = $F9 <C:OFF>
-[00A1] RL (IY+d<$0078>) = $01 <C:ON>
-[00A5] RRCA <A:$AF, C:OFF>
-[00A6] RRA <A:$D7, C:ON>
-[00A7] RRC A<$EB> <C:ON>
-[00A9] RR A<$F5> <C:ON>
-[00AB] RRC (HL<$FFFD>) = $58 <C:ON>
-[00AD] RR (HL<$FFFD>) = $2C <C:OFF>
-[00AF] RRC (IX+d<$5668>) = $00 <C:OFF>
-[00B3] RR (IX+d<$568A>) = $00 <C:OFF>
-[00B7] RRC (IY+d<$0056>) = $F9 <C:OFF>
-[00BB] RR (IY+d<$0078>) = $01 <C:ON>
-[00BF] SLA A<$FA> <C:ON>
-[00C1] SLA (HL<$FFFD>) = $16 <C:ON>
-[00C3] SLA (IX+d<$5668>) = $00 <C:OFF>
-[00C7] SLA (IY+d<$0012>) = $7B <C:OFF>
-[00CB] SRA A<$F4> <C:OFF>
-[00CD] SRA (HL<$FFFD>) = $2C <C:OFF>
-[00CF] SRA (IX+d<$5668>) = $00 <C:OFF>
-[00D3] SRA (IY+d<$0012>) = $7B <C:OFF>
-[00D7] SRL A<$FA> <C:ON>
-[00D9] SRL (HL<$FFFD>) = $16 <C:OFF>
-[00DB] SRL (IX+d<$5668>) = $00 <C:OFF>
-[00DF] SRL (IY+d<$0012>) = $7B <C:OFF>
-[00E3] ADD A<$7D>, B<$AB>
-[00E4] ADD A<$28>, $7F
-[00E6] ADD A<$A7>, (HL<$FFFD>) = $0B
-[00E7] ADD A<$B2>, (IX+d<$5668>) = $00
-[00EA] ADD A<$B2>, (IY+d<$0034>) = $FD
-[00ED] ADC A<$AF>, B<$AB> <C:ON>
-[00EE] ADC A<$5B>, $7F <C:ON>
-[00F0] ADC A<$DB>, (HL<$FFFD>) = $0B <C:OFF>
-[00F1] ADC A<$E6>, (IX+d<$5668>) = $00 <C:OFF>
-[00F4] ADC A<$E6>, (IY+d<$0034>) = $FD <C:OFF>
-[00F7] INC A<$E3>
-[00F8] INC (HL<$FFFD>) = $0B
-[00F9] INC (IX+d<$5668>) = $00
-[00FC] INC (IY+d<$0034>) = $FD
-[00FF] SUB A<$E4>, B<$AB>
-[0100] SUB A<$39>, $7F
-[0102] SUB A<$BA>, (HL<$FFFD>) = $0C
-[0103] SUB A<$AE>, (IX+d<$5668>) = $01
-[0106] SUB A<$AD>, (IY+d<$0034>) = $FD
-[0109] SBC A<$B0>, B<$AB> <C:ON>
-[010A] SBC A<$04>, $7F <C:OFF>
-[010C] SBC A<$85>, (HL<$FFFD>) = $0C <C:ON>
-[010D] SBC A<$78>, (IX+d<$5668>) = $01 <C:OFF>
-[0110] SBC A<$77>, (IY+d<$0034>) = $FD <C:OFF>
-[0113] DEC A<$7A>
-[0114] DEC (HL<$FFFD>) = $0C
-[0115] DEC (IX+d<$5668>) = $01
-[0118] DEC (IY+d<$0034>) = $FD
-[011B] ADD HL<$FFFD>, BC<$ABCD>
-[011C] ADC HL<$ABCA>, DE<$0000> <C:ON>
-[011E] ADD IX<$5656>, BC<$ABCD>
-[0120] ADD IY<$0000>, HL<$ABCB>
-[0122] INC BC<$ABCD>
-[0123] INC IX<$0223>
-[0125] INC IY<$ABCB>
-[0127] SBC HL<$ABCB>, BC<$ABCE> <C:OFF>
-[0129] DEC BC<$ABCE>
-[012A] DEC IX<$0224>
-[012C] DEC IY<$ABCC>
-[012E] AND A<$79>, B<$AB>
-[012F] AND A<$29>, $AA
-[0131] AND A<$28>, (HL<$FFFD>) = $0B
-[0132] AND A<$08>, (IX+d<$0235>) = $10
-[0135] AND A<$00>, (IY+d<$ABFF>) = $10
-[0138] OR A<$00>, B<$AB>
-[0139] OR A<$AB>, $AA
-[013B] OR A<$AB>, (HL<$FFFD>) = $0B
-[013C] OR A<$AB>, (IX+d<$0235>) = $10
-[013F] OR A<$AB>, (IY+d<$ABFF>) = $10
-[0142] XOR A<$AB>, B<$AB>
-[0143] XOR A<$00>, $AA
-[0145] XOR A<$AA>, (HL<$FFFD>) = $0B
-[0146] XOR A<$A1>, (IX+d<$0235>) = $10
-[0149] XOR A<$A1>, (IY+d<$ABFF>) = $10
-[014C] CPL A<$A1>
-[014D] NEG A<$5E>
-[014F] CCF <C:OFF -> ON>
-[0150] SCF <C:ON -> ON>
-[0151] BIT A<$A2> of bit-0
-[0153] BIT (HL<$FFFD>) = $0B of bit-3
-[0155] BIT (IX+d<$0235>) = $00 of bit-4
-[0159] BIT (IY+d<$ABFF>) = $00 of bit-5
-[015D] SET A<$A2> of bit-0
-[015F] SET (HL<$FFFD>) = $0B of bit-3
-[0161] SET (IX+d<$0235>) = $00 of bit-4
-[0165] SET (IY+d<$ABFF>) = $00 of bit-5
-[0169] RES A<$A3> of bit-0
-[016B] RES (HL<$FFFD>) = $0B of bit-3
-[016D] RES (IX+d<$0235>) = $00 of bit-4
-[0171] RES (IY+d<$ABFF>) = $20 of bit-5
-[0175] LD A<$A2>, $71
-[0177] LD BC<$ABCD>, $FFFF
-[017A] LD HL<$FFFD>, $0000
-[017D] CPI ... A<$71>, HL<$0000>, BC<$FFFF>
-[017F] CPIR ... A<$71>, HL<$0001>, BC<$FFFE>
-[0181] LD HL<$0010>, $0020
-[0184] CPD ... A<$71>, HL<$0020>, BC<$FFEF>
-[0186] CPDR ... A<$71>, HL<$001F>, BC<$FFEE>
-[0188] CP A<$71>, B<$FF>
-[0189] CP A<$71>, $AA
-[018B] CP A<$71>, (HL<$000E>) = $FD
-[018C] CP A<$71>, (IX+d<$0235>) = $00
-[018F] CP A<$71>, (IY+d<$ABFF>) = $00
-[0192] JP $019A
-[019A] AND A<$71>, A<$71>
-[019B] JP Z, $FFFF
-[019E] JP NZ, $01A6
-[01A6] AND A<$71>, A<$71>
-[01A7] JR $01A7 + 4 = $01AB
-[01AB] JR $01AB - 2 = $01A9
-[01A9] JR $01A9 + 4 = $01AD
-[01AD] AND A<$71>, A<$71>
-[01AE] JR C, $01AE - 126 = $0130 <NO>
-[01B0] JR NC, $01B0 + 3 = $01B3 <YES>
-[01B3] JR Z, $01B3 - 126 = $0135 <NO>
-[01B5] JR NZ, $01B5 + 3 = $01B8 <YES>
-[01B8] AND A<$71>, A<$71>
-[01B9] LD HL<$000E>, $01BD
-[01BC] JP HL<$01BD>
-[01BD] LD IX, $01C3
-[01C1] JP IX<$01C3>
-[01C3] LD IY, $01C9
-[01C7] JP IY<$01C9>
-[01C9] LD B<$FF>, $03
-[01CB] DJNZ $01CB - 126 = $014D (B<$03>)
-[01CD] DJNZ $01CD - 126 = $014F (B<$02>)
-[01CF] DJNZ $01CF + 4 = $01D3 (B<$01>)
-[01D3] AND A<$71>, A<$71>
-[01D4] CALL $1000 (SP<$0000>)
-[1000] RET to $01D7 (SP<$FFFE>)
-[01D7] CALL NZ, $1001 (SP<$0000>) <execute:YES>
+[0000] JP $0040
+[0040] LD B<$34>, A<$12>
+[0041] LD C<$00>, $56
+[0043] LD D<$00>, (HL<$0001>) = $40
+[0044] LD E<$00>, (IX<$0000>+$04) = $00
+[0047] LD H<$00>, (IY<$0001>+$04) = $00
+[004A] LD (HL<$0001>), B<$12>
+[004B] LD (IX<$0000>+$07), A<$12>
+[004E] LD (IY<$0001>+$07), C<$56>
+[0051] LD (HL<$0001>), $7B
+[0053] LD (IX<$0000>+$09), $64
+[0057] LD (IY<$0001>+$09), $C8
+[005B] LD A, (BC<$1256>) = $00
+[005C] LD A, (DE<$4000>) = $00
+[005D] LD A, ($1234) = $00
+[0060] LD (BC<$1256>), A<$00>
+[0061] LD (DE<$4000>), A<$00>
+[0062] LD ($5678), A<$00>
+[0065] LD A<$00>, I<$00>
+[0067] LD I<$00>, A<$00>
+[0069] LD A<$00>, R<$00>
+[006B] LD R<$00>, A<$00>
+[006D] LD BC<$1256>, $ABCD
+[0070] LD IX, $1234
+[0074] LD IY, $5678
+[0078] LD HL<$0001>, ($1234) = $0000
+[007B] LD SP<$0000>, ($0011) = $0000
+[007F] LD IX<$1234>, ($0002) = $0000
+[0083] LD IY<$5678>, ($0004) = $0000
+[0087] LD ($0010), HL<$0000>
+[008A] LD ($0020), DE<$4000>
+[008E] LD ($0008), IX<$0000>
+[0092] LD ($0018), IY<$0000>
+[0096] LD SP<$0000>, HL<$0000>
+[0097] LD SP<$0000>, IX<$0000>
+[0099] LD SP<$0000>, IY<$0000>
+[009B] LDI ... BC<$ABCD>, DE<$4000>, HL<$0000>
+[009D] LD BC<$ABCC>, $0005
+[00A0] LDIR ... BC<$0005>, DE<$4001>, HL<$0001>
+[00A2] LDD ... BC<$0000>, DE<$4006>, HL<$0006>
+[00A4] LD BC<$FFFF>, $0005
+[00A7] LDDR ... BC<$0005>, DE<$4005>, HL<$0005>
+[00A9] EX DE<$4000>, HL<$0000>
+[00AA] EX AF<$0000>, AF'<$0000>
+[00AB] EXX
+[00AC] EX (SP<$0000>) = $40C3, HL<$0000>
+[00AD] EX (SP<$0000>) = $40C3, IX<$0000>
+[00AF] EX (SP<$0000>) = $40C3, IY<$0000>
+[00B1] LD SP<$0000>, $0000
+[00B4] LD BC<$0000>, $ABCD
+[00B7] PUSH BC<$ABCD> <SP:$0000>
+[00B8] LD BC<$ABCD>, $1234
+[00BB] POP BC<$1234> <SP:$FFFE> = $1234
+[00BC] PUSH AF<$0000> <SP:$0000>
+[00BD] POP AF <SP:$FFFE> = $0000
+[00BE] PUSH IX<$40C3> <SP:$0000>
+[00C0] PUSH IY<$40C3> <SP:$FFFE>
+[00C2] POP IX <SP:$FFFC> = $40C3
+[00C4] POP IY <SP:$FFFE> = $40C3
+[00C6] LD A<$00>, $AA
+[00C8] RLCA <A:$AA, C:OFF>
+[00C9] RLA <A:$55, C:ON>
+[00CA] RLC A<$AB> <C:OFF>
+[00CC] RL A<$57> <C:ON>
+[00CE] LD HL<$40C3>, $FFFD
+[00D1] RLC (HL<$FFFD>) = $40 <C:OFF>
+[00D3] RL (HL<$FFFD>) = $80 <C:OFF>
+[00D5] RLC (IX+d<$40D5>) = $00 <C:ON>
+[00D9] RL (IX+d<$40F7>) = $00 <C:OFF>
+[00DD] RLC (IY+d<$4119>) = $00 <C:OFF>
+[00E1] RL (IY+d<$413B>) = $00 <C:OFF>
+[00E5] RRCA <A:$AF, C:OFF>
+[00E6] RRA <A:$D7, C:ON>
+[00E7] RRC A<$EB> <C:ON>
+[00E9] RR A<$F5> <C:ON>
+[00EB] RRC (HL<$FFFD>) = $00 <C:ON>
+[00ED] RR (HL<$FFFD>) = $00 <C:OFF>
+[00EF] RRC (IX+d<$40D5>) = $00 <C:OFF>
+[00F3] RR (IX+d<$40F7>) = $00 <C:OFF>
+[00F7] RRC (IY+d<$4119>) = $00 <C:OFF>
+[00FB] RR (IY+d<$413B>) = $00 <C:OFF>
+[00FF] SLA A<$FA> <C:OFF>
+[0101] SLA (HL<$FFFD>) = $00 <C:ON>
+[0103] SLA (IX+d<$40D5>) = $00 <C:OFF>
+[0107] SLA (IY+d<$40D5>) = $00 <C:OFF>
+[010B] SRA A<$F4> <C:OFF>
+[010D] SRA (HL<$FFFD>) = $00 <C:OFF>
+[010F] SRA (IX+d<$40D5>) = $00 <C:OFF>
+[0113] SRA (IY+d<$40D5>) = $00 <C:OFF>
+[0117] SRL A<$FA> <C:OFF>
+[0119] SRL (HL<$FFFD>) = $00 <C:OFF>
+[011B] SRL (IX+d<$40D5>) = $00 <C:OFF>
+[011F] SRL (IY+d<$40D5>) = $00 <C:OFF>
+[0123] ADD A<$7D>, B<$AB>
+[0124] ADD A<$28>, $7F
+[0126] ADD A<$A7>, (HL<$FFFD>) = $00
+[0127] ADD A<$A7>, (IX+d<$40D5>) = $00
+[012A] ADD A<$A7>, (IY+d<$40F7>) = $00
+[012D] ADC A<$A7>, B<$AB> <C:OFF>
+[012E] ADC A<$52>, $7F <C:ON>
+[0130] ADC A<$D2>, (HL<$FFFD>) = $00 <C:OFF>
+[0131] ADC A<$D2>, (IX+d<$40D5>) = $00 <C:OFF>
+[0134] ADC A<$D2>, (IY+d<$40F7>) = $00 <C:OFF>
+[0137] INC A<$D2>
+[0138] INC (HL<$FFFD>) = $00
+[0139] INC (IX+d<$40D5>) = $00
+[013C] INC (IY+d<$40F7>) = $00
+[013F] SUB A<$D3>, B<$AB>
+[0140] SUB A<$28>, $7F
+[0142] SUB A<$A9>, (HL<$FFFD>) = $01
+[0143] SUB A<$A8>, (IX+d<$40D5>) = $01
+[0146] SUB A<$A7>, (IY+d<$40F7>) = $01
+[0149] SBC A<$A6>, B<$AB> <C:OFF>
+[014A] SBC A<$FB>, $7F <C:ON>
+[014C] SBC A<$7B>, (HL<$FFFD>) = $01 <C:OFF>
+[014D] SBC A<$7A>, (IX+d<$40D5>) = $01 <C:OFF>
+[0150] SBC A<$79>, (IY+d<$40F7>) = $01 <C:OFF>
+[0153] DEC A<$78>
+[0154] DEC (HL<$FFFD>) = $01
+[0155] DEC (IX+d<$40D5>) = $01
+[0158] DEC (IY+d<$40F7>) = $01
+[015B] ADD HL<$FFFD>, BC<$ABCD>
+[015C] ADC HL<$ABCA>, DE<$0000> <C:ON>
+[015E] ADD IX<$40C3>, BC<$ABCD>
+[0160] ADD IY<$40C3>, HL<$ABCB>
+[0162] INC BC<$ABCD>
+[0163] INC IX<$EC90>
+[0165] INC IY<$EC8E>
+[0167] SBC HL<$ABCB>, BC<$ABCE> <C:OFF>
+[0169] DEC BC<$ABCE>
+[016A] DEC IX<$EC91>
+[016C] DEC IY<$EC8F>
+[016E] AND A<$77>, B<$AB>
+[016F] AND A<$23>, $AA
+[0171] AND A<$22>, (HL<$FFFD>) = $00
+[0172] AND A<$00>, (IX+d<$ECA2>) = $10
+[0175] AND A<$00>, (IY+d<$ECC2>) = $10
+[0178] OR A<$00>, B<$AB>
+[0179] OR A<$AB>, $AA
+[017B] OR A<$AB>, (HL<$FFFD>) = $00
+[017C] OR A<$AB>, (IX+d<$ECA2>) = $10
+[017F] OR A<$AB>, (IY+d<$ECC2>) = $10
+[0182] XOR A<$AB>, B<$AB>
+[0183] XOR A<$00>, $AA
+[0185] XOR A<$AA>, (HL<$FFFD>) = $00
+[0186] XOR A<$AA>, (IX+d<$ECA2>) = $10
+[0189] XOR A<$AA>, (IY+d<$ECC2>) = $10
+[018C] CPL A<$AA>
+[018D] NEG A<$55>
+[018F] CCF <C:OFF -> ON>
+[0190] SCF <C:ON -> ON>
+[0191] BIT A<$AB> of bit-0
+[0193] BIT (HL<$FFFD>) = $00 of bit-3
+[0195] BIT (IX+d<$ECA2>) = $00 of bit-4
+[0199] BIT (IY+d<$ECC2>) = $00 of bit-5
+[019D] SET A<$AB> of bit-0
+[019F] SET (HL<$FFFD>) = $00 of bit-3
+[01A1] SET (IX+d<$ECA2>) = $00 of bit-4
+[01A5] SET (IY+d<$ECC2>) = $00 of bit-5
+[01A9] RES A<$AB> of bit-0
+[01AB] RES (HL<$FFFD>) = $08 of bit-3
+[01AD] RES (IX+d<$ECA2>) = $10 of bit-4
+[01B1] RES (IY+d<$ECC2>) = $20 of bit-5
+[01B5] LD A<$AA>, $71
+[01B7] LD BC<$ABCD>, $FFFF
+[01BA] LD HL<$FFFD>, $0000
+[01BD] CPI ... A<$71>, HL<$0000>, BC<$FFFF>
+[01BF] CPIR ... A<$71>, HL<$0001>, BC<$FFFE>
+[01C1] LD HL<$0050>, $0020
+[01C4] CPD ... A<$71>, HL<$0020>, BC<$FFAF>
+[01C6] CPDR ... A<$71>, HL<$001F>, BC<$FFAE>
+[01C8] CP A<$71>, B<$01>
+[01C9] CP A<$71>, $AA
+[01CB] CP A<$71>, (HL<$01B5>) = $3E
+[01CC] CP A<$71>, (IX+d<$ECA2>) = $00
+[01CF] CP A<$71>, (IY+d<$ECC2>) = $00
+[01D2] JP $01DA
+[01DA] AND A<$71>, A<$71>
+[01DB] JP Z, $FFFF
+[01DE] JP NZ, $01E6
+[01E6] AND A<$71>, A<$71>
+[01E7] JR $01E7 + 4 = $01EB
+[01EB] JR $01EB - 2 = $01E9
+[01E9] JR $01E9 + 4 = $01ED
+[01ED] AND A<$71>, A<$71>
+[01EE] JR C, $01EE - 126 = $0170 <NO>
+[01F0] JR NC, $01F0 + 3 = $01F3 <YES>
+[01F3] JR Z, $01F3 - 126 = $0175 <NO>
+[01F5] JR NZ, $01F5 + 3 = $01F8 <YES>
+[01F8] AND A<$71>, A<$71>
+[01F9] LD HL<$01B5>, $01FD
+[01FC] JP HL<$01FD>
+[01FD] LD IX, $0203
+[0201] JP IX<$0203>
+[0203] LD IY, $0209
+[0207] JP IY<$0209>
+[0209] LD B<$01>, $03
+[020B] DJNZ $020B - 126 = $018D (B<$03>)
+[020D] DJNZ $020D - 126 = $018F (B<$02>)
+[020F] DJNZ $020F + 4 = $0213 (B<$01>)
+[0213] AND A<$71>, A<$71>
+[0214] CALL $1000 (SP<$0000>)
+[1000] RET to $0217 (SP<$FFFE>)
+[0217] CALL NZ, $1001 (SP<$0000>) <execute:YES>
 [1001] RET Z <execute:NO>
-[1002] RET NZ to $01DA (SP<$FFFE>) <execute:YES>
-[01DA] CALL Z, $1001 (SP<$0000>) <execute:NO>
+[1002] RET NZ to $021A (SP<$FFFE>) <execute:YES>
+[021A] CALL Z, $1001 (SP<$0000>) <execute:NO>
 ===== REGISTER DUMP : START =====
-PAIR: A<$71> B<$00> C<$DD> D<$00> E<$00> H<$01> L<$BD>
+PAIR: A<$71> B<$00> C<$44> D<$00> E<$00> H<$01> L<$FD>
 PAIR: F<$14> ... S:OFF, Z:OFF, H:ON, P/V:ON, N:OFF, C:OFF
-BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$0E> L'<$DD> F'<$00>
-PC<$01DD> SP<$0000> IX<$01C3> IY<$01C9>
+BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$40> L'<$00> F'<$00>
+PC<$021D> SP<$0000> IX<$0203> IY<$0209>
 R<$00> I<$00> IFF1<$00> IFF2<$00>
 isHalt: NO, interruptMode: 0
-executed: 3376Hz
+executed: 1372103Hz
 ===== REGISTER DUMP : END =====

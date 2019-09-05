@@ -227,6 +227,11 @@ int main(int argc, char* argv[])
 static void extractProgram(MMU& mmu)
 {
     unsigned short addr = 0;
+    PG = 0b11000011; // JP $0040
+    PG = 0x40;
+    PG = 0x00;
+
+    addr = 0x0040;
     PG = 0b01000111; // LD B, A
     PG = 0b00001110; // LD C, $56
     PG = 0x56;
