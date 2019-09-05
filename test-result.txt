@@ -162,51 +162,52 @@
 [01AD] RES (IX+d<$ECA2>) = $10 of bit-4
 [01B1] RES (IY+d<$ECC2>) = $20 of bit-5
 [01B5] LD A<$AA>, $71
-[01B7] LD BC<$ABCD>, $FFFF
-[01BA] LD HL<$FFFD>, $0000
-[01BD] CPI ... A<$71>, HL<$0000>, BC<$FFFF>
-[01BF] CPIR ... A<$71>, HL<$0001>, BC<$FFFE>
-[01C1] LD HL<$0050>, $0020
-[01C4] CPD ... A<$71>, HL<$0020>, BC<$FFAF>
-[01C6] CPDR ... A<$71>, HL<$001F>, BC<$FFAE>
-[01C8] CP A<$71>, B<$01>
-[01C9] CP A<$71>, $AA
-[01CB] CP A<$71>, (HL<$01B5>) = $3E
-[01CC] CP A<$71>, (IX+d<$ECA2>) = $00
-[01CF] CP A<$71>, (IY+d<$ECC2>) = $00
-[01D2] JP $01DA
-[01DA] AND A<$71>, A<$71>
-[01DB] JP Z, $FFFF
-[01DE] JP NZ, $01E6
-[01E6] AND A<$71>, A<$71>
-[01E7] JR $01E7 + 4 = $01EB
-[01EB] JR $01EB - 2 = $01E9
-[01E9] JR $01E9 + 4 = $01ED
-[01ED] AND A<$71>, A<$71>
-[01EE] JR C, $01EE - 126 = $0170 <NO>
-[01F0] JR NC, $01F0 + 3 = $01F3 <YES>
-[01F3] JR Z, $01F3 - 126 = $0175 <NO>
-[01F5] JR NZ, $01F5 + 3 = $01F8 <YES>
-[01F8] AND A<$71>, A<$71>
-[01F9] LD HL<$01B5>, $01FD
-[01FC] JP HL<$01FD>
-[01FD] LD IX, $0203
-[0201] JP IX<$0203>
-[0203] LD IY, $0209
-[0207] JP IY<$0209>
-[0209] LD B<$01>, $03
-[020B] DJNZ $020B - 126 = $018D (B<$03>)
-[020D] DJNZ $020D - 126 = $018F (B<$02>)
-[020F] DJNZ $020F + 4 = $0213 (B<$01>)
-[0213] AND A<$71>, A<$71>
-[0214] CALL $1000 (SP<$0000>)
-[1000] RET to $0217 (SP<$FFFE>)
-[0217] CALL NZ, $1001 (SP<$0000>) <execute:YES>
+[01B7] LD BC<$ABCD>, $0010
+[01BA] LD HL<$FFFD>, $0020
+[01BD] CPI ... A<$71>, HL<$0020>, BC<$0010>
+[01BF] CPIR ... A<$71>, HL<$0021>, BC<$000F>
+[01C1] LD BC<$0000>, $0010
+[01C4] LD HL<$0030>, $0040
+[01C7] CPD ... A<$71>, HL<$0040>, BC<$0010>
+[01C9] CPDR ... A<$71>, HL<$003F>, BC<$000F>
+[01CB] CP A<$71>, B<$00>
+[01CC] CP A<$71>, $AA
+[01CE] CP A<$71>, (HL<$0030>) = $00
+[01CF] CP A<$71>, (IX+d<$ECA2>) = $00
+[01D2] CP A<$71>, (IY+d<$ECC2>) = $00
+[01D5] JP $01DD
+[01DD] AND A<$71>, A<$71>
+[01DE] JP Z, $FFFF
+[01E1] JP NZ, $01E9
+[01E9] AND A<$71>, A<$71>
+[01EA] JR $01EA + 4 = $01EE
+[01EE] JR $01EE - 2 = $01EC
+[01EC] JR $01EC + 4 = $01F0
+[01F0] AND A<$71>, A<$71>
+[01F1] JR C, $01F1 - 126 = $0173 <NO>
+[01F3] JR NC, $01F3 + 3 = $01F6 <YES>
+[01F6] JR Z, $01F6 - 126 = $0178 <NO>
+[01F8] JR NZ, $01F8 + 3 = $01FB <YES>
+[01FB] AND A<$71>, A<$71>
+[01FC] LD HL<$0030>, $0200
+[01FF] JP HL<$0200>
+[0200] LD IX, $0206
+[0204] JP IX<$0206>
+[0206] LD IY, $020C
+[020A] JP IY<$020C>
+[020C] LD B<$00>, $03
+[020E] DJNZ $020E - 126 = $0190 (B<$03>)
+[0210] DJNZ $0210 - 126 = $0192 (B<$02>)
+[0212] DJNZ $0212 + 4 = $0216 (B<$01>)
+[0216] AND A<$71>, A<$71>
+[0217] CALL $1000 (SP<$0000>)
+[1000] RET to $021A (SP<$FFFE>)
+[021A] CALL NZ, $1001 (SP<$0000>) <execute:YES>
 [1001] RET Z <execute:NO>
-[1002] RET NZ to $021A (SP<$FFFE>) <execute:YES>
-[021A] CALL Z, $1001 (SP<$0000>) <execute:NO>
-[021D] IN A<$71>, ($CD) = $00
-[021F] RST from $0010 (SP<$0000>)
+[1002] RET NZ to $021D (SP<$FFFE>) <execute:YES>
+[021D] CALL Z, $1001 (SP<$0000>) <execute:NO>
+[0220] IN A<$71>, ($CD) = $00
+[0222] RST from $0010 (SP<$0000>)
 [0010] DI
 [0011] EI
 [0012] IM 0
@@ -214,11 +215,11 @@
 [0016] IM 2
 [0018] HALT
 ===== REGISTER DUMP : START =====
-PAIR: A<$00> B<$00> C<$44> D<$00> E<$00> H<$01> L<$FD>
+PAIR: A<$00> B<$00> C<$00> D<$00> E<$00> H<$02> L<$00>
 PAIR: F<$14> ... S:OFF, Z:OFF, H:ON, P/V:ON, N:OFF, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$40> L'<$00> F'<$00>
-PC<$0019> SP<$FFFE> IX<$0203> IY<$0209>
+PC<$0019> SP<$FFFE> IX<$0206> IY<$020C>
 R<$00> I<$00> IFF1<$01> IFF2<$01>
 isHalt: YES, interruptMode: 2
-executed: 1372162Hz
+executed: 3413Hz
 ===== REGISTER DUMP : END =====
