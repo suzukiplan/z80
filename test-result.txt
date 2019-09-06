@@ -217,7 +217,7 @@
 [0018] HALT
 ===== REGISTER DUMP : START =====
 PAIR: A<$00> B<$00> C<$00> D<$00> E<$00> H<$02> L<$00>
-PAIR: F<$14> ... S:OFF, Z:OFF, H:ON, P/V:ON, N:OFF, C:OFF
+PAIR: F<$44> ... S:OFF, Z:ON, H:OFF, P/V:ON, N:OFF, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$40> L'<$00> F'<$00>
 PC<$0019> SP<$FFFE> IX<$0206> IY<$020C>
 R<$00> I<$00> IFF1<$01> IFF2<$01>

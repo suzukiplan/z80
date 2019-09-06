@@ -360,6 +360,10 @@ class Z80
             case 0b10111001: return ctx->CPDR();
             case 0b01001101: return ctx->RETI();
             case 0b01000101: return ctx->RETN();
+            case 0b10100010: return ctx->INI();
+            case 0b10110010: return ctx->INIR();
+            case 0b10101010: return ctx->IND();
+            case 0b10111010: return ctx->INDR();
             default:
                 if ((mode & 0b11001111) == 0b01001011) {
                     return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
@@ -3561,8 +3565,95 @@ class Z80
         unsigned char i = CB.in(CB.arg, reg.pair.C);
         log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
         *rp = i;
+        setFlagS(i & 0x80 ? true : false);
+        setFlagZ(i == 0);
+        setFlagH(false);
+        setFlagPV(isEvenNumberBits(i));
+        setFlagN(false);
         reg.PC += 2;
         return consumeClock(12);
+    }
+
+    // Load location (HL) with input from port (C); or increment HL and decrement B
+    inline int INI()
+    {
+        unsigned char i = CB.in(CB.arg, reg.pair.C);
+        unsigned short hl = getHL();
+        log("[%04X] INI ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+        CB.write(CB.arg, hl, i);
+        reg.pair.B--;
+        setHL(hl + 1);
+        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagZ(reg.pair.B == 0);
+        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagN(true);
+        reg.PC += 2;
+        return consumeClock(16);
+    }
+
+    // Load location (HL) with input from port (C), increment HL and decrement B, repeat until B=0
+    inline int INIR()
+    {
+        log("[%04X] INIR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
+        unsigned short hl = getHL();
+        unsigned char i;
+        int consumed = 0;
+        do {
+            i = CB.in(CB.arg, reg.pair.C);
+            CB.write(CB.arg, hl++, i);
+            reg.pair.B--;
+            consumed += 0 != consumeClock(reg.pair.B == 0 ? 16 : 21);
+        } while (0 != reg.pair.B);
+        setHL(hl);
+        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagZ(true);
+        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagN(true);
+        reg.PC += 2;
+        return consumed;
+    }
+
+    // Load location (HL) with input from port (C); or decrement HL and B
+    inline int IND()
+    {
+        unsigned char i = CB.in(CB.arg, reg.pair.C);
+        unsigned short hl = getHL();
+        log("[%04X] IND ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+        CB.write(CB.arg, hl, i);
+        reg.pair.B--;
+        setHL(hl - 1);
+        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagZ(reg.pair.B == 0);
+        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagN(true);
+        reg.PC += 2;
+        return consumeClock(16);
+    }
+
+    // Load location (HL) with input from port (C), decrement HL and B, repeat until B=0
+    inline int INDR()
+    {
+        log("[%04X] INIR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
+        unsigned short hl = getHL();
+        unsigned char i;
+        int consumed = 0;
+        do {
+            i = CB.in(CB.arg, reg.pair.C);
+            CB.write(CB.arg, hl--, i);
+            reg.pair.B--;
+            consumed += 0 != consumeClock(reg.pair.B == 0 ? 16 : 21);
+        } while (0 != reg.pair.B);
+        setHL(hl);
+        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagZ(true);
+        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagN(true);
+        reg.PC += 2;
+        return consumed;
     }
 
     int (*opSet1[256])(Z80* ctx);
