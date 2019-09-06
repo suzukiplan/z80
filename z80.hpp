@@ -3656,6 +3656,126 @@ class Z80
         return consumed;
     }
 
+    static inline int DAA(Z80* ctx)
+    {
+        unsigned char aH = (ctx->reg.pair.A & 0b11110000) >> 4;
+        unsigned char aL = ctx->reg.pair.A & 0b00001111;
+        unsigned beforeA = ctx->reg.pair.A;
+        bool beforeCarry = ctx->isFlagC();
+        if (!ctx->isFlagN()) {
+            if (!ctx->isFlagC()) {
+                if (!ctx->isFlagH()) {
+                    if (aH < 9) {
+                        ctx->setFlagC(false);
+                        if (aL < 10) {
+                            ;
+                        } else {
+                            ctx->reg.pair.A += 0x06;
+                        }
+                    } else if (aH == 9) {
+                        if (aL < 10) {
+                            ctx->setFlagC(false);
+                        } else {
+                            ctx->reg.pair.A += 0x66;
+                            ctx->setFlagC(true);
+                        }
+                    } else {
+                        ctx->setFlagC(true);
+                        if (aL < 10) {
+                            ctx->reg.pair.A += 0x60;
+                        } else {
+                            ctx->reg.pair.A += 0x66;
+                        }
+                    }
+                } else {
+                    if (aH < 9) {
+                        ctx->setFlagC(false);
+                        ctx->reg.pair.A += 0x06;
+                    } else if (aH == 9) {
+                        if (aL < 10) {
+                            ctx->reg.pair.A += 0x06;
+                            ctx->setFlagC(false);
+                        } else {
+                            ctx->reg.pair.A += 0x66;
+                            ctx->setFlagC(true);
+                        }
+                    } else {
+                        ctx->setFlagC(true);
+                        ctx->reg.pair.A += 0x66;
+                    }
+                }
+            } else {
+                ctx->setFlagC(true);
+                if (!ctx->isFlagH()) {
+                    if (aL < 10) {
+                        ctx->reg.pair.A += 0x60;
+                    } else {
+                        ctx->reg.pair.A += 0x66;
+                    }
+                } else {
+                    ctx->reg.pair.A += 0x66;
+                }
+            }
+        } else {
+            if (!ctx->isFlagC()) {
+                if (!ctx->isFlagH()) {
+                    if (aH < 9) {
+                        ctx->setFlagC(false);
+                        if (aL < 10) {
+                            ;
+                        } else {
+                            ctx->reg.pair.A += 0xFA;
+                        }
+                    } else if (aH == 9) {
+                        if (aL < 10) {
+                            ctx->setFlagC(false);
+                        } else {
+                            ctx->reg.pair.A += 0x9A;
+                            ctx->setFlagC(true);
+                        }
+                    } else {
+                        ctx->setFlagC(true);
+                        if (aL < 10) {
+                            ctx->reg.pair.A += 0xA0;
+                        } else {
+                            ctx->reg.pair.A += 0x9A;
+                        }
+                    }
+                } else {
+                    if (aH < 9) {
+                        ctx->setFlagC(false);
+                        ctx->reg.pair.A += 0xFA;
+                    } else if (aH == 9) {
+                        if (aL < 10) {
+                            ctx->reg.pair.A += 0xFA;
+                            ctx->setFlagC(false);
+                        } else {
+                            ctx->reg.pair.A += 0x9A;
+                            ctx->setFlagC(true);
+                        }
+                    } else {
+                        ctx->setFlagC(true);
+                        ctx->reg.pair.A += 0x9A;
+                    }
+                }
+            } else {
+                ctx->setFlagC(true);
+                if (!ctx->isFlagH()) {
+                    if (aL < 10) {
+                        ctx->reg.pair.A += 0xA0;
+                    } else {
+                        ctx->reg.pair.A += 0x9A;
+                    }
+                } else {
+                    ctx->reg.pair.A += 0x9A;
+                }
+            }
+        }
+        ctx->log("[%04X] DAA ... A: $%02X -> $%02X, carry: %s -> %s", ctx->reg.PC, beforeA, ctx->reg.pair.A, beforeCarry ? "ON" : "OFF", ctx->isFlagC() ? "ON" : "OFF");
+        ctx->reg.PC++;
+        return ctx->consumeClock(4);
+    }
+
     int (*opSet1[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -3676,6 +3796,7 @@ class Z80
         opSet1[0b00011111] = RRA;
         opSet1[0b00100000] = JR_NZ_E;
         opSet1[0b00100010] = LD_ADDR_HL;
+        opSet1[0b00100111] = DAA;
         opSet1[0b00101000] = JR_Z_E;
         opSet1[0b00101010] = LD_HL_ADDR;
         opSet1[0b00101111] = CPL;

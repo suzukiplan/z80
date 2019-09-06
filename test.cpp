@@ -745,6 +745,10 @@ static void extractProgram(MMU& mmu)
     PG = 0b11101101; // INDR
     PG = 0b10111010;
 
+    PG = 0b11000110; // ADD A, $7F
+    PG = 0x7F;
+    PG = 0b00100111; // DAA
+
     PG = 0b11010111; // RST from $0010
 
     // サブルーチン1: 何もせずにRET

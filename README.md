@@ -17,6 +17,7 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 > - [Z80 CPU User Manual - Zilog](https://www.zilog.com/manage_directlink.php?filepath=docs/z80/um0080&extn=.pdf)
 > - [8ビット CPU Z80](http://www.yamamo10.jp/yamamoto/comp/Z80/index.php) of [山本研究所](http://www.yamamo10.jp/yamamoto/index.html)
 > - [Z80 Code Refference](http://mydocuments.g2.xrea.com/html/p6/z80ref.html) of [Bookworm's Library](http://mydocuments.g2.xrea.com/index.html)
+> - [Zilog Z80 DAA Result Table](http://ver0.sakura.ne.jp/doc/daa.html) of [Version 0](http://ver0.sakura.ne.jp/)
 
 ## WIP status
 
