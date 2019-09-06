@@ -1,6 +1,6 @@
 # SUZUKI PLAN - Z80 Emulator (WIP) [![Build Status](https://travis-ci.org/suzukiplan/z80.svg?branch=master)](https://travis-ci.org/suzukiplan/z80)
 
-The Z80 was an 8-bit CPU developed by Zilog corporation, released in 1976, and widely used in computers and game consoles in the 1980s.
+The Z80 is an 8-bit CPU developed by Zilog corporation, released in 1976, and widely used in computers and game consoles in the 1980s.
 It is not just a relic of the past, but continues to be used in embedded systems that require accuracy in processing execution time, such as real-time systems.
 
 __SUZUKI PLAN - Z80 Emulator__ is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80:
@@ -14,6 +14,7 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 
 > Since I do not have deep knowledge about Z80 myself, I'm implementing it with reference to the information on the following web sites:
 > 
+> - [Z80 CPU User Manual - Zilog](https://www.zilog.com/manage_directlink.php?filepath=docs/z80/um0080&extn=.pdf)
 > - [8ビット CPU Z80](http://www.yamamo10.jp/yamamoto/comp/Z80/index.php) of [山本研究所](http://www.yamamo10.jp/yamamoto/index.html)
 > - [Z80 Code Refference](http://mydocuments.g2.xrea.com/html/p6/z80ref.html) of [Bookworm's Library](http://mydocuments.g2.xrea.com/index.html)
 
@@ -39,8 +40,8 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 9.1 jump
 - [x] 9.2 sub routin
 - [x] 10.1 interrupt
-- [ ] __10.2 input__ <sup>*inprogress*</sup>
-- [ ] 10.3 output
+- [x] 10.2 input
+- [ ] __10.3 output__ <sup>*inprogress*</sup>
 - [ ] 11. binary decimal
 
 > Reference: [http://www.yamamo10.jp/yamamoto/comp/Z80/instructions/index.php](http://www.yamamo10.jp/yamamoto/comp/Z80/instructions/index.php)
