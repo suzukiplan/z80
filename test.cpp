@@ -732,6 +732,18 @@ static void extractProgram(MMU& mmu)
     PG = 0xCD;
     PG = 0b11101101; // IN B, (C)
     PG = 0b01000000;
+    PG = 0b00000110; // LD B, $03
+    PG = 0x03;
+    PG = 0b11101101; // INI
+    PG = 0b10100010;
+    PG = 0b11101101; // INIR
+    PG = 0b10110010;
+    PG = 0b00000110; // LD B, $03
+    PG = 0x03;
+    PG = 0b11101101; // IND
+    PG = 0b10101010;
+    PG = 0b11101101; // INDR
+    PG = 0b10111010;
 
     PG = 0b11010111; // RST from $0010
 
