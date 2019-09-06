@@ -3662,7 +3662,7 @@ class Z80
         unsigned char aL = ctx->reg.pair.A & 0b00001111;
         unsigned beforeA = ctx->reg.pair.A;
         bool beforeCarry = ctx->isFlagC();
-        if (!ctx->isFlagN()) {
+        if (ctx->isFlagN()) {
             if (!ctx->isFlagC()) {
                 if (!ctx->isFlagH()) {
                     if (aH < 9) {
@@ -3771,7 +3771,7 @@ class Z80
                 }
             }
         }
-        ctx->log("[%04X] DAA ... A: $%02X -> $%02X, carry: %s -> %s", ctx->reg.PC, beforeA, ctx->reg.pair.A, beforeCarry ? "ON" : "OFF", ctx->isFlagC() ? "ON" : "OFF");
+        ctx->log("[%04X] DAA ... A: $%02X -> $%02X, flag-n: %s, flag-h: %s, flag-c: %s -> %s", ctx->reg.PC, beforeA, ctx->reg.pair.A, ctx->isFlagN() ? "ON" : "OFF", ctx->isFlagH() ? "ON" : "OFF", beforeCarry ? "ON" : "OFF", ctx->isFlagC() ? "ON" : "OFF");
         ctx->reg.PC++;
         return ctx->consumeClock(4);
     }
