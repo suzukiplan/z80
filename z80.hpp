@@ -3636,7 +3636,7 @@ class Z80
     // Load location (HL) with input from port (C), decrement HL and B, repeat until B=0
     inline int INDR()
     {
-        log("[%04X] INIR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
+        log("[%04X] INDR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
         unsigned short hl = getHL();
         unsigned char i;
         int consumed = 0;
