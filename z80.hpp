@@ -308,7 +308,7 @@ class Z80
         return ctx->consumeClock(4);
     }
 
-    static inline int IM(Z80* ctx)
+    static inline int EXTRA(Z80* ctx)
     {
         unsigned char mode = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
         switch (mode) {
@@ -3712,7 +3712,7 @@ class Z80
         opSet1[0b11100110] = AND_N;
         opSet1[0b11101001] = JP_HL;
         opSet1[0b11101011] = EX_DE_HL;
-        opSet1[0b11101101] = IM;
+        opSet1[0b11101101] = EXTRA;
         opSet1[0b11101110] = XOR_N;
         opSet1[0b11110001] = POP_AF;
         opSet1[0b11110011] = DI;
