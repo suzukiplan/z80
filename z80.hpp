@@ -464,15 +464,11 @@ class Z80
                     case 0b00100110: return ctx->SLA_IX(op3);
                     case 0b00101110: return ctx->SRA_IX(op3);
                     case 0b00111110: return ctx->SRL_IX(op3);
-                    default: {
-                        if ((op4 & 0b11000111) == 0b01000110) {
-                            return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
-                        } else if ((op4 & 0b11000111) == 0b11000110) {
-                            return ctx->SET_IX(op3, (op4 & 0b00111000) >> 3);
-                        } else if ((op4 & 0b11000111) == 0b10000110) {
-                            return ctx->RES_IX(op3, (op4 & 0b00111000) >> 3);
-                        }
-                    }
+                }
+                switch (op4 & 0b11000111) {
+                    case 0b01000110: return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
+                    case 0b11000110: return ctx->SET_IX(op3, (op4 & 0b00111000) >> 3);
+                    case 0b10000110: return ctx->RES_IX(op3, (op4 & 0b00111000) >> 3);
                 }
             }
         }
@@ -524,15 +520,11 @@ class Z80
                     case 0b00100110: return ctx->SLA_IY(op3);
                     case 0b00101110: return ctx->SRA_IY(op3);
                     case 0b00111110: return ctx->SRL_IY(op3);
-                    default: {
-                        if ((op4 & 0b11000111) == 0b01000110) {
-                            return ctx->BIT_IY(op3, (op4 & 0b00111000) >> 3);
-                        } else if ((op4 & 0b11000111) == 0b11000110) {
-                            return ctx->SET_IY(op3, (op4 & 0b00111000) >> 3);
-                        } else if ((op4 & 0b11000111) == 0b10000110) {
-                            return ctx->RES_IY(op3, (op4 & 0b00111000) >> 3);
-                        }
-                    }
+                }
+                switch (op4 & 0b11000111) {
+                    case 0b01000110: return ctx->BIT_IY(op3, (op4 & 0b00111000) >> 3);
+                    case 0b11000110: return ctx->SET_IY(op3, (op4 & 0b00111000) >> 3);
+                    case 0b10000110: return ctx->RES_IY(op3, (op4 & 0b00111000) >> 3);
                 }
             }
         }
