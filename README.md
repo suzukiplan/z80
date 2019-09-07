@@ -19,38 +19,6 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 > - [Z80 Code Refference](http://mydocuments.g2.xrea.com/html/p6/z80ref.html) of [Bookworm's Library](http://mydocuments.g2.xrea.com/index.html)
 > - [Zilog Z80 DAA Result Table](http://ver0.sakura.ne.jp/doc/daa.html) of [Version 0](http://ver0.sakura.ne.jp/)
 
-## WIP status
-
-### 1. Implementation
-
-- [x] 3.1 8bit load instructions
-- [x] 3.2 16bit load instructions
-- [x] 3.3 block load instructions
-- [x] 3.4 exchange instructions
-- [x] 4. stack instructions
-- [x] 5.1 left rotate instructions
-- [x] 5.2 right rotate instructions
-- [x] 5.3 left shift instructions
-- [x] 5.4 right shift instructions
-- [x] 6.1 8bit arithmetic instructions
-- [x] 6.2 16bit arithmetic instructions
-- [x] 7.1 logical operation instructions
-- [x] 7.2 bit instructions
-- [x] 8.1 search
-- [x] 8.2 compare
-- [x] 9.1 jump
-- [x] 9.2 sub routin
-- [x] 10.1 interrupt
-- [x] 10.2 input
-- [x] 10.3 output
-- [ ] __11. binary decimal__ <sup>*inprogress*</sup>
-
-> Reference: [http://www.yamamo10.jp/yamamoto/comp/Z80/instructions/index.php](http://www.yamamo10.jp/yamamoto/comp/Z80/instructions/index.php)
-
-### 2. Testing
-
-_Considering good system test method..._
-
 ## How to test
 
 ### Prerequests
