@@ -134,12 +134,15 @@ Debug message contains dynamic disassembly results step by step.
 If you want to execute processing just before executing an instruction of specific program counter value _(in this ex: $008E)_, you can set a breakpoint as follows:
 
 ```c++
-    z80.setBreakPoint(0x008E, [](void* arg) -> void {
+    z80.addBreakPoint(0x008E, [](void* arg) -> void {
         printf("Detect break point! (PUSH ENTER TO CONTINUE)");
         char buf[80];
         fgets(buf, sizeof(buf), stdin);
     });
 ```
+
+- `addBreakPoint` can set multiple breakpoints.
+- call `removeBreakPoint` or `removeAllBreakPoints` if you want to remove the break point(s).
 
 ### Use break operand
 

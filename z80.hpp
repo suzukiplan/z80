@@ -32,6 +32,7 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
+#include <vector>
 
 class Z80
 {
@@ -80,6 +81,18 @@ class Z80
     inline bool isFlagN() { return reg.pair.F & 0b00000010; }
     inline bool isFlagC() { return reg.pair.F & 0b00000001; }
 
+    class BreakPoint
+    {
+      public:
+        unsigned short addr;
+        void (*callback)(void* arg);
+        BreakPoint(unsigned short addr, void (*callback)(void* arg))
+        {
+            this->addr = addr;
+            this->callback = callback;
+        }
+    };
+
     struct Callback {
         unsigned char (*read)(void* arg, unsigned short addr);
         void (*write)(void* arg, unsigned short addr, unsigned char value);
@@ -87,12 +100,31 @@ class Z80
         void (*out)(void* arg, unsigned char port, unsigned char value);
         void (*debugMessage)(void* arg, const char* message);
         void (*consumeClock)(void* arg, int clock);
-        void (*breakPoint)(void* arg);
         void (*breakOperand)(void* arg);
+        std::vector<BreakPoint*> breakPoints;
         void* arg;
-        unsigned short breakPointAddress;
         unsigned char breakOperandNumber;
     } CB;
+
+    inline void checkBreakPoint()
+    {
+        if (!CB.breakPoints.empty()) {
+            for (auto bp : CB.breakPoints) {
+                if (bp->addr == reg.PC) {
+                    bp->callback(CB.arg);
+                }
+            }
+        }
+    }
+
+    inline void checkBreakOperand(unsigned char operandNumber)
+    {
+        if (CB.breakOperand) {
+            if (operandNumber == CB.breakOperandNumber) {
+                CB.breakOperand(CB.arg);
+            }
+        }
+    }
 
     inline void log(const char* format, ...)
     {
@@ -4032,10 +4064,28 @@ class Z80
         CB.debugMessage = debugMessage;
     }
 
-    void setBreakPoint(unsigned short addr, void (*breakPoint)(void*) = NULL)
+    void addBreakPoint(unsigned short addr, void (*callback)(void*) = NULL)
     {
-        CB.breakPointAddress = addr;
-        CB.breakPoint = breakPoint;
+        CB.breakPoints.push_back(new BreakPoint(addr, callback));
+    }
+
+    void removeBreakPoint(void (*callback)(void*))
+    {
+        int index = 0;
+        for (auto bp : CB.breakPoints) {
+            if (bp->callback == callback) {
+                CB.breakPoints.erase(CB.breakPoints.begin() + index);
+                delete bp;
+                return;
+            }
+            index++;
+        }
+    }
+
+    void removeAllBreakPoints()
+    {
+        for (auto bp : CB.breakPoints) delete bp;
+        CB.breakPoints.clear();
     }
 
     void setBreakOperand(unsigned char op, void (*breakOperand)(void*) = NULL)
@@ -4053,17 +4103,9 @@ class Z80
     {
         int executed = 0;
         while (0 < clock && !reg.isHalt) {
-            if (CB.breakPoint) {
-                if (CB.breakPointAddress == reg.PC) {
-                    CB.breakPoint(CB.arg);
-                }
-            }
+            checkBreakPoint();
             int operandNumber = CB.read(CB.arg, reg.PC);
-            if (CB.breakOperand) {
-                if (operandNumber == CB.breakOperandNumber) {
-                    CB.breakOperand(CB.arg);
-                }
-            }
+            checkBreakOperand(operandNumber);
             int (*op)(Z80*) = opSet1[operandNumber];
             int consume = -1;
             if (NULL == op) {
@@ -4130,16 +4172,8 @@ class Z80
         }
         // execute NOP while halt
         while (0 < clock && reg.isHalt) {
-            if (CB.breakPoint) {
-                if (CB.breakPointAddress == reg.PC) {
-                    CB.breakPoint(CB.arg);
-                }
-            }
-            if (CB.breakOperand) {
-                if (0 == CB.breakOperandNumber) {
-                    CB.breakOperand(CB.arg);
-                }
-            }
+            checkBreakPoint();
+            checkBreakOperand(0);
             // execute program counter & consume 4Hz (same as NOP)
             log("[%04X] NOP <HALT>", reg.PC);
             CB.read(CB.arg, reg.PC); // NOTE: read and discard

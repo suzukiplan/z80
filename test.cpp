@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 
     /*
     // Use break point:
-    z80.setBreakPoint(0x008E, [](void* arg) -> void {
+    z80.addBreakPoint(0x008E, [](void* arg) -> void {
         printf("Detect break point! (PUSH ENTER TO CONTINUE)");
         char buf[80];
         fgets(buf, sizeof(buf), stdin);
