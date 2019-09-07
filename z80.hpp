@@ -369,6 +369,7 @@ class Z80
             case 0b10101011: return ctx->OUTD();
             case 0b10111011: return ctx->OUTDR();
             case 0b01101111: return ctx->RLD();
+            case 0b01100111: return ctx->RRD();
             default:
                 if ((mode & 0b11001111) == 0b01001011) {
                     return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
@@ -3890,6 +3891,7 @@ class Z80
         return ctx->consumeClock(4);
     }
 
+    // Rotate digit Left and right between Acc. and location (HL)
     inline int RLD()
     {
         unsigned short hl = getHL();
@@ -3902,6 +3904,30 @@ class Z80
         unsigned char afterA = (aH << 4) | nH;
         unsigned char afterN = (nL << 4) | aL;
         log("[%04X] RLD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC, beforeA, afterA, hl, beforeN, afterN);
+        reg.pair.A = afterA;
+        CB.write(CB.arg, hl, afterN);
+        setFlagS(reg.pair.A & 0x80 ? true : false);
+        setFlagZ(reg.pair.A == 0);
+        setFlagH(false);
+        setFlagPV(isEvenNumberBits(reg.pair.A));
+        setFlagN(false);
+        reg.PC += 2;
+        return consumeClock(18);
+    }
+
+    // Rotate digit Right and right between Acc. and location (HL)
+    inline int RRD()
+    {
+        unsigned short hl = getHL();
+        unsigned char beforeN = CB.read(CB.arg, hl);
+        unsigned char nH = (beforeN & 0b11110000) >> 4;
+        unsigned char nL = beforeN & 0b00001111;
+        unsigned char aH = (reg.pair.A & 0b11110000) >> 4;
+        unsigned char aL = reg.pair.A & 0b00001111;
+        unsigned char beforeA = reg.pair.A;
+        unsigned char afterA = (aH << 4) | nL;
+        unsigned char afterN = (aL << 4) | nH;
+        log("[%04X] RRD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC, beforeA, afterA, hl, beforeN, afterN);
         reg.pair.A = afterA;
         CB.write(CB.arg, hl, afterN);
         setFlagS(reg.pair.A & 0x80 ? true : false);

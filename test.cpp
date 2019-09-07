@@ -795,6 +795,8 @@ static void extractProgram(MMU& mmu)
     PG = 0xCD;
     PG = 0b11101101; // RLD
     PG = 0b01101111;
+    PG = 0b11101101; // RRD
+    PG = 0b01100111;
 
     PG = 0b11010111; // RST from $0010
 
