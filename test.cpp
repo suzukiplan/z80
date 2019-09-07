@@ -786,6 +786,16 @@ static void extractProgram(MMU& mmu)
     PG = 0x09;
     PG = 0b00100111; // DAA
 
+    PG = 0b00111110; // LD A, $AB
+    PG = 0xAB;
+    PG = 0b00100001; // LD HL, $8086
+    PG = 0x86;
+    PG = 0x80;
+    PG = 0b00110110; // LD (HL), $CD
+    PG = 0xCD;
+    PG = 0b11101101; // RLD
+    PG = 0b01101111;
+
     PG = 0b11010111; // RST from $0010
 
     // サブルーチン1: 何もせずにRET

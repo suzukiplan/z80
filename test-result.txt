@@ -231,7 +231,11 @@
 [024D] DAA ... A: $35 -> $35, flag-n: ON, flag-h: OFF, flag-c: OFF -> OFF
 [024E] ADD A<$35>, $09
 [0250] DAA ... A: $3E -> $44, flag-n: ON, flag-h: OFF, flag-c: OFF -> OFF
-[0251] RST from $0010 (SP<$0000>)
+[0251] LD A<$44>, $AB
+[0253] LD HL<$0100>, $8086
+[0256] LD (HL<$8086>), $CD
+[0258] RLD ... A: $AB -> $AC, ($8086): $CD -> $DB
+[025A] RST from $0010 (SP<$0000>)
 [0010] DI
 [0011] EI
 [0012] IM 0
@@ -239,11 +243,11 @@
 [0016] IM 2
 [0018] HALT
 ===== REGISTER DUMP : START =====
-PAIR: A<$44> B<$00> C<$FF> D<$00> E<$00> H<$01> L<$00>
-PAIR: F<$02> ... S:OFF, Z:OFF, H:OFF, P/V:OFF, N:ON, C:OFF
+PAIR: A<$AC> B<$00> C<$FF> D<$00> E<$00> H<$80> L<$86>
+PAIR: F<$84> ... S:ON, Z:OFF, H:OFF, P/V:ON, N:OFF, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$40> L'<$00> F'<$00>
 PC<$0019> SP<$FFFE> IX<$0206> IY<$020C>
 R<$00> I<$00> IFF1<$01> IFF2<$01>
 isHalt: YES, interruptMode: 2
-executed: 3748Hz
+executed: 3793Hz
 ===== REGISTER DUMP : END =====
