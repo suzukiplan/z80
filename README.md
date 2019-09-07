@@ -42,7 +42,7 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 9.2 sub routin
 - [x] 10.1 interrupt
 - [x] 10.2 input
-- [ ] __10.3 output__ <sup>*inprogress*</sup>
+- [x] 10.3 output
 - [ ] __11. binary decimal__ <sup>*inprogress*</sup>
 
 > Reference: [http://www.yamamo10.jp/yamamoto/comp/Z80/instructions/index.php](http://www.yamamo10.jp/yamamoto/comp/Z80/instructions/index.php)
