@@ -32,6 +32,7 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
+#include <vector>
 
 class Z80
 {
@@ -80,6 +81,18 @@ class Z80
     inline bool isFlagN() { return reg.pair.F & 0b00000010; }
     inline bool isFlagC() { return reg.pair.F & 0b00000001; }
 
+    class BreakPoint
+    {
+      public:
+        unsigned short addr;
+        void (*callback)(void* arg);
+        BreakPoint(unsigned short addr, void (*callback)(void* arg))
+        {
+            this->addr = addr;
+            this->callback = callback;
+        }
+    };
+
     struct Callback {
         unsigned char (*read)(void* arg, unsigned short addr);
         void (*write)(void* arg, unsigned short addr, unsigned char value);
@@ -87,12 +100,31 @@ class Z80
         void (*out)(void* arg, unsigned char port, unsigned char value);
         void (*debugMessage)(void* arg, const char* message);
         void (*consumeClock)(void* arg, int clock);
-        void (*breakPoint)(void* arg);
         void (*breakOperand)(void* arg);
+        std::vector<BreakPoint*> breakPoints;
         void* arg;
-        unsigned short breakPointAddress;
         unsigned char breakOperandNumber;
     } CB;
+
+    inline void checkBreakPoint()
+    {
+        if (!CB.breakPoints.empty()) {
+            for (auto bp : CB.breakPoints) {
+                if (bp->addr == reg.PC) {
+                    bp->callback(CB.arg);
+                }
+            }
+        }
+    }
+
+    inline void checkBreakOperand(unsigned char operandNumber)
+    {
+        if (CB.breakOperand) {
+            if (operandNumber == CB.breakOperandNumber) {
+                CB.breakOperand(CB.arg);
+            }
+        }
+    }
 
     inline void log(const char* format, ...)
     {
@@ -308,47 +340,59 @@ class Z80
         return ctx->consumeClock(4);
     }
 
+    inline int IM(int interrptMode)
+    {
+        log("[%04X] IM %d", reg.PC, interrptMode);
+        reg.interruptMode = interrptMode;
+        reg.PC += 2;
+        return consumeClock(8);
+    }
+
+    inline int LD_A_I()
+    {
+        log("[%04X] LD A<$%02X>, I<$%02X>", reg.PC, reg.pair.A, reg.I);
+        reg.pair.A = reg.I;
+        setFlagPV(reg.IFF1 ? true : false);
+        reg.PC += 2;
+        return consumeClock(9);
+    }
+
+    inline int LD_I_A()
+    {
+        log("[%04X] LD I<$%02X>, A<$%02X>", reg.PC, reg.I, reg.pair.A);
+        reg.I = reg.pair.A;
+        reg.PC += 2;
+        return consumeClock(9);
+    }
+
+    inline int LD_A_R()
+    {
+        log("[%04X] LD A<$%02X>, R<$%02X>", reg.PC, reg.pair.A, reg.R);
+        reg.pair.A = reg.R;
+        setFlagPV(reg.IFF1 ? true : false);
+        reg.PC += 2;
+        return consumeClock(9);
+    }
+
+    inline int LD_R_A()
+    {
+        log("[%04X] LD R<$%02X>, A<$%02X>", reg.PC, reg.R, reg.pair.A);
+        reg.R = reg.pair.A;
+        reg.PC += 2;
+        return consumeClock(9);
+    }
+
     static inline int EXTRA(Z80* ctx)
     {
         unsigned char mode = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
         switch (mode) {
-            case 0b01000110:
-                ctx->log("[%04X] IM 0", ctx->reg.PC);
-                ctx->reg.interruptMode = 0;
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(8);
-            case 0b01010110:
-                ctx->log("[%04X] IM 1", ctx->reg.PC);
-                ctx->reg.interruptMode = 1;
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(8);
-            case 0b01011110:
-                ctx->log("[%04X] IM 2", ctx->reg.PC);
-                ctx->reg.interruptMode = 2;
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(8);
-            case 0b01010111:
-                ctx->log("[%04X] LD A<$%02X>, I<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.I);
-                ctx->reg.pair.A = ctx->reg.I;
-                ctx->setFlagPV(ctx->reg.IFF1 ? true : false);
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(9);
-            case 0b01000111:
-                ctx->log("[%04X] LD I<$%02X>, A<$%02X>", ctx->reg.PC, ctx->reg.I, ctx->reg.pair.A);
-                ctx->reg.I = ctx->reg.pair.A;
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(9);
-            case 0b01011111:
-                ctx->log("[%04X] LD A<$%02X>, R<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.R);
-                ctx->reg.pair.A = ctx->reg.R;
-                ctx->setFlagPV(ctx->reg.IFF1 ? true : false);
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(9);
-            case 0b01001111:
-                ctx->log("[%04X] LD R<$%02X>, A<$%02X>", ctx->reg.PC, ctx->reg.R, ctx->reg.pair.A);
-                ctx->reg.R = ctx->reg.pair.A;
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(9);
+            case 0b01000110: return ctx->IM(0);
+            case 0b01010110: return ctx->IM(1);
+            case 0b01011110: return ctx->IM(2);
+            case 0b01010111: return ctx->LD_A_I();
+            case 0b01000111: return ctx->LD_I_A();
+            case 0b01011111: return ctx->LD_A_R();
+            case 0b01001111: return ctx->LD_R_A();
             case 0b10100000: return ctx->LDI();
             case 0b10110000: return ctx->LDIR();
             case 0b10101000: return ctx->LDD();
@@ -370,23 +414,17 @@ class Z80
             case 0b10111011: return ctx->OUTDR();
             case 0b01101111: return ctx->RLD();
             case 0b01100111: return ctx->RRD();
-            default:
-                if ((mode & 0b11001111) == 0b01001011) {
-                    return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
-                } else if ((mode & 0b11001111) == 0b01000011) {
-                    return ctx->LD_ADDR_RP((mode & 0b00110000) >> 4);
-                } else if ((mode & 0b11001111) == 0b01001010) {
-                    return ctx->ADC_HL_RP((mode & 0b00110000) >> 4);
-                } else if ((mode & 0b11001111) == 0b01000010) {
-                    return ctx->SBC_HL_RP((mode & 0b00110000) >> 4);
-                } else if ((mode & 0b11001111) == 0b01000000) {
-                    return ctx->IN_R_C((mode & 0b00110000) >> 4);
-                } else if ((mode & 0b11001111) == 0b01000001) {
-                    return ctx->OUT_C_R((mode & 0b00110000) >> 4);
-                }
-                ctx->log("unknown EXTRA: $%02X", mode);
-                return -1;
         }
+        switch (mode & 0b11001111) {
+            case 0b01001011: return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
+            case 0b01000011: return ctx->LD_ADDR_RP((mode & 0b00110000) >> 4);
+            case 0b01001010: return ctx->ADC_HL_RP((mode & 0b00110000) >> 4);
+            case 0b01000010: return ctx->SBC_HL_RP((mode & 0b00110000) >> 4);
+            case 0b01000000: return ctx->IN_R_C((mode & 0b00110000) >> 4);
+            case 0b01000001: return ctx->OUT_C_R((mode & 0b00110000) >> 4);
+        }
+        ctx->log("unknown EXTRA: $%02X", mode);
+        return -1;
     }
 
     // operand of using IX (first byte is 0b11011101)
@@ -426,15 +464,11 @@ class Z80
                     case 0b00100110: return ctx->SLA_IX(op3);
                     case 0b00101110: return ctx->SRA_IX(op3);
                     case 0b00111110: return ctx->SRL_IX(op3);
-                    default: {
-                        if ((op4 & 0b11000111) == 0b01000110) {
-                            return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
-                        } else if ((op4 & 0b11000111) == 0b11000110) {
-                            return ctx->SET_IX(op3, (op4 & 0b00111000) >> 3);
-                        } else if ((op4 & 0b11000111) == 0b10000110) {
-                            return ctx->RES_IX(op3, (op4 & 0b00111000) >> 3);
-                        }
-                    }
+                }
+                switch (op4 & 0b11000111) {
+                    case 0b01000110: return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
+                    case 0b11000110: return ctx->SET_IX(op3, (op4 & 0b00111000) >> 3);
+                    case 0b10000110: return ctx->RES_IX(op3, (op4 & 0b00111000) >> 3);
                 }
             }
         }
@@ -486,15 +520,11 @@ class Z80
                     case 0b00100110: return ctx->SLA_IY(op3);
                     case 0b00101110: return ctx->SRA_IY(op3);
                     case 0b00111110: return ctx->SRL_IY(op3);
-                    default: {
-                        if ((op4 & 0b11000111) == 0b01000110) {
-                            return ctx->BIT_IY(op3, (op4 & 0b00111000) >> 3);
-                        } else if ((op4 & 0b11000111) == 0b11000110) {
-                            return ctx->SET_IY(op3, (op4 & 0b00111000) >> 3);
-                        } else if ((op4 & 0b11000111) == 0b10000110) {
-                            return ctx->RES_IY(op3, (op4 & 0b00111000) >> 3);
-                        }
-                    }
+                }
+                switch (op4 & 0b11000111) {
+                    case 0b01000110: return ctx->BIT_IY(op3, (op4 & 0b00111000) >> 3);
+                    case 0b11000110: return ctx->SET_IY(op3, (op4 & 0b00111000) >> 3);
+                    case 0b10000110: return ctx->RES_IY(op3, (op4 & 0b00111000) >> 3);
                 }
             }
         }
@@ -513,46 +543,33 @@ class Z80
     static inline int OP_R(Z80* ctx)
     {
         unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        if (op2 == 0b00000110) {
-            return ctx->RLC_HL();
-        } else if (op2 == 0b00010110) {
-            return ctx->RL_HL();
-        } else if (op2 == 0b00001110) {
-            return ctx->RRC_HL();
-        } else if (op2 == 0b00011110) {
-            return ctx->RR_HL();
-        } else if (op2 == 0b00100110) {
-            return ctx->SLA_HL();
-        } else if (op2 == 0b00101110) {
-            return ctx->SRA_HL();
-        } else if (op2 == 0b00111110) {
-            return ctx->SRL_HL();
-        } else if ((op2 & 0b11111000) == 0b00000000) {
-            return ctx->RLC_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00010000) {
-            return ctx->RL_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00001000) {
-            return ctx->RRC_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00011000) {
-            return ctx->RR_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00100000) {
-            return ctx->SLA_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00101000) {
-            return ctx->SRA_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00111000) {
-            return ctx->SRL_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11000111) == 0b01000110) {
-            return ctx->BIT_HN((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000111) == 0b11000110) {
-            return ctx->SET_HN((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000111) == 0b10000110) {
-            return ctx->RES_HN((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000000) == 0b01000000) {
-            return ctx->BIT_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000000) == 0b11000000) {
-            return ctx->SET_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000000) == 0b10000000) {
-            return ctx->RES_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
+        switch (op2) {
+            case 0b00000110: return ctx->RLC_HL();
+            case 0b00010110: return ctx->RL_HL();
+            case 0b00001110: return ctx->RRC_HL();
+            case 0b00011110: return ctx->RR_HL();
+            case 0b00100110: return ctx->SLA_HL();
+            case 0b00101110: return ctx->SRA_HL();
+            case 0b00111110: return ctx->SRL_HL();
+        }
+        switch (op2 & 0b11111000) {
+            case 0b00000000: return ctx->RLC_R(op2 & 0b00000111);
+            case 0b00010000: return ctx->RL_R(op2 & 0b00000111);
+            case 0b00001000: return ctx->RRC_R(op2 & 0b00000111);
+            case 0b00011000: return ctx->RR_R(op2 & 0b00000111);
+            case 0b00100000: return ctx->SLA_R(op2 & 0b00000111);
+            case 0b00101000: return ctx->SRA_R(op2 & 0b00000111);
+            case 0b00111000: return ctx->SRL_R(op2 & 0b00000111);
+        }
+        switch (op2 & 0b11000111) {
+            case 0b01000110: return ctx->BIT_HN((op2 & 0b00111000) >> 3);
+            case 0b11000110: return ctx->SET_HN((op2 & 0b00111000) >> 3);
+            case 0b10000110: return ctx->RES_HN((op2 & 0b00111000) >> 3);
+        }
+        switch (op2 & 0b11000000) {
+            case 0b01000000: return ctx->BIT_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
+            case 0b11000000: return ctx->SET_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
+            case 0b10000000: return ctx->RES_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
         }
         ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
         return -1;
@@ -4032,10 +4049,28 @@ class Z80
         CB.debugMessage = debugMessage;
     }
 
-    void setBreakPoint(unsigned short addr, void (*breakPoint)(void*) = NULL)
+    void addBreakPoint(unsigned short addr, void (*callback)(void*) = NULL)
     {
-        CB.breakPointAddress = addr;
-        CB.breakPoint = breakPoint;
+        CB.breakPoints.push_back(new BreakPoint(addr, callback));
+    }
+
+    void removeBreakPoint(void (*callback)(void*))
+    {
+        int index = 0;
+        for (auto bp : CB.breakPoints) {
+            if (bp->callback == callback) {
+                CB.breakPoints.erase(CB.breakPoints.begin() + index);
+                delete bp;
+                return;
+            }
+            index++;
+        }
+    }
+
+    void removeAllBreakPoints()
+    {
+        for (auto bp : CB.breakPoints) delete bp;
+        CB.breakPoints.clear();
     }
 
     void setBreakOperand(unsigned char op, void (*breakOperand)(void*) = NULL)
@@ -4053,17 +4088,9 @@ class Z80
     {
         int executed = 0;
         while (0 < clock && !reg.isHalt) {
-            if (CB.breakPoint) {
-                if (CB.breakPointAddress == reg.PC) {
-                    CB.breakPoint(CB.arg);
-                }
-            }
+            checkBreakPoint();
             int operandNumber = CB.read(CB.arg, reg.PC);
-            if (CB.breakOperand) {
-                if (operandNumber == CB.breakOperandNumber) {
-                    CB.breakOperand(CB.arg);
-                }
-            }
+            checkBreakOperand(operandNumber);
             int (*op)(Z80*) = opSet1[operandNumber];
             int consume = -1;
             if (NULL == op) {
@@ -4130,16 +4157,8 @@ class Z80
         }
         // execute NOP while halt
         while (0 < clock && reg.isHalt) {
-            if (CB.breakPoint) {
-                if (CB.breakPointAddress == reg.PC) {
-                    CB.breakPoint(CB.arg);
-                }
-            }
-            if (CB.breakOperand) {
-                if (0 == CB.breakOperandNumber) {
-                    CB.breakOperand(CB.arg);
-                }
-            }
+            checkBreakPoint();
+            checkBreakOperand(0);
             // execute program counter & consume 4Hz (same as NOP)
             log("[%04X] NOP <HALT>", reg.PC);
             CB.read(CB.arg, reg.PC); // NOTE: read and discard
