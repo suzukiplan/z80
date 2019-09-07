@@ -340,47 +340,59 @@ class Z80
         return ctx->consumeClock(4);
     }
 
+    inline int IM(int interrptMode)
+    {
+        log("[%04X] IM %d", reg.PC, interrptMode);
+        reg.interruptMode = interrptMode;
+        reg.PC += 2;
+        return consumeClock(8);
+    }
+
+    inline int LD_A_I()
+    {
+        log("[%04X] LD A<$%02X>, I<$%02X>", reg.PC, reg.pair.A, reg.I);
+        reg.pair.A = reg.I;
+        setFlagPV(reg.IFF1 ? true : false);
+        reg.PC += 2;
+        return consumeClock(9);
+    }
+
+    inline int LD_I_A()
+    {
+        log("[%04X] LD I<$%02X>, A<$%02X>", reg.PC, reg.I, reg.pair.A);
+        reg.I = reg.pair.A;
+        reg.PC += 2;
+        return consumeClock(9);
+    }
+
+    inline int LD_A_R()
+    {
+        log("[%04X] LD A<$%02X>, R<$%02X>", reg.PC, reg.pair.A, reg.R);
+        reg.pair.A = reg.R;
+        setFlagPV(reg.IFF1 ? true : false);
+        reg.PC += 2;
+        return consumeClock(9);
+    }
+
+    inline int LD_R_A()
+    {
+        log("[%04X] LD R<$%02X>, A<$%02X>", reg.PC, reg.R, reg.pair.A);
+        reg.R = reg.pair.A;
+        reg.PC += 2;
+        return consumeClock(9);
+    }
+
     static inline int EXTRA(Z80* ctx)
     {
         unsigned char mode = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
         switch (mode) {
-            case 0b01000110:
-                ctx->log("[%04X] IM 0", ctx->reg.PC);
-                ctx->reg.interruptMode = 0;
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(8);
-            case 0b01010110:
-                ctx->log("[%04X] IM 1", ctx->reg.PC);
-                ctx->reg.interruptMode = 1;
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(8);
-            case 0b01011110:
-                ctx->log("[%04X] IM 2", ctx->reg.PC);
-                ctx->reg.interruptMode = 2;
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(8);
-            case 0b01010111:
-                ctx->log("[%04X] LD A<$%02X>, I<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.I);
-                ctx->reg.pair.A = ctx->reg.I;
-                ctx->setFlagPV(ctx->reg.IFF1 ? true : false);
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(9);
-            case 0b01000111:
-                ctx->log("[%04X] LD I<$%02X>, A<$%02X>", ctx->reg.PC, ctx->reg.I, ctx->reg.pair.A);
-                ctx->reg.I = ctx->reg.pair.A;
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(9);
-            case 0b01011111:
-                ctx->log("[%04X] LD A<$%02X>, R<$%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.R);
-                ctx->reg.pair.A = ctx->reg.R;
-                ctx->setFlagPV(ctx->reg.IFF1 ? true : false);
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(9);
-            case 0b01001111:
-                ctx->log("[%04X] LD R<$%02X>, A<$%02X>", ctx->reg.PC, ctx->reg.R, ctx->reg.pair.A);
-                ctx->reg.R = ctx->reg.pair.A;
-                ctx->reg.PC += 2;
-                return ctx->consumeClock(9);
+            case 0b01000110: return ctx->IM(0);
+            case 0b01010110: return ctx->IM(1);
+            case 0b01011110: return ctx->IM(2);
+            case 0b01010111: return ctx->LD_A_I();
+            case 0b01000111: return ctx->LD_I_A();
+            case 0b01011111: return ctx->LD_A_R();
+            case 0b01001111: return ctx->LD_R_A();
             case 0b10100000: return ctx->LDI();
             case 0b10110000: return ctx->LDIR();
             case 0b10101000: return ctx->LDD();
