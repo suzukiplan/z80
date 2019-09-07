@@ -43,7 +43,7 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 - [x] 10.1 interrupt
 - [x] 10.2 input
 - [ ] __10.3 output__ <sup>*inprogress*</sup>
-- [ ] 11. binary decimal
+- [ ] __11. binary decimal__ <sup>*inprogress*</sup>
 
 > Reference: [http://www.yamamo10.jp/yamamoto/comp/Z80/instructions/index.php](http://www.yamamo10.jp/yamamoto/comp/Z80/instructions/index.php)
 

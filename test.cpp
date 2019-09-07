@@ -744,6 +744,10 @@ static void extractProgram(MMU& mmu)
     PG = 0b10101010;
     PG = 0b11101101; // INDR
     PG = 0b10111010;
+    PG = 0b11010011; // OUT ($40), A
+    PG = 0x40;
+    PG = 0b11101101; // OUT (C), B
+    PG = 0b01000001;
 
     PG = 0b00111110; // LD A, $23
     PG = 0x23;

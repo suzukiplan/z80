@@ -375,6 +375,8 @@ class Z80
                     return ctx->SBC_HL_RP((mode & 0b00110000) >> 4);
                 } else if ((mode & 0b11001111) == 0b01000000) {
                     return ctx->IN_R_C((mode & 0b00110000) >> 4);
+                } else if ((mode & 0b11001111) == 0b01000001) {
+                    return ctx->OUT_C_R((mode & 0b00110000) >> 4);
                 }
                 ctx->log("unknown IM: $%02X", mode);
                 return -1;
@@ -3656,6 +3658,31 @@ class Z80
         return consumed;
     }
 
+    // Load Output port (n) with Acc.
+    static inline int OUT_N_A(Z80* ctx)
+    {
+        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        ctx->log("[%04X] OUT ($%02X), %s", ctx->reg.PC, n, ctx->registerDump(0b111));
+        ctx->CB.out(ctx->CB.arg, n, ctx->reg.pair.A);
+        ctx->reg.PC += 2;
+        return ctx->consumeClock(11);
+    }
+
+    // Output a byte to device (C) form register.
+    inline int OUT_C_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        log("[%04X] OUT (%s), %s", reg.PC, registerDump(0b001), registerDump(r));
+        CB.out(CB.arg, reg.pair.C, *rp);
+        reg.PC += 2;
+        return consumeClock(12);
+    }
+
+    // Decimal Adjust Accumulator
     static inline int DAA(Z80* ctx)
     {
         unsigned char aH = (ctx->reg.pair.A & 0b11110000) >> 4;
@@ -3824,6 +3851,7 @@ class Z80
         opSet1[0b11001011] = OP_R;
         opSet1[0b11001101] = CALL_NN;
         opSet1[0b11001110] = ADC_A_N;
+        opSet1[0b11010011] = OUT_N_A;
         opSet1[0b11010110] = SUB_A_N;
         opSet1[0b11011011] = IN_A_N;
         opSet1[0b11011110] = SBC_A_N;
