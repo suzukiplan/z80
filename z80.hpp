@@ -364,6 +364,8 @@ class Z80
             case 0b10110010: return ctx->INIR();
             case 0b10101010: return ctx->IND();
             case 0b10111010: return ctx->INDR();
+            case 0b10100011: return ctx->OUTI();
+            case 0b10110011: return ctx->OUTIR();
             default:
                 if ((mode & 0b11001111) == 0b01001011) {
                     return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
@@ -3680,6 +3682,47 @@ class Z80
         CB.out(CB.arg, reg.pair.C, *rp);
         reg.PC += 2;
         return consumeClock(12);
+    }
+
+    // Load Output port (C) with location (HL), increment HL and decrement B
+    inline int OUTI()
+    {
+        unsigned short hl = getHL();
+        log("[%04X] OUTI ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
+        unsigned char o = CB.read(CB.arg, hl);
+        CB.out(CB.arg, reg.pair.C, o);
+        reg.pair.B--;
+        setHL(hl + 1);
+        setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagZ(reg.pair.B == 0);
+        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagN(true);
+        reg.PC += 2;
+        return consumeClock(16);
+    }
+
+    // Load output port (C) with location (HL), increment HL and decrement B, repeat until B=0
+    inline int OUTIR()
+    {
+        log("[%04X] OUTIR ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
+        unsigned short hl = getHL();
+        unsigned char o;
+        int consumed = 0;
+        do {
+            o = CB.read(CB.arg, hl++);
+            CB.out(CB.arg, reg.pair.C, o);
+            reg.pair.B--;
+            consumed += 0 != consumeClock(reg.pair.B == 0 ? 16 : 21);
+        } while (0 != reg.pair.B);
+        setHL(hl);
+        setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagZ(true);
+        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagN(true);
+        reg.PC += 2;
+        return consumed;
     }
 
     // Decimal Adjust Accumulator

@@ -91,7 +91,14 @@ void fullDumpRAM(MMU* mmu)
     unsigned char* r = mmu->RAM;
     char asc[17];
     asc[16] = 0;
+    fprintf(fp, "RAM:\n");
     for (int addr = 0; addr < 0x10000; addr += 0x10, r += 0x10) {
+        for (int i = 0; i < 0x10; i++) asc[i] = isgraph(r[i]) ? r[i] : '.';
+        fprintf(fp, "[%04X] %02X %02X %02X %02X %02X %02X %02X %02X - %02X %02X %02X %02X %02X %02X %02X %02X : %s\n", addr, r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15], asc);
+    }
+    fprintf(fp, "\nPORT:\n");
+    r = mmu->IO;
+    for (int addr = 0; addr < 0x100; addr += 0x10, r += 0x10) {
         for (int i = 0; i < 0x10; i++) asc[i] = isgraph(r[i]) ? r[i] : '.';
         fprintf(fp, "[%04X] %02X %02X %02X %02X %02X %02X %02X %02X - %02X %02X %02X %02X %02X %02X %02X %02X : %s\n", addr, r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15], asc);
     }
@@ -744,10 +751,25 @@ static void extractProgram(MMU& mmu)
     PG = 0b10101010;
     PG = 0b11101101; // INDR
     PG = 0b10111010;
+    PG = 0b00111110; // LD A, $CD
+    PG = 0xCD;
+    PG = 0b00000110; // LD B, $55
+    PG = 0x55;
     PG = 0b11010011; // OUT ($40), A
     PG = 0x40;
     PG = 0b11101101; // OUT (C), B
     PG = 0b01000001;
+    PG = 0b00000110; // LD B, $03
+    PG = 0x03;
+    PG = 0b00001110; // LD C, $FF
+    PG = 0xFF;
+    PG = 0b00100001; // LD HL, $0100
+    PG = 0x00;
+    PG = 0x01;
+    PG = 0b11101101; // OUTI
+    PG = 0b10100011;
+    PG = 0b11101101; // OUTIR
+    PG = 0b10110011;
 
     PG = 0b00111110; // LD A, $23
     PG = 0x23;

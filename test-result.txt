@@ -214,14 +214,21 @@
 [022A] LD B<$00>, $03
 [022C] IND ... (HL<$0203>) <- p(C<$00>) = $00 [B<$03>]
 [022E] INDR ... (HL<$0202>) <- p(C<$00>) [B<$02>]
-[0230] OUT ($40), A<$00>
-[0232] OUT (C<$00>), B<$00>
-[0234] LD A<$00>, $23
-[0236] ADD A<$23>, $12
-[0238] DAA ... A: $35 -> $35, flag-n: ON, flag-h: OFF, flag-c: OFF -> OFF
-[0239] ADD A<$35>, $09
-[023B] DAA ... A: $3E -> $44, flag-n: ON, flag-h: OFF, flag-c: OFF -> OFF
-[023C] RST from $0010 (SP<$0000>)
+[0230] LD A<$00>, $CD
+[0232] LD B<$00>, $55
+[0234] OUT ($40), A<$CD>
+[0236] OUT (C<$00>), B<$55>
+[0238] LD B<$55>, $03
+[023A] LD C<$00>, $FF
+[023C] LD HL<$0200>, $0100
+[023F] OUTI ... p(C<$FF>) <- (HL<$0100>) [B<$03>]
+[0241] OUTIR ... p(C<$FF>) <- (HL<$0101>) [B<$02>]
+[0243] LD A<$CD>, $23
+[0245] ADD A<$23>, $12
+[0247] DAA ... A: $35 -> $35, flag-n: ON, flag-h: OFF, flag-c: OFF -> OFF
+[0248] ADD A<$35>, $09
+[024A] DAA ... A: $3E -> $44, flag-n: ON, flag-h: OFF, flag-c: OFF -> OFF
+[024B] RST from $0010 (SP<$0000>)
 [0010] DI
 [0011] EI
 [0012] IM 0
@@ -229,11 +236,11 @@
 [0016] IM 2
 [0018] HALT
 ===== REGISTER DUMP : START =====
-PAIR: A<$44> B<$00> C<$00> D<$00> E<$00> H<$02> L<$00>
+PAIR: A<$44> B<$00> C<$FF> D<$00> E<$00> H<$01> L<$03>
 PAIR: F<$02> ... S:OFF, Z:OFF, H:OFF, P/V:OFF, N:ON, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$40> L'<$00> F'<$00>
 PC<$0019> SP<$FFFE> IX<$0206> IY<$020C>
 R<$00> I<$00> IFF1<$01> IFF2<$01>
 isHalt: YES, interruptMode: 2
-executed: 3597Hz
+executed: 3688Hz
 ===== REGISTER DUMP : END =====
