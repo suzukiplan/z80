@@ -414,23 +414,17 @@ class Z80
             case 0b10111011: return ctx->OUTDR();
             case 0b01101111: return ctx->RLD();
             case 0b01100111: return ctx->RRD();
-            default:
-                if ((mode & 0b11001111) == 0b01001011) {
-                    return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
-                } else if ((mode & 0b11001111) == 0b01000011) {
-                    return ctx->LD_ADDR_RP((mode & 0b00110000) >> 4);
-                } else if ((mode & 0b11001111) == 0b01001010) {
-                    return ctx->ADC_HL_RP((mode & 0b00110000) >> 4);
-                } else if ((mode & 0b11001111) == 0b01000010) {
-                    return ctx->SBC_HL_RP((mode & 0b00110000) >> 4);
-                } else if ((mode & 0b11001111) == 0b01000000) {
-                    return ctx->IN_R_C((mode & 0b00110000) >> 4);
-                } else if ((mode & 0b11001111) == 0b01000001) {
-                    return ctx->OUT_C_R((mode & 0b00110000) >> 4);
-                }
-                ctx->log("unknown EXTRA: $%02X", mode);
-                return -1;
         }
+        switch (mode & 0b11001111) {
+            case 0b01001011: return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
+            case 0b01000011: return ctx->LD_ADDR_RP((mode & 0b00110000) >> 4);
+            case 0b01001010: return ctx->ADC_HL_RP((mode & 0b00110000) >> 4);
+            case 0b01000010: return ctx->SBC_HL_RP((mode & 0b00110000) >> 4);
+            case 0b01000000: return ctx->IN_R_C((mode & 0b00110000) >> 4);
+            case 0b01000001: return ctx->OUT_C_R((mode & 0b00110000) >> 4);
+        }
+        ctx->log("unknown EXTRA: $%02X", mode);
+        return -1;
     }
 
     // operand of using IX (first byte is 0b11011101)
