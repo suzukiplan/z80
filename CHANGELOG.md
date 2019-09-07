@@ -1,10 +1,10 @@
 # Change log
 
-## Version 0.2 _(inprogress)_
+## Version 0.2 (Sept 8, 2019 JST)
 
 - support multiple break points (Destructive change)
-  - remove: `setBreakPoint` function
-  - add: `addBreakPoint` , `removeBreakPoint` , `removeAllBreakPoints` function
+  - remove function: `setBreakPoint`
+  - add functions: `addBreakPoint` , `removeBreakPoint` , `removeAllBreakPoints`
 
 ## Version 0.1 (Sept 7, 2019 JST)
 
