@@ -543,46 +543,33 @@ class Z80
     static inline int OP_R(Z80* ctx)
     {
         unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        if (op2 == 0b00000110) {
-            return ctx->RLC_HL();
-        } else if (op2 == 0b00010110) {
-            return ctx->RL_HL();
-        } else if (op2 == 0b00001110) {
-            return ctx->RRC_HL();
-        } else if (op2 == 0b00011110) {
-            return ctx->RR_HL();
-        } else if (op2 == 0b00100110) {
-            return ctx->SLA_HL();
-        } else if (op2 == 0b00101110) {
-            return ctx->SRA_HL();
-        } else if (op2 == 0b00111110) {
-            return ctx->SRL_HL();
-        } else if ((op2 & 0b11111000) == 0b00000000) {
-            return ctx->RLC_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00010000) {
-            return ctx->RL_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00001000) {
-            return ctx->RRC_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00011000) {
-            return ctx->RR_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00100000) {
-            return ctx->SLA_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00101000) {
-            return ctx->SRA_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b00111000) {
-            return ctx->SRL_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11000111) == 0b01000110) {
-            return ctx->BIT_HN((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000111) == 0b11000110) {
-            return ctx->SET_HN((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000111) == 0b10000110) {
-            return ctx->RES_HN((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000000) == 0b01000000) {
-            return ctx->BIT_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000000) == 0b11000000) {
-            return ctx->SET_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000000) == 0b10000000) {
-            return ctx->RES_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
+        switch (op2) {
+            case 0b00000110: return ctx->RLC_HL();
+            case 0b00010110: return ctx->RL_HL();
+            case 0b00001110: return ctx->RRC_HL();
+            case 0b00011110: return ctx->RR_HL();
+            case 0b00100110: return ctx->SLA_HL();
+            case 0b00101110: return ctx->SRA_HL();
+            case 0b00111110: return ctx->SRL_HL();
+        }
+        switch (op2 & 0b11111000) {
+            case 0b00000000: return ctx->RLC_R(op2 & 0b00000111);
+            case 0b00010000: return ctx->RL_R(op2 & 0b00000111);
+            case 0b00001000: return ctx->RRC_R(op2 & 0b00000111);
+            case 0b00011000: return ctx->RR_R(op2 & 0b00000111);
+            case 0b00100000: return ctx->SLA_R(op2 & 0b00000111);
+            case 0b00101000: return ctx->SRA_R(op2 & 0b00000111);
+            case 0b00111000: return ctx->SRL_R(op2 & 0b00000111);
+        }
+        switch (op2 & 0b11000111) {
+            case 0b01000110: return ctx->BIT_HN((op2 & 0b00111000) >> 3);
+            case 0b11000110: return ctx->SET_HN((op2 & 0b00111000) >> 3);
+            case 0b10000110: return ctx->RES_HN((op2 & 0b00111000) >> 3);
+        }
+        switch (op2 & 0b11000000) {
+            case 0b01000000: return ctx->BIT_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
+            case 0b11000000: return ctx->SET_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
+            case 0b10000000: return ctx->RES_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
         }
         ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
         return -1;
