@@ -1,5 +1,12 @@
 # Change log
 
+## Version 0.3 (Sept 8, 2019 JST)
+
+- support multiple break operands (Destructive change)
+  - remove function: `setBreakOperand`
+  - add functions: `addBreakOperand` , `removeBreakOperand` , `removeAllBreakOperands`
+- bugfix: do not increment the program counter while halting
+
 ## Version 0.2 (Sept 8, 2019 JST)
 
 - support multiple break points (Destructive change)

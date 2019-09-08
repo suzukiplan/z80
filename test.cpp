@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
 
     // autoExecモードの場合はNOPを検出したらレジスタを出力してプログラムを終了
     if (autoExec) {
-        z80.setBreakOperand(0x00, [](void* arg) -> void {
+        z80.addBreakOperand(0x00, [](void* arg) -> void {
             printf("NOP detected! (PC:$%04X)\n", ((MMU*)arg)->cpu->reg.PC);
             ((MMU*)arg)->cpu->registerDump();
             fullDumpRAM((MMU*)arg);

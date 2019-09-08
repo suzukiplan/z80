@@ -149,12 +149,15 @@ If you want to execute processing just before executing an instruction of specif
 If you want to execute processing just before executing an instruction of specific operand number _(in this ex: $00; NOP)_, you can set a breakpoint as follows:
 
 ```c++
-    z80.setBreakOperand(0x00, [](void* arg) -> void {
+    z80.addBreakOperand(0x00, [](void* arg) -> void {
         printf("Detect break operand! (PUSH ENTER TO CONTINUE)");
         char buf[80];
         fgets(buf, sizeof(buf), stdin);
     });
 ```
+
+- `addBreakOperand` can set multiple breakpoints.
+- call `removeBreakOperand` or `removeAllBreakOperands` if you want to remove the break operand(s).
 
 ### Detect clock consuming
 
@@ -165,6 +168,8 @@ If you want to implement stricter synchronization, you can capture the CPU clock
         printf("consumed: %dHz\n", clock);
     });
 ```
+
+- call `setConsumeClockCallback(NULL)` if you want to remove the detector.
 
 ### If implement quick save/load
 
