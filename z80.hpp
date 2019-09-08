@@ -93,6 +93,18 @@ class Z80
         }
     };
 
+    class BreakOperand
+    {
+      public:
+        unsigned char operandNumber;
+        void (*callback)(void* arg);
+        BreakOperand(unsigned char operandNumber, void (*callback)(void* arg))
+        {
+            this->operandNumber = operandNumber;
+            this->callback = callback;
+        }
+    };
+
     struct Callback {
         unsigned char (*read)(void* arg, unsigned short addr);
         void (*write)(void* arg, unsigned short addr, unsigned char value);
@@ -100,10 +112,9 @@ class Z80
         void (*out)(void* arg, unsigned char port, unsigned char value);
         void (*debugMessage)(void* arg, const char* message);
         void (*consumeClock)(void* arg, int clock);
-        void (*breakOperand)(void* arg);
         std::vector<BreakPoint*> breakPoints;
+        std::vector<BreakOperand*> breakOperands;
         void* arg;
-        unsigned char breakOperandNumber;
     } CB;
 
     inline void checkBreakPoint()
@@ -119,9 +130,11 @@ class Z80
 
     inline void checkBreakOperand(unsigned char operandNumber)
     {
-        if (CB.breakOperand) {
-            if (operandNumber == CB.breakOperandNumber) {
-                CB.breakOperand(CB.arg);
+        if (!CB.breakOperands.empty()) {
+            for (auto bo : CB.breakOperands) {
+                if (bo->operandNumber == operandNumber) {
+                    bo->callback(CB.arg);
+                }
             }
         }
     }
@@ -4073,10 +4086,28 @@ class Z80
         CB.breakPoints.clear();
     }
 
-    void setBreakOperand(unsigned char op, void (*breakOperand)(void*) = NULL)
+    void addBreakOperand(unsigned char operandNumber, void (*callback)(void*) = NULL)
     {
-        CB.breakOperandNumber = op;
-        CB.breakOperand = breakOperand;
+        CB.breakOperands.push_back(new BreakOperand(operandNumber, callback));
+    }
+
+    void removeBreakOperand(void (*callback)(void*))
+    {
+        int index = 0;
+        for (auto bo : CB.breakOperands) {
+            if (bo->callback == callback) {
+                CB.breakOperands.erase(CB.breakOperands.begin() + index);
+                delete bo;
+                return;
+            }
+            index++;
+        }
+    }
+
+    void removeAllBreakOperands()
+    {
+        for (auto bo : CB.breakOperands) delete bo;
+        CB.breakOperands.clear();
     }
 
     void setConsumeClockCallback(void (*consumeClock)(void*, int) = NULL)
