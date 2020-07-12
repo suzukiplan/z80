@@ -1,5 +1,17 @@
 # Change log
 
+## Version 0.4 (Jul 12, 2020 JST)
+
+- corrected disassemble log of following:
+  - `AND R, (IX+d)`
+  - `AND R, (IY+d)`
+  - `OR R, (RP)`
+  - `OR R, (IX+d)`
+  - `OR R, (IY+d)`
+  - `XOR R, (RP)`
+  - `XOR R, (IX+d)`
+  - `XOR R, (IY+d)`
+
 ## Version 0.3 (Sept 8, 2019 JST)
 
 - support multiple break operands (Destructive change)
