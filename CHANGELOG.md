@@ -2,6 +2,7 @@
 
 ## Version 0.4 (Jul 12, 2020 JST)
 
+- added an explicit execution break function (requestBreak)
 - corrected disassemble log of following:
   - `AND R, (IX+d)`
   - `AND R, (IY+d)`

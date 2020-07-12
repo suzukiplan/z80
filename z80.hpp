@@ -117,6 +117,8 @@ class Z80
         void* arg;
     } CB;
 
+    bool requestBreakFlag;
+
     inline void checkBreakPoint()
     {
         if (!CB.breakPoints.empty()) {
@@ -4115,10 +4117,16 @@ class Z80
         CB.consumeClock = consumeClock;
     }
 
+    void requestBreak()
+    {
+        requestBreakFlag = true;
+    }
+
     int execute(int clock)
     {
         int executed = 0;
-        while (0 < clock && !reg.isHalt) {
+        requestBreakFlag = false;
+        while (0 < clock && !reg.isHalt && !requestBreakFlag) {
             checkBreakPoint();
             int operandNumber = CB.read(CB.arg, reg.PC);
             checkBreakOperand(operandNumber);
@@ -4187,7 +4195,7 @@ class Z80
             executed += consume;
         }
         // execute NOP while halt
-        while (0 < clock && reg.isHalt) {
+        while (0 < clock && reg.isHalt && !requestBreakFlag) {
             checkBreakPoint();
             checkBreakOperand(0);
             // execute program counter & consume 4Hz (same as NOP)
