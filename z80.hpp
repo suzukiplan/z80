@@ -438,6 +438,9 @@ class Z80
             case 0b01000000: return ctx->IN_R_C((mode & 0b00110000) >> 4);
             case 0b01000001: return ctx->OUT_C_R((mode & 0b00110000) >> 4);
         }
+        if ((mode & 0b11000111) == 0b01000001) {
+            return ctx->OUT_C_R((mode & 0b00111000) >> 3);
+        }
         ctx->log("unknown EXTRA: $%02X", mode);
         return -1;
     }

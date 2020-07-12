@@ -1,5 +1,10 @@
 # Change log
 
+## Version 0.5 (Jul 12, 2020 JST)
+
+- implemented compatible(?) instructions:
+  - `OUT (C), r`
+
 ## Version 0.4 (Jul 12, 2020 JST)
 
 - added an explicit execution break function (requestBreak)
