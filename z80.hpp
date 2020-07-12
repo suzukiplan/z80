@@ -26,11 +26,11 @@
  */
 #ifndef INCLUDE_Z80_HPP
 #define INCLUDE_Z80_HPP
+#include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
-#include <limits.h>
 #include <time.h>
 #include <vector>
 
@@ -116,6 +116,8 @@ class Z80
         std::vector<BreakOperand*> breakOperands;
         void* arg;
     } CB;
+
+    bool requestBreakFlag;
 
     inline void checkBreakPoint()
     {
@@ -2732,7 +2734,7 @@ class Z80
         signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr);
+        log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         reg.pair.A &= n;
         setFlagByLogical();
         reg.PC += 3;
@@ -2745,7 +2747,7 @@ class Z80
         signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr);
+        log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         reg.pair.A &= n;
         setFlagByLogical();
         reg.PC += 3;
@@ -2783,7 +2785,7 @@ class Z80
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] OR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        ctx->log("[%04X] OR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A | n);
         ctx->reg.pair.A |= n;
         ctx->setFlagByLogical();
         ctx->reg.PC++;
@@ -2796,7 +2798,7 @@ class Z80
         signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr);
+        log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         reg.pair.A |= n;
         setFlagByLogical();
         reg.PC += 3;
@@ -2809,7 +2811,7 @@ class Z80
         signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr);
+        log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         reg.pair.A |= n;
         setFlagByLogical();
         reg.PC += 3;
@@ -2847,7 +2849,7 @@ class Z80
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] XOR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        ctx->log("[%04X] XOR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A ^ n);
         ctx->reg.pair.A ^= n;
         ctx->setFlagByLogical();
         ctx->reg.PC++;
@@ -2860,7 +2862,7 @@ class Z80
         signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IX + d;
         unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr);
+        log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         reg.pair.A ^= n;
         setFlagByLogical();
         reg.PC += 3;
@@ -2873,7 +2875,7 @@ class Z80
         signed char d = CB.read(CB.arg, reg.PC + 2);
         unsigned short addr = reg.IY + d;
         unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr);
+        log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         reg.pair.A ^= n;
         setFlagByLogical();
         reg.PC += 3;
@@ -4115,10 +4117,16 @@ class Z80
         CB.consumeClock = consumeClock;
     }
 
+    void requestBreak()
+    {
+        requestBreakFlag = true;
+    }
+
     int execute(int clock)
     {
         int executed = 0;
-        while (0 < clock && !reg.isHalt) {
+        requestBreakFlag = false;
+        while (0 < clock && !reg.isHalt && !requestBreakFlag) {
             checkBreakPoint();
             int operandNumber = CB.read(CB.arg, reg.PC);
             checkBreakOperand(operandNumber);
@@ -4187,7 +4195,7 @@ class Z80
             executed += consume;
         }
         // execute NOP while halt
-        while (0 < clock && reg.isHalt) {
+        while (0 < clock && reg.isHalt && !requestBreakFlag) {
             checkBreakPoint();
             checkBreakOperand(0);
             // execute program counter & consume 4Hz (same as NOP)

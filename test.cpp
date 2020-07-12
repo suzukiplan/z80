@@ -172,6 +172,23 @@ int main(int argc, char* argv[])
     z80.reg.pair.L = 0x01;
     z80.reg.IY = 1;
 
+    /*
+    // requestBreak test
+    puts("==== REQUEST BREAK ====");
+    z80.reg.PC = 0x0;
+    z80.reg.consumeClockCounter = 0;
+    static int totalClocks = 0;
+    z80.setConsumeClockCallback([](void* arg, int clocks) {
+        totalClocks += clocks;
+        if (100 <= totalClocks) {
+            puts("require break");
+            ((MMU*)arg)->cpu->requestBreak();
+        }
+    });
+    printf("executed %d Hz\n", z80.execute(0xFFFFFF));
+    exit(0);
+    */
+
     if (autoExec) {
         // 通常は面倒なのでNOPを検出するまで実行し続ける
         while (0 < z80.executeTick4MHz()) {

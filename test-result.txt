@@ -133,18 +133,18 @@
 [016E] AND A<$77>, B<$AB>
 [016F] AND A<$23>, $AA
 [0171] AND A<$22>, (HL<$FFFD>) = $00
-[0172] AND A<$00>, (IX+d<$ECA2>) = $10
-[0175] AND A<$00>, (IY+d<$ECC2>) = $10
+[0172] AND A<$00>, (IX+d<$ECA2>) = $00
+[0175] AND A<$00>, (IY+d<$ECC2>) = $00
 [0178] OR A<$00>, B<$AB>
 [0179] OR A<$AB>, $AA
-[017B] OR A<$AB>, (HL<$FFFD>) = $00
-[017C] OR A<$AB>, (IX+d<$ECA2>) = $10
-[017F] OR A<$AB>, (IY+d<$ECC2>) = $10
+[017B] OR A<$AB>, (HL<$FFFD>) = $AB
+[017C] OR A<$AB>, (IX+d<$ECA2>) = $AB
+[017F] OR A<$AB>, (IY+d<$ECC2>) = $AB
 [0182] XOR A<$AB>, B<$AB>
 [0183] XOR A<$00>, $AA
-[0185] XOR A<$AA>, (HL<$FFFD>) = $00
-[0186] XOR A<$AA>, (IX+d<$ECA2>) = $10
-[0189] XOR A<$AA>, (IY+d<$ECC2>) = $10
+[0185] XOR A<$AA>, (HL<$FFFD>) = $AA
+[0186] XOR A<$AA>, (IX+d<$ECA2>) = $AA
+[0189] XOR A<$AA>, (IY+d<$ECC2>) = $AA
 [018C] CPL A<$AA>
 [018D] NEG A<$55>
 [018F] CCF <C:OFF -> ON>
