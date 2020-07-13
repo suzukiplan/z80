@@ -1,5 +1,9 @@
 # Change log
 
+## Version 0.6 (Jul 14, 2020 JST)
+
+- implemented & bugfix of interrupt features
+
 ## Version 0.5 (Jul 12, 2020 JST)
 
 - implemented compatible(?) instructions:

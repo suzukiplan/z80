@@ -112,6 +112,20 @@ void outPort(void* arg, unsigned char port, unsigned char value)
     int actualExecuteClocks = z80.execute(1234);
 ```
 
+### 5. Generate interrupt
+
+#### IRQ; Interrupt Request
+
+```c++
+    z80.generateIRQ(vector);
+```
+
+#### NMI; Non Maskable Interrupt
+
+```c++
+    z80.generateNMI(address);
+```
+
 ## Optional features
 
 ### Dynamic disassemble (for debug)
