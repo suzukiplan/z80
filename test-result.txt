@@ -248,7 +248,7 @@ PAIR: A<$AB> B<$00> C<$FF> D<$00> E<$00> H<$80> L<$86>
 PAIR: F<$80> ... S:ON, Z:OFF, H:OFF, P/V:OFF, N:OFF, C:OFF
 BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$40> L'<$00> F'<$00>
 PC<$0019> SP<$FFFE> IX<$0206> IY<$020C>
-R<$00> I<$00> IFF1<$01> IFF2<$01>
-isHalt: YES, interruptMode: 2
+R<$00> I<$00> IFF<$05>
+isHalt: YES, interrupt: $02
 executed: 3811Hz
 ===== REGISTER DUMP : END =====

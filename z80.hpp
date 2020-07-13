@@ -58,9 +58,10 @@ class Z80
         unsigned short IY;
         unsigned char R;
         unsigned char I;
-        unsigned char IFF1;
-        unsigned char IFF2;
-        int interruptMode;
+        unsigned char IFF;
+        unsigned char interrupt;        // NI-- --mm (N: NMI, I: IRQ, mm: mode)
+        unsigned short interruptVector; // interrupt vector for IRQ
+        unsigned short interruptAddrN;  // interrupt address for NMI
         bool isHalt;
     } reg;
 
@@ -80,6 +81,12 @@ class Z80
     inline bool isFlagPV() { return reg.pair.F & 0b00000100; }
     inline bool isFlagN() { return reg.pair.F & 0b00000010; }
     inline bool isFlagC() { return reg.pair.F & 0b00000001; }
+
+    inline unsigned char IFF1() { return 0b00000001; }
+    inline unsigned char IFF2() { return 0b00000100; }
+    inline unsigned char IFF_IRQ() { return 0b00100000; }
+    inline unsigned char IFF_NMI() { return 0b01000000; }
+    inline unsigned char IFF_HALT() { return 0b10000000; }
 
     class BreakPoint
     {
@@ -340,8 +347,7 @@ class Z80
     static inline int DI(Z80* ctx)
     {
         ctx->log("[%04X] DI", ctx->reg.PC);
-        ctx->reg.IFF1 = 0;
-        ctx->reg.IFF2 = 0;
+        ctx->reg.IFF &= ~(ctx->IFF1() | ctx->IFF2());
         ctx->reg.PC++;
         return ctx->consumeClock(4);
     }
@@ -349,16 +355,16 @@ class Z80
     static inline int EI(Z80* ctx)
     {
         ctx->log("[%04X] EI", ctx->reg.PC);
-        ctx->reg.IFF1 = 1;
-        ctx->reg.IFF2 = 1;
+        ctx->reg.IFF |= ctx->IFF1() | ctx->IFF2();
         ctx->reg.PC++;
         return ctx->consumeClock(4);
     }
 
-    inline int IM(int interrptMode)
+    inline int IM(unsigned char interrptMode)
     {
         log("[%04X] IM %d", reg.PC, interrptMode);
-        reg.interruptMode = interrptMode;
+        reg.interrupt &= 0b11111100;
+        reg.interrupt |= interrptMode & 0b11;
         reg.PC += 2;
         return consumeClock(8);
     }
@@ -367,7 +373,7 @@ class Z80
     {
         log("[%04X] LD A<$%02X>, I<$%02X>", reg.PC, reg.pair.A, reg.I);
         reg.pair.A = reg.I;
-        setFlagPV(reg.IFF1 ? true : false);
+        setFlagPV(reg.IFF & IFF1() ? true : false);
         reg.PC += 2;
         return consumeClock(9);
     }
@@ -384,7 +390,7 @@ class Z80
     {
         log("[%04X] LD A<$%02X>, R<$%02X>", reg.PC, reg.pair.A, reg.R);
         reg.pair.A = reg.R;
-        setFlagPV(reg.IFF1 ? true : false);
+        setFlagPV(reg.IFF & IFF1() ? true : false);
         reg.PC += 2;
         return consumeClock(9);
     }
@@ -3555,7 +3561,7 @@ class Z80
         log("[%04X] RETI to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
-        reg.IFF1 = reg.IFF2;
+        reg.IFF &= ~IFF_IRQ();
         return consumeClock(10);
     }
 
@@ -3568,7 +3574,15 @@ class Z80
         log("[%04X] RETN to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
-        reg.IFF1 = reg.IFF2;
+        if (!((reg.IFF & IFF1()) && (reg.IFF & IFF2()))) {
+            reg.IFF |= IFF1();
+        } else {
+            if (reg.IFF & IFF2()) {
+                reg.IFF |= IFF1();
+            } else {
+                reg.IFF &= ~IFF1();
+            }
+        }
         return consumeClock(10);
     }
 
@@ -4044,6 +4058,62 @@ class Z80
         opSet1[0b11111110] = CP_N;
     }
 
+    inline void checkInterrupt()
+    {
+        // check interrupt flag
+        if (reg.interrupt & 0b10000000) {
+            // execute NMI
+            if (reg.IFF & IFF_NMI()) return;
+            log("EXECUTE NMI: $%04X", reg.interruptAddrN);
+            reg.R++;
+            reg.IFF |= IFF_NMI();
+            reg.IFF &= ~IFF1();
+            unsigned char pcL = reg.PC & 0x00FF;
+            unsigned char pcH = (reg.PC & 0xFF00) >> 8;
+            CB.write(CB.arg, reg.SP - 1, pcH);
+            CB.write(CB.arg, reg.SP - 2, pcL);
+            reg.SP -= 2;
+            reg.PC = reg.interruptAddrN;
+            consumeClock(11);
+        } else if (reg.interrupt & 0b01000000) {
+            // execute IRQ
+            if (!(reg.IFF & IFF1())) return;
+            reg.IFF |= IFF_IRQ();
+            reg.IFF &= ~(IFF1() | IFF2());
+            switch (reg.interrupt & 0b00000011) {
+                case 0: // mode 0
+                    log("EXECUTE INT MODE1 (RST TO $%04X)", reg.interruptVector * 8);
+                    if (reg.interruptVector == 0xCD) {
+                        consumeClock(7);
+                    }
+                    RST(reg.interruptVector);
+                    break;
+                case 1: // mode 1 (13Hz)
+                    log("EXECUTE INT MODE1 (RST TO $0038)");
+                    consumeClock(1);
+                    RST(7);
+                    break;
+                case 2: { // mode 2
+                    unsigned char pcL = reg.PC & 0x00FF;
+                    unsigned char pcH = (reg.PC & 0xFF00) >> 8;
+                    CB.write(CB.arg, reg.SP - 1, pcH);
+                    CB.write(CB.arg, reg.SP - 2, pcL);
+                    reg.SP -= 2;
+                    unsigned short addr = reg.I;
+                    addr <<= 8;
+                    addr |= reg.interruptVector;
+                    unsigned short pc = CB.read(CB.arg, addr);
+                    pc += ((unsigned short)CB.read(CB.arg, addr)) << 8;
+                    log("EXECUTE INT MODE2: ($%04X) = $%04X", addr, pc);
+                    reg.PC = pc;
+                    consumeClock(19);
+                    break;
+                }
+            }
+        }
+        reg.interrupt &= 0b00111111; // clear request flags
+    }
+
   public: // API functions
     Z80(unsigned char (*read)(void* arg, unsigned short addr),
         void (*write)(void* arg, unsigned short addr, unsigned char value),
@@ -4125,6 +4195,18 @@ class Z80
         requestBreakFlag = true;
     }
 
+    void generateIRQ(unsigned char vector)
+    {
+        reg.interrupt |= 0b01000000;
+        reg.interruptVector = vector;
+    }
+
+    void generateNMI(unsigned short addr)
+    {
+        reg.interrupt |= 0b10000000;
+        reg.interruptAddrN = addr;
+    }
+
     int execute(int clock)
     {
         int executed = 0;
@@ -4196,6 +4278,7 @@ class Z80
             }
             clock -= consume;
             executed += consume;
+            checkInterrupt();
         }
         // execute NOP while halt
         while (0 < clock && reg.isHalt && !requestBreakFlag) {
@@ -4228,8 +4311,8 @@ class Z80
             isFlagC() ? "ON" : "OFF");
         log("BACK: %s %s %s %s %s %s %s F'<$%02X>", registerDump2(0b111), registerDump2(0b000), registerDump2(0b001), registerDump2(0b010), registerDump2(0b011), registerDump2(0b100), registerDump2(0b101), reg.back.F);
         log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
-        log("R<$%02X> I<$%02X> IFF1<$%02X> IFF2<$%02X>", reg.R, reg.I, reg.IFF1, reg.IFF2);
-        log("isHalt: %s, interruptMode: %d", reg.isHalt ? "YES" : "NO", reg.interruptMode);
+        log("R<$%02X> I<$%02X> IFF<$%02X>", reg.R, reg.I, reg.IFF);
+        log("isHalt: %s, interrupt: $%02X", reg.isHalt ? "YES" : "NO", reg.interrupt);
         log("executed: %dHz", reg.consumeClockCounter);
         log("===== REGISTER DUMP : END =====");
     }
