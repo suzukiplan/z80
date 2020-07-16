@@ -732,10 +732,8 @@ static void extractProgram(MMU& mmu)
     PG = (jumpAddr & 0xFF00) >> 8;
     PG = 0b11111101; // JP IY
     PG = 0b11101001;
-    PG = 0b00000110; // LD B, $03
-    PG = 0x03;
-    PG = 0b00010000; // DJNZ -126
-    PG = 0x80;
+    PG = 0b00000110; // LD B, $01
+    PG = 0x01;
     PG = 0b00010000; // DJNZ -126
     PG = 0x80;
     PG = 0b00010000; // DJNZ 2

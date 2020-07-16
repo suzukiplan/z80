@@ -3454,9 +3454,9 @@ class Z80
         ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC, ctx->relativeDump(e), ctx->registerDump(0b000));
         ctx->reg.pair.B--;
         if (ctx->reg.pair.B) {
-            ctx->reg.PC += 2;
-        } else {
             ctx->reg.PC += e;
+        } else {
+            ctx->reg.PC += 2;
         }
         return ctx->consumeClock(13);
     }

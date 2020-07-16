@@ -1,5 +1,11 @@
 # Change log
 
+## Version 0.7 (Jul 16, 2020 JST)
+
+- Fixed a bug that DJNZ command does not work properly:
+  - 0.6 or less: An instruction that decrements the B register and makes a relative jump if it `is 0`.
+  - 0.7 or later: An instruction that decrements the B register and makes a relative jump if it `is not 0`.
+
 ## Version 0.6 (Jul 14, 2020 JST)
 
 - implemented & bugfix of interrupt features
