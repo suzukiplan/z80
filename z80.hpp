@@ -441,8 +441,10 @@ class Z80
             case 0b01000011: return ctx->LD_ADDR_RP((mode & 0b00110000) >> 4);
             case 0b01001010: return ctx->ADC_HL_RP((mode & 0b00110000) >> 4);
             case 0b01000010: return ctx->SBC_HL_RP((mode & 0b00110000) >> 4);
-            case 0b01000000: return ctx->IN_R_C((mode & 0b00110000) >> 4);
-            case 0b01000001: return ctx->OUT_C_R((mode & 0b00110000) >> 4);
+        }
+        switch (mode & 0b11000111) {
+            case 0b01000000: return ctx->IN_R_C((mode & 0b00111000) >> 3);
+            case 0b01000001: return ctx->OUT_C_R((mode & 0b00111000) >> 3);
         }
         if ((mode & 0b11000111) == 0b01000001) {
             return ctx->OUT_C_R((mode & 0b00111000) >> 3);
@@ -1311,8 +1313,7 @@ class Z80
             de++;
             hl++;
             bc--;
-            clocks += 21;
-            consumeClock(0 != bc ? 21 : 16);
+            clocks += consumeClock(0 != bc ? 21 : 16);
         } while (0 != bc);
         setBC(bc);
         setDE(de);
@@ -1360,8 +1361,7 @@ class Z80
             de--;
             hl--;
             bc--;
-            clocks += 21;
-            consumeClock(0 != bc ? 21 : 16);
+            clocks += consumeClock(0 != bc ? 21 : 16);
         } while (0 != bc);
         setBC(bc);
         setDE(de);
@@ -3660,7 +3660,7 @@ class Z80
             i = CB.in(CB.arg, reg.pair.C);
             CB.write(CB.arg, hl++, i);
             reg.pair.B--;
-            consumed += 0 != consumeClock(reg.pair.B == 0 ? 16 : 21);
+            consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
         } while (0 != reg.pair.B);
         setHL(hl);
         setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
@@ -3701,7 +3701,7 @@ class Z80
             i = CB.in(CB.arg, reg.pair.C);
             CB.write(CB.arg, hl--, i);
             reg.pair.B--;
-            consumed += 0 != consumeClock(reg.pair.B == 0 ? 16 : 21);
+            consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
         } while (0 != reg.pair.B);
         setHL(hl);
         setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
@@ -3741,8 +3741,8 @@ class Z80
     inline int OUTI()
     {
         unsigned short hl = getHL();
-        log("[%04X] OUTI ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
         unsigned char o = CB.read(CB.arg, hl);
+        log("[%04X] OUTI ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
         CB.out(CB.arg, reg.pair.C, o);
         reg.pair.B--;
         setHL(hl + 1);
@@ -3766,7 +3766,7 @@ class Z80
             o = CB.read(CB.arg, hl++);
             CB.out(CB.arg, reg.pair.C, o);
             reg.pair.B--;
-            consumed += 0 != consumeClock(reg.pair.B == 0 ? 16 : 21);
+            consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
         } while (0 != reg.pair.B);
         setHL(hl);
         setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
@@ -3807,7 +3807,7 @@ class Z80
             o = CB.read(CB.arg, hl--);
             CB.out(CB.arg, reg.pair.C, o);
             reg.pair.B--;
-            consumed += 0 != consumeClock(reg.pair.B == 0 ? 16 : 21);
+            consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
         } while (0 != reg.pair.B);
         setHL(hl);
         setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN

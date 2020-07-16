@@ -1,5 +1,10 @@
 # Change log
 
+## Version 0.9 (Jul 16, 2020 JST)
+
+- bugfix: invalid clock cycle in repeart operands
+- bugfix: invalid register will specified in `OUT (C), R` & `IN R, (C)`
+
 ## Version 0.8 (Jul 16, 2020 JST)
 
 - Fixed a bug that IRQ/NMI request flag does not clear when masked
