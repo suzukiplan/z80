@@ -4063,7 +4063,10 @@ class Z80
         // check interrupt flag
         if (reg.interrupt & 0b10000000) {
             // execute NMI
-            if (reg.IFF & IFF_NMI()) return;
+            if (reg.IFF & IFF_NMI()) {
+                reg.interrupt &= 0b00111111; // clear request flags
+                return;
+            }
             log("EXECUTE NMI: $%04X", reg.interruptAddrN);
             reg.R++;
             reg.IFF |= IFF_NMI();
@@ -4077,7 +4080,10 @@ class Z80
             consumeClock(11);
         } else if (reg.interrupt & 0b01000000) {
             // execute IRQ
-            if (!(reg.IFF & IFF1())) return;
+            if (!(reg.IFF & IFF1())) {
+                reg.interrupt &= 0b00111111; // clear request flags
+                return;
+            }
             reg.IFF |= IFF_IRQ();
             reg.IFF &= ~(IFF1() | IFF2());
             switch (reg.interrupt & 0b00000011) {

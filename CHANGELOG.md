@@ -1,5 +1,9 @@
 # Change log
 
+## Version 0.8 (Jul 16, 2020 JST)
+
+- Fixed a bug that IRQ/NMI request flag does not clear when masked
+
 ## Version 0.7 (Jul 16, 2020 JST)
 
 - Fixed a bug that DJNZ command does not work properly:
