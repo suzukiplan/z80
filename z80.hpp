@@ -441,8 +441,10 @@ class Z80
             case 0b01000011: return ctx->LD_ADDR_RP((mode & 0b00110000) >> 4);
             case 0b01001010: return ctx->ADC_HL_RP((mode & 0b00110000) >> 4);
             case 0b01000010: return ctx->SBC_HL_RP((mode & 0b00110000) >> 4);
-            case 0b01000000: return ctx->IN_R_C((mode & 0b00110000) >> 4);
-            case 0b01000001: return ctx->OUT_C_R((mode & 0b00110000) >> 4);
+        }
+        switch (mode & 0b11000111) {
+            case 0b01000000: return ctx->IN_R_C((mode & 0b00111000) >> 3);
+            case 0b01000001: return ctx->OUT_C_R((mode & 0b00111000) >> 3);
         }
         if ((mode & 0b11000111) == 0b01000001) {
             return ctx->OUT_C_R((mode & 0b00111000) >> 3);
