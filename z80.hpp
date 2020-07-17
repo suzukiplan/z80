@@ -4124,6 +4124,7 @@ class Z80
         void (*out)(void* arg, unsigned char port, unsigned char value),
         void* arg)
     {
+        ::memset(&CB, 0, sizeof(CB));
         this->CB.read = read;
         this->CB.write = write;
         this->CB.in = in;
