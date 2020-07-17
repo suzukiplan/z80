@@ -1,5 +1,10 @@
 # Change log
 
+## Version 1.0.0 (--- --, ---- ---)
+
+- refactor: remove verbose procedure
+- bugfix: often crush if not set debug message
+
 ## Version 0.9 (Jul 16, 2020 JST)
 
 - bugfix: invalid clock cycle in repeart operands
