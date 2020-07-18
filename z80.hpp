@@ -331,26 +331,28 @@ class Z80
 
     inline unsigned char readByte(unsigned short addr, int clock = 4)
     {
+        unsigned char byte = CB.read(CB.arg, addr);
         consumeClock(clock);
-        return CB.read(CB.arg, addr);
+        return byte;
     }
 
     inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
     {
-        consumeClock(clock);
         CB.write(CB.arg, addr, value);
+        consumeClock(clock);
     }
 
     inline unsigned char inPort(unsigned char port, int clock = 4)
     {
+        unsigned char byte = CB.in(CB.arg, port);
         consumeClock(clock);
-        return CB.in(CB.arg, port);
+        return byte;
     }
 
     inline void outPort(unsigned char port, unsigned char value, int clock = 4)
     {
-        consumeClock(clock);
         CB.out(CB.arg, port, value);
+        consumeClock(clock);
     }
 
     static inline int NOP(Z80* ctx)
