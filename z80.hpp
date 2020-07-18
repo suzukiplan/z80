@@ -339,6 +339,16 @@ class Z80
         CB.write(CB.arg, addr, value);
     }
 
+    inline unsigned char inPort(unsigned char port)
+    {
+        return CB.in(CB.arg, port);
+    }
+
+    inline void outPort(unsigned char port, unsigned char value)
+    {
+        CB.out(CB.arg, port, value);
+    }
+
     static inline int NOP(Z80* ctx)
     {
         ctx->log("[%04X] NOP", ctx->reg.PC);
@@ -3611,7 +3621,7 @@ class Z80
     static inline int IN_A_N(Z80* ctx)
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1);
-        unsigned char i = ctx->CB.in(ctx->CB.arg, n);
+        unsigned char i = ctx->inPort(n);
         ctx->log("[%04X] IN %s, ($%02X) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), n, i);
         ctx->reg.pair.A = i;
         ctx->reg.PC += 2;
@@ -3626,7 +3636,7 @@ class Z80
             log("specified an unknown register (%d)", r);
             return -1;
         }
-        unsigned char i = CB.in(CB.arg, reg.pair.C);
+        unsigned char i = inPort(reg.pair.C);
         log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
         *rp = i;
         setFlagS(i & 0x80 ? true : false);
@@ -3641,7 +3651,7 @@ class Z80
     // Load location (HL) with input from port (C); or increment HL and decrement B
     inline int INI()
     {
-        unsigned char i = CB.in(CB.arg, reg.pair.C);
+        unsigned char i = inPort(reg.pair.C);
         unsigned short hl = getHL();
         log("[%04X] INI ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
         writeByte(hl, i);
@@ -3664,7 +3674,7 @@ class Z80
         unsigned char i;
         int consumed = 0;
         do {
-            i = CB.in(CB.arg, reg.pair.C);
+            i = inPort(reg.pair.C);
             writeByte(hl++, i);
             reg.pair.B--;
             consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
@@ -3682,7 +3692,7 @@ class Z80
     // Load location (HL) with input from port (C); or decrement HL and B
     inline int IND()
     {
-        unsigned char i = CB.in(CB.arg, reg.pair.C);
+        unsigned char i = inPort(reg.pair.C);
         unsigned short hl = getHL();
         log("[%04X] IND ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
         writeByte(hl, i);
@@ -3705,7 +3715,7 @@ class Z80
         unsigned char i;
         int consumed = 0;
         do {
-            i = CB.in(CB.arg, reg.pair.C);
+            i = inPort(reg.pair.C);
             writeByte(hl--, i);
             reg.pair.B--;
             consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
@@ -3725,7 +3735,7 @@ class Z80
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         ctx->log("[%04X] OUT ($%02X), %s", ctx->reg.PC, n, ctx->registerDump(0b111));
-        ctx->CB.out(ctx->CB.arg, n, ctx->reg.pair.A);
+        ctx->outPort(n, ctx->reg.pair.A);
         ctx->reg.PC += 2;
         return ctx->consumeClock(11);
     }
@@ -3739,7 +3749,7 @@ class Z80
             return -1;
         }
         log("[%04X] OUT (%s), %s", reg.PC, registerDump(0b001), registerDump(r));
-        CB.out(CB.arg, reg.pair.C, *rp);
+        outPort(reg.pair.C, *rp);
         reg.PC += 2;
         return consumeClock(12);
     }
@@ -3750,7 +3760,7 @@ class Z80
         unsigned short hl = getHL();
         unsigned char o = readByte(hl);
         log("[%04X] OUTI ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
-        CB.out(CB.arg, reg.pair.C, o);
+        outPort(reg.pair.C, o);
         reg.pair.B--;
         setHL(hl + 1);
         setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
@@ -3771,7 +3781,7 @@ class Z80
         int consumed = 0;
         do {
             o = readByte(hl++);
-            CB.out(CB.arg, reg.pair.C, o);
+            outPort(reg.pair.C, o);
             reg.pair.B--;
             consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
         } while (0 != reg.pair.B);
@@ -3791,7 +3801,7 @@ class Z80
         unsigned short hl = getHL();
         log("[%04X] OUTD ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
         unsigned char o = readByte(hl);
-        CB.out(CB.arg, reg.pair.C, o);
+        outPort(reg.pair.C, o);
         reg.pair.B--;
         setHL(hl - 1);
         setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
@@ -3812,7 +3822,7 @@ class Z80
         int consumed = 0;
         do {
             o = readByte(hl--);
-            CB.out(CB.arg, reg.pair.C, o);
+            outPort(reg.pair.C, o);
             reg.pair.B--;
             consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
         } while (0 != reg.pair.B);
