@@ -249,5 +249,4 @@ BACK: A'<$00> B'<$00> C'<$00> D'<$00> E'<$00> H'<$40> L'<$00> F'<$00>
 PC<$0019> SP<$FFFE> IX<$0206> IY<$020C>
 R<$00> I<$00> IFF<$05>
 isHalt: YES, interrupt: $02
-executed: 3798Hz
 ===== REGISTER DUMP : END =====

@@ -1,6 +1,8 @@
 #include <ctype.h>
 #include "z80.hpp"
 
+static int totalClocks;
+
 // 利用プログラム側で MMU (Memory Management Unit) を実装します。
 // ミニマムでは 64KB の RAM と 256バイト の I/O ポートが必要です。
 class MMU
@@ -102,6 +104,7 @@ void fullDumpRAM(MMU* mmu)
         for (int i = 0; i < 0x10; i++) asc[i] = isgraph(r[i]) ? r[i] : '.';
         fprintf(fp, "[%04X] %02X %02X %02X %02X %02X %02X %02X %02X - %02X %02X %02X %02X %02X %02X %02X %02X : %s\n", addr, r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15], asc);
     }
+    fprintf(fp, "Total Clocks: %d Hz\n", totalClocks);
     fclose(fp);
 }
 
@@ -154,17 +157,16 @@ int main(int argc, char* argv[])
         z80.addBreakOperand(0x00, [](void* arg) -> void {
             printf("NOP detected! (PC:$%04X)\n", ((MMU*)arg)->cpu->reg.PC);
             ((MMU*)arg)->cpu->registerDump();
+            printf("Total Clocks: %d Hz\n", totalClocks);
             fullDumpRAM((MMU*)arg);
             exit(0);
         });
     }
 
-    /*
     // You can detect the timing of clock consume by following:
     z80.setConsumeClockCallback([](void* arg, int clock) -> void {
-        printf("consumed: %dHz\n", clock);
+        totalClocks += clock;
     });
-    */
 
     // レジスタ初期値を設定（未設定時は0）
     z80.reg.pair.A = 0x12;
