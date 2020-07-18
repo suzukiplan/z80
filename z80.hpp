@@ -334,6 +334,11 @@ class Z80
         return CB.read(CB.arg, addr);
     }
 
+    inline void writeByte(unsigned short addr, unsigned char value)
+    {
+        CB.write(CB.arg, addr, value);
+    }
+
     static inline int NOP(Z80* ctx)
     {
         ctx->log("[%04X] NOP", ctx->reg.PC);
@@ -609,7 +614,7 @@ class Z80
         unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         unsigned short hl = ctx->getHL();
         ctx->log("[%04X] LD (HL<$%04X>), $%02X", ctx->reg.PC, hl, n);
-        ctx->CB.write(ctx->CB.arg, hl, n);
+        ctx->writeByte(hl, n);
         ctx->reg.PC += 2;
         return ctx->consumeClock(10);
     }
@@ -654,7 +659,7 @@ class Z80
         unsigned short addr = ctx->getBC();
         unsigned char n = ctx->reg.pair.A;
         ctx->log("[%04X] LD (BC<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
-        ctx->CB.write(ctx->CB.arg, addr, n);
+        ctx->writeByte(addr, n);
         ctx->reg.PC++;
         return ctx->consumeClock(7);
     }
@@ -665,7 +670,7 @@ class Z80
         unsigned short addr = ctx->getDE();
         unsigned char n = ctx->reg.pair.A;
         ctx->log("[%04X] LD (DE<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
-        ctx->CB.write(ctx->CB.arg, addr, n);
+        ctx->writeByte(addr, n);
         ctx->reg.PC++;
         return ctx->consumeClock(7);
     }
@@ -677,7 +682,7 @@ class Z80
         addr += ctx->readByte(ctx->reg.PC + 2) << 8;
         unsigned char n = ctx->reg.pair.A;
         ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC, addr, n);
-        ctx->CB.write(ctx->CB.arg, addr, n);
+        ctx->writeByte(addr, n);
         ctx->reg.PC += 3;
         return ctx->consumeClock(13);
     }
@@ -704,8 +709,8 @@ class Z80
         unsigned char nH = ctx->readByte(ctx->reg.PC + 2);
         unsigned short addr = (nH << 8) + nL;
         ctx->log("[%04X] LD ($%04X), %s", ctx->reg.PC, addr, ctx->registerPairDump(0b10));
-        ctx->CB.write(ctx->CB.arg, addr, ctx->reg.pair.L);
-        ctx->CB.write(ctx->CB.arg, addr + 1, ctx->reg.pair.H);
+        ctx->writeByte(addr, ctx->reg.pair.L);
+        ctx->writeByte(addr + 1, ctx->reg.pair.H);
         ctx->reg.PC += 3;
         return ctx->consumeClock(16);
     }
@@ -750,8 +755,8 @@ class Z80
         unsigned char h = ctx->readByte(ctx->reg.SP + 1);
         unsigned short hl = ctx->getHL();
         ctx->log("[%04X] EX (SP<$%04X>) = $%02X%02X, HL<$%04X>", ctx->reg.PC, ctx->reg.SP, h, l, hl);
-        ctx->CB.write(ctx->CB.arg, ctx->reg.SP, ctx->reg.pair.L);
-        ctx->CB.write(ctx->CB.arg, ctx->reg.SP + 1, ctx->reg.pair.H);
+        ctx->writeByte(ctx->reg.SP, ctx->reg.pair.L);
+        ctx->writeByte(ctx->reg.SP + 1, ctx->reg.pair.H);
         ctx->reg.pair.L = l;
         ctx->reg.pair.H = h;
         ctx->reg.PC++;
@@ -780,8 +785,8 @@ class Z80
     static inline int PUSH_AF(Z80* ctx)
     {
         ctx->log("[%04X] PUSH AF<$%02X%02X> <SP:$%04X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.SP);
-        ctx->CB.write(ctx->CB.arg, --ctx->reg.SP, ctx->reg.pair.A);
-        ctx->CB.write(ctx->CB.arg, --ctx->reg.SP, ctx->reg.pair.F);
+        ctx->writeByte(--ctx->reg.SP, ctx->reg.pair.A);
+        ctx->writeByte(--ctx->reg.SP, ctx->reg.pair.F);
         ctx->reg.PC++;
         return ctx->consumeClock(11);
     }
@@ -1024,7 +1029,7 @@ class Z80
         unsigned char* rp = getRegisterPointer(r);
         unsigned short addr = getHL();
         log("[%04X] LD (%s), %s", reg.PC, registerPairDump(0b10), registerDump(r));
-        if (rp) CB.write(CB.arg, addr, *rp);
+        if (rp) writeByte(addr, *rp);
         reg.PC += 1;
         return consumeClock(7);
     }
@@ -1036,7 +1041,7 @@ class Z80
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
         log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC, reg.IX, d, registerDump(r));
-        if (rp) CB.write(CB.arg, addr, *rp);
+        if (rp) writeByte(addr, *rp);
         reg.PC += 3;
         return consumeClock(19);
     }
@@ -1048,7 +1053,7 @@ class Z80
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
         log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC, reg.IY, d, registerDump(r));
-        if (rp) CB.write(CB.arg, addr, *rp);
+        if (rp) writeByte(addr, *rp);
         reg.PC += 3;
         return consumeClock(19);
     }
@@ -1060,7 +1065,7 @@ class Z80
         unsigned char n = readByte(reg.PC + 3);
         unsigned short addr = reg.IX + d;
         log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         reg.PC += 4;
         return consumeClock(19);
     }
@@ -1072,7 +1077,7 @@ class Z80
         unsigned char n = readByte(reg.PC + 3);
         unsigned short addr = reg.IY + d;
         log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         reg.PC += 4;
         return consumeClock(19);
     }
@@ -1197,8 +1202,8 @@ class Z80
                 log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        CB.write(CB.arg, addr, l);
-        CB.write(CB.arg, addr + 1, h);
+        writeByte(addr, l);
+        writeByte(addr + 1, h);
         reg.PC += 4;
         return consumeClock(20);
     }
@@ -1239,8 +1244,8 @@ class Z80
         log("[%04X] LD ($%04X), IX<$%04X>", reg.PC, addr, reg.IX);
         unsigned char l = reg.IX & 0x00FF;
         unsigned char h = (reg.IX & 0xFF00) >> 8;
-        CB.write(CB.arg, addr, l);
-        CB.write(CB.arg, addr + 1, h);
+        writeByte(addr, l);
+        writeByte(addr + 1, h);
         reg.PC += 4;
         return consumeClock(20);
     }
@@ -1253,8 +1258,8 @@ class Z80
         log("[%04X] LD ($%04X), IY<$%04X>", reg.PC, addr, reg.IY);
         unsigned char l = reg.IY & 0x00FF;
         unsigned char h = (reg.IY & 0xFF00) >> 8;
-        CB.write(CB.arg, addr, l);
-        CB.write(CB.arg, addr + 1, h);
+        writeByte(addr, l);
+        writeByte(addr + 1, h);
         reg.PC += 4;
         return consumeClock(20);
     }
@@ -1287,7 +1292,7 @@ class Z80
         unsigned short de = getDE();
         unsigned short hl = getHL();
         unsigned char n = readByte(hl);
-        CB.write(CB.arg, de, n);
+        writeByte(de, n);
         de++;
         hl++;
         bc--;
@@ -1311,7 +1316,7 @@ class Z80
         unsigned short hl = getHL();
         do {
             unsigned char n = readByte(hl);
-            CB.write(CB.arg, de, n);
+            writeByte(de, n);
             de++;
             hl++;
             bc--;
@@ -1335,7 +1340,7 @@ class Z80
         unsigned short de = getDE();
         unsigned short hl = getHL();
         unsigned char n = readByte(hl);
-        CB.write(CB.arg, de, n);
+        writeByte(de, n);
         de--;
         hl--;
         bc--;
@@ -1359,7 +1364,7 @@ class Z80
         unsigned short hl = getHL();
         do {
             unsigned char n = readByte(hl);
-            CB.write(CB.arg, de, n);
+            writeByte(de, n);
             de--;
             hl--;
             bc--;
@@ -1383,8 +1388,8 @@ class Z80
         unsigned char i = (reg.IX & 0xFF00) >> 8;
         unsigned char x = reg.IX & 0x00FF;
         log("[%04X] EX (SP<$%04X>) = $%02X%02X, IX<$%04X>", reg.PC, reg.SP, h, l, reg.IX);
-        CB.write(CB.arg, reg.SP, x);
-        CB.write(CB.arg, reg.SP + 1, i);
+        writeByte(reg.SP, x);
+        writeByte(reg.SP + 1, i);
         reg.IX = (h << 8) + l;
         reg.PC += 2;
         return consumeClock(23);
@@ -1398,8 +1403,8 @@ class Z80
         unsigned char i = (reg.IY & 0xFF00) >> 8;
         unsigned char y = reg.IY & 0x00FF;
         log("[%04X] EX (SP<$%04X>) = $%02X%02X, IY<$%04X>", reg.PC, reg.SP, h, l, reg.IY);
-        CB.write(CB.arg, reg.SP, y);
-        CB.write(CB.arg, reg.SP + 1, i);
+        writeByte(reg.SP, y);
+        writeByte(reg.SP + 1, i);
         reg.IY = (h << 8) + l;
         reg.PC += 2;
         return consumeClock(23);
@@ -1428,8 +1433,8 @@ class Z80
                 log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        CB.write(CB.arg, --reg.SP, h);
-        CB.write(CB.arg, --reg.SP, l);
+        writeByte(--reg.SP, h);
+        writeByte(--reg.SP, l);
         reg.PC++;
         return consumeClock(11);
     }
@@ -1470,8 +1475,8 @@ class Z80
         log("[%04X] PUSH IX<$%04X> <SP:$%04X>", reg.PC, reg.IX, reg.SP);
         unsigned char h = (reg.IX & 0xFF00) >> 8;
         unsigned char l = reg.IX & 0x00FF;
-        CB.write(CB.arg, --reg.SP, h);
-        CB.write(CB.arg, --reg.SP, l);
+        writeByte(--reg.SP, h);
+        writeByte(--reg.SP, l);
         reg.PC += 2;
         return consumeClock(15);
     }
@@ -1494,8 +1499,8 @@ class Z80
         log("[%04X] PUSH IY<$%04X> <SP:$%04X>", reg.PC, reg.IY, reg.SP);
         unsigned char h = (reg.IY & 0xFF00) >> 8;
         unsigned char l = reg.IY & 0x00FF;
-        CB.write(CB.arg, --reg.SP, h);
-        CB.write(CB.arg, --reg.SP, l);
+        writeByte(--reg.SP, h);
+        writeByte(--reg.SP, l);
         reg.PC += 2;
         return consumeClock(15);
     }
@@ -1690,7 +1695,7 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         n |= n7; // differ with RL (HL)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1712,7 +1717,7 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (HL)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1733,7 +1738,7 @@ class Z80
         log("[%04X] SLA (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1755,7 +1760,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         n |= n0 ? 0x80 : 0; // differ with RR (HL)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1777,7 +1782,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (HL)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1800,7 +1805,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1821,7 +1826,7 @@ class Z80
         log("[%04X] SRL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1843,7 +1848,7 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         n |= n7; // differ with RL (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1865,7 +1870,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         n |= n0 ? 0x80 : 0; // differ with RR (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1887,7 +1892,7 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1908,7 +1913,7 @@ class Z80
         log("[%04X] SLA (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1930,7 +1935,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1953,7 +1958,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1974,7 +1979,7 @@ class Z80
         log("[%04X] SRL (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -1996,7 +2001,7 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         n |= n7; // differ with RL (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -2018,7 +2023,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         n |= n0 ? 0x80 : 0; // differ with RR (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -2040,7 +2045,7 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (IY+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -2061,7 +2066,7 @@ class Z80
         log("[%04X] SLA (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -2083,7 +2088,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (IY+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -2106,7 +2111,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -2127,7 +2132,7 @@ class Z80
         log("[%04X] SRL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
@@ -2308,7 +2313,7 @@ class Z80
         unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] INC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
         ctx->setFlagByAddition(n, 1);
-        ctx->CB.write(ctx->CB.arg, addr, n + 1);
+        ctx->writeByte(addr, n + 1);
         ctx->reg.PC += 1;
         return ctx->consumeClock(11);
     }
@@ -2321,7 +2326,7 @@ class Z80
         unsigned char n = readByte(addr);
         log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByAddition(n, 1);
-        CB.write(CB.arg, addr, n + 1);
+        writeByte(addr, n + 1);
         reg.PC += 3;
         return consumeClock(23);
     }
@@ -2334,7 +2339,7 @@ class Z80
         unsigned char n = readByte(addr);
         log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByAddition(n, 1);
-        CB.write(CB.arg, addr, n + 1);
+        writeByte(addr, n + 1);
         reg.PC += 3;
         return consumeClock(23);
     }
@@ -2509,7 +2514,7 @@ class Z80
         unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] DEC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
         ctx->setFlagBySubstract(n, 1);
-        ctx->CB.write(ctx->CB.arg, addr, n - 1);
+        ctx->writeByte(addr, n - 1);
         ctx->reg.PC += 1;
         return ctx->consumeClock(11);
     }
@@ -2522,7 +2527,7 @@ class Z80
         unsigned char n = readByte(addr);
         log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagBySubstract(n, 1);
-        CB.write(CB.arg, addr, n - 1);
+        writeByte(addr, n - 1);
         reg.PC += 3;
         return consumeClock(23);
     }
@@ -2535,7 +2540,7 @@ class Z80
         unsigned char n = readByte(addr);
         log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagBySubstract(n, 1);
-        CB.write(CB.arg, addr, n - 1);
+        writeByte(addr, n - 1);
         reg.PC += 3;
         return consumeClock(23);
     }
@@ -3072,7 +3077,7 @@ class Z80
             case 6: n |= 0b01000000; break;
             case 7: n |= 0b10000000; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         reg.PC += 2;
         return consumeClock(15);
     }
@@ -3093,7 +3098,7 @@ class Z80
             case 6: n |= 0b01000000; break;
             case 7: n |= 0b10000000; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         reg.PC += 4;
         return consumeClock(23);
     }
@@ -3114,7 +3119,7 @@ class Z80
             case 6: n |= 0b01000000; break;
             case 7: n |= 0b10000000; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         reg.PC += 4;
         return consumeClock(23);
     }
@@ -3158,7 +3163,7 @@ class Z80
             case 6: n &= 0b10111111; break;
             case 7: n &= 0b01111111; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         reg.PC += 2;
         return consumeClock(15);
     }
@@ -3179,7 +3184,7 @@ class Z80
             case 6: n &= 0b10111111; break;
             case 7: n &= 0b01111111; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         reg.PC += 4;
         return consumeClock(23);
     }
@@ -3200,7 +3205,7 @@ class Z80
             case 6: n &= 0b10111111; break;
             case 7: n &= 0b01111111; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n);
         reg.PC += 4;
         return consumeClock(23);
     }
@@ -3473,8 +3478,8 @@ class Z80
         ctx->reg.PC += 3;
         unsigned char pcL = ctx->reg.PC & 0x00FF;
         unsigned char pcH = (ctx->reg.PC & 0xFF00) >> 8;
-        ctx->CB.write(ctx->CB.arg, ctx->reg.SP - 1, pcH);
-        ctx->CB.write(ctx->CB.arg, ctx->reg.SP - 2, pcL);
+        ctx->writeByte(ctx->reg.SP - 1, pcH);
+        ctx->writeByte(ctx->reg.SP - 2, pcL);
         ctx->reg.SP -= 2;
         ctx->reg.PC = addr;
         return ctx->consumeClock(17);
@@ -3515,8 +3520,8 @@ class Z80
         if (execute) {
             unsigned char pcL = reg.PC & 0x00FF;
             unsigned char pcH = (reg.PC & 0xFF00) >> 8;
-            CB.write(CB.arg, reg.SP - 1, pcH);
-            CB.write(CB.arg, reg.SP - 2, pcL);
+            writeByte(reg.SP - 1, pcH);
+            writeByte(reg.SP - 2, pcL);
             reg.SP -= 2;
             reg.PC = addr;
             return consumeClock(17);
@@ -3595,8 +3600,8 @@ class Z80
         unsigned char pcH = (reg.PC & 0xFF00) >> 8;
         unsigned char pcL = reg.PC & 0x00FF;
         log("[%04X] RST from $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
-        CB.write(CB.arg, reg.SP - 1, pcH);
-        CB.write(CB.arg, reg.SP - 2, pcL);
+        writeByte(reg.SP - 1, pcH);
+        writeByte(reg.SP - 2, pcL);
         reg.SP -= 2;
         reg.PC = addr;
         return consumeClock(12);
@@ -3639,7 +3644,7 @@ class Z80
         unsigned char i = CB.in(CB.arg, reg.pair.C);
         unsigned short hl = getHL();
         log("[%04X] INI ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
-        CB.write(CB.arg, hl, i);
+        writeByte(hl, i);
         reg.pair.B--;
         setHL(hl + 1);
         setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
@@ -3660,7 +3665,7 @@ class Z80
         int consumed = 0;
         do {
             i = CB.in(CB.arg, reg.pair.C);
-            CB.write(CB.arg, hl++, i);
+            writeByte(hl++, i);
             reg.pair.B--;
             consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
         } while (0 != reg.pair.B);
@@ -3680,7 +3685,7 @@ class Z80
         unsigned char i = CB.in(CB.arg, reg.pair.C);
         unsigned short hl = getHL();
         log("[%04X] IND ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
-        CB.write(CB.arg, hl, i);
+        writeByte(hl, i);
         reg.pair.B--;
         setHL(hl - 1);
         setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
@@ -3701,7 +3706,7 @@ class Z80
         int consumed = 0;
         do {
             i = CB.in(CB.arg, reg.pair.C);
-            CB.write(CB.arg, hl--, i);
+            writeByte(hl--, i);
             reg.pair.B--;
             consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
         } while (0 != reg.pair.B);
@@ -3956,7 +3961,7 @@ class Z80
         unsigned char afterN = (nL << 4) | aL;
         log("[%04X] RLD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC, beforeA, afterA, hl, beforeN, afterN);
         reg.pair.A = afterA;
-        CB.write(CB.arg, hl, afterN);
+        writeByte(hl, afterN);
         setFlagS(reg.pair.A & 0x80 ? true : false);
         setFlagZ(reg.pair.A == 0);
         setFlagH(false);
@@ -3980,7 +3985,7 @@ class Z80
         unsigned char afterN = (aL << 4) | nH;
         log("[%04X] RRD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC, beforeA, afterA, hl, beforeN, afterN);
         reg.pair.A = afterA;
-        CB.write(CB.arg, hl, afterN);
+        writeByte(hl, afterN);
         setFlagS(reg.pair.A & 0x80 ? true : false);
         setFlagZ(reg.pair.A == 0);
         setFlagH(false);
@@ -4075,8 +4080,8 @@ class Z80
             reg.IFF &= ~IFF1();
             unsigned char pcL = reg.PC & 0x00FF;
             unsigned char pcH = (reg.PC & 0xFF00) >> 8;
-            CB.write(CB.arg, reg.SP - 1, pcH);
-            CB.write(CB.arg, reg.SP - 2, pcL);
+            writeByte(reg.SP - 1, pcH);
+            writeByte(reg.SP - 2, pcL);
             reg.SP -= 2;
             reg.PC = reg.interruptAddrN;
             consumeClock(11);
@@ -4104,8 +4109,8 @@ class Z80
                 case 2: { // mode 2
                     unsigned char pcL = reg.PC & 0x00FF;
                     unsigned char pcH = (reg.PC & 0xFF00) >> 8;
-                    CB.write(CB.arg, reg.SP - 1, pcH);
-                    CB.write(CB.arg, reg.SP - 2, pcL);
+                    writeByte(reg.SP - 1, pcH);
+                    writeByte(reg.SP - 2, pcL);
                     reg.SP -= 2;
                     unsigned short addr = reg.I;
                     addr <<= 8;
