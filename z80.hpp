@@ -329,6 +329,11 @@ class Z80
         return hz;
     }
 
+    inline unsigned char readByte(unsigned short addr)
+    {
+        return CB.read(CB.arg, addr);
+    }
+
     static inline int NOP(Z80* ctx)
     {
         ctx->log("[%04X] NOP", ctx->reg.PC);
@@ -405,7 +410,7 @@ class Z80
 
     static inline int EXTRA(Z80* ctx)
     {
-        unsigned char mode = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char mode = ctx->readByte(ctx->reg.PC + 1);
         switch (mode) {
             case 0b01000110: return ctx->IM(0);
             case 0b01010110: return ctx->IM(1);
@@ -453,7 +458,7 @@ class Z80
     // operand of using IX (first byte is 0b11011101)
     static inline int OP_IX(Z80* ctx)
     {
-        unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char op2 = ctx->readByte(ctx->reg.PC + 1);
         switch (op2) {
             case 0b00100010: return ctx->LD_ADDR_IX();
             case 0b00100011: return ctx->INC_IX_reg();
@@ -477,8 +482,8 @@ class Z80
             case 0b11101001: return ctx->JP_IX();
             case 0b11111001: return ctx->LD_SP_IX();
             case 0b11001011: {
-                unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
-                unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
+                unsigned char op3 = ctx->readByte(ctx->reg.PC + 2);
+                unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
                 switch (op4) {
                     case 0b00000110: return ctx->RLC_IX(op3);
                     case 0b00001110: return ctx->RRC_IX(op3);
@@ -509,7 +514,7 @@ class Z80
     // operand of using IY (first byte is 0b11111101)
     static inline int OP_IY(Z80* ctx)
     {
-        unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char op2 = ctx->readByte(ctx->reg.PC + 1);
         switch (op2) {
             case 0b00100010: return ctx->LD_ADDR_IY();
             case 0b00100011: return ctx->INC_IY_reg();
@@ -533,8 +538,8 @@ class Z80
             case 0b11101001: return ctx->JP_IY();
             case 0b11111001: return ctx->LD_SP_IY();
             case 0b11001011: {
-                unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
-                unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
+                unsigned char op3 = ctx->readByte(ctx->reg.PC + 2);
+                unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
                 switch (op4) {
                     case 0b00000110: return ctx->RLC_IY(op3);
                     case 0b00001110: return ctx->RRC_IY(op3);
@@ -565,7 +570,7 @@ class Z80
     // operand of using other register (first byte is 0b11001011)
     static inline int OP_R(Z80* ctx)
     {
-        unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char op2 = ctx->readByte(ctx->reg.PC + 1);
         switch (op2) {
             case 0b00000110: return ctx->RLC_HL();
             case 0b00010110: return ctx->RL_HL();
@@ -601,7 +606,7 @@ class Z80
     // Load location (HL) with value n
     static inline int LD_HL_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         unsigned short hl = ctx->getHL();
         ctx->log("[%04X] LD (HL<$%04X>), $%02X", ctx->reg.PC, hl, n);
         ctx->CB.write(ctx->CB.arg, hl, n);
@@ -613,7 +618,7 @@ class Z80
     static inline int LD_A_BC(Z80* ctx)
     {
         unsigned short addr = ctx->getBC();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] LD A, (BC<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
         ctx->reg.pair.A = n;
         ctx->reg.PC++;
@@ -624,7 +629,7 @@ class Z80
     static inline int LD_A_DE(Z80* ctx)
     {
         unsigned short addr = ctx->getDE();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] LD A, (DE<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
         ctx->reg.pair.A = n;
         ctx->reg.PC++;
@@ -634,9 +639,9 @@ class Z80
     // Load Acc. wth location (nn)
     static inline int LD_A_NN(Z80* ctx)
     {
-        unsigned short addr = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        addr += ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2) << 8;
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned short addr = ctx->readByte(ctx->reg.PC + 1);
+        addr += ctx->readByte(ctx->reg.PC + 2) << 8;
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC, addr, n);
         ctx->reg.pair.A = n;
         ctx->reg.PC += 3;
@@ -668,8 +673,8 @@ class Z80
     // Load location (nn) with Acc.
     static inline int LD_NN_A(Z80* ctx)
     {
-        unsigned short addr = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        addr += ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2) << 8;
+        unsigned short addr = ctx->readByte(ctx->reg.PC + 1);
+        addr += ctx->readByte(ctx->reg.PC + 2) << 8;
         unsigned char n = ctx->reg.pair.A;
         ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC, addr, n);
         ctx->CB.write(ctx->CB.arg, addr, n);
@@ -680,11 +685,11 @@ class Z80
     // Load HL with location (nn).
     static inline int LD_HL_ADDR(Z80* ctx)
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned char nL = ctx->readByte(ctx->reg.PC + 1);
+        unsigned char nH = ctx->readByte(ctx->reg.PC + 2);
         unsigned short addr = (nH << 8) + nL;
-        unsigned char l = ctx->CB.read(ctx->CB.arg, addr);
-        unsigned char h = ctx->CB.read(ctx->CB.arg, addr + 1);
+        unsigned char l = ctx->readByte(addr);
+        unsigned char h = ctx->readByte(addr + 1);
         ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%02X%02X", ctx->reg.PC, ctx->getHL(), addr, h, l);
         ctx->reg.pair.L = l;
         ctx->reg.pair.H = h;
@@ -695,8 +700,8 @@ class Z80
     // Load location (nn) with HL.
     static inline int LD_ADDR_HL(Z80* ctx)
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned char nL = ctx->readByte(ctx->reg.PC + 1);
+        unsigned char nH = ctx->readByte(ctx->reg.PC + 2);
         unsigned short addr = (nH << 8) + nL;
         ctx->log("[%04X] LD ($%04X), %s", ctx->reg.PC, addr, ctx->registerPairDump(0b10));
         ctx->CB.write(ctx->CB.arg, addr, ctx->reg.pair.L);
@@ -741,8 +746,8 @@ class Z80
 
     static inline int EX_SP_HL(Z80* ctx)
     {
-        unsigned char l = ctx->CB.read(ctx->CB.arg, ctx->reg.SP);
-        unsigned char h = ctx->CB.read(ctx->CB.arg, ctx->reg.SP + 1);
+        unsigned char l = ctx->readByte(ctx->reg.SP);
+        unsigned char h = ctx->readByte(ctx->reg.SP + 1);
         unsigned short hl = ctx->getHL();
         ctx->log("[%04X] EX (SP<$%04X>) = $%02X%02X, HL<$%04X>", ctx->reg.PC, ctx->reg.SP, h, l, hl);
         ctx->CB.write(ctx->CB.arg, ctx->reg.SP, ctx->reg.pair.L);
@@ -784,8 +789,8 @@ class Z80
     static inline int POP_AF(Z80* ctx)
     {
         unsigned short sp = ctx->reg.SP;
-        unsigned char l = ctx->CB.read(ctx->CB.arg, ctx->reg.SP++);
-        unsigned char h = ctx->CB.read(ctx->CB.arg, ctx->reg.SP++);
+        unsigned char l = ctx->readByte(ctx->reg.SP++);
+        unsigned char h = ctx->readByte(ctx->reg.SP++);
         ctx->log("[%04X] POP AF <SP:$%04X> = $%02X%02X", ctx->reg.PC, sp, h, l);
         ctx->reg.pair.F = l;
         ctx->reg.pair.A = h;
@@ -971,7 +976,7 @@ class Z80
     inline int LD_R_N(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char n = CB.read(CB.arg, reg.PC + 1);
+        unsigned char n = readByte(reg.PC + 1);
         log("[%04X] LD %s, $%02X", reg.PC, registerDump(r), n);
         if (rp) *rp = n;
         reg.PC += 2;
@@ -982,7 +987,7 @@ class Z80
     inline int LD_R_HL(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char n = CB.read(CB.arg, getHL());
+        unsigned char n = readByte(getHL());
         log("[%04X] LD %s, (%s) = $%02X", reg.PC, registerDump(r), registerPairDump(0b10), n);
         if (rp) *rp = n;
         reg.PC += 1;
@@ -993,8 +998,8 @@ class Z80
     inline int LD_R_IX(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = CB.read(CB.arg, reg.PC + 2);
-        unsigned char n = CB.read(CB.arg, (reg.IX + d) & 0xFFFF);
+        signed char d = readByte(reg.PC + 2);
+        unsigned char n = readByte((reg.IX + d) & 0xFFFF);
         log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IX, d, n);
         if (rp) *rp = n;
         reg.PC += 3;
@@ -1005,8 +1010,8 @@ class Z80
     inline int LD_R_IY(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = CB.read(CB.arg, reg.PC + 2);
-        unsigned char n = CB.read(CB.arg, (reg.IY + d) & 0xFFFF);
+        signed char d = readByte(reg.PC + 2);
+        unsigned char n = readByte((reg.IY + d) & 0xFFFF);
         log("[%04X] LD %s, (IY<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IY, d, n);
         if (rp) *rp = n;
         reg.PC += 3;
@@ -1028,7 +1033,7 @@ class Z80
     inline int LD_IX_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
         log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC, reg.IX, d, registerDump(r));
         if (rp) CB.write(CB.arg, addr, *rp);
@@ -1040,7 +1045,7 @@ class Z80
     inline int LD_IY_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
         log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC, reg.IY, d, registerDump(r));
         if (rp) CB.write(CB.arg, addr, *rp);
@@ -1051,8 +1056,8 @@ class Z80
     // Load location (IX+d) with value n
     inline int LD_IX_N()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
-        unsigned char n = CB.read(CB.arg, reg.PC + 3);
+        signed char d = readByte(reg.PC + 2);
+        unsigned char n = readByte(reg.PC + 3);
         unsigned short addr = reg.IX + d;
         log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
         CB.write(CB.arg, addr, n);
@@ -1063,8 +1068,8 @@ class Z80
     // Load location (IY+d) with value n
     inline int LD_IY_N()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
-        unsigned char n = CB.read(CB.arg, reg.PC + 3);
+        signed char d = readByte(reg.PC + 2);
+        unsigned char n = readByte(reg.PC + 3);
         unsigned short addr = reg.IY + d;
         log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
         CB.write(CB.arg, addr, n);
@@ -1075,8 +1080,8 @@ class Z80
     // Load Reg. pair rp with value nn.
     inline int LD_RP_NN(unsigned char rp)
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nL = readByte(reg.PC + 1);
+        unsigned char nH = readByte(reg.PC + 2);
         unsigned char* rH;
         unsigned char* rL;
         switch (rp) {
@@ -1111,8 +1116,8 @@ class Z80
 
     inline int LD_IX_NN()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2);
+        unsigned char nH = readByte(reg.PC + 3);
         log("[%04X] LD IX, $%02X%02X", reg.PC, nH, nL);
         reg.IX = (nH << 8) + nL;
         reg.PC += 4;
@@ -1121,8 +1126,8 @@ class Z80
 
     inline int LD_IY_NN()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2);
+        unsigned char nH = readByte(reg.PC + 3);
         log("[%04X] LD IY, $%02X%02X", reg.PC, nH, nL);
         reg.IY = (nH << 8) + nL;
         reg.PC += 4;
@@ -1132,11 +1137,11 @@ class Z80
     // Load Reg. pair rp with location (nn)
     inline int LD_RP_ADDR(unsigned char rp)
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2);
+        unsigned char nH = readByte(reg.PC + 3);
         unsigned short addr = (nH << 8) + nL;
-        unsigned char l = CB.read(CB.arg, addr);
-        unsigned char h = CB.read(CB.arg, addr + 1);
+        unsigned char l = readByte(addr);
+        unsigned char h = readByte(addr + 1);
         log("[%04X] LD %s, ($%02X%02X) = $%02X%02X", reg.PC, registerPairDump(rp), nH, nL, h, l);
         switch (rp) {
             case 0b00:
@@ -1165,8 +1170,8 @@ class Z80
     // Load location (nn) with Reg. pair rp.
     inline int LD_ADDR_RP(unsigned char rp)
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2);
+        unsigned char nH = readByte(reg.PC + 3);
         unsigned short addr = (nH << 8) + nL;
         log("[%04X] LD ($%04X), %s", reg.PC, addr, registerPairDump(rp));
         unsigned char l;
@@ -1201,11 +1206,11 @@ class Z80
     // Load IX with location (nn)
     inline int LD_IX_ADDR()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2);
+        unsigned char nH = readByte(reg.PC + 3);
         unsigned short addr = (nH << 8) + nL;
-        unsigned char l = CB.read(CB.arg, addr);
-        unsigned char h = CB.read(CB.arg, addr + 1);
+        unsigned char l = readByte(addr);
+        unsigned char h = readByte(addr + 1);
         log("[%04X] LD IX<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IX, nH, nL, h, l);
         reg.IX = (h << 8) + l;
         reg.PC += 4;
@@ -1215,11 +1220,11 @@ class Z80
     // Load IY with location (nn)
     inline int LD_IY_ADDR()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2);
+        unsigned char nH = readByte(reg.PC + 3);
         unsigned short addr = (nH << 8) + nL;
-        unsigned char l = CB.read(CB.arg, addr);
-        unsigned char h = CB.read(CB.arg, addr + 1);
+        unsigned char l = readByte(addr);
+        unsigned char h = readByte(addr + 1);
         log("[%04X] LD IY<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IY, nH, nL, h, l);
         reg.IY = (h << 8) + l;
         reg.PC += 4;
@@ -1228,8 +1233,8 @@ class Z80
 
     inline int LD_ADDR_IX()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2);
+        unsigned char nH = readByte(reg.PC + 3);
         unsigned short addr = (nH << 8) + nL;
         log("[%04X] LD ($%04X), IX<$%04X>", reg.PC, addr, reg.IX);
         unsigned char l = reg.IX & 0x00FF;
@@ -1242,8 +1247,8 @@ class Z80
 
     inline int LD_ADDR_IY()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2);
+        unsigned char nH = readByte(reg.PC + 3);
         unsigned short addr = (nH << 8) + nL;
         log("[%04X] LD ($%04X), IY<$%04X>", reg.PC, addr, reg.IY);
         unsigned char l = reg.IY & 0x00FF;
@@ -1281,7 +1286,7 @@ class Z80
         unsigned short bc = getBC();
         unsigned short de = getDE();
         unsigned short hl = getHL();
-        unsigned char n = CB.read(CB.arg, hl);
+        unsigned char n = readByte(hl);
         CB.write(CB.arg, de, n);
         de++;
         hl++;
@@ -1305,7 +1310,7 @@ class Z80
         unsigned short de = getDE();
         unsigned short hl = getHL();
         do {
-            unsigned char n = CB.read(CB.arg, hl);
+            unsigned char n = readByte(hl);
             CB.write(CB.arg, de, n);
             de++;
             hl++;
@@ -1329,7 +1334,7 @@ class Z80
         unsigned short bc = getBC();
         unsigned short de = getDE();
         unsigned short hl = getHL();
-        unsigned char n = CB.read(CB.arg, hl);
+        unsigned char n = readByte(hl);
         CB.write(CB.arg, de, n);
         de--;
         hl--;
@@ -1353,7 +1358,7 @@ class Z80
         unsigned short de = getDE();
         unsigned short hl = getHL();
         do {
-            unsigned char n = CB.read(CB.arg, hl);
+            unsigned char n = readByte(hl);
             CB.write(CB.arg, de, n);
             de--;
             hl--;
@@ -1373,8 +1378,8 @@ class Z80
     // Exchange stack top with IX
     inline int EX_SP_IX()
     {
-        unsigned char l = CB.read(CB.arg, reg.SP);
-        unsigned char h = CB.read(CB.arg, reg.SP + 1);
+        unsigned char l = readByte(reg.SP);
+        unsigned char h = readByte(reg.SP + 1);
         unsigned char i = (reg.IX & 0xFF00) >> 8;
         unsigned char x = reg.IX & 0x00FF;
         log("[%04X] EX (SP<$%04X>) = $%02X%02X, IX<$%04X>", reg.PC, reg.SP, h, l, reg.IX);
@@ -1388,8 +1393,8 @@ class Z80
     // Exchange stack top with IY
     inline int EX_SP_IY()
     {
-        unsigned char l = CB.read(CB.arg, reg.SP);
-        unsigned char h = CB.read(CB.arg, reg.SP + 1);
+        unsigned char l = readByte(reg.SP);
+        unsigned char h = readByte(reg.SP + 1);
         unsigned char i = (reg.IY & 0xFF00) >> 8;
         unsigned char y = reg.IY & 0x00FF;
         log("[%04X] EX (SP<$%04X>) = $%02X%02X, IY<$%04X>", reg.PC, reg.SP, h, l, reg.IY);
@@ -1453,8 +1458,8 @@ class Z80
                 return -1;
         }
         log("[%04X] POP %s <SP:$%04X> = $%02X%02X", reg.PC, registerPairDump(rp), sp, *h, *l);
-        *l = CB.read(CB.arg, reg.SP++);
-        *h = CB.read(CB.arg, reg.SP++);
+        *l = readByte(reg.SP++);
+        *h = readByte(reg.SP++);
         reg.PC++;
         return consumeClock(10);
     }
@@ -1475,8 +1480,8 @@ class Z80
     inline int POP_IX()
     {
         unsigned short sp = reg.SP;
-        unsigned char l = CB.read(CB.arg, reg.SP++);
-        unsigned char h = CB.read(CB.arg, reg.SP++);
+        unsigned char l = readByte(reg.SP++);
+        unsigned char h = readByte(reg.SP++);
         log("[%04X] POP IX <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
         reg.IX = (h << 8) + l;
         reg.PC += 2;
@@ -1499,8 +1504,8 @@ class Z80
     inline int POP_IY()
     {
         unsigned short sp = reg.SP;
-        unsigned char l = CB.read(CB.arg, reg.SP++);
-        unsigned char h = CB.read(CB.arg, reg.SP++);
+        unsigned char l = readByte(reg.SP++);
+        unsigned char h = readByte(reg.SP++);
         log("[%04X] POP IY <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
         reg.IY = (h << 8) + l;
         reg.PC += 2;
@@ -1678,7 +1683,7 @@ class Z80
     inline int RLC_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
         log("[%04X] RLC (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1700,7 +1705,7 @@ class Z80
     inline int RL_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
         log("[%04X] RL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1722,7 +1727,7 @@ class Z80
     inline int SLA_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
         log("[%04X] SLA (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1743,7 +1748,7 @@ class Z80
     inline int RRC_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         log("[%04X] RRC (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1765,7 +1770,7 @@ class Z80
     inline int RR_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         log("[%04X] RR (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1787,7 +1792,7 @@ class Z80
     inline int SRA_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         unsigned char n7 = n & 0x80;
@@ -1810,7 +1815,7 @@ class Z80
     inline int SRL_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         log("[%04X] SRL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1831,7 +1836,7 @@ class Z80
     inline int RLC_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
         log("[%04X] RLC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1853,7 +1858,7 @@ class Z80
     inline int RRC_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         log("[%04X] RRC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1875,7 +1880,7 @@ class Z80
     inline int RL_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
         log("[%04X] RL (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1897,7 +1902,7 @@ class Z80
     inline int SLA_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
         log("[%04X] SLA (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1918,7 +1923,7 @@ class Z80
     inline int RR_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         log("[%04X] RR (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1940,7 +1945,7 @@ class Z80
     inline int SRA_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         unsigned char n7 = n & 0x80;
@@ -1963,7 +1968,7 @@ class Z80
     inline int SRL_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         log("[%04X] SRL (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -1984,7 +1989,7 @@ class Z80
     inline int RLC_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
         log("[%04X] RLC (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -2006,7 +2011,7 @@ class Z80
     inline int RRC_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         log("[%04X] RRC (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -2028,7 +2033,7 @@ class Z80
     inline int RL_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
         log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -2050,7 +2055,7 @@ class Z80
     inline int SLA_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
         log("[%04X] SLA (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -2071,7 +2076,7 @@ class Z80
     inline int RR_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         log("[%04X] RR (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -2093,7 +2098,7 @@ class Z80
     inline int SRA_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         unsigned char n7 = n & 0x80;
@@ -2116,7 +2121,7 @@ class Z80
     inline int SRL_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         log("[%04X] SRL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
@@ -2166,7 +2171,7 @@ class Z80
     // Add value n to Acc.
     static inline int ADD_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         ctx->log("[%04X] ADD %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->setFlagByAddition(ctx->reg.pair.A, n);
         ctx->reg.pair.A += n;
@@ -2178,7 +2183,7 @@ class Z80
     static inline int ADD_A_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] ADD %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->setFlagByAddition(ctx->reg.pair.A, n);
         ctx->reg.pair.A += n;
@@ -2189,9 +2194,9 @@ class Z80
     // Add location (IX+d) to Acc.
     inline int ADD_A_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] ADD %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagByAddition(reg.pair.A, n);
         reg.pair.A += n;
@@ -2202,9 +2207,9 @@ class Z80
     // Add location (IY+d) to Acc.
     inline int ADD_A_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] ADD %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagByAddition(reg.pair.A, n);
         reg.pair.A += n;
@@ -2231,7 +2236,7 @@ class Z80
     // Add immediate with carry
     static inline int ADC_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         ctx->log("[%04X] ADC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
         ctx->setFlagByAddition(ctx->reg.pair.A, c + n);
@@ -2244,7 +2249,7 @@ class Z80
     static inline int ADC_A_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         ctx->log("[%04X] ADC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
         ctx->setFlagByAddition(ctx->reg.pair.A, c + n);
@@ -2256,9 +2261,9 @@ class Z80
     // Add memory with carry
     inline int ADC_A_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         log("[%04X] ADC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         setFlagByAddition(reg.pair.A, c + n);
@@ -2270,9 +2275,9 @@ class Z80
     // Add memory with carry
     inline int ADC_A_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         log("[%04X] ADC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         setFlagByAddition(reg.pair.A, c + n);
@@ -2300,7 +2305,7 @@ class Z80
     static inline int INC_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] INC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
         ctx->setFlagByAddition(n, 1);
         ctx->CB.write(ctx->CB.arg, addr, n + 1);
@@ -2311,9 +2316,9 @@ class Z80
     // Increment location (IX+d)
     inline int INC_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByAddition(n, 1);
         CB.write(CB.arg, addr, n + 1);
@@ -2324,9 +2329,9 @@ class Z80
     // Increment location (IY+d)
     inline int INC_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByAddition(n, 1);
         CB.write(CB.arg, addr, n + 1);
@@ -2367,7 +2372,7 @@ class Z80
     // Substract immediate
     static inline int SUB_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         ctx->log("[%04X] SUB %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->setFlagBySubstract(ctx->reg.pair.A, n);
         ctx->reg.pair.A -= n;
@@ -2379,7 +2384,7 @@ class Z80
     static inline int SUB_A_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] SUB %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->setFlagBySubstract(ctx->reg.pair.A, n);
         ctx->reg.pair.A -= n;
@@ -2390,9 +2395,9 @@ class Z80
     // Substract memory
     inline int SUB_A_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] SUB %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagBySubstract(reg.pair.A, n);
         reg.pair.A -= n;
@@ -2403,9 +2408,9 @@ class Z80
     // Substract memory
     inline int SUB_A_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] SUB %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagBySubstract(reg.pair.A, n);
         reg.pair.A -= n;
@@ -2432,7 +2437,7 @@ class Z80
     // Substract immediate with carry
     static inline int SBC_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         ctx->log("[%04X] SBC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
         ctx->setFlagBySubstract(ctx->reg.pair.A, c + n);
@@ -2445,7 +2450,7 @@ class Z80
     static inline int SBC_A_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         ctx->log("[%04X] SBC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
         ctx->setFlagBySubstract(ctx->reg.pair.A, c + n);
@@ -2457,9 +2462,9 @@ class Z80
     // Substract memory with carry
     inline int SBC_A_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         log("[%04X] SBC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         setFlagBySubstract(reg.pair.A, c + n);
@@ -2471,9 +2476,9 @@ class Z80
     // Substract memory with carry
     inline int SBC_A_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         setFlagBySubstract(reg.pair.A, c + n);
@@ -2501,7 +2506,7 @@ class Z80
     static inline int DEC_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] DEC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
         ctx->setFlagBySubstract(n, 1);
         ctx->CB.write(ctx->CB.arg, addr, n - 1);
@@ -2512,9 +2517,9 @@ class Z80
     // Decrement location (IX+d)
     inline int DEC_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagBySubstract(n, 1);
         CB.write(CB.arg, addr, n - 1);
@@ -2525,9 +2530,9 @@ class Z80
     // Decrement location (IY+d)
     inline int DEC_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagBySubstract(n, 1);
         CB.write(CB.arg, addr, n - 1);
@@ -2714,7 +2719,7 @@ class Z80
     // AND immediate
     static inline int AND_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         ctx->log("[%04X] AND %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->reg.pair.A &= n;
         ctx->setFlagByLogical();
@@ -2726,7 +2731,7 @@ class Z80
     static inline int AND_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] AND %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->reg.pair.A &= n;
         ctx->setFlagByLogical();
@@ -2737,9 +2742,9 @@ class Z80
     // AND Memory
     inline int AND_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         reg.pair.A &= n;
         setFlagByLogical();
@@ -2750,9 +2755,9 @@ class Z80
     // AND Memory
     inline int AND_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         reg.pair.A &= n;
         setFlagByLogical();
@@ -2778,7 +2783,7 @@ class Z80
     // OR immediate
     static inline int OR_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         ctx->log("[%04X] OR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->reg.pair.A |= n;
         ctx->setFlagByLogical();
@@ -2790,7 +2795,7 @@ class Z80
     static inline int OR_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] OR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A | n);
         ctx->reg.pair.A |= n;
         ctx->setFlagByLogical();
@@ -2801,9 +2806,9 @@ class Z80
     // OR Memory
     inline int OR_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         reg.pair.A |= n;
         setFlagByLogical();
@@ -2814,9 +2819,9 @@ class Z80
     // OR Memory
     inline int OR_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         reg.pair.A |= n;
         setFlagByLogical();
@@ -2842,7 +2847,7 @@ class Z80
     // XOR immediate
     static inline int XOR_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         ctx->log("[%04X] XOR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->reg.pair.A ^= n;
         ctx->setFlagByLogical();
@@ -2854,7 +2859,7 @@ class Z80
     static inline int XOR_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] XOR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A ^ n);
         ctx->reg.pair.A ^= n;
         ctx->setFlagByLogical();
@@ -2865,9 +2870,9 @@ class Z80
     // XOR Memory
     inline int XOR_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         reg.pair.A ^= n;
         setFlagByLogical();
@@ -2878,9 +2883,9 @@ class Z80
     // XOR Memory
     inline int XOR_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         reg.pair.A ^= n;
         setFlagByLogical();
@@ -2963,7 +2968,7 @@ class Z80
     inline int BIT_HN(unsigned char bit)
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] BIT (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
@@ -2986,7 +2991,7 @@ class Z80
     inline int BIT_IX(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] BIT (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
@@ -3009,7 +3014,7 @@ class Z80
     inline int BIT_IY(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] BIT (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
@@ -3055,7 +3060,7 @@ class Z80
     inline int SET_HN(unsigned char bit)
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] SET (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
         switch (bit) {
             case 0: n |= 0b00000001; break;
@@ -3076,7 +3081,7 @@ class Z80
     inline int SET_IX(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n |= 0b00000001; break;
@@ -3097,7 +3102,7 @@ class Z80
     inline int SET_IY(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n |= 0b00000001; break;
@@ -3141,7 +3146,7 @@ class Z80
     inline int RES_HN(unsigned char bit)
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] RES (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
         switch (bit) {
             case 0: n &= 0b11111110; break;
@@ -3162,7 +3167,7 @@ class Z80
     inline int RES_IX(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] RES (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b11111110; break;
@@ -3183,7 +3188,7 @@ class Z80
     inline int RES_IY(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] RES (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b11111110; break;
@@ -3206,7 +3211,7 @@ class Z80
         log("[%04X] CPI ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
         unsigned short hl = getHL();
         unsigned short bc = getBC();
-        unsigned char n = CB.read(CB.arg, hl);
+        unsigned char n = readByte(hl);
         setFlagBySubstract(reg.pair.A, n);
         setHL(hl + 1);
         setBC(bc - 1);
@@ -3222,7 +3227,7 @@ class Z80
         while (1) {
             unsigned short hl = getHL();
             unsigned short bc = getBC();
-            unsigned char n = CB.read(CB.arg, hl);
+            unsigned char n = readByte(hl);
             setFlagBySubstract(reg.pair.A, n);
             setHL(++hl);
             setBC(--bc);
@@ -3243,7 +3248,7 @@ class Z80
         log("[%04X] CPD ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
         unsigned short hl = getHL();
         unsigned short bc = getBC();
-        unsigned char n = CB.read(CB.arg, hl);
+        unsigned char n = readByte(hl);
         setFlagBySubstract(reg.pair.A, n);
         setHL(hl - 1);
         setBC(bc - 1);
@@ -3259,7 +3264,7 @@ class Z80
         while (1) {
             unsigned short hl = getHL();
             unsigned short bc = getBC();
-            unsigned char n = CB.read(CB.arg, hl);
+            unsigned char n = readByte(hl);
             setFlagBySubstract(reg.pair.A, n);
             setHL(--hl);
             setBC(--bc);
@@ -3291,7 +3296,7 @@ class Z80
     // Compare immediate
     static inline int CP_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         ctx->log("[%04X] CP %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->setFlagBySubstract(ctx->reg.pair.A, n);
         ctx->reg.PC += 2;
@@ -3302,7 +3307,7 @@ class Z80
     static inline int CP_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr);
         ctx->log("[%04X] CP %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->setFlagBySubstract(ctx->reg.pair.A, n);
         ctx->reg.PC += 1;
@@ -3312,9 +3317,9 @@ class Z80
     // Compare memory
     inline int CP_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] CP %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagBySubstract(reg.pair.A, n);
         reg.PC += 3;
@@ -3324,9 +3329,9 @@ class Z80
     // Compare memory
     inline int CP_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         log("[%04X] CP %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagBySubstract(reg.pair.A, n);
         reg.PC += 3;
@@ -3336,8 +3341,8 @@ class Z80
     // Jump
     static inline int JP_NN(Z80* ctx)
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned char nL = ctx->readByte(ctx->reg.PC + 1);
+        unsigned char nH = ctx->readByte(ctx->reg.PC + 2);
         unsigned short addr = (nH << 8) + nL;
         ctx->log("[%04X] JP $%04X", ctx->reg.PC, addr);
         ctx->reg.PC = addr;
@@ -3347,8 +3352,8 @@ class Z80
     // Conditional Jump
     inline int JP_C_NN(unsigned char c)
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nL = readByte(reg.PC + 1);
+        unsigned char nH = readByte(reg.PC + 2);
         unsigned short addr = (nH << 8) + nL;
         log("[%04X] JP %s, $%04X", reg.PC, conditionDump(c), addr);
         bool jump;
@@ -3374,7 +3379,7 @@ class Z80
     // Jump Relative to PC+e
     static inline int JR_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
         ctx->log("[%04X] JR %s", ctx->reg.PC, ctx->relativeDump(e));
         ctx->reg.PC += e;
         return ctx->consumeClock(12);
@@ -3383,7 +3388,7 @@ class Z80
     // Jump Relative to PC+e, if carry
     static inline int JR_C_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
         bool execute = ctx->isFlagC();
         ctx->log("[%04X] JR C, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
@@ -3393,7 +3398,7 @@ class Z80
     // Jump Relative to PC+e, if not carry
     static inline int JR_NC_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
         bool execute = !ctx->isFlagC();
         ctx->log("[%04X] JR NC, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
@@ -3403,7 +3408,7 @@ class Z80
     // Jump Relative to PC+e, if zero
     static inline int JR_Z_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
         bool execute = ctx->isFlagZ();
         ctx->log("[%04X] JR Z, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
@@ -3413,7 +3418,7 @@ class Z80
     // Jump Relative to PC+e, if zero
     static inline int JR_NZ_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
         bool execute = !ctx->isFlagZ();
         ctx->log("[%04X] JR NZ, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
@@ -3447,7 +3452,7 @@ class Z80
     // 	Decrement B and Jump relative if B=0
     static inline int DJNZ_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
         ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC, ctx->relativeDump(e), ctx->registerDump(0b000));
         ctx->reg.pair.B--;
         if (ctx->reg.pair.B) {
@@ -3461,8 +3466,8 @@ class Z80
     // Call
     static inline int CALL_NN(Z80* ctx)
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned char nL = ctx->readByte(ctx->reg.PC + 1);
+        unsigned char nH = ctx->readByte(ctx->reg.PC + 2);
         unsigned short addr = (nH << 8) + nL;
         ctx->log("[%04X] CALL $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
         ctx->reg.PC += 3;
@@ -3478,8 +3483,8 @@ class Z80
     // Return
     static inline int RET(Z80* ctx)
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.SP);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.SP + 1);
+        unsigned char nL = ctx->readByte(ctx->reg.SP);
+        unsigned char nH = ctx->readByte(ctx->reg.SP + 1);
         unsigned short addr = (nH << 8) + nL;
         ctx->log("[%04X] RET to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
         ctx->reg.SP += 2;
@@ -3502,8 +3507,8 @@ class Z80
             case 0b111: execute = isFlagS() ? true : false; break;
             default: execute = false;
         }
-        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nL = readByte(reg.PC + 1);
+        unsigned char nH = readByte(reg.PC + 2);
         unsigned short addr = (nH << 8) + nL;
         log("[%04X] CALL %s, $%04X (%s) <execute:%s>", reg.PC, conditionDump(c), addr, registerPairDump(0b11), execute ? "YES" : "NO");
         reg.PC += 3;
@@ -3540,8 +3545,8 @@ class Z80
             reg.PC++;
             return consumeClock(5);
         }
-        unsigned char nL = CB.read(CB.arg, reg.SP);
-        unsigned char nH = CB.read(CB.arg, reg.SP + 1);
+        unsigned char nL = readByte(reg.SP);
+        unsigned char nH = readByte(reg.SP + 1);
         unsigned short addr = (nH << 8) + nL;
         log("[%04X] RET %s to $%04X (%s) <execute:YES>", reg.PC, conditionDump(c), addr, registerPairDump(0b11));
         reg.SP += 2;
@@ -3552,8 +3557,8 @@ class Z80
     // Return from interrupt
     inline int RETI()
     {
-        unsigned char nL = CB.read(CB.arg, reg.SP);
-        unsigned char nH = CB.read(CB.arg, reg.SP + 1);
+        unsigned char nL = readByte(reg.SP);
+        unsigned char nH = readByte(reg.SP + 1);
         unsigned short addr = (nH << 8) + nL;
         log("[%04X] RETI to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         reg.SP += 2;
@@ -3565,8 +3570,8 @@ class Z80
     // Return from non maskable interrupt
     inline int RETN()
     {
-        unsigned char nL = CB.read(CB.arg, reg.SP);
-        unsigned char nH = CB.read(CB.arg, reg.SP + 1);
+        unsigned char nL = readByte(reg.SP);
+        unsigned char nH = readByte(reg.SP + 1);
         unsigned short addr = (nH << 8) + nL;
         log("[%04X] RETN to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         reg.SP += 2;
@@ -3600,7 +3605,7 @@ class Z80
     // Input a byte form device n to accu.
     static inline int IN_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         unsigned char i = ctx->CB.in(ctx->CB.arg, n);
         ctx->log("[%04X] IN %s, ($%02X) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), n, i);
         ctx->reg.pair.A = i;
@@ -3713,7 +3718,7 @@ class Z80
     // Load Output port (n) with Acc.
     static inline int OUT_N_A(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
         ctx->log("[%04X] OUT ($%02X), %s", ctx->reg.PC, n, ctx->registerDump(0b111));
         ctx->CB.out(ctx->CB.arg, n, ctx->reg.pair.A);
         ctx->reg.PC += 2;
@@ -3738,7 +3743,7 @@ class Z80
     inline int OUTI()
     {
         unsigned short hl = getHL();
-        unsigned char o = CB.read(CB.arg, hl);
+        unsigned char o = readByte(hl);
         log("[%04X] OUTI ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
         CB.out(CB.arg, reg.pair.C, o);
         reg.pair.B--;
@@ -3760,7 +3765,7 @@ class Z80
         unsigned char o;
         int consumed = 0;
         do {
-            o = CB.read(CB.arg, hl++);
+            o = readByte(hl++);
             CB.out(CB.arg, reg.pair.C, o);
             reg.pair.B--;
             consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
@@ -3780,7 +3785,7 @@ class Z80
     {
         unsigned short hl = getHL();
         log("[%04X] OUTD ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
-        unsigned char o = CB.read(CB.arg, hl);
+        unsigned char o = readByte(hl);
         CB.out(CB.arg, reg.pair.C, o);
         reg.pair.B--;
         setHL(hl - 1);
@@ -3801,7 +3806,7 @@ class Z80
         unsigned char o;
         int consumed = 0;
         do {
-            o = CB.read(CB.arg, hl--);
+            o = readByte(hl--);
             CB.out(CB.arg, reg.pair.C, o);
             reg.pair.B--;
             consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
@@ -3941,7 +3946,7 @@ class Z80
     inline int RLD()
     {
         unsigned short hl = getHL();
-        unsigned char beforeN = CB.read(CB.arg, hl);
+        unsigned char beforeN = readByte(hl);
         unsigned char nH = (beforeN & 0b11110000) >> 4;
         unsigned char nL = beforeN & 0b00001111;
         unsigned char aH = (reg.pair.A & 0b11110000) >> 4;
@@ -3965,7 +3970,7 @@ class Z80
     inline int RRD()
     {
         unsigned short hl = getHL();
-        unsigned char beforeN = CB.read(CB.arg, hl);
+        unsigned char beforeN = readByte(hl);
         unsigned char nH = (beforeN & 0b11110000) >> 4;
         unsigned char nL = beforeN & 0b00001111;
         unsigned char aH = (reg.pair.A & 0b11110000) >> 4;
@@ -4105,8 +4110,8 @@ class Z80
                     unsigned short addr = reg.I;
                     addr <<= 8;
                     addr |= reg.interruptVector;
-                    unsigned short pc = CB.read(CB.arg, addr);
-                    pc += ((unsigned short)CB.read(CB.arg, addr)) << 8;
+                    unsigned short pc = readByte(addr);
+                    pc += ((unsigned short)readByte(addr)) << 8;
                     log("EXECUTE INT MODE2: ($%04X) = $%04X", addr, pc);
                     reg.PC = pc;
                     consumeClock(19);
@@ -4217,7 +4222,7 @@ class Z80
         requestBreakFlag = false;
         while (0 < clock && !reg.isHalt && !requestBreakFlag) {
             checkBreakPoint();
-            int operandNumber = CB.read(CB.arg, reg.PC);
+            int operandNumber = readByte(reg.PC);
             checkBreakOperand(operandNumber);
             int (*op)(Z80*) = opSet1[operandNumber];
             int consume = -1;
@@ -4290,7 +4295,7 @@ class Z80
             checkBreakOperand(0);
             // execute program counter & consume 4Hz (same as NOP)
             log("[%04X] NOP <HALT>", reg.PC);
-            CB.read(CB.arg, reg.PC); // NOTE: read and discard
+            readByte(reg.PC); // NOTE: read and discard
             clock -= consumeClock(4);
             executed += 4;
         }
