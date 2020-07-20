@@ -10,6 +10,7 @@
 - refactor: remove verbose procedure
 - refactor: make wrapper functions for memory read/write & port I/O 
 - bugfix: often crush if not set debug message
+- bugfix: HALT is not released by IRQ/NMI
 - performance up
 
 ## Version 0.9 (Jul 16, 2020 JST)

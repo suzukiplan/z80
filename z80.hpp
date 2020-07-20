@@ -51,7 +51,6 @@ class Z80
     struct Register {
         struct RegisterPair pair;
         struct RegisterPair back;
-        unsigned long consumeClockCounter;
         unsigned short PC;
         unsigned short SP;
         unsigned short IX;
@@ -62,7 +61,9 @@ class Z80
         unsigned char interrupt;        // NI-- --mm (N: NMI, I: IRQ, mm: mode)
         unsigned short interruptVector; // interrupt vector for IRQ
         unsigned short interruptAddrN;  // interrupt address for NMI
-        bool isHalt;
+        unsigned char consumeClockCounter;
+        unsigned char isHalt;
+        unsigned short reserved;
     } reg;
 
   private: // Internal functions & variables
@@ -4077,6 +4078,7 @@ class Z80
                 reg.interrupt &= 0b00111111; // clear request flags
                 return;
             }
+            reg.isHalt = false;
             if (isDebug()) log("EXECUTE NMI: $%04X", reg.interruptAddrN);
             reg.R++;
             reg.IFF |= IFF_NMI();
@@ -4094,6 +4096,7 @@ class Z80
                 reg.interrupt &= 0b00111111; // clear request flags
                 return;
             }
+            reg.isHalt = false;
             reg.IFF |= IFF_IRQ();
             reg.IFF &= ~(IFF1() | IFF2());
             switch (reg.interrupt & 0b00000011) {
@@ -4299,22 +4302,23 @@ class Z80
                 if (isDebug()) log("[%04X] detected an invalid operand: $%02X", reg.PC, operandNumber);
                 return 0;
             }
-            executed += reg.consumeClockCounter;
-            clock -= reg.consumeClockCounter;
-            reg.consumeClockCounter = 0;
-            checkInterrupt();
+            executeAfter(&executed, &clock);
         }
         // execute NOP while halt
         while (0 < clock && reg.isHalt && !requestBreakFlag) {
-            checkBreakPoint();
-            checkBreakOperand(0);
             // execute program counter & consume 4Hz (same as NOP)
-            if (isDebug()) log("[%04X] NOP <HALT>", reg.PC);
             readByte(reg.PC); // NOTE: read and discard
-            clock -= consumeClock(4);
-            executed += 4;
+            executeAfter(&executed, &clock);
         }
         return executed;
+    }
+
+    inline void executeAfter(int* executed, int* clock)
+    {
+        *executed = (*executed) + reg.consumeClockCounter;
+        *clock = (*clock) - reg.consumeClockCounter;
+        reg.consumeClockCounter = 0;
+        checkInterrupt();
     }
 
     int executeTick4MHz() { return execute(4194304 / 60); }
