@@ -1326,21 +1326,22 @@ class Z80
         unsigned short bc = getBC();
         unsigned short de = getDE();
         unsigned short hl = getHL();
-        do {
-            unsigned char n = readByte(hl);
-            writeByte(de, n);
-            de++;
-            hl++;
-            bc--;
-            if (0 != bc) consumeClock(5);
-        } while (0 != bc);
+        unsigned char n = readByte(hl);
+        writeByte(de, n);
+        de++;
+        hl++;
+        bc--;
+        if (0 != bc) {
+            consumeClock(5);
+        } else {
+            reg.PC += 2;
+        }
         setBC(bc);
         setDE(de);
         setHL(hl);
         setFlagH(false);
         setFlagPV(false);
         setFlagN(false);
-        reg.PC += 2;
         return 0;
     }
 
@@ -1373,21 +1374,22 @@ class Z80
         unsigned short bc = getBC();
         unsigned short de = getDE();
         unsigned short hl = getHL();
-        do {
-            unsigned char n = readByte(hl);
-            writeByte(de, n);
-            de--;
-            hl--;
-            bc--;
-            if (0 != bc) consumeClock(5);
-        } while (0 != bc);
+        unsigned char n = readByte(hl);
+        writeByte(de, n);
+        de--;
+        hl--;
+        bc--;
+        if (0 != bc) {
+            consumeClock(5);
+        } else {
+            reg.PC += 2;
+        }
         setBC(bc);
         setDE(de);
         setHL(hl);
         setFlagH(false);
         setFlagPV(false);
         setFlagN(false);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3239,21 +3241,18 @@ class Z80
     inline int CPIR()
     {
         if (isDebug()) log("[%04X] CPIR ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        while (1) {
-            unsigned short hl = getHL();
-            unsigned short bc = getBC();
-            unsigned char n = readByte(hl);
-            setFlagBySubstract(reg.pair.A, n);
-            setHL(++hl);
-            setBC(--bc);
-            consumeClock(4);
-            if (isFlagZ() || 0 == bc) {
-                break;
-            } else {
-                consumeClock(5);
-            }
+        unsigned short hl = getHL();
+        unsigned short bc = getBC();
+        unsigned char n = readByte(hl);
+        setFlagBySubstract(reg.pair.A, n);
+        setHL(++hl);
+        setBC(--bc);
+        consumeClock(4);
+        if (isFlagZ() || 0 == bc) {
+            reg.PC += 2;
+        } else {
+            consumeClock(5);
         }
-        reg.PC += 2;
         return 0;
     }
 
@@ -3275,20 +3274,17 @@ class Z80
     inline int CPDR()
     {
         if (isDebug()) log("[%04X] CPDR ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        while (1) {
-            unsigned short hl = getHL();
-            unsigned short bc = getBC();
-            unsigned char n = readByte(hl);
-            setFlagBySubstract(reg.pair.A, n);
-            setHL(--hl);
-            setBC(--bc);
-            if (isFlagZ() || 0 == bc) {
-                break;
-            } else {
-                consumeClock(5);
-            }
+        unsigned short hl = getHL();
+        unsigned short bc = getBC();
+        unsigned char n = readByte(hl);
+        setFlagBySubstract(reg.pair.A, n);
+        setHL(--hl);
+        setBC(--bc);
+        if (isFlagZ() || 0 == bc) {
+            reg.PC += 2;
+        } else {
+            consumeClock(5);
         }
-        reg.PC += 2;
         return 0;
     }
 
@@ -3669,19 +3665,20 @@ class Z80
         if (isDebug()) log("[%04X] INIR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
         unsigned short hl = getHL();
         unsigned char i;
-        do {
-            i = inPort(reg.pair.C);
-            writeByte(hl++, i);
-            reg.pair.B--;
-            if (0 != reg.pair.B) consumeClock(5);
-        } while (0 != reg.pair.B);
+        i = inPort(reg.pair.C);
+        writeByte(hl++, i);
+        reg.pair.B--;
+        if (0 != reg.pair.B) {
+            consumeClock(5);
+        } else {
+            reg.PC += 2;
+        }
         setHL(hl);
         setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagZ(true);
         setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagN(true);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3709,19 +3706,20 @@ class Z80
         if (isDebug()) log("[%04X] INDR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
         unsigned short hl = getHL();
         unsigned char i;
-        do {
-            i = inPort(reg.pair.C);
-            writeByte(hl--, i);
-            reg.pair.B--;
-            if (0 != reg.pair.B) consumeClock(5);
-        } while (0 != reg.pair.B);
+        i = inPort(reg.pair.C);
+        writeByte(hl--, i);
+        reg.pair.B--;
+        if (0 != reg.pair.B) {
+            consumeClock(5);
+        } else {
+            reg.PC += 2;
+        }
         setHL(hl);
         setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagZ(true);
         setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagN(true);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3773,19 +3771,20 @@ class Z80
         if (isDebug()) log("[%04X] OUTIR ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
         unsigned short hl = getHL();
         unsigned char o;
-        do {
-            o = readByte(hl++);
-            outPort(reg.pair.C, o);
-            reg.pair.B--;
-            if (0 != reg.pair.B) consumeClock(5);
-        } while (0 != reg.pair.B);
+        o = readByte(hl++);
+        outPort(reg.pair.C, o);
+        reg.pair.B--;
+        if (0 != reg.pair.B) {
+            consumeClock(5);
+        } else {
+            reg.PC += 2;
+        }
         setHL(hl);
         setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagZ(true);
         setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagN(true);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3813,19 +3812,20 @@ class Z80
         if (isDebug()) log("[%04X] OUTDR ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
         unsigned short hl = getHL();
         unsigned char o;
-        do {
-            o = readByte(hl--);
-            outPort(reg.pair.C, o);
-            reg.pair.B--;
-            if (0 != reg.pair.B) consumeClock(5);
-        } while (0 != reg.pair.B);
+        o = readByte(hl--);
+        outPort(reg.pair.C, o);
+        reg.pair.B--;
+        if (0 != reg.pair.B) {
+            consumeClock(5);
+        } else {
+            reg.PC += 2;
+        }
         setHL(hl);
         setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagZ(true);
         setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagN(true);
-        reg.PC += 2;
         return 0;
     }
 

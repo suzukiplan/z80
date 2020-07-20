@@ -4,6 +4,9 @@
 
 - split clock synchronization timing into fine timings such as fetch and store
   - in the process, some operands with incorrect execution clock numbers are being corrected.
+- Fixed implementation error of repeat operands (LDIR, LDDR, CPIR, CPDR, OUTIR, OUTDR, INIR, INDR)
+  - actual: Loop until B flag is 0 in instruction
+  - expected: PC cannot proceed unless B flag is 0
 - refactor: remove verbose procedure
 - refactor: make wrapper functions for memory read/write & port I/O 
 - bugfix: often crush if not set debug message
