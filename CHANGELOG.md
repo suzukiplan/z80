@@ -12,6 +12,7 @@
 - bugfix: often crush if not set debug message
 - bugfix: HALT is not released by IRQ/NMI
 - performance up
+- change register layout (disruptive change)
 
 ## Version 0.9 (Jul 16, 2020 JST)
 

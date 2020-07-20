@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
 
     if (autoExec) {
         // 通常は面倒なのでNOPを検出するまで実行し続ける
-        while (0 < z80.executeTick4MHz() && !z80.reg.isHalt) {
+        while (0 < z80.executeTick4MHz() && !(z80.reg.IFF & 0x80)) {
             puts("--- proceed 1 frame (1/60sec) of 4MHz ---");
         }
     } else {
@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
         }
         printf("executed %dHz\n", clocks);
     }
-    if (autoExec && z80.reg.isHalt) {
+    if (autoExec && (z80.reg.IFF & 0x80)) {
         printf("HALT detected! (PC:$%04X)\n", z80.reg.PC);
         z80.registerDump();
         printf("Total Clocks: %d Hz\n", totalClocks);

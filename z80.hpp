@@ -62,8 +62,8 @@ class Z80
         unsigned short interruptVector; // interrupt vector for IRQ
         unsigned short interruptAddrN;  // interrupt address for NMI
         unsigned char consumeClockCounter;
-        unsigned char isHalt;
-        unsigned short reserved;
+        unsigned char reserved1;
+        unsigned short reserved2;
     } reg;
 
   private: // Internal functions & variables
@@ -363,7 +363,7 @@ class Z80
     static inline int HALT(Z80* ctx)
     {
         if (ctx->isDebug()) ctx->log("[%04X] HALT", ctx->reg.PC);
-        ctx->reg.isHalt = true;
+        ctx->reg.IFF |= ctx->IFF_HALT();
         ctx->reg.PC++;
         return 0;
     }
@@ -3603,7 +3603,7 @@ class Z80
         unsigned short addr = t * 8;
         unsigned char pcH = (reg.PC & 0xFF00) >> 8;
         unsigned char pcL = reg.PC & 0x00FF;
-        if (isDebug()) log("[%04X] RST from $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
+        if (isDebug()) log("[%04X] RST $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         writeByte(reg.SP - 1, pcH);
         writeByte(reg.SP - 2, pcL);
         reg.SP -= 2;
@@ -4078,7 +4078,7 @@ class Z80
                 reg.interrupt &= 0b00111111; // clear request flags
                 return;
             }
-            reg.isHalt = false;
+            reg.IFF &= ~IFF_HALT();
             if (isDebug()) log("EXECUTE NMI: $%04X", reg.interruptAddrN);
             reg.R++;
             reg.IFF |= IFF_NMI();
@@ -4096,7 +4096,7 @@ class Z80
                 reg.interrupt &= 0b00111111; // clear request flags
                 return;
             }
-            reg.isHalt = false;
+            reg.IFF &= ~IFF_HALT();
             reg.IFF |= IFF_IRQ();
             reg.IFF &= ~(IFF1() | IFF2());
             switch (reg.interrupt & 0b00000011) {
@@ -4237,88 +4237,82 @@ class Z80
         int executed = 0;
         requestBreakFlag = false;
         reg.consumeClockCounter = 0;
-        while (0 < clock && !reg.isHalt && !requestBreakFlag) {
-            checkBreakPoint();
-            int operandNumber = readByte(reg.PC);
-            checkBreakOperand(operandNumber);
-            int (*op)(Z80*) = opSet1[operandNumber];
-            int ret = -1;
-            if (NULL == op) {
-                // execute an operand that register type has specified in the first byte.
-                if ((operandNumber & 0b11111000) == 0b01110000) {
-                    ret = LD_HL_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11001111) == 0b00001001) {
-                    ret = ADD_HL_RP((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11000111) == 0b00000110) {
-                    ret = LD_R_N((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11001111) == 0b00000001) {
-                    ret = LD_RP_NN((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11001111) == 0b11000101) {
-                    ret = PUSH_RP((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11001111) == 0b11000001) {
-                    ret = POP_RP((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11001111) == 0b00000011) {
-                    ret = INC_RP((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11001111) == 0b00001011) {
-                    ret = DEC_RP((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11000111) == 0b01000110) {
-                    ret = LD_R_HL((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b00000100) {
-                    ret = INC_R((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b00000101) {
-                    ret = DEC_R((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b11000010) {
-                    ret = JP_C_NN((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b11000100) {
-                    ret = CALL_C_NN((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b11000000) {
-                    ret = RET_C((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b11000111) {
-                    ret = RST((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000000) == 0b01000000) {
-                    ret = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10000000) {
-                    ret = ADD_A_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10001000) {
-                    ret = ADC_A_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10010000) {
-                    ret = SUB_A_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10011000) {
-                    ret = SBC_A_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10100000) {
-                    ret = AND_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10110000) {
-                    ret = OR_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10101000) {
-                    ret = XOR_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10111000) {
-                    ret = CP_R(operandNumber & 0b00000111);
-                }
+        while (0 < clock && !requestBreakFlag) {
+            // execute NOP while halt
+            if (reg.IFF & IFF_HALT()) {
+                readByte(reg.PC); // NOTE: read and discard (to be consumed 4Hz)
             } else {
-                // execute an operand that the first byte is fixed.
-                ret = op(this);
+                checkBreakPoint();
+                int operandNumber = readByte(reg.PC);
+                checkBreakOperand(operandNumber);
+                int (*op)(Z80*) = opSet1[operandNumber];
+                int ret = -1;
+                if (NULL == op) {
+                    // execute an operand that register type has specified in the first byte.
+                    if ((operandNumber & 0b11111000) == 0b01110000) {
+                        ret = LD_HL_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11001111) == 0b00001001) {
+                        ret = ADD_HL_RP((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11000111) == 0b00000110) {
+                        ret = LD_R_N((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11001111) == 0b00000001) {
+                        ret = LD_RP_NN((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11001111) == 0b11000101) {
+                        ret = PUSH_RP((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11001111) == 0b11000001) {
+                        ret = POP_RP((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11001111) == 0b00000011) {
+                        ret = INC_RP((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11001111) == 0b00001011) {
+                        ret = DEC_RP((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11000111) == 0b01000110) {
+                        ret = LD_R_HL((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b00000100) {
+                        ret = INC_R((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b00000101) {
+                        ret = DEC_R((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b11000010) {
+                        ret = JP_C_NN((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b11000100) {
+                        ret = CALL_C_NN((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b11000000) {
+                        ret = RET_C((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b11000111) {
+                        ret = RST((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000000) == 0b01000000) {
+                        ret = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10000000) {
+                        ret = ADD_A_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10001000) {
+                        ret = ADC_A_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10010000) {
+                        ret = SUB_A_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10011000) {
+                        ret = SBC_A_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10100000) {
+                        ret = AND_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10110000) {
+                        ret = OR_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10101000) {
+                        ret = XOR_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10111000) {
+                        ret = CP_R(operandNumber & 0b00000111);
+                    }
+                } else {
+                    // execute an operand that the first byte is fixed.
+                    ret = op(this);
+                }
+                if (ret < 0) {
+                    if (isDebug()) log("[%04X] detected an invalid operand: $%02X", reg.PC, operandNumber);
+                    return 0;
+                }
             }
-            if (ret < 0) {
-                if (isDebug()) log("[%04X] detected an invalid operand: $%02X", reg.PC, operandNumber);
-                return 0;
-            }
-            executeAfter(&executed, &clock);
-        }
-        // execute NOP while halt
-        while (0 < clock && reg.isHalt && !requestBreakFlag) {
-            // execute program counter & consume 4Hz (same as NOP)
-            readByte(reg.PC); // NOTE: read and discard
-            executeAfter(&executed, &clock);
+            executed += reg.consumeClockCounter;
+            clock -= reg.consumeClockCounter;
+            reg.consumeClockCounter = 0;
+            checkInterrupt();
         }
         return executed;
-    }
-
-    inline void executeAfter(int* executed, int* clock)
-    {
-        *executed = (*executed) + reg.consumeClockCounter;
-        *clock = (*clock) - reg.consumeClockCounter;
-        reg.consumeClockCounter = 0;
-        checkInterrupt();
     }
 
     int executeTick4MHz() { return execute(4194304 / 60); }
@@ -4340,7 +4334,7 @@ class Z80
         if (isDebug()) log("BACK: %s %s %s %s %s %s %s F'<$%02X>", registerDump2(0b111), registerDump2(0b000), registerDump2(0b001), registerDump2(0b010), registerDump2(0b011), registerDump2(0b100), registerDump2(0b101), reg.back.F);
         if (isDebug()) log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
         if (isDebug()) log("R<$%02X> I<$%02X> IFF<$%02X>", reg.R, reg.I, reg.IFF);
-        if (isDebug()) log("isHalt: %s, interrupt: $%02X", reg.isHalt ? "YES" : "NO", reg.interrupt);
+        if (isDebug()) log("isHalt: %s, interrupt: $%02X", reg.IFF & IFF_HALT() ? "YES" : "NO", reg.interrupt);
         if (isDebug()) log("===== REGISTER DUMP : END =====");
     }
 };
