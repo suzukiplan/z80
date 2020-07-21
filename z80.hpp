@@ -63,7 +63,8 @@ class Z80
         unsigned short interruptAddrN;  // interrupt address for NMI
         unsigned char consumeClockCounter;
         unsigned char execEI;
-        unsigned short reserved2;
+        unsigned char reserved1;
+        unsigned char reserved2;
     } reg;
 
   private: // Internal functions & variables
@@ -4248,6 +4249,7 @@ class Z80
         while (0 < clock && !requestBreakFlag) {
             // execute NOP while halt
             if (reg.IFF & IFF_HALT()) {
+                reg.execEI = 0;
                 readByte(reg.PC); // NOTE: read and discard (to be consumed 4Hz)
             } else {
                 checkBreakPoint();
