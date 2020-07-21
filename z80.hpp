@@ -3445,7 +3445,7 @@ class Z80
     {
         if (ctx->isDebug()) ctx->log("[%04X] JP %s", ctx->reg.PC, ctx->registerPairDump(0b10));
         ctx->reg.PC = ctx->getHL();
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     // Jump to IX
