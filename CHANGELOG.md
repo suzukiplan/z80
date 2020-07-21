@@ -22,6 +22,7 @@
 - bugfix: correct the invalid clock cycle: OUT (N), A
 - interrupt processing is not executed by the instruction immediately after executing EI
 - do not clear IRQ/NMI request when masked
+- bugfix: the status register set after executing LDI/LDD are incorrect.
 
 ## Version 0.9 (Jul 16, 2020 JST)
 

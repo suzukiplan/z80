@@ -1315,7 +1315,7 @@ class Z80
         setBC(bc);
         setDE(de);
         setHL(hl);
-        setFlagH(true);
+        setFlagH(false);
         setFlagPV(bc != 1);
         setFlagN(false);
         reg.PC += 2;
@@ -1363,7 +1363,7 @@ class Z80
         setBC(bc);
         setDE(de);
         setHL(hl);
-        setFlagH(true);
+        setFlagH(false);
         setFlagPV(bc != 1);
         setFlagN(false);
         reg.PC += 2;
