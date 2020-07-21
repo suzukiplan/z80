@@ -13,6 +13,7 @@
 - bugfix: HALT is not released by IRQ/NMI
 - performance up
 - change register layout (disruptive change)
+- bugfix: correct the invalid clock cycle: LD SP, nn (expected: 10Hz, actual: 20Hz)
 
 ## Version 0.9 (Jul 16, 2020 JST)
 

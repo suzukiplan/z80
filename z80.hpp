@@ -1121,7 +1121,7 @@ class Z80
                 if (isDebug()) log("[%04X] LD SP<$%04X>, $%02X%02X", reg.PC, reg.SP, nH, nL);
                 reg.SP = (nH << 8) + nL;
                 reg.PC += 3;
-                return consumeClock(10);
+                return 0;
             default:
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
