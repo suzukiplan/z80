@@ -4,3 +4,5 @@ all:
 	rm z80.hpp.bak
 	clang -std=c++11 -Wall -Wfloat-equal -Wshadow -Werror test.cpp -lstdc++
 	./a.out
+	clang -std=c++11 -Wall -Wfloat-equal -Wshadow -Werror test-clock.cpp -lstdc++
+	./a.out
