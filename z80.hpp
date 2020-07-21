@@ -3281,6 +3281,7 @@ class Z80
         setFlagBySubstract(reg.pair.A, n);
         setHL(--hl);
         setBC(--bc);
+        consumeClock(4);
         if (isFlagZ() || 0 == bc) {
             reg.PC += 2;
         } else {

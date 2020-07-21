@@ -14,6 +14,7 @@
 - performance up
 - change register layout (disruptive change)
 - bugfix: correct the invalid clock cycle: LD SP, nn (expected: 10Hz, actual: 20Hz)
+- bugfix: missing consume clock 4Hz in CPDR
 
 ## Version 0.9 (Jul 16, 2020 JST)
 
