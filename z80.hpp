@@ -3610,7 +3610,7 @@ class Z80
         unsigned char pcL = reg.PC & 0x00FF;
         if (isDebug()) log("[%04X] RST $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         writeByte(reg.SP - 1, pcH);
-        writeByte(reg.SP - 2, pcL);
+        writeByte(reg.SP - 2, pcL, 3);
         reg.SP -= 2;
         reg.PC = addr;
         return 0;

@@ -18,6 +18,7 @@
 - bugfix: memory issue will occur when execute the relative jump operands if enabled debug mode
 - bugfix: correct the invalid clock cycle: jump relative + if
 - bugfix: correct the invalid clock cycle: JP (HL), JP (IX), JP (IY)
+- bugfix: correct the invalid clock cycle: RST
 
 ## Version 0.9 (Jul 16, 2020 JST)
 
