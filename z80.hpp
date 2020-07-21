@@ -62,7 +62,7 @@ class Z80
         unsigned short interruptVector; // interrupt vector for IRQ
         unsigned short interruptAddrN;  // interrupt address for NMI
         unsigned char consumeClockCounter;
-        unsigned char reserved1;
+        unsigned char execEI;
         unsigned short reserved2;
     } reg;
 
@@ -381,6 +381,7 @@ class Z80
         if (ctx->isDebug()) ctx->log("[%04X] EI", ctx->reg.PC);
         ctx->reg.IFF |= ctx->IFF1() | ctx->IFF2();
         ctx->reg.PC++;
+        ctx->reg.execEI = 1;
         return 0;
     }
 
@@ -4076,11 +4077,14 @@ class Z80
 
     inline void checkInterrupt()
     {
+        // Interrupt processing is not executed by the instruction immediately after executing EI.
+        if (reg.execEI) {
+            return;
+        }
         // check interrupt flag
         if (reg.interrupt & 0b10000000) {
             // execute NMI
             if (reg.IFF & IFF_NMI()) {
-                reg.interrupt &= 0b00111111; // clear request flags
                 return;
             }
             reg.IFF &= ~IFF_HALT();
@@ -4098,7 +4102,6 @@ class Z80
         } else if (reg.interrupt & 0b01000000) {
             // execute IRQ
             if (!(reg.IFF & IFF1())) {
-                reg.interrupt &= 0b00111111; // clear request flags
                 return;
             }
             reg.IFF &= ~IFF_HALT();
@@ -4248,6 +4251,7 @@ class Z80
                 readByte(reg.PC); // NOTE: read and discard (to be consumed 4Hz)
             } else {
                 checkBreakPoint();
+                reg.execEI = 0;
                 int operandNumber = readByte(reg.PC);
                 checkBreakOperand(operandNumber);
                 int (*op)(Z80*) = opSet1[operandNumber];

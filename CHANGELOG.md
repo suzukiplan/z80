@@ -19,7 +19,9 @@
 - bugfix: correct the invalid clock cycle: jump relative + if
 - bugfix: correct the invalid clock cycle: JP (HL), JP (IX), JP (IY)
 - bugfix: correct the invalid clock cycle: RST
-- bugfix: correct the invalid clock cycle: OUT (N), A 
+- bugfix: correct the invalid clock cycle: OUT (N), A
+- interrupt processing is not executed by the instruction immediately after executing EI
+- do not clear IRQ/NMI request when masked
 
 ## Version 0.9 (Jul 16, 2020 JST)
 
