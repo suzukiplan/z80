@@ -3453,7 +3453,7 @@ class Z80
     {
         if (isDebug()) log("[%04X] JP IX<$%04X>", reg.PC, reg.IX);
         reg.PC = reg.IX;
-        return consumeClock(4);
+        return 0;
     }
 
     // Jump to IY
@@ -3461,7 +3461,7 @@ class Z80
     {
         if (isDebug()) log("[%04X] JP IY<$%04X>", reg.PC, reg.IY);
         reg.PC = reg.IY;
-        return consumeClock(4);
+        return 0;
     }
 
     // 	Decrement B and Jump relative if B=0
