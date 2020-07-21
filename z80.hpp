@@ -3736,7 +3736,7 @@ class Z80
         if (ctx->isDebug()) ctx->log("[%04X] OUT ($%02X), %s", ctx->reg.PC, n, ctx->registerDump(0b111));
         ctx->outPort(n, ctx->reg.pair.A);
         ctx->reg.PC += 2;
-        return ctx->consumeClock(11);
+        return 0;
     }
 
     // Output a byte to device (C) form register.

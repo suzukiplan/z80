@@ -19,6 +19,7 @@
 - bugfix: correct the invalid clock cycle: jump relative + if
 - bugfix: correct the invalid clock cycle: JP (HL), JP (IX), JP (IY)
 - bugfix: correct the invalid clock cycle: RST
+- bugfix: correct the invalid clock cycle: OUT (N), A 
 
 ## Version 0.9 (Jul 16, 2020 JST)
 
