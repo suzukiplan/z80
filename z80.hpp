@@ -3399,41 +3399,45 @@ class Z80
     // Jump Relative to PC+e, if carry
     static inline int JR_C_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
         bool execute = ctx->isFlagC();
         if (ctx->isDebug()) ctx->log("[%04X] JR C, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
-        return ctx->consumeClock(4);
+        if (execute) ctx->consumeClock(5);
+        return 0;
     }
 
     // Jump Relative to PC+e, if not carry
     static inline int JR_NC_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
         bool execute = !ctx->isFlagC();
         if (ctx->isDebug()) ctx->log("[%04X] JR NC, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
-        return ctx->consumeClock(4);
+        if (execute) ctx->consumeClock(5);
+        return 0;
     }
 
     // Jump Relative to PC+e, if zero
     static inline int JR_Z_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
         bool execute = ctx->isFlagZ();
         if (ctx->isDebug()) ctx->log("[%04X] JR Z, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
-        return ctx->consumeClock(4);
+        if (execute) ctx->consumeClock(5);
+        return 0;
     }
 
     // Jump Relative to PC+e, if zero
     static inline int JR_NZ_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
         bool execute = !ctx->isFlagZ();
         if (ctx->isDebug()) ctx->log("[%04X] JR NZ, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
-        return ctx->consumeClock(4);
+        if (execute) ctx->consumeClock(5);
+        return 0;
     }
 
     // Jump to HL
