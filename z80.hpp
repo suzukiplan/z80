@@ -933,7 +933,7 @@ class Z80
 
     inline char* relativeDump(signed char e)
     {
-        static char buf[16];
+        static char buf[80];
         if (e < 0) {
             sprintf(buf, "$%04X - %d = $%04X", reg.PC, -e, reg.PC + e);
         } else {

@@ -8,13 +8,14 @@
   - actual: Loop until B flag is 0 in instruction
   - expected: PC cannot proceed unless B flag is 0
 - refactor: remove verbose procedure
-- refactor: make wrapper functions for memory read/write & port I/O 
+- refactor: make wrapper functions for memory read/write & port I/O
 - bugfix: often crush if not set debug message
 - bugfix: HALT is not released by IRQ/NMI
 - performance up
 - change register layout (disruptive change)
 - bugfix: correct the invalid clock cycle: LD SP, nn (expected: 10Hz, actual: 20Hz)
 - bugfix: missing consume clock 4Hz in CPDR
+- bugfix: memory issue will occur when execute the relative jump operands if enabled debug mode
 
 ## Version 0.9 (Jul 16, 2020 JST)
 
