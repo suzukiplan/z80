@@ -4092,6 +4092,7 @@ class Z80
             if (reg.IFF & IFF_NMI()) {
                 return;
             }
+            reg.interrupt &= 0b01111111;
             reg.IFF &= ~IFF_HALT();
             if (isDebug()) log("EXECUTE NMI: $%04X", reg.interruptAddrN);
             reg.R++;
@@ -4109,6 +4110,7 @@ class Z80
             if (!(reg.IFF & IFF1())) {
                 return;
             }
+            reg.interrupt &= 0b10111111;
             reg.IFF &= ~IFF_HALT();
             reg.IFF |= IFF_IRQ();
             reg.IFF &= ~(IFF1() | IFF2());
@@ -4143,7 +4145,6 @@ class Z80
                 }
             }
         }
-        reg.interrupt &= 0b00111111; // clear request flags
     }
 
   public: // API functions
