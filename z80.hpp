@@ -3764,11 +3764,12 @@ class Z80
         outPort(reg.pair.C, o);
         reg.pair.B--;
         setHL(hl + 1);
-        setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagZ(reg.pair.B == 0);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagN(true);
+        setFlagS(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         reg.PC += 2;
         return 0;
     }
@@ -3788,11 +3789,12 @@ class Z80
             reg.PC += 2;
         }
         setHL(hl);
-        setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagZ(true);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagN(true);
+        setFlagS(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         return 0;
     }
 
@@ -3805,11 +3807,12 @@ class Z80
         outPort(reg.pair.C, o);
         reg.pair.B--;
         setHL(hl - 1);
-        setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagZ(reg.pair.B == 0);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagN(true);
+        setFlagS(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         reg.PC += 2;
         return 0;
     }
@@ -3829,11 +3832,12 @@ class Z80
             reg.PC += 2;
         }
         setHL(hl);
-        setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagZ(true);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagN(true);
+        setFlagS(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         return 0;
     }
 
