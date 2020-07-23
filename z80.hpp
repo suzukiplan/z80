@@ -3603,90 +3603,38 @@ class Z80
         return 0;
     }
 
-    // Load location (HL) with input from port (C); or increment HL and decrement B
-    inline int INI()
+    // Load location (HL) with input from port (C); or increment/decrement HL and decrement B
+    inline int repeatIN(bool isIncHL, bool isRepeat)
     {
         unsigned char i = inPort(reg.pair.C);
         unsigned short hl = getHL();
-        if (isDebug()) log("[%04X] INI ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+        if (isDebug()) {
+            if (isIncHL) {
+                log("[%04X] %s ... (%s) <- p(%s) = $%02X [%s]", reg.PC, isRepeat ? "INIR" : "INI", registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+            } else {
+                log("[%04X] %s ... (%s) <- p(%s) = $%02X [%s]", reg.PC, isRepeat ? "INDR" : "IND", registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+            }
+        }
         writeByte(hl, i);
         reg.pair.B--;
-        setHL(hl + 1);
+        hl += isIncHL ? 1 : -1;
+        setHL(hl);
         setFlagZ(reg.pair.B == 0);
         setFlagN(i & 0x80 ? true : false);                                             // NOTE: undocumented
         setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                                // NOTE: undocumented
         setFlagH(isFlagC());                                                           // NOTE: undocumented
-        setFlagPV(i + (((reg.pair.C + 1) & 0xFF) & 0x07) ^ reg.pair.B ? true : false); // NOTE: undocumented        setFlagN(true);
-        reg.PC += 2;
-        return 0;
-    }
-
-    // Load location (HL) with input from port (C), increment HL and decrement B, repeat until B=0
-    inline int INIR()
-    {
-        if (isDebug()) log("[%04X] INIR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char i;
-        i = inPort(reg.pair.C);
-        writeByte(hl++, i);
-        reg.pair.B--;
-        if (0 != reg.pair.B) {
+        setFlagPV(i + (((reg.pair.C + 1) & 0xFF) & 0x07) ^ reg.pair.B ? true : false); // NOTE: undocumented
+        if (isRepeat && 0 != reg.pair.B) {
             consumeClock(5);
         } else {
             reg.PC += 2;
         }
-        setHL(hl);
-        setFlagZ(true);
-        setFlagN(i & 0x80 ? true : false);                                             // NOTE: undocumented
-        setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                                // NOTE: undocumented
-        setFlagH(isFlagC());                                                           // NOTE: undocumented
-        setFlagPV(i + (((reg.pair.C + 1) & 0xFF) & 0x07) ^ reg.pair.B ? true : false); // NOTE: undocumented        setFlagN(true);
-        setFlagN(true);
         return 0;
     }
-
-    // Load location (HL) with input from port (C); or decrement HL and B
-    inline int IND()
-    {
-        unsigned char i = inPort(reg.pair.C);
-        unsigned short hl = getHL();
-        if (isDebug()) log("[%04X] IND ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
-        writeByte(hl, i);
-        reg.pair.B--;
-        setHL(hl - 1);
-        setFlagZ(reg.pair.B == 0);
-        setFlagN(i & 0x80 ? true : false);                                             // NOTE: undocumented
-        setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                                // NOTE: undocumented
-        setFlagH(isFlagC());                                                           // NOTE: undocumented
-        setFlagPV(i + (((reg.pair.C + 1) & 0xFF) & 0x07) ^ reg.pair.B ? true : false); // NOTE: undocumented        setFlagN(true);
-        setFlagN(true);
-        reg.PC += 2;
-        return 0;
-    }
-
-    // Load location (HL) with input from port (C), decrement HL and B, repeat until B=0
-    inline int INDR()
-    {
-        if (isDebug()) log("[%04X] INDR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char i;
-        i = inPort(reg.pair.C);
-        writeByte(hl--, i);
-        reg.pair.B--;
-        if (0 != reg.pair.B) {
-            consumeClock(5);
-        } else {
-            reg.PC += 2;
-        }
-        setHL(hl);
-        setFlagZ(true);
-        setFlagN(i & 0x80 ? true : false);                                             // NOTE: undocumented
-        setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                                // NOTE: undocumented
-        setFlagH(isFlagC());                                                           // NOTE: undocumented
-        setFlagPV(i + (((reg.pair.C + 1) & 0xFF) & 0x07) ^ reg.pair.B ? true : false); // NOTE: undocumented        setFlagN(true);
-        setFlagN(true);
-        return 0;
-    }
+    inline int INI() { return repeatIN(true, false); }
+    inline int INIR() { return repeatIN(true, true); }
+    inline int IND() { return repeatIN(false, false); }
+    inline int INDR() { return repeatIN(false, true); }
 
     // Load Output port (n) with Acc.
     static inline int OUT_N_A(Z80* ctx)
