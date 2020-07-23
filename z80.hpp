@@ -2177,8 +2177,8 @@ class Z80
 
     inline void setFlagByAddition(unsigned char before, unsigned char addition, bool withCarry = false)
     {
-        int result = reg.pair.A + before + (withCarry ? (isFlagC() ? 1 : 0) : 0);
-        int carryBits = reg.pair.A ^ before ^ result;
+        int result = before + addition + (withCarry ? (isFlagC() ? 1 : 0) : 0);
+        int carryBits = before ^ addition ^ result;
         unsigned char finalResult = (unsigned char)result;
         clearAllFlags();
         setFlagZ(finalResult == 0);
@@ -2388,7 +2388,7 @@ class Z80
 
     inline void setFlagBySubstract(unsigned char before, unsigned char substract, bool withCarry = false)
     {
-        int result = before - substract - (withCarry ? isFlagC() ? 1 : 0 : 0);
+        int result = before - substract - (withCarry ? (isFlagC() ? 1 : 0) : 0);
         int carryBits = before ^ substract ^ result;
         unsigned char finalResult = (unsigned char)result;
         clearAllFlags();
