@@ -2757,7 +2757,6 @@ class Z80
         setFlagS(reg.pair.A & 0x80 ? true : false);
         setFlagsXY(reg.pair.A);
         setFlagPV(isEvenNumberBits(reg.pair.A));
-        setFlagH(true);
     }
 
     // AND Register
@@ -2771,6 +2770,7 @@ class Z80
         if (isDebug()) log("[%04X] AND %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         reg.pair.A &= *rp;
         setFlagByLogical();
+        setFlagH(true);
         reg.PC++;
         return 0;
     }
@@ -2782,6 +2782,7 @@ class Z80
         if (ctx->isDebug()) ctx->log("[%04X] AND %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->reg.pair.A &= n;
         ctx->setFlagByLogical();
+        ctx->setFlagH(true);
         ctx->reg.PC += 2;
         return 0;
     }
@@ -2794,6 +2795,7 @@ class Z80
         if (ctx->isDebug()) ctx->log("[%04X] AND %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->reg.pair.A &= n;
         ctx->setFlagByLogical();
+        ctx->setFlagH(true);
         ctx->reg.PC++;
         return 0;
     }
@@ -2807,6 +2809,7 @@ class Z80
         if (isDebug()) log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         reg.pair.A &= n;
         setFlagByLogical();
+        setFlagH(true);
         reg.PC += 3;
         return consumeClock(3);
     }
@@ -2820,6 +2823,7 @@ class Z80
         if (isDebug()) log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         reg.pair.A &= n;
         setFlagByLogical();
+        setFlagH(true);
         reg.PC += 3;
         return consumeClock(3);
     }
