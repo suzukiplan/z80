@@ -3197,9 +3197,9 @@ class Z80
     }
 
     // Compare location (HL) and A, increment HL and decrement BC
-    inline int CPI()
+    inline int CPI(bool isRepeat = false)
     {
-        if (isDebug()) log("[%04X] CPI ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
+        if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "CPIR" : "CPI", registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
         unsigned short hl = getHL();
         unsigned short bc = getBC();
         unsigned char n = readByte(hl);
@@ -3213,26 +3213,18 @@ class Z80
     // Compare location (HL) and A, increment HL, decrement BC repeat until BC=0.
     inline int CPIR()
     {
-        if (isDebug()) log("[%04X] CPIR ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        unsigned short hl = getHL();
-        unsigned short bc = getBC();
-        unsigned char n = readByte(hl);
-        setFlagBySubstract(reg.pair.A, n);
-        setHL(++hl);
-        setBC(--bc);
-        consumeClock(4);
-        if (isFlagZ() || 0 == bc) {
-            reg.PC += 2;
-        } else {
+        CPI(true);
+        if (!isFlagZ() && 0 != getBC()) {
+            reg.PC -= 2;
             consumeClock(5);
         }
         return 0;
     }
 
     // Compare location (HL) and A, decrement HL and decrement BC
-    inline int CPD()
+    inline int CPD(bool isRepeat = false)
     {
-        if (isDebug()) log("[%04X] CPD ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
+        if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "CPDR" : "CPD", registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
         unsigned short hl = getHL();
         unsigned short bc = getBC();
         unsigned char n = readByte(hl);
@@ -3246,17 +3238,9 @@ class Z80
     // Compare location (HL) and A, decrement HL, decrement BC repeat until BC=0.
     inline int CPDR()
     {
-        if (isDebug()) log("[%04X] CPDR ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        unsigned short hl = getHL();
-        unsigned short bc = getBC();
-        unsigned char n = readByte(hl);
-        setFlagBySubstract(reg.pair.A, n);
-        setHL(--hl);
-        setBC(--bc);
-        consumeClock(4);
-        if (isFlagZ() || 0 == bc) {
-            reg.PC += 2;
-        } else {
+        CPD(true);
+        if (!isFlagZ() && 0 != getBC()) {
+            reg.PC -= 2;
             consumeClock(5);
         }
         return 0;
