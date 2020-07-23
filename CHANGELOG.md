@@ -25,6 +25,7 @@
 - bugfix: the status register set after executing LDI/LDD are incorrect.
 - bugfix: P/V flag after LDI/LDD is incorrect
 - bugfix: correct undocumented conditions: OUTI, OUTIR, OUTD, OUTDR
+- bugfix: INC/DEC operands are not change carry flag
 
 ## Version 0.9 (Jul 16, 2020 JST)
 

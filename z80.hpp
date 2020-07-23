@@ -2159,7 +2159,7 @@ class Z80
         return 0;
     }
 
-    inline void setFlagByAddition(unsigned char before, unsigned char addition)
+    inline void setFlagByAddition(unsigned char before, unsigned char addition, bool setCarry = true)
     {
         unsigned char result8 = before + addition;
         unsigned short result16u = before;
@@ -2171,7 +2171,7 @@ class Z80
         setFlagH(0x0F < (before & 0x0F) + (addition & 0x0F));
         setFlagPV(result16s < -128 || 127 < result16s);
         setFlagN(true);
-        setFlagC(255 < result16u);
+        if (setCarry) setFlagC(255 < result16u);
     }
 
     // Add Reg. r to Acc.
@@ -2316,7 +2316,7 @@ class Z80
             return -1;
         }
         if (isDebug()) log("[%04X] INC %s", reg.PC, registerDump(r));
-        setFlagByAddition(*rp, 1);
+        setFlagByAddition(*rp, 1, false);
         (*rp)++;
         reg.PC += 1;
         return 0;
@@ -2328,7 +2328,7 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr);
         if (ctx->isDebug()) ctx->log("[%04X] INC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
-        ctx->setFlagByAddition(n, 1);
+        ctx->setFlagByAddition(n, 1, false);
         ctx->writeByte(addr, n + 1, 3);
         ctx->reg.PC += 1;
         return 0;
@@ -2341,7 +2341,7 @@ class Z80
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagByAddition(n, 1);
+        setFlagByAddition(n, 1, false);
         writeByte(addr, n + 1);
         reg.PC += 3;
         return consumeClock(3);
@@ -2354,13 +2354,13 @@ class Z80
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagByAddition(n, 1);
+        setFlagByAddition(n, 1, false);
         writeByte(addr, n + 1);
         reg.PC += 3;
         return consumeClock(3);
     }
 
-    inline void setFlagBySubstract(unsigned char before, unsigned char substract)
+    inline void setFlagBySubstract(unsigned char before, unsigned char substract, bool setCarry = true)
     {
         unsigned char result8 = before - substract;
         unsigned short result16u = before;
@@ -2372,7 +2372,7 @@ class Z80
         setFlagH((0x0F & (before & 0xF0) - (substract & 0xF0)) == 0); // TODO: これで正しいのだろうか？
         setFlagPV(result16s < -128 || 127 < result16s);
         setFlagN(false);
-        setFlagC(255 < result16u);
+        if (setCarry) setFlagC(255 < result16u);
     }
 
     // Substract Register
@@ -2517,7 +2517,7 @@ class Z80
             return -1;
         }
         if (isDebug()) log("[%04X] DEC %s", reg.PC, registerDump(r));
-        setFlagBySubstract(*rp, 1);
+        setFlagBySubstract(*rp, 1, false);
         (*rp)--;
         reg.PC += 1;
         return 0;
@@ -2529,7 +2529,7 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr);
         if (ctx->isDebug()) ctx->log("[%04X] DEC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
-        ctx->setFlagBySubstract(n, 1);
+        ctx->setFlagBySubstract(n, 1, false);
         ctx->writeByte(addr, n - 1, 3);
         ctx->reg.PC += 1;
         return 0;
@@ -2542,7 +2542,7 @@ class Z80
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagBySubstract(n, 1);
+        setFlagBySubstract(n, 1, false);
         writeByte(addr, n - 1);
         reg.PC += 3;
         return consumeClock(3);
@@ -2555,7 +2555,7 @@ class Z80
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagBySubstract(n, 1);
+        setFlagBySubstract(n, 1, false);
         writeByte(addr, n - 1);
         reg.PC += 3;
         return consumeClock(3);
