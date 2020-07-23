@@ -3660,88 +3660,38 @@ class Z80
         return 0;
     }
 
-    // Load Output port (C) with location (HL), increment HL and decrement B
-    inline int OUTI()
+    // Load Output port (C) with location (HL), increment/decrement HL and decrement B
+    inline int repeatOUT(bool isIncHL, bool isRepeat)
     {
         unsigned short hl = getHL();
         unsigned char o = readByte(hl);
-        if (isDebug()) log("[%04X] OUTI ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
+        if (isDebug()) {
+            if (isIncHL) {
+                log("[%04X] %s ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, isRepeat ? "OUTIR" : "OUTI", registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
+            } else {
+                log("[%04X] %s ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, isRepeat ? "OUTDR" : "OUTD", registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
+            }
+        }
         outPort(reg.pair.C, o);
         reg.pair.B--;
-        setHL(hl + 1);
+        hl += isIncHL ? 1 : -1;
+        setHL(hl);
         setFlagZ(reg.pair.B == 0);
         setFlagN(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        reg.PC += 2;
-        return 0;
-    }
-
-    // Load output port (C) with location (HL), increment HL and decrement B, repeat until B=0
-    inline int OUTIR()
-    {
-        if (isDebug()) log("[%04X] OUTIR ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char o;
-        o = readByte(hl++);
-        outPort(reg.pair.C, o);
-        reg.pair.B--;
-        if (0 != reg.pair.B) {
+        if (isRepeat && 0 != reg.pair.B) {
             consumeClock(5);
         } else {
             reg.PC += 2;
         }
-        setHL(hl);
-        setFlagZ(true);
-        setFlagN(true);
-        setFlagN(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         return 0;
     }
-
-    // Load Output port (C) with location (HL), decrement HL and B
-    inline int OUTD()
-    {
-        unsigned short hl = getHL();
-        if (isDebug()) log("[%04X] OUTD ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
-        unsigned char o = readByte(hl);
-        outPort(reg.pair.C, o);
-        reg.pair.B--;
-        setHL(hl - 1);
-        setFlagZ(reg.pair.B == 0);
-        setFlagN(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        reg.PC += 2;
-        return 0;
-    }
-
-    // Load output port (C) with location (HL), decrement HL and  B, repeat until B=0
-    inline int OUTDR()
-    {
-        if (isDebug()) log("[%04X] OUTDR ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char o;
-        o = readByte(hl--);
-        outPort(reg.pair.C, o);
-        reg.pair.B--;
-        if (0 != reg.pair.B) {
-            consumeClock(5);
-        } else {
-            reg.PC += 2;
-        }
-        setHL(hl);
-        setFlagZ(true);
-        setFlagN(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        return 0;
-    }
+    inline int OUTI() { return repeatOUT(true, false); }
+    inline int OUTIR() { return repeatOUT(true, true); }
+    inline int OUTD() { return repeatOUT(false, false); }
+    inline int OUTDR() { return repeatOUT(false, true); }
 
     // Decimal Adjust Accumulator
     static inline int DAA(Z80* ctx)
