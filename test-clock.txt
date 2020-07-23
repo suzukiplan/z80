@@ -115,9 +115,9 @@ TEST#109:  4Hz [0000] DEC B<$01>
 TEST#110: 11Hz [0000] DEC (HL<$00E3>) = $00
 TEST#111: 23Hz [0000] DEC (IX+d<$E3E0>) = $01
 TEST#112: 23Hz [0000] DEC (IY+d<$E403>) = $01
-TEST#113:  4Hz [0000] DAA ... A: $00 -> $FA, flag-n: OFF, flag-h: ON, flag-c: OFF -> OFF
-TEST#114:  4Hz [0000] CPL A<$FA>
-TEST#115:  8Hz [0000] NEG A<$05>
+TEST#113:  4Hz [0000] DAA ... A: $00 -> $00, flag-n: ON, flag-h: OFF, flag-c: OFF -> OFF
+TEST#114:  4Hz [0000] CPL A<$00>
+TEST#115:  8Hz [0000] NEG A<$FF>
 TEST#116:  4Hz [0000] CCF <C:OFF -> ON>
 TEST#117:  4Hz [0000] SCF <C:ON -> ON>
 TEST#118:  4Hz [0000] NOP
@@ -154,11 +154,11 @@ TEST#148:  6Hz [0000] DEC HL<$0001>
 TEST#149:  6Hz [0000] DEC SP<$0001>
 TEST#150: 10Hz [0000] DEC IX<$E3DE>
 TEST#151: 10Hz [0000] DEC IY<$E3FE>
-TEST#152:  4Hz [0000] RLCA <A:$FB, C:OFF>
-TEST#153:  4Hz [0000] RLA <A:$F7, C:ON>
-TEST#154:  4Hz [0000] RRCA <A:$EF, C:ON>
-TEST#155:  4Hz [0000] RRA <A:$F7, C:ON>
-TEST#156:  8Hz [0000] RLC B<$00> <C:ON>
+TEST#152:  4Hz [0000] RLCA <A:$01, C:OFF>
+TEST#153:  4Hz [0000] RLA <A:$02, C:OFF>
+TEST#154:  4Hz [0000] RRCA <A:$04, C:OFF>
+TEST#155:  4Hz [0000] RRA <A:$02, C:OFF>
+TEST#156:  8Hz [0000] RLC B<$00> <C:OFF>
 TEST#157: 15Hz [0000] RLC (HL<$0000>) = $CB <C:OFF>
 TEST#158: 23Hz [0000] RLC (IX+d<$E458>) = $00 <C:ON>
 TEST#159: 23Hz [0000] RLC (IY+d<$E478>) = $00 <C:OFF>
@@ -186,8 +186,8 @@ TEST#180:  8Hz [0000] SRL B<$00> <C:OFF>
 TEST#181: 15Hz [0000] SRL (HL<$0000>) = $CB <C:OFF>
 TEST#182: 23Hz [0000] SRL (IX+d<$E458>) = $C0 <C:ON>
 TEST#183: 23Hz [0000] SRL (IY+d<$E478>) = $00 <C:OFF>
-TEST#184: 18Hz [0000] RLD ... A: $FB -> $FE, ($0000): $ED -> $DB
-TEST#185: 18Hz [0000] RRD ... A: $FE -> $FD, ($0000): $ED -> $EE
+TEST#184: 18Hz [0000] RLD ... A: $01 -> $0E, ($0000): $ED -> $D1
+TEST#185: 18Hz [0000] RRD ... A: $0E -> $0D, ($0000): $ED -> $EE
 TEST#186:  8Hz [0000] BIT B<$00> of bit-0
 TEST#187: 12Hz [0000] BIT (HL<$0000>) = $CB of bit-0
 TEST#188: 20Hz [0000] BIT (IX+d<$E35E>) = $00 of bit-0
@@ -260,7 +260,7 @@ TEST#233: 11Hz [0000] RET M to $0003 (SP<$FFFE>) <execute:YES>
 TEST#234: 14Hz [0000] RETI to $4DED (SP<$0000>)
 TEST#235: 14Hz [0000] RETN to $0000 (SP<$0002>)
 TEST#236: 11Hz [0000] RST $0000 (SP<$0004>)
-TEST#237: 11Hz [0000] IN A<$FD>, ($01) = $00
+TEST#237: 11Hz [0000] IN A<$0D>, ($01) = $00
 TEST#238: 12Hz [0000] IN B<$00>, (C<$00>) = $00
 TEST#238: 12Hz [0000] IN C<$00>, (C<$00>) = $00
 TEST#238: 12Hz [0000] IN D<$00>, (C<$00>) = $00
@@ -269,11 +269,11 @@ TEST#238: 12Hz [0000] IN H<$00>, (C<$00>) = $00
 TEST#238: 12Hz [0000] IN L<$00>, (C<$00>) = $00
 TEST#238: 12Hz [0000] IN A<$00>, (C<$00>) = $00
 TEST#239: 16Hz [0000] INI ... (HL<$0000>) <- p(C<$00>) = $00 [B<$00>]
-TEST#240: 21Hz [0000] INIR ... (HL<$0001>) <- p(C<$00>) [B<$02>]
-TEST#240: 16Hz [0000] INIR ... (HL<$0002>) <- p(C<$00>) [B<$01>]
+TEST#240: 21Hz [0000] INIR ... (HL<$0001>) <- p(C<$00>) = $00 [B<$02>]
+TEST#240: 16Hz [0000] INIR ... (HL<$0002>) <- p(C<$00>) = $00 [B<$01>]
 TEST#241: 16Hz [0000] IND ... (HL<$0003>) <- p(C<$00>) = $00 [B<$00>]
-TEST#242: 21Hz [0000] INDR ... (HL<$0002>) <- p(C<$00>) [B<$02>]
-TEST#242: 16Hz [0000] INDR ... (HL<$0001>) <- p(C<$00>) [B<$01>]
+TEST#242: 21Hz [0000] INDR ... (HL<$0002>) <- p(C<$00>) = $00 [B<$02>]
+TEST#242: 16Hz [0000] INDR ... (HL<$0001>) <- p(C<$00>) = $00 [B<$01>]
 TEST#243: 11Hz [0000] OUT ($00), A<$00>
 TEST#244: 12Hz [0000] OUT (C<$00>), B<$00>
 TEST#244: 12Hz [0000] OUT (C<$00>), C<$00>
@@ -283,11 +283,11 @@ TEST#244: 12Hz [0000] OUT (C<$00>), H<$00>
 TEST#244: 12Hz [0000] OUT (C<$00>), L<$00>
 TEST#244: 12Hz [0000] OUT (C<$00>), A<$00>
 TEST#245: 16Hz [0000] OUTI ... p(C<$00>) <- (HL<$0000>) <$ed> [B<$00>]
-TEST#246: 21Hz [0000] OUTIR ... p(C<$00>) <- (HL<$0001>) [B<$02>]
-TEST#246: 16Hz [0000] OUTIR ... p(C<$00>) <- (HL<$0002>) [B<$01>]
+TEST#246: 21Hz [0000] OTIR ... p(C<$00>) <- (HL<$0001>) <$b3> [B<$02>]
+TEST#246: 16Hz [0000] OTIR ... p(C<$00>) <- (HL<$0002>) <$00> [B<$01>]
 TEST#247: 16Hz [0000] OUTD ... p(C<$00>) <- (HL<$0003>) [B<$00>]
-TEST#248: 21Hz [0000] OUTDR ... p(C<$00>) <- (HL<$0002>) [B<$02>]
-TEST#248: 16Hz [0000] OUTDR ... p(C<$00>) <- (HL<$0001>) [B<$01>]
+TEST#248: 21Hz [0000] OTDR ... p(C<$00>) <- (HL<$0002>) [B<$02>]
+TEST#248: 16Hz [0000] OTDR ... p(C<$00>) <- (HL<$0001>) [B<$01>]
 TEST#249:  4Hz [0000] DI
 TEST#250:  4Hz [0000] EI
 TEST#251:  8Hz [0000] IM 0

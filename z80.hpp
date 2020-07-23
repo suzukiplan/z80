@@ -69,12 +69,22 @@ class Z80
 
   private: // Internal functions & variables
     // flag setter
+    inline void clearAllFlags() { reg.pair.F = 0; }
+    inline void clearAllFlagsWithKeepCarry() { reg.pair.F &= 0b00000001; }
     inline void setFlagS(bool on) { on ? reg.pair.F |= 0b10000000 : reg.pair.F &= 0b01111111; }
     inline void setFlagZ(bool on) { on ? reg.pair.F |= 0b01000000 : reg.pair.F &= 0b10111111; }
+    inline void setFlagY(bool on) { on ? reg.pair.F |= 0b00100000 : reg.pair.F &= 0b11011111; }
     inline void setFlagH(bool on) { on ? reg.pair.F |= 0b00010000 : reg.pair.F &= 0b11101111; }
+    inline void setFlagX(bool on) { on ? reg.pair.F |= 0b00001000 : reg.pair.F &= 0b11110111; }
     inline void setFlagPV(bool on) { on ? reg.pair.F |= 0b00000100 : reg.pair.F &= 0b11111011; }
     inline void setFlagN(bool on) { on ? reg.pair.F |= 0b00000010 : reg.pair.F &= 0b11111101; }
     inline void setFlagC(bool on) { on ? reg.pair.F |= 0b00000001 : reg.pair.F &= 0b11111110; }
+
+    inline void setFlagsXY(unsigned char value)
+    {
+        setFlagX(value & 0b00001000 ? true : false);
+        setFlagY(value & 0b00100000 ? true : false);
+    }
 
     // flag checker
     inline bool isFlagS() { return reg.pair.F & 0b10000000; }
@@ -830,6 +840,7 @@ class Z80
         ctx->setFlagC(a7 ? true : false);
         ctx->setFlagH(false);
         ctx->setFlagN(false);
+        ctx->setFlagsXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -845,6 +856,7 @@ class Z80
         ctx->setFlagC(a0 ? true : false);
         ctx->setFlagH(false);
         ctx->setFlagN(false);
+        ctx->setFlagsXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -860,6 +872,7 @@ class Z80
         ctx->setFlagC(a7 ? true : false);
         ctx->setFlagH(false);
         ctx->setFlagN(false);
+        ctx->setFlagsXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -875,6 +888,7 @@ class Z80
         ctx->setFlagC(a0 ? true : false);
         ctx->setFlagH(false);
         ctx->setFlagN(false);
+        ctx->setFlagsXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -1301,9 +1315,9 @@ class Z80
     }
 
     // Load location (DE) with Loacation (HL), increment DE, HL, decrement BC
-    inline int LDI()
+    inline int LDI(bool isRepeat = false)
     {
-        if (isDebug()) log("[%04X] LDI ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+        if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "LDIR" : "LDI", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
         unsigned short bc = getBC();
         unsigned short de = getDE();
         unsigned short hl = getHL();
@@ -1315,43 +1329,34 @@ class Z80
         setBC(bc);
         setDE(de);
         setHL(hl);
+        setFlagN(false);
         setFlagH(false);
         setFlagPV(bc != 0);
-        setFlagN(false);
+        setFlagsXY((reg.pair.A + (int)n) & 0xFF); // NOTE: undocumented
         reg.PC += 2;
         return 0;
+    }
+
+    inline void endCheckForRepeatLD()
+    {
+        if (0 != getBC()) {
+            reg.PC -= 2;
+            consumeClock(5);
+        }
     }
 
     // Load location (DE) with Loacation (HL), increment DE, HL, decrement BC and repeat until BC=0.
     inline int LDIR()
     {
-        if (isDebug()) log("[%04X] LDIR ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
-        unsigned short bc = getBC();
-        unsigned short de = getDE();
-        unsigned short hl = getHL();
-        unsigned char n = readByte(hl);
-        writeByte(de, n);
-        de++;
-        hl++;
-        bc--;
-        if (0 != bc) {
-            consumeClock(5);
-        } else {
-            reg.PC += 2;
-        }
-        setBC(bc);
-        setDE(de);
-        setHL(hl);
-        setFlagH(false);
-        setFlagPV(false);
-        setFlagN(false);
+        LDI(true);
+        endCheckForRepeatLD();
         return 0;
     }
 
     // Load location (DE) with Loacation (HL), decrement DE, HL, decrement BC
-    inline int LDD()
+    inline int LDD(bool isRepeat = false)
     {
-        if (isDebug()) log("[%04X] LDD ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+        if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "LDDR" : "LDD", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
         unsigned short bc = getBC();
         unsigned short de = getDE();
         unsigned short hl = getHL();
@@ -1363,9 +1368,10 @@ class Z80
         setBC(bc);
         setDE(de);
         setHL(hl);
+        setFlagN(false);
         setFlagH(false);
         setFlagPV(bc != 0);
-        setFlagN(false);
+        setFlagsXY(reg.pair.A + n); // NOTE: undocumented
         reg.PC += 2;
         return 0;
     }
@@ -1373,26 +1379,8 @@ class Z80
     // Load location (DE) with Loacation (HL), decrement DE, HL, decrement BC and repeat until BC=0.
     inline int LDDR()
     {
-        if (isDebug()) log("[%04X] LDDR ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
-        unsigned short bc = getBC();
-        unsigned short de = getDE();
-        unsigned short hl = getHL();
-        unsigned char n = readByte(hl);
-        writeByte(de, n);
-        de--;
-        hl--;
-        bc--;
-        if (0 != bc) {
-            consumeClock(5);
-        } else {
-            reg.PC += 2;
-        }
-        setBC(bc);
-        setDE(de);
-        setHL(hl);
-        setFlagH(false);
-        setFlagPV(false);
-        setFlagN(false);
+        LDD(true);
+        endCheckForRepeatLD();
         return 0;
     }
 
@@ -1550,6 +1538,7 @@ class Z80
         setFlagC(r7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(*rp);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
@@ -1574,6 +1563,7 @@ class Z80
         setFlagC(r7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(*rp);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
@@ -1597,6 +1587,7 @@ class Z80
         setFlagC(r7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(*rp);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
@@ -1621,6 +1612,7 @@ class Z80
         setFlagC(r0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(*rp);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
@@ -1645,6 +1637,7 @@ class Z80
         setFlagC(r0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(*rp);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
@@ -1670,6 +1663,7 @@ class Z80
         setFlagC(r0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(*rp);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
@@ -1693,6 +1687,7 @@ class Z80
         setFlagC(r0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(*rp);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
         setFlagPV(isEvenNumberBits(*rp));
@@ -1715,6 +1710,7 @@ class Z80
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1737,6 +1733,7 @@ class Z80
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1758,6 +1755,7 @@ class Z80
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1780,6 +1778,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1802,6 +1801,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1825,6 +1825,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1846,6 +1847,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1868,6 +1870,7 @@ class Z80
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1890,6 +1893,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1912,6 +1916,7 @@ class Z80
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1933,6 +1938,7 @@ class Z80
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1955,6 +1961,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1978,6 +1985,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -1999,6 +2007,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -2021,6 +2030,7 @@ class Z80
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -2043,6 +2053,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -2065,6 +2076,7 @@ class Z80
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -2086,6 +2098,7 @@ class Z80
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -2108,6 +2121,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -2131,6 +2145,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -2152,6 +2167,7 @@ class Z80
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
+        setFlagsXY(n);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
         setFlagPV(isEvenNumberBits(n));
@@ -2159,19 +2175,29 @@ class Z80
         return 0;
     }
 
-    inline void setFlagByAddition(unsigned char before, unsigned char addition)
+    inline void setFlagByAddition(unsigned char before, unsigned char addition, bool withCarry = false)
     {
-        unsigned char result8 = before + addition;
-        unsigned short result16u = before;
-        result16u += addition;
-        signed short result16s = (signed char)before;
-        result16s += (signed char)addition;
-        setFlagS(result8 & 0x80 ? true : false);
-        setFlagZ(result8 == 0);
-        setFlagH(0x0F < (before & 0x0F) + (addition & 0x0F));
-        setFlagPV(result16s < -128 || 127 < result16s);
-        setFlagN(true);
-        setFlagC(255 < result16u);
+        int result = reg.pair.A + before + (withCarry ? (isFlagC() ? 1 : 0) : 0);
+        int carryBits = reg.pair.A ^ before ^ result;
+        unsigned char finalResult = (unsigned char)result;
+        clearAllFlags();
+        setFlagZ(finalResult == 0);
+        setFlagS(finalResult & 0x80 ? true : false);
+        setFlagsXY(finalResult);
+        setFlagC(carryBits & 0x100 ? true : false);
+        setFlagH(carryBits & 0x10 ? true : false);
+        setFlagPV((((carryBits << 1) ^ carryBits) & 0x100) != 0);
+    }
+
+    inline void setFlagByIncrement(unsigned char before)
+    {
+        unsigned char n = before++;
+        clearAllFlagsWithKeepCarry();
+        setFlagZ(n == 0);
+        setFlagS(n & 0x80 ? true : false);
+        setFlagsXY(n);
+        setFlagH(n & 0x0F ? false : true);
+        setFlagPV(n == 0x80);
     }
 
     // Add Reg. r to Acc.
@@ -2248,7 +2274,7 @@ class Z80
             return -1;
         }
         if (isDebug()) log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
-        setFlagByAddition(reg.pair.A, c + *rp);
+        setFlagByAddition(reg.pair.A, *rp, true);
         reg.pair.A += c + *rp;
         reg.PC += 1;
         return 0;
@@ -2260,7 +2286,7 @@ class Z80
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         if (ctx->isDebug()) ctx->log("[%04X] ADC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
-        ctx->setFlagByAddition(ctx->reg.pair.A, c + n);
+        ctx->setFlagByAddition(ctx->reg.pair.A, n, true);
         ctx->reg.pair.A += c + n;
         ctx->reg.PC += 2;
         return 0;
@@ -2273,7 +2299,7 @@ class Z80
         unsigned char n = ctx->readByte(addr, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         if (ctx->isDebug()) ctx->log("[%04X] ADC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
-        ctx->setFlagByAddition(ctx->reg.pair.A, c + n);
+        ctx->setFlagByAddition(ctx->reg.pair.A, n, true);
         ctx->reg.pair.A += c + n;
         ctx->reg.PC += 1;
         return 0;
@@ -2287,7 +2313,7 @@ class Z80
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
-        setFlagByAddition(reg.pair.A, c + n);
+        setFlagByAddition(reg.pair.A, n, true);
         reg.pair.A += c + n;
         reg.PC += 3;
         return consumeClock(3);
@@ -2301,7 +2327,7 @@ class Z80
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
-        setFlagByAddition(reg.pair.A, c + n);
+        setFlagByAddition(reg.pair.A, n, true);
         reg.pair.A += c + n;
         reg.PC += 3;
         return consumeClock(3);
@@ -2316,7 +2342,7 @@ class Z80
             return -1;
         }
         if (isDebug()) log("[%04X] INC %s", reg.PC, registerDump(r));
-        setFlagByAddition(*rp, 1);
+        setFlagByIncrement(*rp);
         (*rp)++;
         reg.PC += 1;
         return 0;
@@ -2328,7 +2354,7 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr);
         if (ctx->isDebug()) ctx->log("[%04X] INC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
-        ctx->setFlagByAddition(n, 1);
+        ctx->setFlagByIncrement(n);
         ctx->writeByte(addr, n + 1, 3);
         ctx->reg.PC += 1;
         return 0;
@@ -2341,7 +2367,7 @@ class Z80
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagByAddition(n, 1);
+        setFlagByIncrement(n);
         writeByte(addr, n + 1);
         reg.PC += 3;
         return consumeClock(3);
@@ -2354,25 +2380,37 @@ class Z80
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagByAddition(n, 1);
+        setFlagByIncrement(n);
         writeByte(addr, n + 1);
         reg.PC += 3;
         return consumeClock(3);
     }
 
-    inline void setFlagBySubstract(unsigned char before, unsigned char substract)
+    inline void setFlagBySubstract(unsigned char before, unsigned char substract, bool withCarry = false)
     {
-        unsigned char result8 = before - substract;
-        unsigned short result16u = before;
-        result16u -= substract;
-        signed short result16s = (signed char)before;
-        result16s += (signed char)substract;
-        setFlagS(result8 & 0x80 ? true : false);
-        setFlagZ(result8 == 0);
-        setFlagH((0x0F & (before & 0xF0) - (substract & 0xF0)) == 0); // TODO: これで正しいのだろうか？
-        setFlagPV(result16s < -128 || 127 < result16s);
-        setFlagN(false);
-        setFlagC(255 < result16u);
+        int result = before - substract - (withCarry ? isFlagC() ? 1 : 0 : 0);
+        int carryBits = before ^ substract ^ result;
+        unsigned char finalResult = (unsigned char)result;
+        clearAllFlags();
+        setFlagN(true);
+        setFlagZ(finalResult == 0);
+        setFlagS(finalResult & 0x80 ? true : false);
+        setFlagsXY(finalResult);
+        setFlagC(carryBits & 0x100 ? true : false);
+        setFlagH(carryBits & 0x10);
+        setFlagPV((((carryBits << 1) ^ carryBits) & 0x100) != 0);
+    }
+
+    inline void setFlagByDecrement(unsigned char before)
+    {
+        unsigned char n = before--;
+        clearAllFlagsWithKeepCarry();
+        setFlagN(true);
+        setFlagZ(n == 0);
+        setFlagS(n & 0x80);
+        setFlagsXY(n);
+        setFlagH((n & 0x0F) == 0x0F);
+        setFlagPV(n == 0x7F);
     }
 
     // Substract Register
@@ -2449,7 +2487,7 @@ class Z80
             return -1;
         }
         if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
-        setFlagBySubstract(reg.pair.A, c + *rp);
+        setFlagBySubstract(reg.pair.A, *rp, true);
         reg.pair.A -= c + *rp;
         reg.PC += 1;
         return 0;
@@ -2461,7 +2499,7 @@ class Z80
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         if (ctx->isDebug()) ctx->log("[%04X] SBC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
-        ctx->setFlagBySubstract(ctx->reg.pair.A, c + n);
+        ctx->setFlagBySubstract(ctx->reg.pair.A, n, true);
         ctx->reg.pair.A -= c + n;
         ctx->reg.PC += 2;
         return 0;
@@ -2474,7 +2512,7 @@ class Z80
         unsigned char n = ctx->readByte(addr, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         if (ctx->isDebug()) ctx->log("[%04X] SBC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
-        ctx->setFlagBySubstract(ctx->reg.pair.A, c + n);
+        ctx->setFlagBySubstract(ctx->reg.pair.A, n, true);
         ctx->reg.pair.A -= c + n;
         ctx->reg.PC += 1;
         return 0;
@@ -2488,7 +2526,7 @@ class Z80
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
-        setFlagBySubstract(reg.pair.A, c + n);
+        setFlagBySubstract(reg.pair.A, n, true);
         reg.pair.A -= c + n;
         reg.PC += 3;
         return consumeClock(3);
@@ -2502,7 +2540,7 @@ class Z80
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
-        setFlagBySubstract(reg.pair.A, c + n);
+        setFlagBySubstract(reg.pair.A, n, true);
         reg.pair.A -= c + n;
         reg.PC += 3;
         return consumeClock(3);
@@ -2517,7 +2555,7 @@ class Z80
             return -1;
         }
         if (isDebug()) log("[%04X] DEC %s", reg.PC, registerDump(r));
-        setFlagBySubstract(*rp, 1);
+        setFlagByDecrement(*rp);
         (*rp)--;
         reg.PC += 1;
         return 0;
@@ -2529,7 +2567,7 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr);
         if (ctx->isDebug()) ctx->log("[%04X] DEC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
-        ctx->setFlagBySubstract(n, 1);
+        ctx->setFlagByDecrement(n);
         ctx->writeByte(addr, n - 1, 3);
         ctx->reg.PC += 1;
         return 0;
@@ -2542,7 +2580,7 @@ class Z80
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagBySubstract(n, 1);
+        setFlagByDecrement(n);
         writeByte(addr, n - 1);
         reg.PC += 3;
         return consumeClock(3);
@@ -2555,7 +2593,7 @@ class Z80
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagBySubstract(n, 1);
+        setFlagByDecrement(n);
         writeByte(addr, n - 1);
         reg.PC += 3;
         return consumeClock(3);
@@ -2714,12 +2752,12 @@ class Z80
 
     inline void setFlagByLogical()
     {
-        setFlagS(reg.pair.A & 0x80 ? true : false);
+        clearAllFlags();
         setFlagZ(reg.pair.A == 0);
-        setFlagH(true);
+        setFlagS(reg.pair.A & 0x80 ? true : false);
+        setFlagsXY(reg.pair.A);
         setFlagPV(isEvenNumberBits(reg.pair.A));
-        setFlagN(false);
-        setFlagC(false);
+        setFlagH(true);
     }
 
     // AND Register
@@ -2929,9 +2967,8 @@ class Z80
     inline int NEG()
     {
         if (isDebug()) log("[%04X] NEG %s", reg.PC, registerDump(0b111));
-        reg.pair.A = ~reg.pair.A;
-        setFlagByAddition(reg.pair.A, 1);
-        reg.pair.A++;
+        setFlagBySubstract(0, reg.pair.A);
+        reg.pair.A = 0 - reg.pair.A;
         reg.PC += 2;
         return 0;
     }
@@ -2978,9 +3015,12 @@ class Z80
             case 6: n = *rp & 0b01000000; break;
             case 7: n = *rp & 0b10000000; break;
         }
+        clearAllFlagsWithKeepCarry();
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        if (n && 7 == bit) setFlagS(true);
+        setFlagsXY(*rp);
         setFlagH(true);
-        setFlagN(false);
         reg.PC += 2;
         return 0;
     }
@@ -2990,6 +3030,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
+        clearAllFlagsWithKeepCarry();
+        setFlagsXY(n);
         if (isDebug()) log("[%04X] BIT (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
@@ -3002,8 +3044,9 @@ class Z80
             case 7: n &= 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        if (n && 7 == bit) setFlagS(true);
         setFlagH(true);
-        setFlagN(false);
         reg.PC += 2;
         return 0;
     }
@@ -3013,6 +3056,8 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
+        clearAllFlagsWithKeepCarry();
+        setFlagsXY(n);
         if (isDebug()) log("[%04X] BIT (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
@@ -3025,8 +3070,9 @@ class Z80
             case 7: n &= 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        if (n && 7 == bit) setFlagS(true);
         setFlagH(true);
-        setFlagN(false);
         reg.PC += 4;
         return 0;
     }
@@ -3036,6 +3082,8 @@ class Z80
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
+        clearAllFlagsWithKeepCarry();
+        setFlagsXY(n);
         if (isDebug()) log("[%04X] BIT (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
@@ -3048,8 +3096,9 @@ class Z80
             case 7: n &= 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        if (n && 7 == bit) setFlagS(true);
         setFlagH(true);
-        setFlagN(false);
         reg.PC += 4;
         return 0;
     }
@@ -3226,69 +3275,66 @@ class Z80
         return 0;
     }
 
-    // Compare location (HL) and A, increment HL and decrement BC
-    inline int CPI()
+    // common procedure of CPI/CPD
+    inline void cp_internal(bool isIncrement)
     {
-        if (isDebug()) log("[%04X] CPI ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
         unsigned short hl = getHL();
         unsigned short bc = getBC();
         unsigned char n = readByte(hl);
-        setFlagBySubstract(reg.pair.A, n);
-        setHL(hl + 1);
-        setBC(bc - 1);
+        int result = reg.pair.A - (int)n;
+        int carryBits = reg.pair.A ^ n ^ result;
+        unsigned char finalResult = (unsigned char)result;
+        hl += isIncrement ? 1 : -1;
+        bc--;
+        setHL(hl);
+        setBC(bc);
+        clearAllFlags();
+        setFlagN(true);
+        setFlagZ(finalResult == 0);
+        setFlagS(finalResult & 0x80 ? true : false);
+        setFlagH(carryBits & 0x10 ? true : false);
+        setFlagPV(bc != 0);
+        setFlagsXY(reg.pair.A - n - (isFlagH() ? 1 : 0));
         reg.PC += 2;
+    }
+
+    // Compare location (HL) and A, increment HL and decrement BC
+    inline int CPI(bool isRepeat = false)
+    {
+        if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "CPIR" : "CPI", registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
+        cp_internal(true);
         return consumeClock(4);
+    }
+
+    inline void endCheckForRepeatCP()
+    {
+        if (!isFlagZ() && 0 != getBC()) {
+            reg.PC -= 2;
+            consumeClock(5);
+        }
     }
 
     // Compare location (HL) and A, increment HL, decrement BC repeat until BC=0.
     inline int CPIR()
     {
-        if (isDebug()) log("[%04X] CPIR ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        unsigned short hl = getHL();
-        unsigned short bc = getBC();
-        unsigned char n = readByte(hl);
-        setFlagBySubstract(reg.pair.A, n);
-        setHL(++hl);
-        setBC(--bc);
-        consumeClock(4);
-        if (isFlagZ() || 0 == bc) {
-            reg.PC += 2;
-        } else {
-            consumeClock(5);
-        }
+        CPI(true);
+        endCheckForRepeatCP();
         return 0;
     }
 
     // Compare location (HL) and A, decrement HL and decrement BC
-    inline int CPD()
+    inline int CPD(bool isRepeat = false)
     {
-        if (isDebug()) log("[%04X] CPD ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        unsigned short hl = getHL();
-        unsigned short bc = getBC();
-        unsigned char n = readByte(hl);
-        setFlagBySubstract(reg.pair.A, n);
-        setHL(hl - 1);
-        setBC(bc - 1);
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "CPDR" : "CPD", registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
+        cp_internal(false);
         return consumeClock(4);
     }
 
     // Compare location (HL) and A, decrement HL, decrement BC repeat until BC=0.
     inline int CPDR()
     {
-        if (isDebug()) log("[%04X] CPDR ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        unsigned short hl = getHL();
-        unsigned short bc = getBC();
-        unsigned char n = readByte(hl);
-        setFlagBySubstract(reg.pair.A, n);
-        setHL(--hl);
-        setBC(--bc);
-        consumeClock(4);
-        if (isFlagZ() || 0 == bc) {
-            reg.PC += 2;
-        } else {
-            consumeClock(5);
-        }
+        CPD(true);
+        endCheckForRepeatCP();
         return 0;
     }
 
@@ -3640,29 +3686,42 @@ class Z80
         unsigned char i = inPort(reg.pair.C);
         if (isDebug()) log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
         *rp = i;
-        setFlagS(i & 0x80 ? true : false);
+        clearAllFlagsWithKeepCarry();
         setFlagZ(i == 0);
-        setFlagH(false);
+        setFlagS(i & 0x80 ? true : false);
         setFlagPV(isEvenNumberBits(i));
-        setFlagN(false);
+        setFlagsXY(i);
         reg.PC += 2;
         return 0;
     }
 
+    inline void decrementB_forRepeatIO()
+    {
+        setFlagByDecrement(reg.pair.B);
+        reg.pair.B--;
+    }
+
+    inline void endCheckForRepeatIO()
+    {
+        if (0 != reg.pair.B) {
+            reg.PC -= 2;
+            consumeClock(5);
+        }
+    }
+
     // Load location (HL) with input from port (C); or increment HL and decrement B
-    inline int INI()
+    inline int INI(bool isRepeat = false)
     {
         unsigned char i = inPort(reg.pair.C);
         unsigned short hl = getHL();
-        if (isDebug()) log("[%04X] INI ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+        if (isDebug()) log("[%04X] %s ... (%s) <- p(%s) = $%02X [%s]", reg.PC, isRepeat ? "INIR" : "INI", registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
         writeByte(hl, i);
-        reg.pair.B--;
+        decrementB_forRepeatIO();
         setHL(hl + 1);
-        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagZ(reg.pair.B == 0);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
+        setFlagN(i & 0x80 ? true : false);                                             // NOTE: undocumented
+        setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                                // NOTE: undocumented
+        setFlagH(isFlagC());                                                           // NOTE: undocumented
+        setFlagPV(i + (((reg.pair.C + 1) & 0xFF) & 0x07) ^ reg.pair.B ? true : false); // NOTE: undocumented
         reg.PC += 2;
         return 0;
     }
@@ -3670,40 +3729,24 @@ class Z80
     // Load location (HL) with input from port (C), increment HL and decrement B, repeat until B=0
     inline int INIR()
     {
-        if (isDebug()) log("[%04X] INIR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char i;
-        i = inPort(reg.pair.C);
-        writeByte(hl++, i);
-        reg.pair.B--;
-        if (0 != reg.pair.B) {
-            consumeClock(5);
-        } else {
-            reg.PC += 2;
-        }
-        setHL(hl);
-        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagZ(true);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
+        INI(true);
+        endCheckForRepeatIO();
         return 0;
     }
 
     // Load location (HL) with input from port (C); or decrement HL and B
-    inline int IND()
+    inline int IND(bool isRepeat = false)
     {
         unsigned char i = inPort(reg.pair.C);
         unsigned short hl = getHL();
-        if (isDebug()) log("[%04X] IND ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+        if (isDebug()) log("[%04X] %s ... (%s) <- p(%s) = $%02X [%s]", reg.PC, isRepeat ? "INDR" : "IND", registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
         writeByte(hl, i);
-        reg.pair.B--;
+        decrementB_forRepeatIO();
         setHL(hl - 1);
-        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagZ(reg.pair.B == 0);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
+        setFlagN(i & 0x80 ? true : false);                                             // NOTE: undocumented
+        setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                                // NOTE: undocumented
+        setFlagH(isFlagC());                                                           // NOTE: undocumented
+        setFlagPV(i + (((reg.pair.C + 1) & 0xFF) & 0x07) ^ reg.pair.B ? true : false); // NOTE: undocumented
         reg.PC += 2;
         return 0;
     }
@@ -3711,23 +3754,8 @@ class Z80
     // Load location (HL) with input from port (C), decrement HL and B, repeat until B=0
     inline int INDR()
     {
-        if (isDebug()) log("[%04X] INDR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char i;
-        i = inPort(reg.pair.C);
-        writeByte(hl--, i);
-        reg.pair.B--;
-        if (0 != reg.pair.B) {
-            consumeClock(5);
-        } else {
-            reg.PC += 2;
-        }
-        setHL(hl);
-        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagZ(true);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
+        IND(true);
+        endCheckForRepeatIO();
         return 0;
     }
 
@@ -3756,20 +3784,18 @@ class Z80
     }
 
     // Load Output port (C) with location (HL), increment HL and decrement B
-    inline int OUTI()
+    inline int OUTI(bool isRepeat = false)
     {
         unsigned short hl = getHL();
         unsigned char o = readByte(hl);
-        if (isDebug()) log("[%04X] OUTI ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
+        if (isDebug()) log("[%04X] %s ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, isRepeat ? "OTIR" : "OUTI", registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
         outPort(reg.pair.C, o);
-        reg.pair.B--;
+        decrementB_forRepeatIO();
         setHL(hl + 1);
-        setFlagZ(reg.pair.B == 0);
-        setFlagN(true);
-        setFlagS(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagN(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagC(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagH(isFlagC());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(((reg.pair.L + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         reg.PC += 2;
         return 0;
     }
@@ -3777,42 +3803,24 @@ class Z80
     // Load output port (C) with location (HL), increment HL and decrement B, repeat until B=0
     inline int OUTIR()
     {
-        if (isDebug()) log("[%04X] OUTIR ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char o;
-        o = readByte(hl++);
-        outPort(reg.pair.C, o);
-        reg.pair.B--;
-        if (0 != reg.pair.B) {
-            consumeClock(5);
-        } else {
-            reg.PC += 2;
-        }
-        setHL(hl);
-        setFlagZ(true);
-        setFlagN(true);
-        setFlagS(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        OUTI(true);
+        endCheckForRepeatIO();
         return 0;
     }
 
     // Load Output port (C) with location (HL), decrement HL and B
-    inline int OUTD()
+    inline int OUTD(bool isRepeat = false)
     {
         unsigned short hl = getHL();
-        if (isDebug()) log("[%04X] OUTD ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
+        if (isDebug()) log("[%04X] %s ... p(%s) <- (%s) [%s]", reg.PC, isRepeat ? "OTDR" : "OUTD", registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
         unsigned char o = readByte(hl);
         outPort(reg.pair.C, o);
-        reg.pair.B--;
+        decrementB_forRepeatIO();
         setHL(hl - 1);
-        setFlagZ(reg.pair.B == 0);
-        setFlagN(true);
         setFlagS(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagC(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagH(isFlagC());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(((reg.pair.L + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         reg.PC += 2;
         return 0;
     }
@@ -3820,24 +3828,8 @@ class Z80
     // Load output port (C) with location (HL), decrement HL and  B, repeat until B=0
     inline int OUTDR()
     {
-        if (isDebug()) log("[%04X] OUTDR ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char o;
-        o = readByte(hl--);
-        outPort(reg.pair.C, o);
-        reg.pair.B--;
-        if (0 != reg.pair.B) {
-            consumeClock(5);
-        } else {
-            reg.PC += 2;
-        }
-        setHL(hl);
-        setFlagZ(true);
-        setFlagN(true);
-        setFlagS(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        OUTD(true);
+        endCheckForRepeatIO();
         return 0;
     }
 
