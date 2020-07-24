@@ -71,10 +71,18 @@ class Z80
     // flag setter
     inline void setFlagS(bool on) { on ? reg.pair.F |= 0b10000000 : reg.pair.F &= 0b01111111; }
     inline void setFlagZ(bool on) { on ? reg.pair.F |= 0b01000000 : reg.pair.F &= 0b10111111; }
+    inline void setFlagY(bool on) { on ? reg.pair.F |= 0b00100000 : reg.pair.F &= 0b11011111; }
     inline void setFlagH(bool on) { on ? reg.pair.F |= 0b00010000 : reg.pair.F &= 0b11101111; }
+    inline void setFlagX(bool on) { on ? reg.pair.F |= 0b00001000 : reg.pair.F &= 0b11110111; }
     inline void setFlagPV(bool on) { on ? reg.pair.F |= 0b00000100 : reg.pair.F &= 0b11111011; }
     inline void setFlagN(bool on) { on ? reg.pair.F |= 0b00000010 : reg.pair.F &= 0b11111101; }
     inline void setFlagC(bool on) { on ? reg.pair.F |= 0b00000001 : reg.pair.F &= 0b11111110; }
+
+    inline void setFlagXY(unsigned char value)
+    {
+        setFlagX(value & 0b00001000 ? true : false);
+        setFlagY(value & 0b00100000 ? true : false);
+    }
 
     // flag checker
     inline bool isFlagS() { return reg.pair.F & 0b10000000; }
@@ -1329,6 +1337,7 @@ class Z80
         setFlagH(false);
         setFlagPV(bc != 0);
         setFlagN(false);
+        setFlagXY(reg.pair.A + n);
         if (isRepeat && 0 != bc) {
             consumeClock(5);
         } else {
@@ -1497,6 +1506,7 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
         return 0;
@@ -1521,6 +1531,7 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
         return 0;
@@ -1544,6 +1555,7 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
         return 0;
@@ -1568,6 +1580,7 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
         return 0;
@@ -1592,6 +1605,7 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
         return 0;
@@ -1617,6 +1631,7 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
         return 0;
@@ -1640,6 +1655,7 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
         return 0;
@@ -1662,6 +1678,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
         return 0;
@@ -1684,6 +1701,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
         return 0;
@@ -1705,6 +1723,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
         return 0;
@@ -1727,6 +1746,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
         return 0;
@@ -1749,6 +1769,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
         return 0;
@@ -1772,6 +1793,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
         return 0;
@@ -1793,6 +1815,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
         return 0;
@@ -1815,6 +1838,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -1837,6 +1861,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -1859,6 +1884,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -1880,6 +1906,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -1902,6 +1929,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -1925,6 +1953,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -1946,6 +1975,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -1968,6 +1998,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -1990,6 +2021,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -2012,6 +2044,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -2033,6 +2066,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -2055,6 +2089,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -2078,6 +2113,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -2099,6 +2135,7 @@ class Z80
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
@@ -2114,6 +2151,7 @@ class Z80
         setFlagS(0x80 & finalResult ? true : false);
         setFlagH((carry & 0x10) != 0);
         setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
+        setFlagXY(finalResult);
         if (setCarry) setFlagC((carry & 0x100) != 0);
     }
 
@@ -2127,6 +2165,7 @@ class Z80
         setFlagS(0x80 & finalResult ? true : false);
         setFlagH((carry & 0x10) != 0);
         setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
+        setFlagXY(finalResult);
         if (setCarry) setFlagC((carry & 0x100) != 0);
     }
 
@@ -2138,6 +2177,7 @@ class Z80
         setFlagS(0x80 & finalResult ? true : false);
         setFlagH((finalResult & 0x0F) == 0x00);
         setFlagPV(finalResult == 0x80);
+        setFlagXY(finalResult);
     }
 
     inline void setFlagByDecrement(unsigned char before)
@@ -2148,6 +2188,7 @@ class Z80
         setFlagS(0x80 & finalResult ? true : false);
         setFlagH((finalResult & 0x0F) == 0x0F);
         setFlagPV(finalResult == 0x7F);
+        setFlagXY(finalResult);
     }
 
     // Add Reg. r to Acc.
@@ -2677,6 +2718,7 @@ class Z80
     {
         setFlagS(reg.pair.A & 0x80 ? true : false);
         setFlagZ(reg.pair.A == 0);
+        setFlagXY(reg.pair.A);
         setFlagH(true);
         setFlagPV(isEvenNumberBits(reg.pair.A));
         setFlagN(false);
@@ -2882,6 +2924,7 @@ class Z80
         ctx->reg.pair.A = ~ctx->reg.pair.A;
         ctx->setFlagH(true);
         ctx->setFlagN(true);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -2890,9 +2933,10 @@ class Z80
     inline int NEG()
     {
         if (isDebug()) log("[%04X] NEG %s", reg.PC, registerDump(0b111));
-        reg.pair.A = ~reg.pair.A;
-        setFlagByAddition(reg.pair.A, 1);
-        reg.pair.A++;
+        unsigned char a = reg.pair.A;
+        reg.pair.A = 0;
+        setFlagBySubstract(reg.pair.A, a);
+        reg.pair.A -= a;
         reg.PC += 2;
         return 0;
     }
@@ -2904,6 +2948,7 @@ class Z80
         ctx->setFlagH(ctx->isFlagC());
         ctx->setFlagN(false);
         ctx->setFlagC(!ctx->isFlagC());
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -2915,6 +2960,7 @@ class Z80
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->setFlagC(true);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -2940,8 +2986,11 @@ class Z80
             case 7: n = *rp & 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
+        setFlagXY(*rp);
         reg.PC += 2;
         return 0;
     }
@@ -2963,8 +3012,11 @@ class Z80
             case 7: n &= 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
+        // TODO: need set XY flags
         reg.PC += 2;
         return 0;
     }
@@ -2986,8 +3038,11 @@ class Z80
             case 7: n &= 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
+        // TODO: need set XY flags
         reg.PC += 4;
         return 0;
     }
@@ -3009,8 +3064,11 @@ class Z80
             case 7: n &= 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
+        // TODO: need set XY flags
         reg.PC += 4;
         return 0;
     }
@@ -3228,6 +3286,7 @@ class Z80
             return -1;
         }
         setFlagBySubstract(reg.pair.A, *rp);
+        setFlagXY(reg.pair.A);
         reg.PC += 1;
         return 0;
     }
@@ -3238,6 +3297,7 @@ class Z80
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] CP %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC += 2;
         return 0;
     }
@@ -3249,6 +3309,7 @@ class Z80
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] CP %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC += 1;
         return 0;
     }
@@ -3261,6 +3322,7 @@ class Z80
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] CP %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagBySubstract(reg.pair.A, n);
+        setFlagXY(reg.pair.A);
         reg.PC += 3;
         return consumeClock(3);
     }
@@ -3273,6 +3335,7 @@ class Z80
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] CP %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagBySubstract(reg.pair.A, n);
+        setFlagXY(reg.pair.A);
         reg.PC += 3;
         return consumeClock(3);
     }
@@ -3571,6 +3634,7 @@ class Z80
         setFlagH(false);
         setFlagPV(isEvenNumberBits(i));
         setFlagN(false);
+        setFlagXY(i);
         reg.PC += 2;
         return 0;
     }
@@ -3582,6 +3646,7 @@ class Z80
         setFlagC(isFlagC());
         setFlagN(true);
         setFlagZ(reg.pair.B == 0);
+        setFlagXY(reg.pair.B);
         setFlagS(reg.pair.B & 0x80 ? true : false);
         setFlagH((reg.pair.B & 0x0F) == 0x0F);
         setFlagPV(reg.pair.B == 0x7F);
