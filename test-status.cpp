@@ -306,24 +306,30 @@ int main(int argc, char* argv[])
     z80.reg.pair.L = 0x00;                                                   // setup register for test
     executeTest(&z80, &mmu, 0xED, 0xB9, 0, 0, 0xFF, 0b10111111);             // CPDR
 
+    z80.reg.pair.A = 0;                                       // setup register for test
+    z80.reg.pair.B = 0;                                       // setup register for test
+    executeTest(&z80, &mmu, 0x80, 0, 0, 0, 0x00, 0b01000000); // ADD A, B
+    z80.reg.pair.A = 0x88;                                    // setup register for test
+    z80.reg.pair.B = 0x88;                                    // setup register for test
+    executeTest(&z80, &mmu, 0x80, 0, 0, 0, 0x00, 0b00010101); // ADD A, B
+    z80.reg.pair.A = 0x00;                                    // setup register for test
+    z80.reg.pair.B = 0x80;                                    // setup register for test
+    executeTest(&z80, &mmu, 0x80, 0, 0, 0, 0x00, 0b10000000); // ADD A, B
+
+    z80.reg.pair.A = 0;                                       // setup register for test
+    z80.reg.pair.B = 0;                                       // setup register for test
+    executeTest(&z80, &mmu, 0x80, 0, 0, 0, 0xFF, 0b01101000); // ADD A, B
+    z80.reg.pair.A = 0x88;                                    // setup register for test
+    z80.reg.pair.B = 0x88;                                    // setup register for test
+    executeTest(&z80, &mmu, 0x80, 0, 0, 0, 0xFF, 0b00111101); // ADD A, B
+    z80.reg.pair.A = 0x00;                                    // setup register for test
+    z80.reg.pair.B = 0x80;                                    // setup register for test
+    executeTest(&z80, &mmu, 0x80, 0, 0, 0, 0xFF, 0b10101000); // ADD A, B
+
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
 
     /*
-    executeTest(&z80, &mmu, 0xED, 0xA1, 0, 0, 16);                   // CPI
-    z80.reg.pair.A = 123;                                            // (setup register for test)
-    z80.reg.pair.B = 0;                                              // (setup register for test)
-    z80.reg.pair.C = 2;                                              // (setup register for test)
-    executeTest(&z80, &mmu, 0xED, 0xB1, 0, 0, 21);                   // CPIR (--BC != 0)
-    testNumber--;                                                    // (decrement test number)
-    executeTest(&z80, &mmu, 0xED, 0xB1, 0, 0, 16);                   // CPIR (--BC == 0)
-    executeTest(&z80, &mmu, 0xED, 0xA9, 0, 0, 16);                   // CPD
-    z80.reg.pair.A = 123;                                            // (setup register for test)
-    z80.reg.pair.B = 0;                                              // (setup register for test)
-    z80.reg.pair.C = 2;                                              // (setup register for test)
-    executeTest(&z80, &mmu, 0xED, 0xB9, 0, 0, 21);                   // CPDR (--BC != 0)
-    testNumber--;                                                    // (decrement test number)
-    executeTest(&z80, &mmu, 0xED, 0xB9, 0, 0, 16);                   // CPDR (--BC == 0)
     executeTest(&z80, &mmu, 0x80, 0, 0, 0, 4);                       // ADD A, B
     executeTest(&z80, &mmu, 0xC6, 9, 0, 0, 7);                       // ADD A, n
     executeTest(&z80, &mmu, 0x86, 0, 0, 0, 7);                       // ADD A, (HL)
