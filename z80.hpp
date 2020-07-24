@@ -3171,55 +3171,34 @@ class Z80
         return 0;
     }
 
-    // Compare location (HL) and A, increment HL and decrement BC
-    inline int CPI(bool isRepeat = false)
+    // Compare location (HL) and A, increment/decrement HL and decrement BC
+    inline int repeatCP(bool isIncHL, bool isRepeat)
     {
-        if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "CPIR" : "CPI", registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
+        if (isDebug()) {
+            if (isIncHL) {
+                log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "CPIR" : "CPI", registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
+            } else {
+                log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "CPDR" : "CPD", registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
+            }
+        }
         unsigned short hl = getHL();
         unsigned short bc = getBC();
         unsigned char n = readByte(hl);
         setFlagBySubstract(reg.pair.A, n, false);
-        setHL(hl + 1);
+        setHL(hl + (isIncHL ? 1 : -1));
         setBC(bc - 1);
-        reg.PC += 2;
-        return consumeClock(4);
-    }
-
-    // Compare location (HL) and A, increment HL, decrement BC repeat until BC=0.
-    inline int CPIR()
-    {
-        CPI(true);
-        if (!isFlagZ() && 0 != getBC()) {
-            reg.PC -= 2;
+        consumeClock(4);
+        if (isRepeat && !isFlagZ() && 0 != getBC()) {
             consumeClock(5);
+        } else {
+            reg.PC += 2;
         }
         return 0;
     }
-
-    // Compare location (HL) and A, decrement HL and decrement BC
-    inline int CPD(bool isRepeat = false)
-    {
-        if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "CPDR" : "CPD", registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        unsigned short hl = getHL();
-        unsigned short bc = getBC();
-        unsigned char n = readByte(hl);
-        setFlagBySubstract(reg.pair.A, n, false);
-        setHL(hl - 1);
-        setBC(bc - 1);
-        reg.PC += 2;
-        return consumeClock(4);
-    }
-
-    // Compare location (HL) and A, decrement HL, decrement BC repeat until BC=0.
-    inline int CPDR()
-    {
-        CPD(true);
-        if (!isFlagZ() && 0 != getBC()) {
-            reg.PC -= 2;
-            consumeClock(5);
-        }
-        return 0;
-    }
+    inline int CPI() { return repeatCP(true, false); }
+    inline int CPIR() { return repeatCP(true, true); }
+    inline int CPD() { return repeatCP(false, false); }
+    inline int CPDR() { return repeatCP(false, true); }
 
     // Compare Register
     inline int CP_R(unsigned char r)
