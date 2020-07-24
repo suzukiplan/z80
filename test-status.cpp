@@ -200,17 +200,21 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xED, 0xB0, 0, 0, 0xFF, 0b11101101);             // LDIR
     executeTest(&z80, &mmu, 0xED, 0xB0, 0, 0, 0xFF, 0b11101001);             // LDIR
     executeTest(&z80, &mmu, 0xED, 0xB0, 0, 0, 0x00, 0b00000100);             // LDIR
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.pair.C = 2;                                                      // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xA8, 0, 0, 0xFF, 0b11101101);             // LDD
+    executeTest(&z80, &mmu, 0xED, 0xA8, 0, 0, 0xFF, 0b11101001);             // LDD
+    executeTest(&z80, &mmu, 0xED, 0xA8, 0, 0, 0x00, 0b00000100);             // LDD
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.pair.C = 2;                                                      // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 0xFF, 0b11101101);             // LDDR
+    executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 0xFF, 0b11101001);             // LDDR
+    executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 0x00, 0b00000100);             // LDDR
 
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
 
     /*
-    executeTest(&z80, &mmu, 0xED, 0xA8, 0, 0, 16);                   // LDD
-    z80.reg.pair.B = 0;                                              // (setup register for test)
-    z80.reg.pair.C = 2;                                              // (setup register for test)
-    executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 21);                   // LDDR (--BC != 0)
-    testNumber--;                                                    // (decrement test number)
-    executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 16);                   // LDDR (--BC == 0)
     executeTest(&z80, &mmu, 0xED, 0xA1, 0, 0, 16);                   // CPI
     z80.reg.pair.A = 123;                                            // (setup register for test)
     z80.reg.pair.B = 0;                                              // (setup register for test)

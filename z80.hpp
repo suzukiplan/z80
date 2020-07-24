@@ -1300,17 +1300,28 @@ class Z80
         return consumeClock(2);
     }
 
-    // Load location (DE) with Loacation (HL), increment DE, HL, decrement BC
-    inline int LDI(bool isRepeat = false)
+    // Load location (DE) with Loacation (HL), increment/decrement DE, HL, decrement BC
+    inline int repeatLD(bool isIncDEHL, bool isRepeat)
     {
-        if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "LDIR" : "LDI", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+        if (isDebug()) {
+            if (isIncDEHL) {
+                if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "LDIR" : "LDI", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+            } else {
+                if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "LDDR" : "LDD", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+            }
+        }
         unsigned short bc = getBC();
         unsigned short de = getDE();
         unsigned short hl = getHL();
         unsigned char n = readByte(hl);
         writeByte(de, n);
-        de++;
-        hl++;
+        if (isIncDEHL) {
+            de++;
+            hl++;
+        } else {
+            de--;
+            hl--;
+        }
         bc--;
         setBC(bc);
         setDE(de);
@@ -1318,53 +1329,17 @@ class Z80
         setFlagH(false);
         setFlagPV(bc != 0);
         setFlagN(false);
-        reg.PC += 2;
-        return 0;
-    }
-
-    // Load location (DE) with Loacation (HL), increment DE, HL, decrement BC and repeat until BC=0.
-    inline int LDIR()
-    {
-        LDI(true);
-        if (0 != getBC()) {
-            reg.PC -= 2;
+        if (isRepeat && 0 != bc) {
             consumeClock(5);
+        } else {
+            reg.PC += 2;
         }
         return 0;
     }
-
-    // Load location (DE) with Loacation (HL), decrement DE, HL, decrement BC
-    inline int LDD(bool isRepeat = false)
-    {
-        if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "LDDR" : "LDD", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
-        unsigned short bc = getBC();
-        unsigned short de = getDE();
-        unsigned short hl = getHL();
-        unsigned char n = readByte(hl);
-        writeByte(de, n);
-        de--;
-        hl--;
-        bc--;
-        setBC(bc);
-        setDE(de);
-        setHL(hl);
-        setFlagH(false);
-        setFlagPV(bc != 0);
-        setFlagN(false);
-        reg.PC += 2;
-        return 0;
-    }
-
-    // Load location (DE) with Loacation (HL), decrement DE, HL, decrement BC and repeat until BC=0.
-    inline int LDDR()
-    {
-        LDD(true);
-        if (0 != getBC()) {
-            reg.PC -= 2;
-            consumeClock(5);
-        }
-        return 0;
-    }
+    inline int LDI() { return repeatLD(true, false); }
+    inline int LDIR() { return repeatLD(true, true); }
+    inline int LDD() { return repeatLD(false, false); }
+    inline int LDDR() { return repeatLD(false, true); }
 
     // Exchange stack top with IX
     inline int EX_SP_IX()
