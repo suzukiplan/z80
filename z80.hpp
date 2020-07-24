@@ -2106,17 +2106,48 @@ class Z80
 
     inline void setFlagByAddition(unsigned char before, unsigned char addition, bool setCarry = true)
     {
-        unsigned char result8 = before + addition;
-        unsigned short result16u = before;
-        result16u += addition;
-        signed short result16s = (signed char)before;
-        result16s += (signed char)addition;
-        setFlagS(result8 & 0x80 ? true : false);
-        setFlagZ(result8 == 0);
-        setFlagH(0x0F < (before & 0x0F) + (addition & 0x0F));
-        setFlagPV(result16s < -128 || 127 < result16s);
+        int result = ((int)before) + addition;
+        int carry = before ^ addition ^ result;
+        unsigned char finalResult = (unsigned char)result;
+        setFlagN(false);
+        setFlagZ(0 == finalResult);
+        setFlagS(0x80 & finalResult ? true : false);
+        setFlagH((carry & 0x10) != 0);
+        setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
+        if (setCarry) setFlagC((carry & 0x100) != 0);
+    }
+
+    inline void setFlagBySubstract(unsigned char before, unsigned char substract, bool setCarry = true)
+    {
+        int result = ((int)before) - substract;
+        int carry = before ^ substract ^ result;
+        unsigned char finalResult = (unsigned char)result;
         setFlagN(true);
-        if (setCarry) setFlagC(255 < result16u);
+        setFlagZ(0 == finalResult);
+        setFlagS(0x80 & finalResult ? true : false);
+        setFlagH((carry & 0x10) != 0);
+        setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
+        if (setCarry) setFlagC((carry & 0x100) != 0);
+    }
+
+    inline void setFlagByIncrement(unsigned char before)
+    {
+        unsigned char finalResult = before + 1;
+        setFlagN(false);
+        setFlagZ(0 == finalResult);
+        setFlagS(0x80 & finalResult ? true : false);
+        setFlagH((finalResult & 0x0F) == 0x00);
+        setFlagPV(finalResult == 0x80);
+    }
+
+    inline void setFlagByDecrement(unsigned char before)
+    {
+        unsigned char finalResult = before - 1;
+        setFlagN(true);
+        setFlagZ(0 == finalResult);
+        setFlagS(0x80 & finalResult ? true : false);
+        setFlagH((finalResult & 0x0F) == 0x0F);
+        setFlagPV(finalResult == 0x7F);
     }
 
     // Add Reg. r to Acc.
@@ -2261,7 +2292,7 @@ class Z80
             return -1;
         }
         if (isDebug()) log("[%04X] INC %s", reg.PC, registerDump(r));
-        setFlagByAddition(*rp, 1, false);
+        setFlagByIncrement(*rp);
         (*rp)++;
         reg.PC += 1;
         return 0;
@@ -2273,7 +2304,7 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr);
         if (ctx->isDebug()) ctx->log("[%04X] INC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
-        ctx->setFlagByAddition(n, 1, false);
+        ctx->setFlagByIncrement(n);
         ctx->writeByte(addr, n + 1, 3);
         ctx->reg.PC += 1;
         return 0;
@@ -2286,7 +2317,7 @@ class Z80
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagByAddition(n, 1, false);
+        setFlagByIncrement(n);
         writeByte(addr, n + 1);
         reg.PC += 3;
         return consumeClock(3);
@@ -2299,25 +2330,10 @@ class Z80
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagByAddition(n, 1, false);
+        setFlagByIncrement(n);
         writeByte(addr, n + 1);
         reg.PC += 3;
         return consumeClock(3);
-    }
-
-    inline void setFlagBySubstract(unsigned char before, unsigned char substract, bool setCarry = true)
-    {
-        unsigned char result8 = before - substract;
-        unsigned short result16u = before;
-        result16u -= substract;
-        signed short result16s = (signed char)before;
-        result16s += (signed char)substract;
-        setFlagS(result8 & 0x80 ? true : false);
-        setFlagZ(result8 == 0);
-        setFlagH((0x0F & (before & 0xF0) - (substract & 0xF0)) == 0); // TODO: これで正しいのだろうか？
-        setFlagPV(result16s < -128 || 127 < result16s);
-        setFlagN(true);
-        if (setCarry) setFlagC(255 < result16u);
     }
 
     // Substract Register
@@ -2462,7 +2478,7 @@ class Z80
             return -1;
         }
         if (isDebug()) log("[%04X] DEC %s", reg.PC, registerDump(r));
-        setFlagBySubstract(*rp, 1, false);
+        setFlagByDecrement(*rp);
         (*rp)--;
         reg.PC += 1;
         return 0;
@@ -2474,7 +2490,7 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr);
         if (ctx->isDebug()) ctx->log("[%04X] DEC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
-        ctx->setFlagBySubstract(n, 1, false);
+        ctx->setFlagByDecrement(n);
         ctx->writeByte(addr, n - 1, 3);
         ctx->reg.PC += 1;
         return 0;
@@ -2487,7 +2503,7 @@ class Z80
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagBySubstract(n, 1, false);
+        setFlagByDecrement(n);
         writeByte(addr, n - 1);
         reg.PC += 3;
         return consumeClock(3);
@@ -2500,7 +2516,7 @@ class Z80
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagBySubstract(n, 1, false);
+        setFlagByDecrement(n);
         writeByte(addr, n - 1);
         reg.PC += 3;
         return consumeClock(3);

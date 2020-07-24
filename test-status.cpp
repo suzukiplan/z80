@@ -237,6 +237,13 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 0xFF, 0b11101101);             // LDDR
     executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 0xFF, 0b11101001);             // LDDR
     executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 0x00, 0b00000100);             // LDDR
+    z80.reg.pair.A = 0;                                                      // setup register for test
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.pair.C = 2;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    mmu.RAM[0x100] = 16;                                                     // setup RAM for test
+    executeTest(&z80, &mmu, 0xED, 0xA1, 0, 0, 0, 0b10000010);                // CPI
 
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
