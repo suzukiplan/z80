@@ -37,6 +37,33 @@ void outPort(void* arg, unsigned char port, unsigned char value)
     ((MMU*)arg)->IO[port] = value;
 }
 
+const char* statusText(unsigned char f, char* buf)
+{
+    int bit[8];
+    bit[7] = (f & 0b10000000) ? 1 : 0;
+    bit[6] = (f & 0b01000000) ? 1 : 0;
+    bit[5] = (f & 0b00100000) ? 1 : 0;
+    bit[4] = (f & 0b00010000) ? 1 : 0;
+    bit[3] = (f & 0b00001000) ? 1 : 0;
+    bit[2] = (f & 0b00000100) ? 1 : 0;
+    bit[1] = (f & 0b00000010) ? 1 : 0;
+    bit[0] = (f & 0b00000001) ? 1 : 0;
+    sprintf(buf, "%d%d%d%d%d%d%d%d", bit[7], bit[6], bit[5], bit[4], bit[3], bit[2], bit[1], bit[0]);
+    return buf;
+}
+
+const char* statusText1(unsigned char f)
+{
+    static char buf[32];
+    return statusText(f, buf);
+}
+
+const char* statusText2(unsigned char f)
+{
+    static char buf[32];
+    return statusText(f, buf);
+}
+
 static int testNumber;
 static int prev;
 static int expect;
@@ -70,8 +97,8 @@ int main(int argc, char* argv[])
     mmu.cpu = &z80;
     z80.setDebugMessage([](void* arg, const char* msg) {
         testNumber++;
-        fprintf(file, "TEST#%03d: $%02X -> $%02X %s\n", testNumber, prev, expect, msg);
-        fprintf(stdout, "TEST#%03d: $%02X -> $%02X %s\n", testNumber, prev, expect, msg);
+        fprintf(file, "TEST#%03d: <SZ*H*PNC> %s -> %s %s\n", testNumber, statusText1(prev), statusText2(expect), msg);
+        fprintf(stdout, "TEST#%03d: <SZ*H*PNC> %s -> %s %s\n", testNumber, statusText1(prev), statusText2(expect), msg);
     });
 
     executeTest(&z80, &mmu, 0b01000111, 0, 0, 0, 0, 0);                      // LD B, A
