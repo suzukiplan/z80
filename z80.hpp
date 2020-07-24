@@ -55,16 +55,17 @@ class Z80
         unsigned short SP;
         unsigned short IX;
         unsigned short IY;
+        unsigned short interruptVector; // interrupt vector for IRQ
+        unsigned short interruptAddrN;  // interrupt address for NMI
+        unsigned short WZ;
+        unsigned short reserved16;
         unsigned char R;
         unsigned char I;
         unsigned char IFF;
-        unsigned char interrupt;        // NI-- --mm (N: NMI, I: IRQ, mm: mode)
-        unsigned short interruptVector; // interrupt vector for IRQ
-        unsigned short interruptAddrN;  // interrupt address for NMI
+        unsigned char interrupt; // NI-- --mm (N: NMI, I: IRQ, mm: mode)
         unsigned char consumeClockCounter;
         unsigned char execEI;
-        unsigned char reserved1;
-        unsigned char reserved2;
+        unsigned char reserved8[2];
     } reg;
 
   private: // Internal functions & variables
