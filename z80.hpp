@@ -4092,6 +4092,11 @@ class Z80
         reg.interruptVector = vector;
     }
 
+    void cancelIRQ()
+    {
+        reg.interrupt &= 0b10111111;
+    }
+
     void generateNMI(unsigned short addr)
     {
         reg.interrupt |= 0b10000000;

@@ -26,6 +26,7 @@
 - bugfix: P/V flag after LDI/LDD is incorrect
 - bugfix: correct undocumented conditions: OUTI, OUTIR, OUTD, OUTDR
 - bugfix: INC/DEC operands are not change carry flag
+- add cancelIRQ function
 
 ## Version 0.9 (Jul 16, 2020 JST)
 
