@@ -68,30 +68,39 @@ class Z80
         unsigned char reserved8[2];
     } reg;
 
+    inline unsigned char flagS() { return 0b10000000; }
+    inline unsigned char flagZ() { return 0b01000000; }
+    inline unsigned char flagY() { return 0b00100000; }
+    inline unsigned char flagH() { return 0b00010000; }
+    inline unsigned char flagX() { return 0b00001000; }
+    inline unsigned char flagPV() { return 0b00000100; }
+    inline unsigned char flagN() { return 0b00000010; }
+    inline unsigned char flagC() { return 0b00000001; }
+
   private: // Internal functions & variables
     // flag setter
-    inline void setFlagS(bool on) { on ? reg.pair.F |= 0b10000000 : reg.pair.F &= 0b01111111; }
-    inline void setFlagZ(bool on) { on ? reg.pair.F |= 0b01000000 : reg.pair.F &= 0b10111111; }
-    inline void setFlagY(bool on) { on ? reg.pair.F |= 0b00100000 : reg.pair.F &= 0b11011111; }
-    inline void setFlagH(bool on) { on ? reg.pair.F |= 0b00010000 : reg.pair.F &= 0b11101111; }
-    inline void setFlagX(bool on) { on ? reg.pair.F |= 0b00001000 : reg.pair.F &= 0b11110111; }
-    inline void setFlagPV(bool on) { on ? reg.pair.F |= 0b00000100 : reg.pair.F &= 0b11111011; }
-    inline void setFlagN(bool on) { on ? reg.pair.F |= 0b00000010 : reg.pair.F &= 0b11111101; }
-    inline void setFlagC(bool on) { on ? reg.pair.F |= 0b00000001 : reg.pair.F &= 0b11111110; }
+    inline void setFlagS(bool on) { on ? reg.pair.F |= flagS() : reg.pair.F &= ~flagS(); }
+    inline void setFlagZ(bool on) { on ? reg.pair.F |= flagZ() : reg.pair.F &= ~flagZ(); }
+    inline void setFlagY(bool on) { on ? reg.pair.F |= flagY() : reg.pair.F &= ~flagY(); }
+    inline void setFlagH(bool on) { on ? reg.pair.F |= flagH() : reg.pair.F &= ~flagH(); }
+    inline void setFlagX(bool on) { on ? reg.pair.F |= flagX() : reg.pair.F &= ~flagX(); }
+    inline void setFlagPV(bool on) { on ? reg.pair.F |= flagPV() : reg.pair.F &= ~flagPV(); }
+    inline void setFlagN(bool on) { on ? reg.pair.F |= flagN() : reg.pair.F &= ~flagN(); }
+    inline void setFlagC(bool on) { on ? reg.pair.F |= flagC() : reg.pair.F &= ~flagC(); }
 
     inline void setFlagXY(unsigned char value)
     {
-        setFlagX(value & 0b00001000 ? true : false);
-        setFlagY(value & 0b00100000 ? true : false);
+        setFlagX(value & flagX() ? true : false);
+        setFlagY(value & flagY() ? true : false);
     }
 
     // flag checker
-    inline bool isFlagS() { return reg.pair.F & 0b10000000; }
-    inline bool isFlagZ() { return reg.pair.F & 0b01000000; }
-    inline bool isFlagH() { return reg.pair.F & 0b00010000; }
-    inline bool isFlagPV() { return reg.pair.F & 0b00000100; }
-    inline bool isFlagN() { return reg.pair.F & 0b00000010; }
-    inline bool isFlagC() { return reg.pair.F & 0b00000001; }
+    inline bool isFlagS() { return reg.pair.F & flagS(); }
+    inline bool isFlagZ() { return reg.pair.F & flagZ(); }
+    inline bool isFlagH() { return reg.pair.F & flagH(); }
+    inline bool isFlagPV() { return reg.pair.F & flagPV(); }
+    inline bool isFlagN() { return reg.pair.F & flagN(); }
+    inline bool isFlagC() { return reg.pair.F & flagC(); }
 
     inline unsigned char IFF1() { return 0b00000001; }
     inline unsigned char IFF2() { return 0b00000100; }
