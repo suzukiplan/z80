@@ -6,3 +6,5 @@ all:
 	./a.out
 	clang -std=c++11 -Wall -Wfloat-equal -Wshadow -Werror test-clock.cpp -lstdc++
 	./a.out
+	clang -std=c++11 -Wall -Wfloat-equal -Wshadow -Werror test-status.cpp -lstdc++
+	./a.out
