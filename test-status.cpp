@@ -190,6 +190,11 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0xE3, 0, 0, 0xff, 0xff);                   // EX (SP), IX
     executeTest(&z80, &mmu, 0xFD, 0xE3, 0, 0, 0, 0);                         // EX (SP), IY
     executeTest(&z80, &mmu, 0xFD, 0xE3, 0, 0, 0xff, 0xff);                   // EX (SP), IY
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.pair.C = 2;                                                      // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xA0, 0, 0, 0xFF, 0b11101101);             // LDI
+    executeTest(&z80, &mmu, 0xED, 0xA0, 0, 0, 0xFF, 0b11101001);             // LDI
+    executeTest(&z80, &mmu, 0xED, 0xA0, 0, 0, 0x00, 0b00000100);             // LDI
 
     /*
     executeTest(&z80, &mmu, 0xED, 0xA0, 0, 0, 16);                   // LDI
