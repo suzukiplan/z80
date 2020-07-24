@@ -3178,7 +3178,7 @@ class Z80
         unsigned short hl = getHL();
         unsigned short bc = getBC();
         unsigned char n = readByte(hl);
-        setFlagBySubstract(reg.pair.A, n);
+        setFlagBySubstract(reg.pair.A, n, false);
         setHL(hl + 1);
         setBC(bc - 1);
         reg.PC += 2;
@@ -3203,7 +3203,7 @@ class Z80
         unsigned short hl = getHL();
         unsigned short bc = getBC();
         unsigned char n = readByte(hl);
-        setFlagBySubstract(reg.pair.A, n);
+        setFlagBySubstract(reg.pair.A, n, false);
         setHL(hl - 1);
         setBC(bc - 1);
         reg.PC += 2;
