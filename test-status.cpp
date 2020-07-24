@@ -195,14 +195,16 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xED, 0xA0, 0, 0, 0xFF, 0b11101101);             // LDI
     executeTest(&z80, &mmu, 0xED, 0xA0, 0, 0, 0xFF, 0b11101001);             // LDI
     executeTest(&z80, &mmu, 0xED, 0xA0, 0, 0, 0x00, 0b00000100);             // LDI
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.pair.C = 2;                                                      // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xB0, 0, 0, 0xFF, 0b11101101);             // LDIR
+    executeTest(&z80, &mmu, 0xED, 0xB0, 0, 0, 0xFF, 0b11101001);             // LDIR
+    executeTest(&z80, &mmu, 0xED, 0xB0, 0, 0, 0x00, 0b00000100);             // LDIR
+
+    //         7 6 5 4 3 2   1 0
+    // status: S Z * H * P/V N C
 
     /*
-    executeTest(&z80, &mmu, 0xED, 0xA0, 0, 0, 16);                   // LDI
-    z80.reg.pair.B = 0;                                              // (setup register for test)
-    z80.reg.pair.C = 2;                                              // (setup register for test)
-    executeTest(&z80, &mmu, 0xED, 0xB0, 0, 0, 21);                   // LDIR (--BC != 0)
-    testNumber--;                                                    // (decrement test number)
-    executeTest(&z80, &mmu, 0xED, 0xB0, 0, 0, 16);                   // LDIR (--BC == 0)
     executeTest(&z80, &mmu, 0xED, 0xA8, 0, 0, 16);                   // LDD
     z80.reg.pair.B = 0;                                              // (setup register for test)
     z80.reg.pair.C = 2;                                              // (setup register for test)
