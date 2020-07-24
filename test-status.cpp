@@ -260,6 +260,51 @@ int main(int argc, char* argv[])
     z80.reg.pair.H = 0x01;                                                   // setup register for test
     z80.reg.pair.L = 0x00;                                                   // setup register for test
     executeTest(&z80, &mmu, 0xED, 0xA1, 0, 0, 0xFF, 0b10111111);             // CPI
+    z80.reg.pair.A = 0x11;                                                   // setup register for test
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.pair.C = 2;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    mmu.RAM[0x100] = 0x22;                                                   // setup RAM for test
+    executeTest(&z80, &mmu, 0xED, 0xB1, 0, 0, 0x00, 0b10010010);             // CPIR
+    z80.reg.pair.C = 1;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xB1, 0, 0, 0x00, 0b10010110);             // CPIR
+    z80.reg.pair.C = 1;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xB1, 0, 0, 0xFF, 0b10111111);             // CPIR
+    z80.reg.pair.A = 0x11;                                                   // setup register for test
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.pair.C = 2;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    mmu.RAM[0x100] = 0x22;                                                   // setup RAM for test
+    executeTest(&z80, &mmu, 0xED, 0xA9, 0, 0, 0x00, 0b10010010);             // CPD
+    z80.reg.pair.C = 1;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xA9, 0, 0, 0x00, 0b10010110);             // CPD
+    z80.reg.pair.C = 1;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xA9, 0, 0, 0xFF, 0b10111111);             // CPD
+    z80.reg.pair.A = 0x11;                                                   // setup register for test
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.pair.C = 2;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    mmu.RAM[0x100] = 0x22;                                                   // setup RAM for test
+    executeTest(&z80, &mmu, 0xED, 0xB9, 0, 0, 0x00, 0b10010010);             // CPDR
+    z80.reg.pair.C = 1;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xB9, 0, 0, 0x00, 0b10010110);             // CPDR
+    z80.reg.pair.C = 1;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xB9, 0, 0, 0xFF, 0b10111111);             // CPDR
 
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
