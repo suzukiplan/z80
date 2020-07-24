@@ -38,8 +38,6 @@ cd z80
 make
 ```
 
-see the result: [test-result.txt](test-result.txt) or [result of Travis-CI](https://travis-ci.org/suzukiplan/z80)
-
 ## Minimum usage
 
 ### 1. Include
@@ -130,7 +128,7 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 
 ### Dynamic disassemble (for debug)
 
-You can acquire the debug messages ([example](test-result.txt)) with `setDebugMessage`.
+You can acquire the debug messages with `setDebugMessage`.
 Debug message contains dynamic disassembly results step by step.
 
 ```c++
