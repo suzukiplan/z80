@@ -3202,7 +3202,9 @@ class Z80
         }
         setFlagBySubstract(reg.pair.A, n, false);
         setHL(hl + (isIncHL ? 1 : -1));
-        setBC(bc - 1);
+        bc--;
+        setBC(bc);
+        setFlagPV(0 == bc);
         consumeClock(4);
         if (isRepeat && !isFlagZ() && 0 != getBC()) {
             consumeClock(5);
