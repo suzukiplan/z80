@@ -324,47 +324,82 @@ int main(int argc, char* argv[])
     z80.reg.pair.B = 0x80;                                                   // setup register for test
     executeTest(&z80, &mmu, 0x80, 0, 0, 0, 0xFF, 0b10101000);                // ADD A, B
     z80.reg.pair.B = 0xFF;                                                   // setup register for test
-
-    z80.reg.pair.A = 0;                                          // setup register for test
-    executeTest(&z80, &mmu, 0xC6, 0x00, 0, 0, 0x00, 0b01000000); // ADD A, n
-    z80.reg.pair.A = 0x88;                                       // setup register for test
-    executeTest(&z80, &mmu, 0xC6, 0x88, 0, 0, 0x00, 0b00010101); // ADD A, n
-    z80.reg.pair.A = 0x00;                                       // setup register for test
-    executeTest(&z80, &mmu, 0xC6, 0x80, 0, 0, 0x00, 0b10000000); // ADD A, n
-    z80.reg.pair.A = 0;                                          // setup register for test
-    executeTest(&z80, &mmu, 0xC6, 0, 0, 0, 0xFF, 0b01101000);    // ADD A, n
-    z80.reg.pair.A = 0x88;                                       // setup register for test
-    executeTest(&z80, &mmu, 0xC6, 0x88, 0, 0, 0xFF, 0b00111101); // ADD A, n
-    z80.reg.pair.A = 0x00;                                       // setup register for test
-    executeTest(&z80, &mmu, 0xC6, 0x80, 0, 0, 0xFF, 0b10101000); // ADD A, n
-    z80.reg.pair.H = 0x01;                                       // setup register for test
-    z80.reg.pair.L = 0x00;                                       // setup register for test
-    mmu.RAM[0x100] = 0x00;                                       // setup RAM for test
-    z80.reg.pair.A = 0;                                          // setup register for test
-    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0x00, 0b01000000);    // ADD A, n
-    mmu.RAM[0x100] = 0x88;                                       // setup RAM for test
-    z80.reg.pair.A = 0x88;                                       // setup register for test
-    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0x00, 0b00010101);    // ADD A, n
-    mmu.RAM[0x100] = 0x80;                                       // setup RAM for test
-    z80.reg.pair.A = 0x00;                                       // setup register for test
-    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0x00, 0b10000000);    // ADD A, n
-    mmu.RAM[0x100] = 0x00;                                       // setup RAM for test
-    z80.reg.pair.A = 0;                                          // setup register for test
-    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0xFF, 0b01101000);    // ADD A, n
-    mmu.RAM[0x100] = 0x88;                                       // setup RAM for test
-    z80.reg.pair.A = 0x88;                                       // setup register for test
-    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0xFF, 0b00111101);    // ADD A, n
-    mmu.RAM[0x100] = 0x80;                                       // setup RAM for test
-    z80.reg.pair.A = 0x00;                                       // setup register for test
-    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0xFF, 0b10101000);    // ADD A, n
+    z80.reg.pair.A = 0;                                                      // setup register for test
+    executeTest(&z80, &mmu, 0xC6, 0x00, 0, 0, 0x00, 0b01000000);             // ADD A, n
+    z80.reg.pair.A = 0x88;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xC6, 0x88, 0, 0, 0x00, 0b00010101);             // ADD A, n
+    z80.reg.pair.A = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xC6, 0x80, 0, 0, 0x00, 0b10000000);             // ADD A, n
+    z80.reg.pair.A = 0;                                                      // setup register for test
+    executeTest(&z80, &mmu, 0xC6, 0, 0, 0, 0xFF, 0b01101000);                // ADD A, n
+    z80.reg.pair.A = 0x88;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xC6, 0x88, 0, 0, 0xFF, 0b00111101);             // ADD A, n
+    z80.reg.pair.A = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xC6, 0x80, 0, 0, 0xFF, 0b10101000);             // ADD A, n
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    mmu.RAM[0x100] = 0x00;                                                   // setup RAM for test
+    z80.reg.pair.A = 0;                                                      // setup register for test
+    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0x00, 0b01000000);                // ADD A, (HL)
+    mmu.RAM[0x100] = 0x88;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x88;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0x00, 0b00010101);                // ADD A, (HL)
+    mmu.RAM[0x100] = 0x80;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0x00, 0b10000000);                // ADD A, (HL)
+    mmu.RAM[0x100] = 0x00;                                                   // setup RAM for test
+    z80.reg.pair.A = 0;                                                      // setup register for test
+    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0xFF, 0b01101000);                // ADD A, (HL)
+    mmu.RAM[0x100] = 0x88;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x88;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0xFF, 0b00111101);                // ADD A, (HL)
+    mmu.RAM[0x100] = 0x80;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0xFF, 0b10101000);                // ADD A, (HL)
+    z80.reg.IX = 0x200;                                                      // setup register for test
+    z80.reg.pair.A = 0x00;                                                   // setup register for test
+    mmu.RAM[0x205] = 0x00;                                                   // setup RAM for test
+    executeTest(&z80, &mmu, 0xDD, 0x86, 5, 0, 0x00, 0b01000000);             // ADD A, (IX+d)
+    mmu.RAM[0x205] = 0x88;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x88;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xDD, 0x86, 5, 0, 0x00, 0b00010101);             // ADD A, (IX+d)
+    mmu.RAM[0x205] = 0x80;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xDD, 0x86, 5, 0, 0x00, 0b10000000);             // ADD A, (IX+d)
+    mmu.RAM[0x205] = 0x00;                                                   // setup RAM for test
+    z80.reg.pair.A = 0;                                                      // setup register for test
+    executeTest(&z80, &mmu, 0xDD, 0x86, 5, 0, 0xFF, 0b01101000);             // ADD A, (IX+d)
+    mmu.RAM[0x205] = 0x88;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x88;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xDD, 0x86, 5, 0, 0xFF, 0b00111101);             // ADD A, (IX+d)
+    mmu.RAM[0x205] = 0x80;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xDD, 0x86, 5, 0, 0xFF, 0b10101000);             // ADD A, (IX+d)
+    z80.reg.IY = 0x200;                                                      // setup register for test
+    z80.reg.pair.A = 0x00;                                                   // setup register for test
+    mmu.RAM[0x205] = 0x00;                                                   // setup RAM for test
+    executeTest(&z80, &mmu, 0xFD, 0x86, 5, 0, 0x00, 0b01000000);             // ADD A, (IY+d)
+    mmu.RAM[0x205] = 0x88;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x88;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xFD, 0x86, 5, 0, 0x00, 0b00010101);             // ADD A, (IY+d)
+    mmu.RAM[0x205] = 0x80;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xFD, 0x86, 5, 0, 0x00, 0b10000000);             // ADD A, (IY+d)
+    mmu.RAM[0x205] = 0x00;                                                   // setup RAM for test
+    z80.reg.pair.A = 0;                                                      // setup register for test
+    executeTest(&z80, &mmu, 0xFD, 0x86, 5, 0, 0xFF, 0b01101000);             // ADD A, (IY+d)
+    mmu.RAM[0x205] = 0x88;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x88;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xFD, 0x86, 5, 0, 0xFF, 0b00111101);             // ADD A, (IY+d)
+    mmu.RAM[0x205] = 0x80;                                                   // setup RAM for test
+    z80.reg.pair.A = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xFD, 0x86, 5, 0, 0xFF, 0b10101000);             // ADD A, (IY+d)
 
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
 
     /*
-    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 7);                       // ADD A, (HL)
-    executeTest(&z80, &mmu, 0xDD, 0x86, 5, 0, 19);                   // ADD A, (IX+d)
-    executeTest(&z80, &mmu, 0xFD, 0x86, 5, 0, 19);                   // ADD A, (IX+d)
+    executeTest(&z80, &mmu, 0xFD, 0x86, 5, 0, 19);                   // ADD A, (IY+d)
     executeTest(&z80, &mmu, 0x88, 0, 0, 0, 4);                       // ADC A, B
     executeTest(&z80, &mmu, 0xCE, 9, 0, 0, 7);                       // ADC A, n
     executeTest(&z80, &mmu, 0x8E, 0, 0, 0, 7);                       // ADC A, (HL)
