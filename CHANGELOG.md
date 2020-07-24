@@ -27,6 +27,7 @@
 - bugfix: correct undocumented conditions: OUTI, OUTIR, OUTD, OUTDR
 - bugfix: INC/DEC operands are not change carry flag
 - add cancelIRQ function
+- bugfix: correct status flag conditions after repeat I/O: INI, INIR, IND, INDR, OUTI, OUTIR, OUTD, OUTDR
 
 ## Version 0.9 (Jul 16, 2020 JST)
 

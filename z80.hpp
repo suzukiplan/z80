@@ -3603,6 +3603,18 @@ class Z80
         return 0;
     }
 
+    inline void decrementB_forRepeatIO()
+    {
+        reg.pair.B--;
+        reg.pair.F = 0;
+        setFlagC(isFlagC());
+        setFlagN(true);
+        setFlagZ(reg.pair.B == 0);
+        setFlagS(reg.pair.B & 0x80 ? true : false);
+        setFlagH((reg.pair.B & 0x0F) == 0x0F);
+        setFlagPV(reg.pair.B == 0x7F);
+    }
+
     // Load location (HL) with input from port (C); or increment/decrement HL and decrement B
     inline int repeatIN(bool isIncHL, bool isRepeat)
     {
@@ -3616,7 +3628,7 @@ class Z80
             }
         }
         writeByte(hl, i);
-        reg.pair.B--;
+        decrementB_forRepeatIO();
         hl += isIncHL ? 1 : -1;
         setHL(hl);
         setFlagZ(reg.pair.B == 0);
@@ -3673,7 +3685,7 @@ class Z80
             }
         }
         outPort(reg.pair.C, o);
-        reg.pair.B--;
+        decrementB_forRepeatIO();
         hl += isIncHL ? 1 : -1;
         setHL(hl);
         setFlagZ(reg.pair.B == 0);
