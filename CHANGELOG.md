@@ -29,6 +29,7 @@
 - add cancelIRQ function
 - bugfix: correct status flag conditions after repeat I/O: INI, INIR, IND, INDR, OUTI, OUTIR, OUTD, OUTDR
 - bugfix: correct carry flag conditions: CPI, CPIR, CPD, CPDR
+- bugfix: correct negative flag conditions: the all of substract/compare operands
 
 ## Version 0.9 (Jul 16, 2020 JST)
 

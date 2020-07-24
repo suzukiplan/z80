@@ -2316,7 +2316,7 @@ class Z80
         setFlagZ(result8 == 0);
         setFlagH((0x0F & (before & 0xF0) - (substract & 0xF0)) == 0); // TODO: これで正しいのだろうか？
         setFlagPV(result16s < -128 || 127 < result16s);
-        setFlagN(false);
+        setFlagN(true);
         if (setCarry) setFlagC(255 < result16u);
     }
 
@@ -3174,16 +3174,16 @@ class Z80
     // Compare location (HL) and A, increment/decrement HL and decrement BC
     inline int repeatCP(bool isIncHL, bool isRepeat)
     {
-        if (isDebug()) {
-            if (isIncHL) {
-                log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "CPIR" : "CPI", registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-            } else {
-                log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "CPDR" : "CPD", registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-            }
-        }
         unsigned short hl = getHL();
         unsigned short bc = getBC();
         unsigned char n = readByte(hl);
+        if (isDebug()) {
+            if (isIncHL) {
+                log("[%04X] %s ... %s, %s = $%02X, %s", reg.PC, isRepeat ? "CPIR" : "CPI", registerDump(0b111), registerPairDump(0b10), n, registerPairDump(0b00));
+            } else {
+                log("[%04X] %s ... %s, %s = $%02X, %s", reg.PC, isRepeat ? "CPDR" : "CPD", registerDump(0b111), registerPairDump(0b10), n, registerPairDump(0b00));
+            }
+        }
         setFlagBySubstract(reg.pair.A, n, false);
         setHL(hl + (isIncHL ? 1 : -1));
         setBC(bc - 1);
