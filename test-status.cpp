@@ -64,6 +64,12 @@ const char* statusText2(unsigned char f)
     return statusText(f, buf);
 }
 
+const char* statusText3(unsigned char f)
+{
+    static char buf[32];
+    return statusText(f, buf);
+}
+
 static int testNumber;
 static int prev;
 static int expect;
@@ -80,8 +86,10 @@ void executeTest(Z80* cpu, MMU* mmu, unsigned char op1, unsigned char op2, unsig
     expect = expectF;
     cpu->execute(1);
     if (expectF != cpu->reg.pair.F) {
-        fprintf(file, "TEST FAILED! (F: prev=$%02X, after=$%02X, excpect=$%02X)\n", prevF, cpu->reg.pair.F, expectF);
-        fprintf(stdout, "TEST FAILED! (F: prev=$%02X, after=$%02X, excpect=$%02X)\n", prevF, cpu->reg.pair.F, expectF);
+        fprintf(file, "                      SZ*H*PNC        SZ*H*PNC          SZ*H*PNC\n");
+        fprintf(file, "TEST FAILED! (F: prev=%s, after=%s, excpect=%s)\n", statusText1(prevF), statusText2(cpu->reg.pair.F), statusText3(expectF));
+        fprintf(stdout, "                      SZ*H*PNC        SZ*H*PNC          SZ*H*PNC\n");
+        fprintf(stdout, "TEST FAILED! (F: prev=%s, after=%s, excpect=%s)\n", statusText1(prevF), statusText2(cpu->reg.pair.F), statusText3(expectF));
         exit(255);
     }
     cpu->reg.IFF = 0;
@@ -237,13 +245,21 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 0xFF, 0b11101101);             // LDDR
     executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 0xFF, 0b11101001);             // LDDR
     executeTest(&z80, &mmu, 0xED, 0xB8, 0, 0, 0x00, 0b00000100);             // LDDR
-    z80.reg.pair.A = 0;                                                      // setup register for test
+    z80.reg.pair.A = 0x11;                                                   // setup register for test
     z80.reg.pair.B = 0;                                                      // setup register for test
     z80.reg.pair.C = 2;                                                      // setup register for test
     z80.reg.pair.H = 0x01;                                                   // setup register for test
     z80.reg.pair.L = 0x00;                                                   // setup register for test
-    mmu.RAM[0x100] = 16;                                                     // setup RAM for test
-    executeTest(&z80, &mmu, 0xED, 0xA1, 0, 0, 0, 0b10000010);                // CPI
+    mmu.RAM[0x100] = 0x22;                                                   // setup RAM for test
+    executeTest(&z80, &mmu, 0xED, 0xA1, 0, 0, 0x00, 0b10010010);             // CPI
+    z80.reg.pair.C = 1;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xA1, 0, 0, 0x00, 0b10010110);             // CPI
+    z80.reg.pair.C = 1;                                                      // setup register for test
+    z80.reg.pair.H = 0x01;                                                   // setup register for test
+    z80.reg.pair.L = 0x00;                                                   // setup register for test
+    executeTest(&z80, &mmu, 0xED, 0xA1, 0, 0, 0xFF, 0b10111111);             // CPI
 
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
