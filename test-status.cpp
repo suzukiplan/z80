@@ -568,6 +568,14 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10011011, 0b00011011);    // DAA
     check("A", 0x79, z80.reg.pair.A);                                  // check register result
 
+    // test CPL
+    z80.reg.pair.A = 0b10110100;                                    // setup register for test
+    executeTest(&z80, &mmu, 0x2F, 0, 0, 0, 0b00000000, 0b00011010); // CPL
+    check("A", 0b01001011, z80.reg.pair.A);                         // check register result
+    z80.reg.pair.A = 0b10110100;                                    // setup register for test
+    executeTest(&z80, &mmu, 0x2F, 0, 0, 0, 0b11111111, 0b11011111); // CPL
+    check("A", 0b01001011, z80.reg.pair.A);                         // check register result
+
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
 
@@ -611,8 +619,6 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0x35, 3, 0, 23);                   // DEC (IX+d)
     executeTest(&z80, &mmu, 0xFD, 0x35, 6, 0, 23);                   // DEC (IY+d)
     executeTest(&z80, &mmu, 0x27, 0, 0, 0, 4);                       // DAA
-    executeTest(&z80, &mmu, 0x2F, 0, 0, 0, 4);                       // CPL
-    executeTest(&z80, &mmu, 0xED, 0x44, 0, 0, 8);                    // NEG
     executeTest(&z80, &mmu, 0x3F, 0, 0, 0, 4);                       // CCF
     executeTest(&z80, &mmu, 0x37, 0, 0, 0, 4);                       // SCF
     executeTest(&z80, &mmu, 0x00, 0, 0, 0, 4);                       // NOP
