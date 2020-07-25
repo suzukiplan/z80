@@ -521,12 +521,19 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10101100, 0b00101001);    // DAA
     check("A", 0x49, z80.reg.pair.A);                                  // check register result
 
-    // test DAA (addition / carry & half)
-    executeTest(&z80, &mmu, 0x3E, 0x67, 0, 0, 0b00000000, 0b00000000); // LD A, $72
-    executeTest(&z80, &mmu, 0xC6, 0x55, 0, 0, 0b00000000, 0b10101100); // ADD A, $77
+    // test DAA (addition / carry & half - case 1)
+    executeTest(&z80, &mmu, 0x3E, 0x67, 0, 0, 0b00000000, 0b00000000); // LD A, $67
+    executeTest(&z80, &mmu, 0xC6, 0x55, 0, 0, 0b00000000, 0b10101100); // ADD A, $55
     check("A", 0xBC, z80.reg.pair.A);                                  // check register result
     executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10101100, 0b00111101);    // DAA
     check("A", 0x22, z80.reg.pair.A);                                  // check register result
+
+    // test DAA (addition / carry & half - case 2)
+    executeTest(&z80, &mmu, 0x3E, 0x67, 0, 0, 0b00000000, 0b00000000); // LD A, $67
+    executeTest(&z80, &mmu, 0xC6, 0x33, 0, 0, 0b00000000, 0b10001100); // ADD A, $33
+    check("A", 0x9A, z80.reg.pair.A);                                  // check register result
+    executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10001100, 0b01011101);    // DAA
+    check("A", 0x00, z80.reg.pair.A);                                  // check register result
 
     // test DAA (decrement)
     executeTest(&z80, &mmu, 0x3E, 0, 0, 0, 0b00000000, 0b00000000); // LD A, $00
