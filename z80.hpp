@@ -51,36 +51,56 @@ class Z80
     struct Register {
         struct RegisterPair pair;
         struct RegisterPair back;
-        unsigned long consumeClockCounter;
         unsigned short PC;
         unsigned short SP;
         unsigned short IX;
         unsigned short IY;
+        unsigned short interruptVector; // interrupt vector for IRQ
+        unsigned short interruptAddrN;  // interrupt address for NMI
+        unsigned short WZ;
+        unsigned short reserved16;
         unsigned char R;
         unsigned char I;
         unsigned char IFF;
-        unsigned char interrupt;        // NI-- --mm (N: NMI, I: IRQ, mm: mode)
-        unsigned short interruptVector; // interrupt vector for IRQ
-        unsigned short interruptAddrN;  // interrupt address for NMI
-        bool isHalt;
+        unsigned char interrupt; // NI-- --mm (N: NMI, I: IRQ, mm: mode)
+        unsigned char consumeClockCounter;
+        unsigned char execEI;
+        unsigned char reserved8[2];
     } reg;
+
+    inline unsigned char flagS() { return 0b10000000; }
+    inline unsigned char flagZ() { return 0b01000000; }
+    inline unsigned char flagY() { return 0b00100000; }
+    inline unsigned char flagH() { return 0b00010000; }
+    inline unsigned char flagX() { return 0b00001000; }
+    inline unsigned char flagPV() { return 0b00000100; }
+    inline unsigned char flagN() { return 0b00000010; }
+    inline unsigned char flagC() { return 0b00000001; }
 
   private: // Internal functions & variables
     // flag setter
-    inline void setFlagS(bool on) { on ? reg.pair.F |= 0b10000000 : reg.pair.F &= 0b01111111; }
-    inline void setFlagZ(bool on) { on ? reg.pair.F |= 0b01000000 : reg.pair.F &= 0b10111111; }
-    inline void setFlagH(bool on) { on ? reg.pair.F |= 0b00010000 : reg.pair.F &= 0b11101111; }
-    inline void setFlagPV(bool on) { on ? reg.pair.F |= 0b00000100 : reg.pair.F &= 0b11111011; }
-    inline void setFlagN(bool on) { on ? reg.pair.F |= 0b00000010 : reg.pair.F &= 0b11111101; }
-    inline void setFlagC(bool on) { on ? reg.pair.F |= 0b00000001 : reg.pair.F &= 0b11111110; }
+    inline void setFlagS(bool on) { on ? reg.pair.F |= flagS() : reg.pair.F &= ~flagS(); }
+    inline void setFlagZ(bool on) { on ? reg.pair.F |= flagZ() : reg.pair.F &= ~flagZ(); }
+    inline void setFlagY(bool on) { on ? reg.pair.F |= flagY() : reg.pair.F &= ~flagY(); }
+    inline void setFlagH(bool on) { on ? reg.pair.F |= flagH() : reg.pair.F &= ~flagH(); }
+    inline void setFlagX(bool on) { on ? reg.pair.F |= flagX() : reg.pair.F &= ~flagX(); }
+    inline void setFlagPV(bool on) { on ? reg.pair.F |= flagPV() : reg.pair.F &= ~flagPV(); }
+    inline void setFlagN(bool on) { on ? reg.pair.F |= flagN() : reg.pair.F &= ~flagN(); }
+    inline void setFlagC(bool on) { on ? reg.pair.F |= flagC() : reg.pair.F &= ~flagC(); }
+
+    inline void setFlagXY(unsigned char value)
+    {
+        setFlagX(value & flagX() ? true : false);
+        setFlagY(value & flagY() ? true : false);
+    }
 
     // flag checker
-    inline bool isFlagS() { return reg.pair.F & 0b10000000; }
-    inline bool isFlagZ() { return reg.pair.F & 0b01000000; }
-    inline bool isFlagH() { return reg.pair.F & 0b00010000; }
-    inline bool isFlagPV() { return reg.pair.F & 0b00000100; }
-    inline bool isFlagN() { return reg.pair.F & 0b00000010; }
-    inline bool isFlagC() { return reg.pair.F & 0b00000001; }
+    inline bool isFlagS() { return reg.pair.F & flagS(); }
+    inline bool isFlagZ() { return reg.pair.F & flagZ(); }
+    inline bool isFlagH() { return reg.pair.F & flagH(); }
+    inline bool isFlagPV() { return reg.pair.F & flagPV(); }
+    inline bool isFlagN() { return reg.pair.F & flagN(); }
+    inline bool isFlagC() { return reg.pair.F & flagC(); }
 
     inline unsigned char IFF1() { return 0b00000001; }
     inline unsigned char IFF2() { return 0b00000100; }
@@ -150,9 +170,6 @@ class Z80
 
     inline void log(const char* format, ...)
     {
-        if (!CB.debugMessage) {
-            return;
-        }
         char buf[1024];
         va_list args;
         va_start(args, format);
@@ -329,83 +346,110 @@ class Z80
         return hz;
     }
 
+    inline unsigned char readByte(unsigned short addr, int clock = 4)
+    {
+        unsigned char byte = CB.read(CB.arg, addr);
+        consumeClock(clock);
+        return byte;
+    }
+
+    inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
+    {
+        CB.write(CB.arg, addr, value);
+        consumeClock(clock);
+    }
+
+    inline unsigned char inPort(unsigned char port, int clock = 4)
+    {
+        unsigned char byte = CB.in(CB.arg, port);
+        consumeClock(clock);
+        return byte;
+    }
+
+    inline void outPort(unsigned char port, unsigned char value, int clock = 4)
+    {
+        CB.out(CB.arg, port, value);
+        consumeClock(clock);
+    }
+
     static inline int NOP(Z80* ctx)
     {
-        ctx->log("[%04X] NOP", ctx->reg.PC);
+        if (ctx->isDebug()) ctx->log("[%04X] NOP", ctx->reg.PC);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     static inline int HALT(Z80* ctx)
     {
-        ctx->log("[%04X] HALT", ctx->reg.PC);
-        ctx->reg.isHalt = true;
+        if (ctx->isDebug()) ctx->log("[%04X] HALT", ctx->reg.PC);
+        ctx->reg.IFF |= ctx->IFF_HALT();
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     static inline int DI(Z80* ctx)
     {
-        ctx->log("[%04X] DI", ctx->reg.PC);
+        if (ctx->isDebug()) ctx->log("[%04X] DI", ctx->reg.PC);
         ctx->reg.IFF &= ~(ctx->IFF1() | ctx->IFF2());
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     static inline int EI(Z80* ctx)
     {
-        ctx->log("[%04X] EI", ctx->reg.PC);
+        if (ctx->isDebug()) ctx->log("[%04X] EI", ctx->reg.PC);
         ctx->reg.IFF |= ctx->IFF1() | ctx->IFF2();
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        ctx->reg.execEI = 1;
+        return 0;
     }
 
     inline int IM(unsigned char interrptMode)
     {
-        log("[%04X] IM %d", reg.PC, interrptMode);
+        if (isDebug()) log("[%04X] IM %d", reg.PC, interrptMode);
         reg.interrupt &= 0b11111100;
         reg.interrupt |= interrptMode & 0b11;
         reg.PC += 2;
-        return consumeClock(8);
+        return 0;
     }
 
     inline int LD_A_I()
     {
-        log("[%04X] LD A<$%02X>, I<$%02X>", reg.PC, reg.pair.A, reg.I);
+        if (isDebug()) log("[%04X] LD A<$%02X>, I<$%02X>", reg.PC, reg.pair.A, reg.I);
         reg.pair.A = reg.I;
         setFlagPV(reg.IFF & IFF1() ? true : false);
         reg.PC += 2;
-        return consumeClock(9);
+        return consumeClock(1);
     }
 
     inline int LD_I_A()
     {
-        log("[%04X] LD I<$%02X>, A<$%02X>", reg.PC, reg.I, reg.pair.A);
+        if (isDebug()) log("[%04X] LD I<$%02X>, A<$%02X>", reg.PC, reg.I, reg.pair.A);
         reg.I = reg.pair.A;
         reg.PC += 2;
-        return consumeClock(9);
+        return consumeClock(1);
     }
 
     inline int LD_A_R()
     {
-        log("[%04X] LD A<$%02X>, R<$%02X>", reg.PC, reg.pair.A, reg.R);
+        if (isDebug()) log("[%04X] LD A<$%02X>, R<$%02X>", reg.PC, reg.pair.A, reg.R);
         reg.pair.A = reg.R;
         setFlagPV(reg.IFF & IFF1() ? true : false);
         reg.PC += 2;
-        return consumeClock(9);
+        return consumeClock(1);
     }
 
     inline int LD_R_A()
     {
-        log("[%04X] LD R<$%02X>, A<$%02X>", reg.PC, reg.R, reg.pair.A);
+        if (isDebug()) log("[%04X] LD R<$%02X>, A<$%02X>", reg.PC, reg.R, reg.pair.A);
         reg.R = reg.pair.A;
         reg.PC += 2;
-        return consumeClock(9);
+        return consumeClock(1);
     }
 
     static inline int EXTRA(Z80* ctx)
     {
-        unsigned char mode = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char mode = ctx->readByte(ctx->reg.PC + 1);
         switch (mode) {
             case 0b01000110: return ctx->IM(0);
             case 0b01010110: return ctx->IM(1);
@@ -446,17 +490,14 @@ class Z80
             case 0b01000000: return ctx->IN_R_C((mode & 0b00111000) >> 3);
             case 0b01000001: return ctx->OUT_C_R((mode & 0b00111000) >> 3);
         }
-        if ((mode & 0b11000111) == 0b01000001) {
-            return ctx->OUT_C_R((mode & 0b00111000) >> 3);
-        }
-        ctx->log("unknown EXTRA: $%02X", mode);
+        if (ctx->isDebug()) ctx->log("unknown EXTRA: $%02X", mode);
         return -1;
     }
 
     // operand of using IX (first byte is 0b11011101)
     static inline int OP_IX(Z80* ctx)
     {
-        unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char op2 = ctx->readByte(ctx->reg.PC + 1);
         switch (op2) {
             case 0b00100010: return ctx->LD_ADDR_IX();
             case 0b00100011: return ctx->INC_IX_reg();
@@ -480,8 +521,8 @@ class Z80
             case 0b11101001: return ctx->JP_IX();
             case 0b11111001: return ctx->LD_SP_IX();
             case 0b11001011: {
-                unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
-                unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
+                unsigned char op3 = ctx->readByte(ctx->reg.PC + 2);
+                unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
                 switch (op4) {
                     case 0b00000110: return ctx->RLC_IX(op3);
                     case 0b00001110: return ctx->RRC_IX(op3);
@@ -505,14 +546,14 @@ class Z80
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IX_R(op2 & 0b00000111);
         }
-        ctx->log("detected an unknown operand: 0b11011101 - $%02X", op2);
+        if (ctx->isDebug()) ctx->log("detected an unknown operand: 0b11011101 - $%02X", op2);
         return -1;
     }
 
     // operand of using IY (first byte is 0b11111101)
     static inline int OP_IY(Z80* ctx)
     {
-        unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char op2 = ctx->readByte(ctx->reg.PC + 1);
         switch (op2) {
             case 0b00100010: return ctx->LD_ADDR_IY();
             case 0b00100011: return ctx->INC_IY_reg();
@@ -536,8 +577,8 @@ class Z80
             case 0b11101001: return ctx->JP_IY();
             case 0b11111001: return ctx->LD_SP_IY();
             case 0b11001011: {
-                unsigned char op3 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
-                unsigned char op4 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 3);
+                unsigned char op3 = ctx->readByte(ctx->reg.PC + 2);
+                unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
                 switch (op4) {
                     case 0b00000110: return ctx->RLC_IY(op3);
                     case 0b00001110: return ctx->RRC_IY(op3);
@@ -561,14 +602,14 @@ class Z80
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IY_R(op2 & 0b00000111);
         }
-        ctx->log("detected an unknown operand: 11111101 - $%02X", op2);
+        if (ctx->isDebug()) ctx->log("detected an unknown operand: 11111101 - $%02X", op2);
         return -1;
     }
 
     // operand of using other register (first byte is 0b11001011)
     static inline int OP_R(Z80* ctx)
     {
-        unsigned char op2 = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char op2 = ctx->readByte(ctx->reg.PC + 1);
         switch (op2) {
             case 0b00000110: return ctx->RLC_HL();
             case 0b00010110: return ctx->RL_HL();
@@ -588,62 +629,62 @@ class Z80
             case 0b00111000: return ctx->SRL_R(op2 & 0b00000111);
         }
         switch (op2 & 0b11000111) {
-            case 0b01000110: return ctx->BIT_HN((op2 & 0b00111000) >> 3);
-            case 0b11000110: return ctx->SET_HN((op2 & 0b00111000) >> 3);
-            case 0b10000110: return ctx->RES_HN((op2 & 0b00111000) >> 3);
+            case 0b01000110: return ctx->BIT_HL((op2 & 0b00111000) >> 3);
+            case 0b11000110: return ctx->SET_HL((op2 & 0b00111000) >> 3);
+            case 0b10000110: return ctx->RES_HL((op2 & 0b00111000) >> 3);
         }
         switch (op2 & 0b11000000) {
             case 0b01000000: return ctx->BIT_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
             case 0b11000000: return ctx->SET_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
             case 0b10000000: return ctx->RES_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
         }
-        ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
+        if (ctx->isDebug()) ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
         return -1;
     }
 
     // Load location (HL) with value n
     static inline int LD_HL_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned short hl = ctx->getHL();
-        ctx->log("[%04X] LD (HL<$%04X>), $%02X", ctx->reg.PC, hl, n);
-        ctx->CB.write(ctx->CB.arg, hl, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD (HL<$%04X>), $%02X", ctx->reg.PC, hl, n);
+        ctx->writeByte(hl, n, 3);
         ctx->reg.PC += 2;
-        return ctx->consumeClock(10);
+        return 0;
     }
 
     // Load Acc. wth location (BC)
     static inline int LD_A_BC(Z80* ctx)
     {
         unsigned short addr = ctx->getBC();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] LD A, (BC<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
+        unsigned char n = ctx->readByte(addr, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] LD A, (BC<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
         ctx->reg.pair.A = n;
         ctx->reg.PC++;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Load Acc. wth location (DE)
     static inline int LD_A_DE(Z80* ctx)
     {
         unsigned short addr = ctx->getDE();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] LD A, (DE<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
+        unsigned char n = ctx->readByte(addr, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] LD A, (DE<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
         ctx->reg.pair.A = n;
         ctx->reg.PC++;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Load Acc. wth location (nn)
     static inline int LD_A_NN(Z80* ctx)
     {
-        unsigned short addr = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        addr += ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2) << 8;
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC, addr, n);
+        unsigned short addr = ctx->readByte(ctx->reg.PC + 1, 3);
+        addr += ctx->readByte(ctx->reg.PC + 2, 3) << 8;
+        unsigned char n = ctx->readByte(addr, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC, addr, n);
         ctx->reg.pair.A = n;
         ctx->reg.PC += 3;
-        return ctx->consumeClock(13);
+        return 0;
     }
 
     // Load location (BC) wtih Acc.
@@ -651,10 +692,10 @@ class Z80
     {
         unsigned short addr = ctx->getBC();
         unsigned char n = ctx->reg.pair.A;
-        ctx->log("[%04X] LD (BC<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
-        ctx->CB.write(ctx->CB.arg, addr, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD (BC<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
+        ctx->writeByte(addr, n, 3);
         ctx->reg.PC++;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Load location (DE) wtih Acc.
@@ -662,60 +703,60 @@ class Z80
     {
         unsigned short addr = ctx->getDE();
         unsigned char n = ctx->reg.pair.A;
-        ctx->log("[%04X] LD (DE<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
-        ctx->CB.write(ctx->CB.arg, addr, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD (DE<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
+        ctx->writeByte(addr, n, 3);
         ctx->reg.PC++;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Load location (nn) with Acc.
     static inline int LD_NN_A(Z80* ctx)
     {
-        unsigned short addr = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        addr += ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2) << 8;
+        unsigned short addr = ctx->readByte(ctx->reg.PC + 1, 3);
+        addr += ctx->readByte(ctx->reg.PC + 2, 3) << 8;
         unsigned char n = ctx->reg.pair.A;
-        ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC, addr, n);
-        ctx->CB.write(ctx->CB.arg, addr, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC, addr, n);
+        ctx->writeByte(addr, n, 3);
         ctx->reg.PC += 3;
-        return ctx->consumeClock(13);
+        return 0;
     }
 
     // Load HL with location (nn).
     static inline int LD_HL_ADDR(Z80* ctx)
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
+        unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
         unsigned short addr = (nH << 8) + nL;
-        unsigned char l = ctx->CB.read(ctx->CB.arg, addr);
-        unsigned char h = ctx->CB.read(ctx->CB.arg, addr + 1);
-        ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%02X%02X", ctx->reg.PC, ctx->getHL(), addr, h, l);
+        unsigned char l = ctx->readByte(addr, 3);
+        unsigned char h = ctx->readByte(addr + 1, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%02X%02X", ctx->reg.PC, ctx->getHL(), addr, h, l);
         ctx->reg.pair.L = l;
         ctx->reg.pair.H = h;
         ctx->reg.PC += 3;
-        return ctx->consumeClock(16);
+        return 0;
     }
 
     // Load location (nn) with HL.
     static inline int LD_ADDR_HL(Z80* ctx)
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
+        unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
         unsigned short addr = (nH << 8) + nL;
-        ctx->log("[%04X] LD ($%04X), %s", ctx->reg.PC, addr, ctx->registerPairDump(0b10));
-        ctx->CB.write(ctx->CB.arg, addr, ctx->reg.pair.L);
-        ctx->CB.write(ctx->CB.arg, addr + 1, ctx->reg.pair.H);
+        if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), %s", ctx->reg.PC, addr, ctx->registerPairDump(0b10));
+        ctx->writeByte(addr, ctx->reg.pair.L, 3);
+        ctx->writeByte(addr + 1, ctx->reg.pair.H, 3);
         ctx->reg.PC += 3;
-        return ctx->consumeClock(16);
+        return 0;
     }
 
     // Load SP with HL.
     static inline int LD_SP_HL(Z80* ctx)
     {
         unsigned short value = ctx->getHL();
-        ctx->log("[%04X] LD %s, HL<$%04X>", ctx->reg.PC, ctx->registerPairDump(0b11), value);
+        if (ctx->isDebug()) ctx->log("[%04X] LD %s, HL<$%04X>", ctx->reg.PC, ctx->registerPairDump(0b11), value);
         ctx->reg.SP = value;
         ctx->reg.PC++;
-        return ctx->consumeClock(6);
+        return ctx->consumeClock(2);
     }
 
     // Exchange H and L with D and E
@@ -723,11 +764,11 @@ class Z80
     {
         unsigned short de = ctx->getDE();
         unsigned short hl = ctx->getHL();
-        ctx->log("[%04X] EX %s, %s", ctx->reg.PC, ctx->registerPairDump(0b01), ctx->registerPairDump(0b10));
+        if (ctx->isDebug()) ctx->log("[%04X] EX %s, %s", ctx->reg.PC, ctx->registerPairDump(0b01), ctx->registerPairDump(0b10));
         ctx->setDE(hl);
         ctx->setHL(de);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     // Exchange A and F with A' and F'
@@ -735,30 +776,30 @@ class Z80
     {
         unsigned short af = ctx->getAF();
         unsigned short af2 = ctx->getAF2();
-        ctx->log("[%04X] EX AF<$%02X%02X>, AF'<$%02X%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.back.A, ctx->reg.back.F);
+        if (ctx->isDebug()) ctx->log("[%04X] EX AF<$%02X%02X>, AF'<$%02X%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.back.A, ctx->reg.back.F);
         ctx->setAF(af2);
         ctx->setAF2(af);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     static inline int EX_SP_HL(Z80* ctx)
     {
-        unsigned char l = ctx->CB.read(ctx->CB.arg, ctx->reg.SP);
-        unsigned char h = ctx->CB.read(ctx->CB.arg, ctx->reg.SP + 1);
+        unsigned char l = ctx->readByte(ctx->reg.SP);
+        unsigned char h = ctx->readByte(ctx->reg.SP + 1);
         unsigned short hl = ctx->getHL();
-        ctx->log("[%04X] EX (SP<$%04X>) = $%02X%02X, HL<$%04X>", ctx->reg.PC, ctx->reg.SP, h, l, hl);
-        ctx->CB.write(ctx->CB.arg, ctx->reg.SP, ctx->reg.pair.L);
-        ctx->CB.write(ctx->CB.arg, ctx->reg.SP + 1, ctx->reg.pair.H);
+        if (ctx->isDebug()) ctx->log("[%04X] EX (SP<$%04X>) = $%02X%02X, HL<$%04X>", ctx->reg.PC, ctx->reg.SP, h, l, hl);
+        ctx->writeByte(ctx->reg.SP, ctx->reg.pair.L);
+        ctx->writeByte(ctx->reg.SP + 1, ctx->reg.pair.H, 3);
         ctx->reg.pair.L = l;
         ctx->reg.pair.H = h;
         ctx->reg.PC++;
-        return ctx->consumeClock(19);
+        return 0;
     }
 
     static inline int EXX(Z80* ctx)
     {
-        ctx->log("[%04X] EXX", ctx->reg.PC);
+        if (ctx->isDebug()) ctx->log("[%04X] EXX", ctx->reg.PC);
         unsigned short bc = ctx->getBC();
         unsigned short bc2 = ctx->getBC2();
         unsigned short de = ctx->getDE();
@@ -772,35 +813,35 @@ class Z80
         ctx->setHL(hl2);
         ctx->setHL2(hl);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     static inline int PUSH_AF(Z80* ctx)
     {
-        ctx->log("[%04X] PUSH AF<$%02X%02X> <SP:$%04X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.SP);
-        ctx->CB.write(ctx->CB.arg, --ctx->reg.SP, ctx->reg.pair.A);
-        ctx->CB.write(ctx->CB.arg, --ctx->reg.SP, ctx->reg.pair.F);
+        if (ctx->isDebug()) ctx->log("[%04X] PUSH AF<$%02X%02X> <SP:$%04X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.SP);
+        ctx->writeByte(--ctx->reg.SP, ctx->reg.pair.A);
+        ctx->writeByte(--ctx->reg.SP, ctx->reg.pair.F, 3);
         ctx->reg.PC++;
-        return ctx->consumeClock(11);
+        return 0;
     }
 
     static inline int POP_AF(Z80* ctx)
     {
         unsigned short sp = ctx->reg.SP;
-        unsigned char l = ctx->CB.read(ctx->CB.arg, ctx->reg.SP++);
-        unsigned char h = ctx->CB.read(ctx->CB.arg, ctx->reg.SP++);
-        ctx->log("[%04X] POP AF <SP:$%04X> = $%02X%02X", ctx->reg.PC, sp, h, l);
+        unsigned char l = ctx->readByte(ctx->reg.SP++, 3);
+        unsigned char h = ctx->readByte(ctx->reg.SP++, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] POP AF <SP:$%04X> = $%02X%02X", ctx->reg.PC, sp, h, l);
         ctx->reg.pair.F = l;
         ctx->reg.pair.A = h;
         ctx->reg.PC++;
-        return ctx->consumeClock(10);
+        return 0;
     }
 
     static inline int RLCA(Z80* ctx)
     {
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         unsigned char a7 = ctx->reg.pair.A & 0x80 ? 1 : 0;
-        ctx->log("[%04X] RLCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] RLCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
         ctx->reg.pair.A &= 0b01111111;
         ctx->reg.pair.A <<= 1;
         ctx->reg.pair.A |= a7; // differ with RLA
@@ -808,14 +849,14 @@ class Z80
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     static inline int RRCA(Z80* ctx)
     {
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         unsigned char a0 = ctx->reg.pair.A & 0x01;
-        ctx->log("[%04X] RRCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] RRCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
         ctx->reg.pair.A &= 0b11111110;
         ctx->reg.pair.A >>= 1;
         ctx->reg.pair.A |= a0 ? 0x80 : 0; // differ with RRA
@@ -823,14 +864,14 @@ class Z80
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     static inline int RLA(Z80* ctx)
     {
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         unsigned char a7 = ctx->reg.pair.A & 0x80 ? 1 : 0;
-        ctx->log("[%04X] RLA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] RLA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
         ctx->reg.pair.A &= 0b01111111;
         ctx->reg.pair.A <<= 1;
         ctx->reg.pair.A |= c; // differ with RLCA
@@ -838,14 +879,14 @@ class Z80
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     static inline int RRA(Z80* ctx)
     {
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         unsigned char a0 = ctx->reg.pair.A & 0x01;
-        ctx->log("[%04X] RRA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] RRA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
         ctx->reg.pair.A &= 0b11111110;
         ctx->reg.pair.A >>= 1;
         ctx->reg.pair.A |= c ? 0x80 : 0x00; // differ with RLCA
@@ -853,7 +894,7 @@ class Z80
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     inline unsigned char* getRegisterPointer(unsigned char r)
@@ -867,7 +908,7 @@ class Z80
             case 0b100: return &reg.pair.H;
             case 0b101: return &reg.pair.L;
         }
-        log("detected an unknown register number: $%02X", r);
+        if (isDebug()) log("detected an unknown register number: $%02X", r);
         return NULL;
     }
 
@@ -912,7 +953,7 @@ class Z80
 
     inline char* relativeDump(signed char e)
     {
-        static char buf[16];
+        static char buf[80];
         if (e < 0) {
             sprintf(buf, "$%04X - %d = $%04X", reg.PC, -e, reg.PC + e);
         } else {
@@ -964,56 +1005,56 @@ class Z80
     {
         unsigned char* r1p = getRegisterPointer(r1);
         unsigned char* r2p = getRegisterPointer(r2);
-        log("[%04X] LD %s, %s", reg.PC, registerDump(r1), registerDump(r2));
+        if (isDebug()) log("[%04X] LD %s, %s", reg.PC, registerDump(r1), registerDump(r2));
         if (r1p && r2p) *r1p = *r2p;
         reg.PC += 1;
-        return consumeClock(4);
+        return 0;
     }
 
     // Load Reg. r with value n
     inline int LD_R_N(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char n = CB.read(CB.arg, reg.PC + 1);
-        log("[%04X] LD %s, $%02X", reg.PC, registerDump(r), n);
+        unsigned char n = readByte(reg.PC + 1, 3);
+        if (isDebug()) log("[%04X] LD %s, $%02X", reg.PC, registerDump(r), n);
         if (rp) *rp = n;
         reg.PC += 2;
-        return consumeClock(7);
+        return 0;
     }
 
     // Load Reg. r with location (HL)
     inline int LD_R_HL(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char n = CB.read(CB.arg, getHL());
-        log("[%04X] LD %s, (%s) = $%02X", reg.PC, registerDump(r), registerPairDump(0b10), n);
+        unsigned char n = readByte(getHL(), 3);
+        if (isDebug()) log("[%04X] LD %s, (%s) = $%02X", reg.PC, registerDump(r), registerPairDump(0b10), n);
         if (rp) *rp = n;
         reg.PC += 1;
-        return consumeClock(7);
+        return 0;
     }
 
     // Load Reg. r with location (IX+d)
     inline int LD_R_IX(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = CB.read(CB.arg, reg.PC + 2);
-        unsigned char n = CB.read(CB.arg, (reg.IX + d) & 0xFFFF);
-        log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IX, d, n);
+        signed char d = readByte(reg.PC + 2);
+        unsigned char n = readByte((reg.IX + d) & 0xFFFF);
+        if (isDebug()) log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IX, d, n);
         if (rp) *rp = n;
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Load Reg. r with location (IY+d)
     inline int LD_R_IY(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = CB.read(CB.arg, reg.PC + 2);
-        unsigned char n = CB.read(CB.arg, (reg.IY + d) & 0xFFFF);
-        log("[%04X] LD %s, (IY<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IY, d, n);
+        signed char d = readByte(reg.PC + 2);
+        unsigned char n = readByte((reg.IY + d) & 0xFFFF);
+        if (isDebug()) log("[%04X] LD %s, (IY<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IY, d, n);
         if (rp) *rp = n;
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Load location (HL) with Reg. r
@@ -1021,65 +1062,65 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned short addr = getHL();
-        log("[%04X] LD (%s), %s", reg.PC, registerPairDump(0b10), registerDump(r));
-        if (rp) CB.write(CB.arg, addr, *rp);
+        if (isDebug()) log("[%04X] LD (%s), %s", reg.PC, registerPairDump(0b10), registerDump(r));
+        if (rp) writeByte(addr, *rp, 3);
         reg.PC += 1;
-        return consumeClock(7);
+        return 0;
     }
 
     // 	Load location (IX+d) with Reg. r
     inline int LD_IX_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC, reg.IX, d, registerDump(r));
-        if (rp) CB.write(CB.arg, addr, *rp);
+        if (isDebug()) log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC, reg.IX, d, registerDump(r));
+        if (rp) writeByte(addr, *rp);
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // 	Load location (IY+d) with Reg. r
     inline int LD_IY_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC, reg.IY, d, registerDump(r));
-        if (rp) CB.write(CB.arg, addr, *rp);
+        if (isDebug()) log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC, reg.IY, d, registerDump(r));
+        if (rp) writeByte(addr, *rp);
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Load location (IX+d) with value n
     inline int LD_IX_N()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
-        unsigned char n = CB.read(CB.arg, reg.PC + 3);
+        signed char d = readByte(reg.PC + 2);
+        unsigned char n = readByte(reg.PC + 3);
         unsigned short addr = reg.IX + d;
-        log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
-        CB.write(CB.arg, addr, n);
+        if (isDebug()) log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
+        writeByte(addr, n, 3);
         reg.PC += 4;
-        return consumeClock(19);
+        return 0;
     }
 
     // Load location (IY+d) with value n
     inline int LD_IY_N()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
-        unsigned char n = CB.read(CB.arg, reg.PC + 3);
+        signed char d = readByte(reg.PC + 2);
+        unsigned char n = readByte(reg.PC + 3);
         unsigned short addr = reg.IY + d;
-        log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
-        CB.write(CB.arg, addr, n);
+        if (isDebug()) log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
+        writeByte(addr, n, 3);
         reg.PC += 4;
-        return consumeClock(19);
+        return 0;
     }
 
     // Load Reg. pair rp with value nn.
     inline int LD_RP_NN(unsigned char rp)
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nL = readByte(reg.PC + 1, 3);
+        unsigned char nH = readByte(reg.PC + 2, 3);
         unsigned char* rH;
         unsigned char* rL;
         switch (rp) {
@@ -1097,50 +1138,51 @@ class Z80
                 break;
             case 0b11:
                 // SP is not managed in pair structure, so calculate directly
-                log("[%04X] LD SP<$%04X>, $%02X%02X", reg.PC, reg.SP, nH, nL);
+                if (isDebug()) log("[%04X] LD SP<$%04X>, $%02X%02X", reg.PC, reg.SP, nH, nL);
                 reg.SP = (nH << 8) + nL;
                 reg.PC += 3;
-                return consumeClock(10);
+                return 0;
             default:
-                log("invalid register pair has specified: $%02X", rp);
+                if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        log("[%04X] LD %s, $%02X%02X", reg.PC, registerPairDump(rp), nH, nL);
+        if (isDebug()) log("[%04X] LD %s, $%02X%02X", reg.PC, registerPairDump(rp), nH, nL);
         *rH = nH;
         *rL = nL;
         reg.PC += 3;
-        return consumeClock(10);
+        return 0;
     }
 
     inline int LD_IX_NN()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
-        log("[%04X] LD IX, $%02X%02X", reg.PC, nH, nL);
+        unsigned char nL = readByte(reg.PC + 2, 3);
+        unsigned char nH = readByte(reg.PC + 3, 3);
+        if (isDebug()) log("[%04X] LD IX, $%02X%02X", reg.PC, nH, nL);
         reg.IX = (nH << 8) + nL;
         reg.PC += 4;
-        return consumeClock(14);
+        return 0;
     }
 
     inline int LD_IY_NN()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
-        log("[%04X] LD IY, $%02X%02X", reg.PC, nH, nL);
+        unsigned char nL = readByte(reg.PC + 2, 3);
+        unsigned char nH = readByte(reg.PC + 3, 3);
+        if (isDebug()) log("[%04X] LD IY, $%02X%02X", reg.PC, nH, nL);
         reg.IY = (nH << 8) + nL;
         reg.PC += 4;
-        return consumeClock(14);
+        return 0;
     }
 
     // Load Reg. pair rp with location (nn)
     inline int LD_RP_ADDR(unsigned char rp)
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2, 3);
+        unsigned char nH = readByte(reg.PC + 3, 3);
         unsigned short addr = (nH << 8) + nL;
-        unsigned char l = CB.read(CB.arg, addr);
-        unsigned char h = CB.read(CB.arg, addr + 1);
-        log("[%04X] LD %s, ($%02X%02X) = $%02X%02X", reg.PC, registerPairDump(rp), nH, nL, h, l);
+        unsigned char l = readByte(addr, 3);
+        unsigned char h = readByte(addr + 1, 3);
+        reg.WZ = addr + 1;
+        if (isDebug()) log("[%04X] LD %s, ($%02X%02X) = $%02X%02X", reg.PC, registerPairDump(rp), nH, nL, h, l);
         switch (rp) {
             case 0b00:
                 reg.pair.B = h;
@@ -1158,20 +1200,20 @@ class Z80
                 reg.SP = (h << 8) + l;
                 break;
             default:
-                log("invalid register pair has specified: $%02X", rp);
+                if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
         reg.PC += 4;
-        return consumeClock(20);
+        return 0;
     }
 
     // Load location (nn) with Reg. pair rp.
     inline int LD_ADDR_RP(unsigned char rp)
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2, 3);
+        unsigned char nH = readByte(reg.PC + 3, 3);
         unsigned short addr = (nH << 8) + nL;
-        log("[%04X] LD ($%04X), %s", reg.PC, addr, registerPairDump(rp));
+        if (isDebug()) log("[%04X] LD ($%04X), %s", reg.PC, addr, registerPairDump(rp));
         unsigned char l;
         unsigned char h;
         switch (rp) {
@@ -1192,221 +1234,168 @@ class Z80
                 l = reg.SP & 0x00FF;
                 break;
             default:
-                log("invalid register pair has specified: $%02X", rp);
+                if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        CB.write(CB.arg, addr, l);
-        CB.write(CB.arg, addr + 1, h);
+        writeByte(addr, l, 3);
+        writeByte(addr + 1, h, 3);
+        reg.WZ = addr + 1;
         reg.PC += 4;
-        return consumeClock(20);
+        return 0;
     }
 
     // Load IX with location (nn)
     inline int LD_IX_ADDR()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2, 3);
+        unsigned char nH = readByte(reg.PC + 3, 3);
         unsigned short addr = (nH << 8) + nL;
-        unsigned char l = CB.read(CB.arg, addr);
-        unsigned char h = CB.read(CB.arg, addr + 1);
-        log("[%04X] LD IX<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IX, nH, nL, h, l);
+        unsigned char l = readByte(addr, 3);
+        unsigned char h = readByte(addr + 1, 3);
+        if (isDebug()) log("[%04X] LD IX<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IX, nH, nL, h, l);
         reg.IX = (h << 8) + l;
         reg.PC += 4;
-        return consumeClock(20);
+        return 0;
     }
 
     // Load IY with location (nn)
     inline int LD_IY_ADDR()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2, 3);
+        unsigned char nH = readByte(reg.PC + 3, 3);
         unsigned short addr = (nH << 8) + nL;
-        unsigned char l = CB.read(CB.arg, addr);
-        unsigned char h = CB.read(CB.arg, addr + 1);
-        log("[%04X] LD IY<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IY, nH, nL, h, l);
+        unsigned char l = readByte(addr, 3);
+        unsigned char h = readByte(addr + 1, 3);
+        if (isDebug()) log("[%04X] LD IY<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IY, nH, nL, h, l);
         reg.IY = (h << 8) + l;
         reg.PC += 4;
-        return consumeClock(20);
+        return 0;
     }
 
     inline int LD_ADDR_IX()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2, 3);
+        unsigned char nH = readByte(reg.PC + 3, 3);
         unsigned short addr = (nH << 8) + nL;
-        log("[%04X] LD ($%04X), IX<$%04X>", reg.PC, addr, reg.IX);
+        if (isDebug()) log("[%04X] LD ($%04X), IX<$%04X>", reg.PC, addr, reg.IX);
         unsigned char l = reg.IX & 0x00FF;
         unsigned char h = (reg.IX & 0xFF00) >> 8;
-        CB.write(CB.arg, addr, l);
-        CB.write(CB.arg, addr + 1, h);
+        writeByte(addr, l, 3);
+        writeByte(addr + 1, h, 3);
         reg.PC += 4;
-        return consumeClock(20);
+        return 0;
     }
 
     inline int LD_ADDR_IY()
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 2);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 3);
+        unsigned char nL = readByte(reg.PC + 2, 3);
+        unsigned char nH = readByte(reg.PC + 3, 3);
         unsigned short addr = (nH << 8) + nL;
-        log("[%04X] LD ($%04X), IY<$%04X>", reg.PC, addr, reg.IY);
+        if (isDebug()) log("[%04X] LD ($%04X), IY<$%04X>", reg.PC, addr, reg.IY);
         unsigned char l = reg.IY & 0x00FF;
         unsigned char h = (reg.IY & 0xFF00) >> 8;
-        CB.write(CB.arg, addr, l);
-        CB.write(CB.arg, addr + 1, h);
+        writeByte(addr, l, 3);
+        writeByte(addr + 1, h, 3);
         reg.PC += 4;
-        return consumeClock(20);
+        return 0;
     }
 
     // Load SP with IX.
     inline int LD_SP_IX()
     {
         unsigned short value = reg.IX;
-        log("[%04X] LD %s, IX<$%04X>", reg.PC, registerPairDump(0b11), value);
+        if (isDebug()) log("[%04X] LD %s, IX<$%04X>", reg.PC, registerPairDump(0b11), value);
         reg.SP = value;
         reg.PC += 2;
-        return consumeClock(10);
+        return consumeClock(2);
     }
 
     // Load SP with IY.
     inline int LD_SP_IY()
     {
         unsigned short value = reg.IY;
-        log("[%04X] LD %s, IY<$%04X>", reg.PC, registerPairDump(0b11), value);
+        if (isDebug()) log("[%04X] LD %s, IY<$%04X>", reg.PC, registerPairDump(0b11), value);
         reg.SP = value;
         reg.PC += 2;
-        return consumeClock(10);
+        return consumeClock(2);
     }
 
-    // Load location (DE) with Loacation (HL), increment DE, HL, decrement BC
-    inline int LDI()
+    // Load location (DE) with Loacation (HL), increment/decrement DE, HL, decrement BC
+    inline int repeatLD(bool isIncDEHL, bool isRepeat)
     {
-        log("[%04X] LDI ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+        if (isDebug()) {
+            if (isIncDEHL) {
+                if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "LDIR" : "LDI", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+            } else {
+                if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "LDDR" : "LDD", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+            }
+        }
         unsigned short bc = getBC();
         unsigned short de = getDE();
         unsigned short hl = getHL();
-        unsigned char n = CB.read(CB.arg, hl);
-        CB.write(CB.arg, de, n);
-        de++;
-        hl++;
-        bc--;
-        setBC(bc);
-        setDE(de);
-        setHL(hl);
-        setFlagH(true);
-        setFlagPV(bc != 1);
-        setFlagN(false);
-        reg.PC += 2;
-        return consumeClock(16);
-    }
-
-    // Load location (DE) with Loacation (HL), increment DE, HL, decrement BC and repeat until BC=0.
-    inline int LDIR()
-    {
-        int clocks = 0;
-        log("[%04X] LDIR ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
-        unsigned short bc = getBC();
-        unsigned short de = getDE();
-        unsigned short hl = getHL();
-        do {
-            unsigned char n = CB.read(CB.arg, hl);
-            CB.write(CB.arg, de, n);
+        unsigned char n = readByte(hl);
+        writeByte(de, n);
+        if (isIncDEHL) {
             de++;
             hl++;
-            bc--;
-            clocks += consumeClock(0 != bc ? 21 : 16);
-        } while (0 != bc);
-        setBC(bc);
-        setDE(de);
-        setHL(hl);
-        setFlagH(false);
-        setFlagPV(false);
-        setFlagN(false);
-        reg.PC += 2;
-        return clocks - 5;
-    }
-
-    // Load location (DE) with Loacation (HL), decrement DE, HL, decrement BC
-    inline int LDD()
-    {
-        log("[%04X] LDD ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
-        unsigned short bc = getBC();
-        unsigned short de = getDE();
-        unsigned short hl = getHL();
-        unsigned char n = CB.read(CB.arg, hl);
-        CB.write(CB.arg, de, n);
-        de--;
-        hl--;
+        } else {
+            de--;
+            hl--;
+        }
         bc--;
         setBC(bc);
         setDE(de);
         setHL(hl);
-        setFlagH(true);
-        setFlagPV(bc != 1);
-        setFlagN(false);
-        reg.PC += 2;
-        return consumeClock(16);
-    }
-
-    // Load location (DE) with Loacation (HL), decrement DE, HL, decrement BC and repeat until BC=0.
-    inline int LDDR()
-    {
-        int clocks = 0;
-        log("[%04X] LDDR ... %s, %s, %s", reg.PC, registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
-        unsigned short bc = getBC();
-        unsigned short de = getDE();
-        unsigned short hl = getHL();
-        do {
-            unsigned char n = CB.read(CB.arg, hl);
-            CB.write(CB.arg, de, n);
-            de--;
-            hl--;
-            bc--;
-            clocks += consumeClock(0 != bc ? 21 : 16);
-        } while (0 != bc);
-        setBC(bc);
-        setDE(de);
-        setHL(hl);
         setFlagH(false);
-        setFlagPV(false);
+        setFlagPV(bc != 0);
         setFlagN(false);
-        reg.PC += 2;
-        return clocks - 5;
+        setFlagXY(reg.pair.A + n);
+        if (isRepeat && 0 != bc) {
+            consumeClock(5);
+        } else {
+            reg.PC += 2;
+        }
+        return 0;
     }
+    inline int LDI() { return repeatLD(true, false); }
+    inline int LDIR() { return repeatLD(true, true); }
+    inline int LDD() { return repeatLD(false, false); }
+    inline int LDDR() { return repeatLD(false, true); }
 
     // Exchange stack top with IX
     inline int EX_SP_IX()
     {
-        unsigned char l = CB.read(CB.arg, reg.SP);
-        unsigned char h = CB.read(CB.arg, reg.SP + 1);
+        unsigned char l = readByte(reg.SP);
+        unsigned char h = readByte(reg.SP + 1);
         unsigned char i = (reg.IX & 0xFF00) >> 8;
         unsigned char x = reg.IX & 0x00FF;
-        log("[%04X] EX (SP<$%04X>) = $%02X%02X, IX<$%04X>", reg.PC, reg.SP, h, l, reg.IX);
-        CB.write(CB.arg, reg.SP, x);
-        CB.write(CB.arg, reg.SP + 1, i);
+        if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IX<$%04X>", reg.PC, reg.SP, h, l, reg.IX);
+        writeByte(reg.SP, x);
+        writeByte(reg.SP + 1, i, 3);
         reg.IX = (h << 8) + l;
         reg.PC += 2;
-        return consumeClock(23);
+        return 0;
     }
 
     // Exchange stack top with IY
     inline int EX_SP_IY()
     {
-        unsigned char l = CB.read(CB.arg, reg.SP);
-        unsigned char h = CB.read(CB.arg, reg.SP + 1);
+        unsigned char l = readByte(reg.SP);
+        unsigned char h = readByte(reg.SP + 1);
         unsigned char i = (reg.IY & 0xFF00) >> 8;
         unsigned char y = reg.IY & 0x00FF;
-        log("[%04X] EX (SP<$%04X>) = $%02X%02X, IY<$%04X>", reg.PC, reg.SP, h, l, reg.IY);
-        CB.write(CB.arg, reg.SP, y);
-        CB.write(CB.arg, reg.SP + 1, i);
+        if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IY<$%04X>", reg.PC, reg.SP, h, l, reg.IY);
+        writeByte(reg.SP, y);
+        writeByte(reg.SP + 1, i, 3);
         reg.IY = (h << 8) + l;
         reg.PC += 2;
-        return consumeClock(23);
+        return 0;
     }
 
     // Push Reg. on Stack.
     inline int PUSH_RP(unsigned char rp)
     {
-        log("[%04X] PUSH %s <SP:$%04X>", reg.PC, registerPairDump(rp), reg.SP);
+        if (isDebug()) log("[%04X] PUSH %s <SP:$%04X>", reg.PC, registerPairDump(rp), reg.SP);
         unsigned char l;
         unsigned char h;
         switch (rp) {
@@ -1423,13 +1412,13 @@ class Z80
                 l = reg.pair.L;
                 break;
             default:
-                log("invalid register pair has specified: $%02X", rp);
+                if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        CB.write(CB.arg, --reg.SP, h);
-        CB.write(CB.arg, --reg.SP, l);
+        writeByte(--reg.SP, h);
+        writeByte(--reg.SP, l, 3);
         reg.PC++;
-        return consumeClock(11);
+        return 0;
     }
 
     // Push Reg. on Stack.
@@ -1452,62 +1441,62 @@ class Z80
                 l = &reg.pair.L;
                 break;
             default:
-                log("invalid register pair has specified: $%02X", rp);
+                if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        log("[%04X] POP %s <SP:$%04X> = $%02X%02X", reg.PC, registerPairDump(rp), sp, *h, *l);
-        *l = CB.read(CB.arg, reg.SP++);
-        *h = CB.read(CB.arg, reg.SP++);
+        if (isDebug()) log("[%04X] POP %s <SP:$%04X> = $%02X%02X", reg.PC, registerPairDump(rp), sp, *h, *l);
+        *l = readByte(reg.SP++, 3);
+        *h = readByte(reg.SP++, 3);
         reg.PC++;
-        return consumeClock(10);
+        return 0;
     }
 
     // Push Reg. IX on Stack.
     inline int PUSH_IX()
     {
-        log("[%04X] PUSH IX<$%04X> <SP:$%04X>", reg.PC, reg.IX, reg.SP);
+        if (isDebug()) log("[%04X] PUSH IX<$%04X> <SP:$%04X>", reg.PC, reg.IX, reg.SP);
         unsigned char h = (reg.IX & 0xFF00) >> 8;
         unsigned char l = reg.IX & 0x00FF;
-        CB.write(CB.arg, --reg.SP, h);
-        CB.write(CB.arg, --reg.SP, l);
+        writeByte(--reg.SP, h);
+        writeByte(--reg.SP, l, 3);
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // Pop Reg. IX from Stack.
     inline int POP_IX()
     {
         unsigned short sp = reg.SP;
-        unsigned char l = CB.read(CB.arg, reg.SP++);
-        unsigned char h = CB.read(CB.arg, reg.SP++);
-        log("[%04X] POP IX <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
+        unsigned char l = readByte(reg.SP++, 3);
+        unsigned char h = readByte(reg.SP++, 3);
+        if (isDebug()) log("[%04X] POP IX <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
         reg.IX = (h << 8) + l;
         reg.PC += 2;
-        return consumeClock(14);
+        return 0;
     }
 
     // Push Reg. IY on Stack.
     inline int PUSH_IY()
     {
-        log("[%04X] PUSH IY<$%04X> <SP:$%04X>", reg.PC, reg.IY, reg.SP);
+        if (isDebug()) log("[%04X] PUSH IY<$%04X> <SP:$%04X>", reg.PC, reg.IY, reg.SP);
         unsigned char h = (reg.IY & 0xFF00) >> 8;
         unsigned char l = reg.IY & 0x00FF;
-        CB.write(CB.arg, --reg.SP, h);
-        CB.write(CB.arg, --reg.SP, l);
+        writeByte(--reg.SP, h);
+        writeByte(--reg.SP, l, 3);
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // Pop Reg. IY from Stack.
     inline int POP_IY()
     {
         unsigned short sp = reg.SP;
-        unsigned char l = CB.read(CB.arg, reg.SP++);
-        unsigned char h = CB.read(CB.arg, reg.SP++);
-        log("[%04X] POP IY <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
+        unsigned char l = readByte(reg.SP++, 3);
+        unsigned char h = readByte(reg.SP++, 3);
+        if (isDebug()) log("[%04X] POP IY <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
         reg.IY = (h << 8) + l;
         reg.PC += 2;
-        return consumeClock(14);
+        return 0;
     }
 
     // Rotate register Left Circular
@@ -1515,12 +1504,12 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r7 = *rp & 0x80 ? 1 : 0;
-        log("[%04X] RLC %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RLC %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
         *rp &= 0b01111111;
         *rp <<= 1;
         *rp |= r7; // differ with RL
@@ -1529,9 +1518,10 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return consumeClock(4);
+        return 0;
     }
 
     // Rotate Left register
@@ -1539,12 +1529,12 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r7 = *rp & 0x80 ? 1 : 0;
-        log("[%04X] RL %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RL %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
         *rp &= 0b01111111;
         *rp <<= 1;
         *rp |= c; // differ with RLC
@@ -1553,9 +1543,10 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return consumeClock(8);
+        return 0;
     }
 
     // Shift operand register left Arithmetic
@@ -1563,12 +1554,12 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r7 = *rp & 0x80 ? 1 : 0;
-        log("[%04X] SLA %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SLA %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
         *rp &= 0b01111111;
         *rp <<= 1;
         setFlagC(r7 ? true : false);
@@ -1576,9 +1567,10 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return consumeClock(8);
+        return 0;
     }
 
     // Rotate register Right Circular
@@ -1586,12 +1578,12 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r0 = *rp & 0x01;
-        log("[%04X] RRC %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RRC %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
         *rp &= 0b11111110;
         *rp >>= 1;
         *rp |= r0 ? 0x80 : 0; // differ with RR
@@ -1600,9 +1592,10 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return consumeClock(4);
+        return 0;
     }
 
     // Rotate Right register
@@ -1610,12 +1603,12 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r0 = *rp & 0x01;
-        log("[%04X] RR %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RR %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
         *rp &= 0b11111110;
         *rp >>= 1;
         *rp |= c ? 0x80 : 0; // differ with RRC
@@ -1624,9 +1617,10 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return consumeClock(8);
+        return 0;
     }
 
     // Shift operand register Right Arithmetic
@@ -1634,13 +1628,13 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r0 = *rp & 0x01;
         unsigned char r7 = *rp & 0x80;
-        log("[%04X] SRA %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRA %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
         *rp &= 0b11111110;
         *rp >>= 1;
         r7 ? * rp |= 0x80 : * rp &= 0x7F;
@@ -1649,9 +1643,10 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return consumeClock(8);
+        return 0;
     }
 
     // Shift operand register Right Logical
@@ -1659,12 +1654,12 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r0 = *rp & 0x01;
-        log("[%04X] SRL %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRL %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
         *rp &= 0b11111110;
         *rp >>= 1;
         setFlagC(r0 ? true : false);
@@ -1672,547 +1667,604 @@ class Z80
         setFlagN(false);
         setFlagS((*rp & 0x80) != 0);
         setFlagZ(*rp == 0);
+        setFlagXY(*rp);
         setFlagPV(isEvenNumberBits(*rp));
         reg.PC += 2;
-        return consumeClock(8);
+        return 0;
     }
 
     // Rotate memory (HL) Left Circular
     inline int RLC_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] RLC (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RLC (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
         n |= n7; // differ with RL (HL)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // Rotate Left memory
     inline int RL_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] RL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (HL)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // Shift operand location (HL) left Arithmetic
     inline int SLA_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] SLA (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SLA (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // Rotate memory (HL) Right Circular
     inline int RRC_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        log("[%04X] RRC (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RRC (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
         n |= n0 ? 0x80 : 0; // differ with RR (HL)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // Rotate Right memory
     inline int RR_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        log("[%04X] RR (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RR (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (HL)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // Shift operand location (HL) Right Arithmetic
     inline int SRA_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         unsigned char n7 = n & 0x80;
-        log("[%04X] SRA (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRA (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // Shift operand location (HL) Right Logical
     inline int SRL_HL()
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        log("[%04X] SRL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // Rotate memory (IX+d) Left Circular
     inline int RLC_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] RLC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RLC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
         n |= n7; // differ with RL (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Rotate memory (IX+d) Right Circular
     inline int RRC_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        log("[%04X] RRC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RRC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
         n |= n0 ? 0x80 : 0; // differ with RR (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Rotate Left memory
     inline int RL_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] RL (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RL (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Shift operand location (IX+d) left Arithmetic
     inline int SLA_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] SLA (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SLA (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Rotate Right memory
     inline int RR_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        log("[%04X] RR (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RR (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Shift operand location (IX+d) Right Arithmetic
     inline int SRA_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         unsigned char n7 = n & 0x80;
-        log("[%04X] SRA (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRA (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Shift operand location (IX+d) Right Logical
     inline int SRL_IX(signed char d)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        log("[%04X] SRL (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRL (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Rotate memory (IY+d) Left Circular
     inline int RLC_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] RLC (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RLC (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
         n |= n7; // differ with RL (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Rotate memory (IY+d) Right Circular
     inline int RRC_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        log("[%04X] RRC (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RRC (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
         n |= n0 ? 0x80 : 0; // differ with RR (IX+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Rotate Left memory
     inline int RL_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (IY+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Shift operand location (IY+d) left Arithmetic
     inline int SLA_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        log("[%04X] SLA (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SLA (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b01111111;
         n <<= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n7 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Rotate Right memory
     inline int RR_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        log("[%04X] RR (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RR (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (IY+d)
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Shift operand location (IY+d) Right Arithmetic
     inline int SRA_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         unsigned char n7 = n & 0x80;
-        log("[%04X] SRA (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRA (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // Shift operand location (IY+d) Right Logical
     inline int SRL_IY(signed char d)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        log("[%04X] SRL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
         n &= 0b11111110;
         n >>= 1;
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
         setFlagN(false);
         setFlagS((n & 0x80) != 0);
         setFlagZ(n == 0);
+        setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
-    inline void setFlagByAddition(unsigned char before, unsigned char addition)
+    inline void setFlagByAddition(unsigned char before, unsigned char addition, bool setCarry = true)
     {
-        unsigned char result8 = before + addition;
-        unsigned short result16u = before;
-        result16u += addition;
-        signed short result16s = (signed char)before;
-        result16s += (signed char)addition;
-        setFlagS(result8 & 0x80 ? true : false);
-        setFlagZ(result8 == 0);
-        setFlagH(0x0F < (before & 0x0F) + (addition & 0x0F));
-        setFlagPV(result16s < -128 || 127 < result16s);
+        int result = ((int)before) + addition;
+        int carry = before ^ addition ^ result;
+        unsigned char finalResult = (unsigned char)result;
+        setFlagN(false);
+        setFlagZ(0 == finalResult);
+        setFlagS(0x80 & finalResult ? true : false);
+        setFlagH((carry & 0x10) != 0);
+        setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
+        setFlagXY(finalResult);
+        if (setCarry) setFlagC((carry & 0x100) != 0);
+    }
+
+    inline void setFlagBySubstract(unsigned char before, unsigned char substract, bool setCarry = true)
+    {
+        int result = ((int)before) - substract;
+        int carry = before ^ substract ^ result;
+        unsigned char finalResult = (unsigned char)result;
         setFlagN(true);
-        setFlagC(255 < result16u);
+        setFlagZ(0 == finalResult);
+        setFlagS(0x80 & finalResult ? true : false);
+        setFlagH((carry & 0x10) != 0);
+        setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
+        setFlagXY(finalResult);
+        if (setCarry) setFlagC((carry & 0x100) != 0);
+    }
+
+    inline void setFlagByIncrement(unsigned char before)
+    {
+        unsigned char finalResult = before + 1;
+        setFlagN(false);
+        setFlagZ(0 == finalResult);
+        setFlagS(0x80 & finalResult ? true : false);
+        setFlagH((finalResult & 0x0F) == 0x00);
+        setFlagPV(finalResult == 0x80);
+        setFlagXY(finalResult);
+    }
+
+    inline void setFlagByDecrement(unsigned char before)
+    {
+        unsigned char finalResult = before - 1;
+        setFlagN(true);
+        setFlagZ(0 == finalResult);
+        setFlagS(0x80 & finalResult ? true : false);
+        setFlagH((finalResult & 0x0F) == 0x0F);
+        setFlagPV(finalResult == 0x7F);
+        setFlagXY(finalResult);
     }
 
     // Add Reg. r to Acc.
     inline int ADD_A_R(unsigned char r)
     {
-        log("[%04X] ADD %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        if (isDebug()) log("[%04X] ADD %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
         setFlagByAddition(reg.pair.A, *rp);
         reg.pair.A += *rp;
         reg.PC += 1;
-        return consumeClock(4);
+        return 0;
     }
 
     // Add value n to Acc.
     static inline int ADD_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        ctx->log("[%04X] ADD %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] ADD %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->setFlagByAddition(ctx->reg.pair.A, n);
         ctx->reg.pair.A += n;
         ctx->reg.PC += 2;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Add location (HL) to Acc.
     static inline int ADD_A_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] ADD %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        unsigned char n = ctx->readByte(addr, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] ADD %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->setFlagByAddition(ctx->reg.pair.A, n);
         ctx->reg.pair.A += n;
         ctx->reg.PC += 1;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Add location (IX+d) to Acc.
     inline int ADD_A_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] ADD %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] ADD %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagByAddition(reg.pair.A, n);
         reg.pair.A += n;
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Add location (IY+d) to Acc.
     inline int ADD_A_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] ADD %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] ADD %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagByAddition(reg.pair.A, n);
         reg.pair.A += n;
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Add Resister with carry
@@ -2221,67 +2273,67 @@ class Z80
         unsigned char* rp = getRegisterPointer(r);
         unsigned char c = isFlagC() ? 1 : 0;
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
         setFlagByAddition(reg.pair.A, c + *rp);
         reg.pair.A += c + *rp;
         reg.PC += 1;
-        return consumeClock(4);
+        return 0;
     }
 
     // Add immediate with carry
     static inline int ADC_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
-        ctx->log("[%04X] ADC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] ADC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
         ctx->setFlagByAddition(ctx->reg.pair.A, c + n);
         ctx->reg.pair.A += c + n;
         ctx->reg.PC += 2;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Add memory with carry
     static inline int ADC_A_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
-        ctx->log("[%04X] ADC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] ADC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
         ctx->setFlagByAddition(ctx->reg.pair.A, c + n);
         ctx->reg.pair.A += c + n;
         ctx->reg.PC += 1;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Add memory with carry
     inline int ADC_A_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
-        log("[%04X] ADC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         setFlagByAddition(reg.pair.A, c + n);
         reg.pair.A += c + n;
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Add memory with carry
     inline int ADC_A_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
-        log("[%04X] ADC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         setFlagByAddition(reg.pair.A, c + n);
         reg.pair.A += c + n;
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Increment Register
@@ -2289,131 +2341,116 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] INC %s", reg.PC, registerDump(r));
-        setFlagByAddition(*rp, 1);
+        if (isDebug()) log("[%04X] INC %s", reg.PC, registerDump(r));
+        setFlagByIncrement(*rp);
         (*rp)++;
         reg.PC += 1;
-        return consumeClock(4);
+        return 0;
     }
 
     // Increment location (HL)
     static inline int INC_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] INC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
-        ctx->setFlagByAddition(n, 1);
-        ctx->CB.write(ctx->CB.arg, addr, n + 1);
+        unsigned char n = ctx->readByte(addr);
+        if (ctx->isDebug()) ctx->log("[%04X] INC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
+        ctx->setFlagByIncrement(n);
+        ctx->writeByte(addr, n + 1, 3);
         ctx->reg.PC += 1;
-        return ctx->consumeClock(11);
+        return 0;
     }
 
     // Increment location (IX+d)
     inline int INC_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagByAddition(n, 1);
-        CB.write(CB.arg, addr, n + 1);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
+        setFlagByIncrement(n);
+        writeByte(addr, n + 1);
         reg.PC += 3;
-        return consumeClock(23);
+        return consumeClock(3);
     }
 
     // Increment location (IY+d)
     inline int INC_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagByAddition(n, 1);
-        CB.write(CB.arg, addr, n + 1);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
+        setFlagByIncrement(n);
+        writeByte(addr, n + 1);
         reg.PC += 3;
-        return consumeClock(23);
-    }
-
-    inline void setFlagBySubstract(unsigned char before, unsigned char substract)
-    {
-        unsigned char result8 = before - substract;
-        unsigned short result16u = before;
-        result16u -= substract;
-        signed short result16s = (signed char)before;
-        result16s += (signed char)substract;
-        setFlagS(result8 & 0x80 ? true : false);
-        setFlagZ(result8 == 0);
-        setFlagH((0x0F & (before & 0xF0) - (substract & 0xF0)) == 0); // TODO: これで正しいのだろうか？
-        setFlagPV(result16s < -128 || 127 < result16s);
-        setFlagN(false);
-        setFlagC(255 < result16u);
+        return consumeClock(3);
     }
 
     // Substract Register
     inline int SUB_A_R(unsigned char r)
     {
-        log("[%04X] SUB %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        if (isDebug()) log("[%04X] SUB %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
         setFlagBySubstract(reg.pair.A, *rp);
         reg.pair.A -= *rp;
         reg.PC += 1;
-        return consumeClock(4);
+        return 0;
     }
 
     // Substract immediate
     static inline int SUB_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        ctx->log("[%04X] SUB %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] SUB %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->setFlagBySubstract(ctx->reg.pair.A, n);
         ctx->reg.pair.A -= n;
         ctx->reg.PC += 2;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Substract memory
     static inline int SUB_A_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] SUB %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        unsigned char n = ctx->readByte(addr, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] SUB %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->setFlagBySubstract(ctx->reg.pair.A, n);
         ctx->reg.pair.A -= n;
         ctx->reg.PC += 1;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Substract memory
     inline int SUB_A_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] SUB %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] SUB %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagBySubstract(reg.pair.A, n);
         reg.pair.A -= n;
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Substract memory
     inline int SUB_A_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] SUB %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] SUB %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagBySubstract(reg.pair.A, n);
         reg.pair.A -= n;
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Substract Resister with carry
@@ -2422,67 +2459,67 @@ class Z80
         unsigned char* rp = getRegisterPointer(r);
         unsigned char c = isFlagC() ? 1 : 0;
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
         setFlagBySubstract(reg.pair.A, c + *rp);
         reg.pair.A -= c + *rp;
         reg.PC += 1;
-        return consumeClock(4);
+        return 0;
     }
 
     // Substract immediate with carry
     static inline int SBC_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
-        ctx->log("[%04X] SBC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] SBC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
         ctx->setFlagBySubstract(ctx->reg.pair.A, c + n);
         ctx->reg.pair.A -= c + n;
         ctx->reg.PC += 2;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Substract memory with carry
     static inline int SBC_A_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
+        unsigned char n = ctx->readByte(addr, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
-        ctx->log("[%04X] SBC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] SBC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
         ctx->setFlagBySubstract(ctx->reg.pair.A, c + n);
         ctx->reg.pair.A -= c + n;
         ctx->reg.PC += 1;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Substract memory with carry
     inline int SBC_A_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
-        log("[%04X] SBC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SBC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         setFlagBySubstract(reg.pair.A, c + n);
         reg.pair.A -= c + n;
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Substract memory with carry
     inline int SBC_A_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
+        unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
-        log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         setFlagBySubstract(reg.pair.A, c + n);
         reg.pair.A -= c + n;
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Decrement Register
@@ -2490,209 +2527,218 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] DEC %s", reg.PC, registerDump(r));
-        setFlagBySubstract(*rp, 1);
+        if (isDebug()) log("[%04X] DEC %s", reg.PC, registerDump(r));
+        setFlagByDecrement(*rp);
         (*rp)--;
         reg.PC += 1;
-        return consumeClock(4);
+        return 0;
     }
 
     // Decrement location (HL)
     static inline int DEC_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] DEC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
-        ctx->setFlagBySubstract(n, 1);
-        ctx->CB.write(ctx->CB.arg, addr, n - 1);
+        unsigned char n = ctx->readByte(addr);
+        if (ctx->isDebug()) ctx->log("[%04X] DEC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
+        ctx->setFlagByDecrement(n);
+        ctx->writeByte(addr, n - 1, 3);
         ctx->reg.PC += 1;
-        return ctx->consumeClock(11);
+        return 0;
     }
 
     // Decrement location (IX+d)
     inline int DEC_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagBySubstract(n, 1);
-        CB.write(CB.arg, addr, n - 1);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
+        setFlagByDecrement(n);
+        writeByte(addr, n - 1);
         reg.PC += 3;
-        return consumeClock(23);
+        return consumeClock(3);
     }
 
     // Decrement location (IY+d)
     inline int DEC_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
-        setFlagBySubstract(n, 1);
-        CB.write(CB.arg, addr, n - 1);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
+        setFlagByDecrement(n);
+        writeByte(addr, n - 1);
         reg.PC += 3;
-        return consumeClock(23);
+        return consumeClock(3);
     }
 
     inline void setFlagByAdd16(unsigned short before, unsigned short addition)
     {
-        unsigned int result32u = before;
-        result32u += addition;
-        setFlagH(0x00FF < (before & 0x00FF) + (addition & 0x00FF));
-        setFlagN(true);
-        setFlagC(65535 < result32u);
+        int result = before + addition;
+        int carrybits = before ^ addition ^ result;
+        setFlagN(false);
+        setFlagXY((result & 0xFF00) >> 8);
+        setFlagC((carrybits & 0x10000) != 0);
+        setFlagH((carrybits & 0x1000) != 0);
     }
 
     inline void setFlagByAdc16(unsigned short before, unsigned short addition)
     {
-        unsigned short result16 = before + addition;
-        signed int result32s = (signed short)before;
-        result32s += (signed short)addition;
-        setFlagByAdd16(before, addition);
-        setFlagS(result16 & 0x8000 ? true : false);
-        setFlagZ(result16 == 0);
-        setFlagPV(result32s < -32768 || 32767 < result32s);
+        int result = before + addition;
+        int carrybits = before ^ addition ^ result;
+        unsigned short finalResult = (unsigned short)(result);
+        // same as ADD
+        setFlagN(false);
+        setFlagXY((finalResult & 0xFF00) >> 8);
+        setFlagC((carrybits & 0x10000) != 0);
+        setFlagH((carrybits & 0x1000) != 0);
+        // only ADC
+        setFlagS(finalResult & 0x8000 ? true : false);
+        setFlagZ(0 == finalResult);
+        setFlagPV((((carrybits << 1) ^ carrybits) & 0x10000) != 0);
     }
 
     // Add register pair to H and L
     inline int ADD_HL_RP(unsigned char rp)
     {
-        log("[%04X] ADD %s, %s", reg.PC, registerPairDump(0b10), registerPairDump(rp));
+        if (isDebug()) log("[%04X] ADD %s, %s", reg.PC, registerPairDump(0b10), registerPairDump(rp));
         unsigned short hl = getHL();
         unsigned short nn = getRP(rp);
+        reg.WZ = nn + 1;
         setFlagByAdd16(hl, nn);
         setHL(hl + nn);
         reg.PC++;
-        return consumeClock(11);
+        return consumeClock(7);
     }
 
     // Add with carry register pair to HL
     inline int ADC_HL_RP(unsigned char rp)
     {
-        log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
         unsigned short hl = getHL();
         unsigned short nn = getRP(rp);
         unsigned char c = isFlagC() ? 1 : 0;
+        reg.WZ = hl + 1;
         setFlagByAdc16(hl, c + nn);
         setHL(hl + c + nn);
         reg.PC += 2;
-        return consumeClock(15);
+        return consumeClock(7);
     }
 
     // Add register pair to IX
     inline int ADD_IX_RP(unsigned char rp)
     {
-        log("[%04X] ADD IX<$%04X>, %s", reg.PC, reg.IX, registerPairDump(rp));
+        if (isDebug()) log("[%04X] ADD IX<$%04X>, %s", reg.PC, reg.IX, registerPairDump(rp));
         unsigned short nn = getRP(rp);
         setFlagByAdd16(reg.IX, nn);
         reg.IX += nn;
         reg.PC += 2;
-        return consumeClock(15);
+        return consumeClock(7);
     }
 
     // Add register pair to IY
     inline int ADD_IY_RP(unsigned char rp)
     {
-        log("[%04X] ADD IY<$%04X>, %s", reg.PC, reg.IY, registerPairDump(rp));
+        if (isDebug()) log("[%04X] ADD IY<$%04X>, %s", reg.PC, reg.IY, registerPairDump(rp));
         unsigned short nn = getRP(rp);
         setFlagByAdd16(reg.IY, nn);
         reg.IY += nn;
         reg.PC += 2;
-        return consumeClock(15);
+        return consumeClock(7);
     }
 
     // Increment register pair
     inline int INC_RP(unsigned char rp)
     {
-        log("[%04X] INC %s", reg.PC, registerPairDump(rp));
+        if (isDebug()) log("[%04X] INC %s", reg.PC, registerPairDump(rp));
         unsigned short nn = getRP(rp);
         setRP(rp, nn + 1);
         reg.PC++;
-        return consumeClock(6);
+        return consumeClock(2);
     }
 
     // Increment IX
     inline int INC_IX_reg()
     {
-        log("[%04X] INC IX<$%04X>", reg.PC, reg.IX);
+        if (isDebug()) log("[%04X] INC IX<$%04X>", reg.PC, reg.IX);
         reg.IX++;
         reg.PC += 2;
-        return consumeClock(10);
+        return consumeClock(2);
     }
 
     // Increment IY
     inline int INC_IY_reg()
     {
-        log("[%04X] INC IY<$%04X>", reg.PC, reg.IY);
+        if (isDebug()) log("[%04X] INC IY<$%04X>", reg.PC, reg.IY);
         reg.IY++;
         reg.PC += 2;
-        return consumeClock(10);
+        return consumeClock(2);
     }
 
     // Decrement register pair
     inline int DEC_RP(unsigned char rp)
     {
-        log("[%04X] DEC %s", reg.PC, registerPairDump(rp));
+        if (isDebug()) log("[%04X] DEC %s", reg.PC, registerPairDump(rp));
         unsigned short nn = getRP(rp);
         setRP(rp, nn - 1);
         reg.PC++;
-        return consumeClock(6);
+        return consumeClock(2);
     }
 
     // Decrement IX
     inline int DEC_IX_reg()
     {
-        log("[%04X] DEC IX<$%04X>", reg.PC, reg.IX);
+        if (isDebug()) log("[%04X] DEC IX<$%04X>", reg.PC, reg.IX);
         reg.IX--;
         reg.PC += 2;
-        return consumeClock(10);
+        return consumeClock(2);
     }
 
     // Decrement IY
     inline int DEC_IY_reg()
     {
-        log("[%04X] DEC IY<$%04X>", reg.PC, reg.IY);
+        if (isDebug()) log("[%04X] DEC IY<$%04X>", reg.PC, reg.IY);
         reg.IY--;
         reg.PC += 2;
-        return consumeClock(10);
+        return consumeClock(2);
     }
 
     inline void setFlagBySbc16(unsigned short before, unsigned short substract)
     {
-        unsigned short result16 = before - substract;
-        unsigned int result32u = before;
-        result32u -= substract;
-        signed int result32s = (signed short)before;
-        result32s += (signed short)substract;
-        setFlagH((0x00FF & (before & 0xFF00) - (substract & 0xFF00)) == 0); // TODO: これで正しいのだろうか？
-        setFlagN(false);
-        setFlagC(65535 < result32u);
-        setFlagS(result16 & 0x8000 ? true : false);
-        setFlagZ(result16 == 0);
-        setFlagPV(result32s < -32768 || 32767 < result32s);
+        int result = before - substract;
+        int carrybits = before ^ substract ^ result;
+        unsigned short finalResult = (unsigned short)result;
+        setFlagN(true);
+        setFlagXY((finalResult & 0xFF00) >> 8);
+        setFlagC((carrybits & 0x10000) != 0);
+        setFlagH((carrybits & 0x1000) != 0);
+        setFlagS(finalResult & 0x8000 ? true : false);
+        setFlagZ(0 == finalResult);
+        setFlagPV((((carrybits << 1) ^ carrybits) & 0x10000) != 0);
     }
 
     // Subtract register pair from HL with carry
     inline int SBC_HL_RP(unsigned char rp)
     {
-        log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
         unsigned short hl = getHL();
         unsigned short nn = getRP(rp);
         unsigned char c = isFlagC() ? 1 : 0;
+        reg.WZ = hl + 1;
         setFlagBySbc16(hl, c + nn);
         setHL(hl - c - nn);
         reg.PC += 2;
-        return consumeClock(15);
+        return consumeClock(7);
     }
 
     inline void setFlagByLogical()
     {
         setFlagS(reg.pair.A & 0x80 ? true : false);
         setFlagZ(reg.pair.A == 0);
+        setFlagXY(reg.pair.A);
         setFlagH(true);
         setFlagPV(isEvenNumberBits(reg.pair.A));
         setFlagN(false);
@@ -2704,63 +2750,63 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] AND %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        if (isDebug()) log("[%04X] AND %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         reg.pair.A &= *rp;
         setFlagByLogical();
         reg.PC++;
-        return consumeClock(4);
+        return 0;
     }
 
     // AND immediate
     static inline int AND_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        ctx->log("[%04X] AND %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] AND %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->reg.pair.A &= n;
         ctx->setFlagByLogical();
         ctx->reg.PC += 2;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // AND Memory
     static inline int AND_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] AND %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        unsigned char n = ctx->readByte(addr, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] AND %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->reg.pair.A &= n;
         ctx->setFlagByLogical();
         ctx->reg.PC++;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // AND Memory
     inline int AND_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         reg.pair.A &= n;
         setFlagByLogical();
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // AND Memory
     inline int AND_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         reg.pair.A &= n;
         setFlagByLogical();
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // OR Register
@@ -2768,63 +2814,63 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] OR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        if (isDebug()) log("[%04X] OR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         reg.pair.A |= *rp;
         setFlagByLogical();
         reg.PC++;
-        return consumeClock(4);
+        return 0;
     }
 
     // OR immediate
     static inline int OR_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        ctx->log("[%04X] OR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] OR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->reg.pair.A |= n;
         ctx->setFlagByLogical();
         ctx->reg.PC += 2;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // OR Memory
     static inline int OR_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] OR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A | n);
+        unsigned char n = ctx->readByte(addr, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] OR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A | n);
         ctx->reg.pair.A |= n;
         ctx->setFlagByLogical();
         ctx->reg.PC++;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // OR Memory
     inline int OR_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         reg.pair.A |= n;
         setFlagByLogical();
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // OR Memory
     inline int OR_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         reg.pair.A |= n;
         setFlagByLogical();
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // XOR Reigster
@@ -2832,107 +2878,111 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] XOR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        if (isDebug()) log("[%04X] XOR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         reg.pair.A ^= *rp;
         setFlagByLogical();
         reg.PC++;
-        return consumeClock(4);
+        return 0;
     }
 
     // XOR immediate
     static inline int XOR_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        ctx->log("[%04X] XOR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] XOR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->reg.pair.A ^= n;
         ctx->setFlagByLogical();
         ctx->reg.PC += 2;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // XOR Memory
     static inline int XOR_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] XOR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A ^ n);
+        unsigned char n = ctx->readByte(addr, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] XOR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A ^ n);
         ctx->reg.pair.A ^= n;
         ctx->setFlagByLogical();
         ctx->reg.PC++;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // XOR Memory
     inline int XOR_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         reg.pair.A ^= n;
         setFlagByLogical();
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // XOR Memory
     inline int XOR_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         reg.pair.A ^= n;
         setFlagByLogical();
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Complement acc. (1's Comp.)
     static inline int CPL(Z80* ctx)
     {
-        ctx->log("[%04X] CPL %s", ctx->reg.PC, ctx->registerDump(0b111));
+        if (ctx->isDebug()) ctx->log("[%04X] CPL %s", ctx->reg.PC, ctx->registerDump(0b111));
         ctx->reg.pair.A = ~ctx->reg.pair.A;
         ctx->setFlagH(true);
         ctx->setFlagN(true);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     // Negate Acc. (2's Comp.)
     inline int NEG()
     {
-        log("[%04X] NEG %s", reg.PC, registerDump(0b111));
-        reg.pair.A = ~reg.pair.A;
-        setFlagByAddition(reg.pair.A, 1);
-        reg.pair.A++;
+        if (isDebug()) log("[%04X] NEG %s", reg.PC, registerDump(0b111));
+        unsigned char a = reg.pair.A;
+        reg.pair.A = 0;
+        setFlagBySubstract(reg.pair.A, a);
+        reg.pair.A -= a;
         reg.PC += 2;
-        return consumeClock(8);
+        return 0;
     }
 
     //　Complement Carry Flag
     static inline int CCF(Z80* ctx)
     {
-        ctx->log("[%04X] CCF <C:%s -> %s>", ctx->reg.PC, ctx->isFlagC() ? "ON" : "OFF", !ctx->isFlagC() ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] CCF <C:%s -> %s>", ctx->reg.PC, ctx->isFlagC() ? "ON" : "OFF", !ctx->isFlagC() ? "ON" : "OFF");
         ctx->setFlagH(ctx->isFlagC());
         ctx->setFlagN(false);
         ctx->setFlagC(!ctx->isFlagC());
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     // Set Carry Flag
     static inline int SCF(Z80* ctx)
     {
-        ctx->log("[%04X] SCF <C:%s -> ON>", ctx->reg.PC, ctx->isFlagC() ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] SCF <C:%s -> ON>", ctx->reg.PC, ctx->isFlagC() ? "ON" : "OFF");
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->setFlagC(true);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        return 0;
     }
 
     // Test BIT b of register r
@@ -2940,10 +2990,10 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] BIT %s of bit-%d", reg.PC, registerDump(r), bit);
+        if (isDebug()) log("[%04X] BIT %s of bit-%d", reg.PC, registerDump(r), bit);
         unsigned char n = 0;
         switch (bit) {
             case 0: n = *rp & 0b00000001; break;
@@ -2956,18 +3006,21 @@ class Z80
             case 7: n = *rp & 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
+        setFlagXY(*rp);
         reg.PC += 2;
-        return consumeClock(8);
+        return 0;
     }
 
     // Test BIT b of lacation (HL)
-    inline int BIT_HN(unsigned char bit)
+    inline int BIT_HL(unsigned char bit)
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] BIT (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] BIT (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
             case 1: n &= 0b00000010; break;
@@ -2979,18 +3032,22 @@ class Z80
             case 7: n &= 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
+        setFlagXY((reg.WZ & 0xFF00) >> 8);
         reg.PC += 2;
-        return consumeClock(12);
+        return 0;
     }
 
     // Test BIT b of lacation (IX+d)
     inline int BIT_IX(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] BIT (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        unsigned char n = readByte(addr);
+        setFlagXY(n);
+        if (isDebug()) log("[%04X] BIT (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
             case 1: n &= 0b00000010; break;
@@ -3002,18 +3059,21 @@ class Z80
             case 7: n &= 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
         reg.PC += 4;
-        return consumeClock(20);
+        return 0;
     }
 
     // Test BIT b of lacation (IY+d)
     inline int BIT_IY(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] BIT (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        unsigned char n = readByte(addr);
+        setFlagXY(n);
+        if (isDebug()) log("[%04X] BIT (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
             case 1: n &= 0b00000010; break;
@@ -3025,10 +3085,12 @@ class Z80
             case 7: n &= 0b10000000; break;
         }
         setFlagZ(n ? false : true);
+        setFlagPV(isFlagZ());
+        setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
         reg.PC += 4;
-        return consumeClock(20);
+        return 0;
     }
 
     // SET bit b of register r
@@ -3036,10 +3098,10 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] SET %s of bit-%d", reg.PC, registerDump(r), bit);
+        if (isDebug()) log("[%04X] SET %s of bit-%d", reg.PC, registerDump(r), bit);
         switch (bit) {
             case 0: *rp |= 0b00000001; break;
             case 1: *rp |= 0b00000010; break;
@@ -3051,15 +3113,15 @@ class Z80
             case 7: *rp |= 0b10000000; break;
         }
         reg.PC += 2;
-        return consumeClock(8);
+        return 0;
     }
 
     // SET bit b of lacation (HL)
-    inline int SET_HN(unsigned char bit)
+    inline int SET_HL(unsigned char bit)
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] SET (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] SET (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
         switch (bit) {
             case 0: n |= 0b00000001; break;
             case 1: n |= 0b00000010; break;
@@ -3070,17 +3132,17 @@ class Z80
             case 6: n |= 0b01000000; break;
             case 7: n |= 0b10000000; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // SET bit b of lacation (IX+d)
     inline int SET_IX(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n |= 0b00000001; break;
             case 1: n |= 0b00000010; break;
@@ -3091,17 +3153,17 @@ class Z80
             case 6: n |= 0b01000000; break;
             case 7: n |= 0b10000000; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // SET bit b of lacation (IY+d)
     inline int SET_IY(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n |= 0b00000001; break;
             case 1: n |= 0b00000010; break;
@@ -3112,9 +3174,9 @@ class Z80
             case 6: n |= 0b01000000; break;
             case 7: n |= 0b10000000; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // RESET bit b of register r
@@ -3122,10 +3184,10 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] RES %s of bit-%d", reg.PC, registerDump(r), bit);
+        if (isDebug()) log("[%04X] RES %s of bit-%d", reg.PC, registerDump(r), bit);
         switch (bit) {
             case 0: *rp &= 0b11111110; break;
             case 1: *rp &= 0b11111101; break;
@@ -3137,15 +3199,15 @@ class Z80
             case 7: *rp &= 0b01111111; break;
         }
         reg.PC += 2;
-        return consumeClock(8);
+        return 0;
     }
 
     // RESET bit b of lacation (HL)
-    inline int RES_HN(unsigned char bit)
+    inline int RES_HL(unsigned char bit)
     {
         unsigned short addr = getHL();
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] RES (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] RES (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
         switch (bit) {
             case 0: n &= 0b11111110; break;
             case 1: n &= 0b11111101; break;
@@ -3156,17 +3218,17 @@ class Z80
             case 6: n &= 0b10111111; break;
             case 7: n &= 0b01111111; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         reg.PC += 2;
-        return consumeClock(15);
+        return 0;
     }
 
     // RESET bit b of lacation (IX+d)
     inline int RES_IX(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] RES (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] RES (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b11111110; break;
             case 1: n &= 0b11111101; break;
@@ -3177,17 +3239,17 @@ class Z80
             case 6: n &= 0b10111111; break;
             case 7: n &= 0b01111111; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
     // RESET bit b of lacation (IY+d)
     inline int RES_IY(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] RES (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] RES (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b11111110; break;
             case 1: n &= 0b11111101; break;
@@ -3198,162 +3260,126 @@ class Z80
             case 6: n &= 0b10111111; break;
             case 7: n &= 0b01111111; break;
         }
-        CB.write(CB.arg, addr, n);
+        writeByte(addr, n, 3);
         reg.PC += 4;
-        return consumeClock(23);
+        return 0;
     }
 
-    // Compare location (HL) and A, increment HL and decrement BC
-    inline int CPI()
+    // Compare location (HL) and A, increment/decrement HL and decrement BC
+    inline int repeatCP(bool isIncHL, bool isRepeat)
     {
-        log("[%04X] CPI ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
         unsigned short hl = getHL();
         unsigned short bc = getBC();
-        unsigned char n = CB.read(CB.arg, hl);
-        setFlagBySubstract(reg.pair.A, n);
-        setHL(hl + 1);
-        setBC(bc - 1);
-        reg.PC += 2;
-        return consumeClock(16);
-    }
-
-    // Compare location (HL) and A, increment HL, decrement BC repeat until BC=0.
-    inline int CPIR()
-    {
-        log("[%04X] CPIR ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        int hz = 0;
-        while (1) {
-            unsigned short hl = getHL();
-            unsigned short bc = getBC();
-            unsigned char n = CB.read(CB.arg, hl);
-            setFlagBySubstract(reg.pair.A, n);
-            setHL(++hl);
-            setBC(--bc);
-            if (isFlagZ() || 0 == bc) {
-                hz += consumeClock(16);
-                break;
+        unsigned char n = readByte(hl);
+        if (isDebug()) {
+            if (isIncHL) {
+                log("[%04X] %s ... %s, %s = $%02X, %s", reg.PC, isRepeat ? "CPIR" : "CPI", registerDump(0b111), registerPairDump(0b10), n, registerPairDump(0b00));
             } else {
-                hz += consumeClock(21);
+                log("[%04X] %s ... %s, %s = $%02X, %s", reg.PC, isRepeat ? "CPDR" : "CPD", registerDump(0b111), registerPairDump(0b10), n, registerPairDump(0b00));
             }
         }
-        reg.PC += 2;
-        return hz;
-    }
-
-    // Compare location (HL) and A, decrement HL and decrement BC
-    inline int CPD()
-    {
-        log("[%04X] CPD ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        unsigned short hl = getHL();
-        unsigned short bc = getBC();
-        unsigned char n = CB.read(CB.arg, hl);
-        setFlagBySubstract(reg.pair.A, n);
-        setHL(hl - 1);
-        setBC(bc - 1);
-        reg.PC += 2;
-        return consumeClock(16);
-    }
-
-    // Compare location (HL) and A, decrement HL, decrement BC repeat until BC=0.
-    inline int CPDR()
-    {
-        log("[%04X] CPDR ... %s, %s, %s", reg.PC, registerDump(0b111), registerPairDump(0b10), registerPairDump(0b00));
-        int hz = 0;
-        while (1) {
-            unsigned short hl = getHL();
-            unsigned short bc = getBC();
-            unsigned char n = CB.read(CB.arg, hl);
-            setFlagBySubstract(reg.pair.A, n);
-            setHL(--hl);
-            setBC(--bc);
-            if (isFlagZ() || 0 == bc) {
-                hz += consumeClock(16);
-                break;
-            } else {
-                hz += consumeClock(21);
-            }
+        setFlagBySubstract(reg.pair.A, n, false);
+        setHL(hl + (isIncHL ? 1 : -1));
+        bc--;
+        setBC(bc);
+        setFlagPV(0 == bc);
+        consumeClock(4);
+        if (isRepeat && !isFlagZ() && 0 != getBC()) {
+            consumeClock(5);
+        } else {
+            reg.PC += 2;
         }
-        reg.PC += 2;
-        return hz;
+        reg.WZ += isIncHL ? 1 : -1;
+        return 0;
     }
+    inline int CPI() { return repeatCP(true, false); }
+    inline int CPIR() { return repeatCP(true, true); }
+    inline int CPD() { return repeatCP(false, false); }
+    inline int CPDR() { return repeatCP(false, true); }
 
     // Compare Register
     inline int CP_R(unsigned char r)
     {
-        log("[%04X] CP %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        if (isDebug()) log("[%04X] CP %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
         setFlagBySubstract(reg.pair.A, *rp);
+        setFlagXY(reg.pair.A);
         reg.PC += 1;
-        return consumeClock(4);
+        return 0;
     }
 
     // Compare immediate
     static inline int CP_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        ctx->log("[%04X] CP %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] CP %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC += 2;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Compare memory
     static inline int CP_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->CB.read(ctx->CB.arg, addr);
-        ctx->log("[%04X] CP %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        unsigned char n = ctx->readByte(addr, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] CP %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC += 1;
-        return ctx->consumeClock(7);
+        return 0;
     }
 
     // Compare memory
     inline int CP_IX()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] CP %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] CP %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagBySubstract(reg.pair.A, n);
+        setFlagXY(reg.pair.A);
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Compare memory
     inline int CP_IY()
     {
-        signed char d = CB.read(CB.arg, reg.PC + 2);
+        signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
-        unsigned char n = CB.read(CB.arg, addr);
-        log("[%04X] CP %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        unsigned char n = readByte(addr);
+        if (isDebug()) log("[%04X] CP %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         setFlagBySubstract(reg.pair.A, n);
+        setFlagXY(reg.pair.A);
         reg.PC += 3;
-        return consumeClock(19);
+        return consumeClock(3);
     }
 
     // Jump
     static inline int JP_NN(Z80* ctx)
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
+        unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
         unsigned short addr = (nH << 8) + nL;
-        ctx->log("[%04X] JP $%04X", ctx->reg.PC, addr);
+        if (ctx->isDebug()) ctx->log("[%04X] JP $%04X", ctx->reg.PC, addr);
         ctx->reg.PC = addr;
-        return ctx->consumeClock(10);
+        ctx->reg.WZ = addr;
+        return 0;
     }
 
     // Conditional Jump
     inline int JP_C_NN(unsigned char c)
     {
-        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nL = readByte(reg.PC + 1, 3);
+        unsigned char nH = readByte(reg.PC + 2, 3);
         unsigned short addr = (nH << 8) + nL;
-        log("[%04X] JP %s, $%04X", reg.PC, conditionDump(c), addr);
+        if (isDebug()) log("[%04X] JP %s, $%04X", reg.PC, conditionDump(c), addr);
         bool jump;
         switch (c) {
             case 0b000: jump = isFlagZ() ? false : true; break;
@@ -3371,123 +3397,131 @@ class Z80
         } else {
             reg.PC += 3;
         }
-        return consumeClock(10);
+        reg.WZ = addr;
+        return 0;
     }
 
     // Jump Relative to PC+e
     static inline int JR_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
-        ctx->log("[%04X] JR %s", ctx->reg.PC, ctx->relativeDump(e));
+        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
+        if (ctx->isDebug()) ctx->log("[%04X] JR %s", ctx->reg.PC, ctx->relativeDump(e));
         ctx->reg.PC += e;
-        return ctx->consumeClock(12);
+        return ctx->consumeClock(4);
     }
 
     // Jump Relative to PC+e, if carry
     static inline int JR_C_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
         bool execute = ctx->isFlagC();
-        ctx->log("[%04X] JR C, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
+        if (ctx->isDebug()) ctx->log("[%04X] JR C, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
-        return ctx->consumeClock(12);
+        if (execute) ctx->consumeClock(5);
+        return 0;
     }
 
     // Jump Relative to PC+e, if not carry
     static inline int JR_NC_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
         bool execute = !ctx->isFlagC();
-        ctx->log("[%04X] JR NC, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
+        if (ctx->isDebug()) ctx->log("[%04X] JR NC, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
-        return ctx->consumeClock(12);
+        if (execute) ctx->consumeClock(5);
+        return 0;
     }
 
     // Jump Relative to PC+e, if zero
     static inline int JR_Z_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
         bool execute = ctx->isFlagZ();
-        ctx->log("[%04X] JR Z, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
+        if (ctx->isDebug()) ctx->log("[%04X] JR Z, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
-        return ctx->consumeClock(12);
+        if (execute) ctx->consumeClock(5);
+        return 0;
     }
 
     // Jump Relative to PC+e, if zero
     static inline int JR_NZ_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
         bool execute = !ctx->isFlagZ();
-        ctx->log("[%04X] JR NZ, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
+        if (ctx->isDebug()) ctx->log("[%04X] JR NZ, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += execute ? e : 2;
-        return ctx->consumeClock(12);
+        if (execute) ctx->consumeClock(5);
+        return 0;
     }
 
     // Jump to HL
     static inline int JP_HL(Z80* ctx)
     {
-        ctx->log("[%04X] JP %s", ctx->reg.PC, ctx->registerPairDump(0b10));
+        if (ctx->isDebug()) ctx->log("[%04X] JP %s", ctx->reg.PC, ctx->registerPairDump(0b10));
         ctx->reg.PC = ctx->getHL();
-        return ctx->consumeClock(8);
+        return 0;
     }
 
     // Jump to IX
     inline int JP_IX()
     {
-        log("[%04X] JP IX<$%04X>", reg.PC, reg.IX);
+        if (isDebug()) log("[%04X] JP IX<$%04X>", reg.PC, reg.IX);
         reg.PC = reg.IX;
-        return consumeClock(8);
+        return 0;
     }
 
     // Jump to IY
     inline int JP_IY()
     {
-        log("[%04X] JP IY<$%04X>", reg.PC, reg.IY);
+        if (isDebug()) log("[%04X] JP IY<$%04X>", reg.PC, reg.IY);
         reg.PC = reg.IY;
-        return consumeClock(8);
+        return 0;
     }
 
     // 	Decrement B and Jump relative if B=0
     static inline int DJNZ_E(Z80* ctx)
     {
-        signed char e = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1) + 2;
-        ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC, ctx->relativeDump(e), ctx->registerDump(0b000));
+        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
+        if (ctx->isDebug()) ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC, ctx->relativeDump(e), ctx->registerDump(0b000));
         ctx->reg.pair.B--;
         if (ctx->reg.pair.B) {
             ctx->reg.PC += e;
+            ctx->consumeClock(5);
         } else {
             ctx->reg.PC += 2;
         }
-        return ctx->consumeClock(13);
+        return 0;
     }
 
     // Call
     static inline int CALL_NN(Z80* ctx)
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 2);
+        unsigned char nL = ctx->readByte(ctx->reg.PC + 1);
+        unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
         unsigned short addr = (nH << 8) + nL;
-        ctx->log("[%04X] CALL $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
+        if (ctx->isDebug()) ctx->log("[%04X] CALL $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
         ctx->reg.PC += 3;
         unsigned char pcL = ctx->reg.PC & 0x00FF;
         unsigned char pcH = (ctx->reg.PC & 0xFF00) >> 8;
-        ctx->CB.write(ctx->CB.arg, ctx->reg.SP - 1, pcH);
-        ctx->CB.write(ctx->CB.arg, ctx->reg.SP - 2, pcL);
+        ctx->writeByte(ctx->reg.SP - 1, pcH, 3);
+        ctx->writeByte(ctx->reg.SP - 2, pcL, 3);
         ctx->reg.SP -= 2;
+        ctx->reg.WZ = addr;
         ctx->reg.PC = addr;
-        return ctx->consumeClock(17);
+        return 0;
     }
 
     // Return
     static inline int RET(Z80* ctx)
     {
-        unsigned char nL = ctx->CB.read(ctx->CB.arg, ctx->reg.SP);
-        unsigned char nH = ctx->CB.read(ctx->CB.arg, ctx->reg.SP + 1);
+        unsigned char nL = ctx->readByte(ctx->reg.SP, 3);
+        unsigned char nH = ctx->readByte(ctx->reg.SP + 1, 3);
         unsigned short addr = (nH << 8) + nL;
-        ctx->log("[%04X] RET to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
+        if (ctx->isDebug()) ctx->log("[%04X] RET to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
         ctx->reg.SP += 2;
         ctx->reg.PC = addr;
-        return ctx->consumeClock(10);
+        ctx->reg.WZ = addr;
+        return 0;
     }
 
     // Call with condition
@@ -3505,22 +3539,21 @@ class Z80
             case 0b111: execute = isFlagS() ? true : false; break;
             default: execute = false;
         }
-        unsigned char nL = CB.read(CB.arg, reg.PC + 1);
-        unsigned char nH = CB.read(CB.arg, reg.PC + 2);
+        unsigned char nL = readByte(reg.PC + 1, 3);
+        unsigned char nH = readByte(reg.PC + 2, 3);
         unsigned short addr = (nH << 8) + nL;
-        log("[%04X] CALL %s, $%04X (%s) <execute:%s>", reg.PC, conditionDump(c), addr, registerPairDump(0b11), execute ? "YES" : "NO");
+        if (isDebug()) log("[%04X] CALL %s, $%04X (%s) <execute:%s>", reg.PC, conditionDump(c), addr, registerPairDump(0b11), execute ? "YES" : "NO");
         reg.PC += 3;
         if (execute) {
             unsigned char pcL = reg.PC & 0x00FF;
             unsigned char pcH = (reg.PC & 0xFF00) >> 8;
-            CB.write(CB.arg, reg.SP - 1, pcH);
-            CB.write(CB.arg, reg.SP - 2, pcL);
+            writeByte(reg.SP - 1, pcH);
+            writeByte(reg.SP - 2, pcL, 3);
             reg.SP -= 2;
             reg.PC = addr;
-            return consumeClock(17);
-        } else {
-            return consumeClock(10);
         }
+        reg.WZ = addr;
+        return 0;
     }
 
     // Return with condition
@@ -3539,41 +3572,44 @@ class Z80
             default: execute = false;
         }
         if (!execute) {
-            log("[%04X] RET %s <execute:NO>", reg.PC, conditionDump(c));
+            if (isDebug()) log("[%04X] RET %s <execute:NO>", reg.PC, conditionDump(c));
             reg.PC++;
-            return consumeClock(5);
+            return consumeClock(1);
         }
-        unsigned char nL = CB.read(CB.arg, reg.SP);
-        unsigned char nH = CB.read(CB.arg, reg.SP + 1);
+        unsigned char nL = readByte(reg.SP);
+        unsigned char nH = readByte(reg.SP + 1, 3);
         unsigned short addr = (nH << 8) + nL;
-        log("[%04X] RET %s to $%04X (%s) <execute:YES>", reg.PC, conditionDump(c), addr, registerPairDump(0b11));
+        if (isDebug()) log("[%04X] RET %s to $%04X (%s) <execute:YES>", reg.PC, conditionDump(c), addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
-        return consumeClock(11);
+        reg.WZ = addr;
+        return 0;
     }
 
     // Return from interrupt
     inline int RETI()
     {
-        unsigned char nL = CB.read(CB.arg, reg.SP);
-        unsigned char nH = CB.read(CB.arg, reg.SP + 1);
+        unsigned char nL = readByte(reg.SP, 3);
+        unsigned char nH = readByte(reg.SP + 1, 3);
         unsigned short addr = (nH << 8) + nL;
-        log("[%04X] RETI to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
+        if (isDebug()) log("[%04X] RETI to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
+        reg.WZ = addr;
         reg.IFF &= ~IFF_IRQ();
-        return consumeClock(10);
+        return 0;
     }
 
     // Return from non maskable interrupt
     inline int RETN()
     {
-        unsigned char nL = CB.read(CB.arg, reg.SP);
-        unsigned char nH = CB.read(CB.arg, reg.SP + 1);
+        unsigned char nL = readByte(reg.SP, 3);
+        unsigned char nH = readByte(reg.SP + 1, 3);
         unsigned short addr = (nH << 8) + nL;
-        log("[%04X] RETN to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
+        if (isDebug()) log("[%04X] RETN to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
+        reg.WZ = addr;
         if (!((reg.IFF & IFF1()) && (reg.IFF & IFF2()))) {
             reg.IFF |= IFF1();
         } else {
@@ -3583,32 +3619,33 @@ class Z80
                 reg.IFF &= ~IFF1();
             }
         }
-        return consumeClock(10);
+        return 0;
     }
 
-    //　Restart
+    // Interrupt
     inline int RST(unsigned char t)
     {
         unsigned short addr = t * 8;
         unsigned char pcH = (reg.PC & 0xFF00) >> 8;
         unsigned char pcL = reg.PC & 0x00FF;
-        log("[%04X] RST from $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
-        CB.write(CB.arg, reg.SP - 1, pcH);
-        CB.write(CB.arg, reg.SP - 2, pcL);
+        if (isDebug()) log("[%04X] RST $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
+        writeByte(reg.SP - 1, pcH);
+        writeByte(reg.SP - 2, pcL, 3);
         reg.SP -= 2;
+        reg.WZ = addr;
         reg.PC = addr;
-        return consumeClock(12);
+        return 0;
     }
 
     // Input a byte form device n to accu.
     static inline int IN_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        unsigned char i = ctx->CB.in(ctx->CB.arg, n);
-        ctx->log("[%04X] IN %s, ($%02X) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), n, i);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        unsigned char i = ctx->inPort(n);
+        if (ctx->isDebug()) ctx->log("[%04X] IN %s, ($%02X) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), n, i);
         ctx->reg.pair.A = i;
         ctx->reg.PC += 2;
-        return ctx->consumeClock(11);
+        return 0;
     }
 
     // Input a byte form device (C) to register.
@@ -3616,111 +3653,77 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        unsigned char i = CB.in(CB.arg, reg.pair.C);
-        log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
+        unsigned char i = inPort(reg.pair.C);
+        if (isDebug()) log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
         *rp = i;
         setFlagS(i & 0x80 ? true : false);
         setFlagZ(i == 0);
         setFlagH(false);
         setFlagPV(isEvenNumberBits(i));
         setFlagN(false);
+        setFlagXY(i);
         reg.PC += 2;
-        return consumeClock(12);
+        return 0;
     }
 
-    // Load location (HL) with input from port (C); or increment HL and decrement B
-    inline int INI()
+    inline void decrementB_forRepeatIO()
     {
-        unsigned char i = CB.in(CB.arg, reg.pair.C);
-        unsigned short hl = getHL();
-        log("[%04X] INI ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
-        CB.write(CB.arg, hl, i);
         reg.pair.B--;
-        setHL(hl + 1);
-        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        reg.pair.F = 0;
+        setFlagC(isFlagC());
+        setFlagN(true);
         setFlagZ(reg.pair.B == 0);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
-        reg.PC += 2;
-        return consumeClock(16);
+        setFlagXY(reg.pair.B);
+        setFlagS(reg.pair.B & 0x80 ? true : false);
+        setFlagH((reg.pair.B & 0x0F) == 0x0F);
+        setFlagPV(reg.pair.B == 0x7F);
     }
 
-    // Load location (HL) with input from port (C), increment HL and decrement B, repeat until B=0
-    inline int INIR()
+    // Load location (HL) with input from port (C); or increment/decrement HL and decrement B
+    inline int repeatIN(bool isIncHL, bool isRepeat)
     {
-        log("[%04X] INIR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
+        reg.WZ = getBC() + (isIncHL ? 1 : -1);
+        unsigned char i = inPort(reg.pair.C);
         unsigned short hl = getHL();
-        unsigned char i;
-        int consumed = 0;
-        do {
-            i = CB.in(CB.arg, reg.pair.C);
-            CB.write(CB.arg, hl++, i);
-            reg.pair.B--;
-            consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
-        } while (0 != reg.pair.B);
+        if (isDebug()) {
+            if (isIncHL) {
+                log("[%04X] %s ... (%s) <- p(%s) = $%02X [%s]", reg.PC, isRepeat ? "INIR" : "INI", registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+            } else {
+                log("[%04X] %s ... (%s) <- p(%s) = $%02X [%s]", reg.PC, isRepeat ? "INDR" : "IND", registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+            }
+        }
+        writeByte(hl, i);
+        decrementB_forRepeatIO();
+        hl += isIncHL ? 1 : -1;
         setHL(hl);
-        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagZ(true);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
-        reg.PC += 2;
-        return consumed;
-    }
-
-    // Load location (HL) with input from port (C); or decrement HL and B
-    inline int IND()
-    {
-        unsigned char i = CB.in(CB.arg, reg.pair.C);
-        unsigned short hl = getHL();
-        log("[%04X] IND ... (%s) <- p(%s) = $%02X [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
-        CB.write(CB.arg, hl, i);
-        reg.pair.B--;
-        setHL(hl - 1);
-        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagZ(reg.pair.B == 0);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
-        reg.PC += 2;
-        return consumeClock(16);
+        setFlagN(i & 0x80 ? true : false);                                             // NOTE: undocumented
+        setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                                // NOTE: undocumented
+        setFlagH(isFlagC());                                                           // NOTE: undocumented
+        setFlagPV(i + (((reg.pair.C + 1) & 0xFF) & 0x07) ^ reg.pair.B ? true : false); // NOTE: undocumented
+        if (isRepeat && 0 != reg.pair.B) {
+            consumeClock(5);
+        } else {
+            reg.PC += 2;
+        }
+        return 0;
     }
-
-    // Load location (HL) with input from port (C), decrement HL and B, repeat until B=0
-    inline int INDR()
-    {
-        log("[%04X] INDR ... (%s) <- p(%s) [%s]", reg.PC, registerPairDump(0b10), registerDump(0b001), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char i;
-        int consumed = 0;
-        do {
-            i = CB.in(CB.arg, reg.pair.C);
-            CB.write(CB.arg, hl--, i);
-            reg.pair.B--;
-            consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
-        } while (0 != reg.pair.B);
-        setHL(hl);
-        setFlagS(i & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagZ(true);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(i)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
-        reg.PC += 2;
-        return consumed;
-    }
+    inline int INI() { return repeatIN(true, false); }
+    inline int INIR() { return repeatIN(true, true); }
+    inline int IND() { return repeatIN(false, false); }
+    inline int INDR() { return repeatIN(false, true); }
 
     // Load Output port (n) with Acc.
     static inline int OUT_N_A(Z80* ctx)
     {
-        unsigned char n = ctx->CB.read(ctx->CB.arg, ctx->reg.PC + 1);
-        ctx->log("[%04X] OUT ($%02X), %s", ctx->reg.PC, n, ctx->registerDump(0b111));
-        ctx->CB.out(ctx->CB.arg, n, ctx->reg.pair.A);
+        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] OUT ($%02X), %s", ctx->reg.PC, n, ctx->registerDump(0b111));
+        ctx->outPort(n, ctx->reg.pair.A);
         ctx->reg.PC += 2;
-        return ctx->consumeClock(11);
+        return 0;
     }
 
     // Output a byte to device (C) form register.
@@ -3728,223 +3731,95 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (!rp) {
-            log("specified an unknown register (%d)", r);
+            if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        log("[%04X] OUT (%s), %s", reg.PC, registerDump(0b001), registerDump(r));
-        CB.out(CB.arg, reg.pair.C, *rp);
+        if (isDebug()) log("[%04X] OUT (%s), %s", reg.PC, registerDump(0b001), registerDump(r));
+        outPort(reg.pair.C, *rp);
         reg.PC += 2;
-        return consumeClock(12);
+        return 0;
     }
 
-    // Load Output port (C) with location (HL), increment HL and decrement B
-    inline int OUTI()
+    // Load Output port (C) with location (HL), increment/decrement HL and decrement B
+    inline int repeatOUT(bool isIncHL, bool isRepeat)
     {
         unsigned short hl = getHL();
-        unsigned char o = CB.read(CB.arg, hl);
-        log("[%04X] OUTI ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
-        CB.out(CB.arg, reg.pair.C, o);
-        reg.pair.B--;
-        setHL(hl + 1);
-        setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagZ(reg.pair.B == 0);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
-        reg.PC += 2;
-        return consumeClock(16);
-    }
-
-    // Load output port (C) with location (HL), increment HL and decrement B, repeat until B=0
-    inline int OUTIR()
-    {
-        log("[%04X] OUTIR ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char o;
-        int consumed = 0;
-        do {
-            o = CB.read(CB.arg, hl++);
-            CB.out(CB.arg, reg.pair.C, o);
-            reg.pair.B--;
-            consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
-        } while (0 != reg.pair.B);
-        setHL(hl);
-        setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagZ(true);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
-        reg.PC += 2;
-        return consumed;
-    }
-
-    // Load Output port (C) with location (HL), decrement HL and B
-    inline int OUTD()
-    {
-        unsigned short hl = getHL();
-        log("[%04X] OUTD ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
-        unsigned char o = CB.read(CB.arg, hl);
-        CB.out(CB.arg, reg.pair.C, o);
-        reg.pair.B--;
-        setHL(hl - 1);
-        setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagZ(reg.pair.B == 0);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
-        reg.PC += 2;
-        return consumeClock(16);
-    }
-
-    // Load output port (C) with location (HL), decrement HL and  B, repeat until B=0
-    inline int OUTDR()
-    {
-        log("[%04X] OUTDR ... p(%s) <- (%s) [%s]", reg.PC, registerDump(0b001), registerPairDump(0b10), registerDump(0b000));
-        unsigned short hl = getHL();
-        unsigned char o;
-        int consumed = 0;
-        do {
-            o = CB.read(CB.arg, hl--);
-            CB.out(CB.arg, reg.pair.C, o);
-            reg.pair.B--;
-            consumed += consumeClock(reg.pair.B == 0 ? 16 : 21);
-        } while (0 != reg.pair.B);
-        setHL(hl);
-        setFlagS(o & 0x80 ? true : false); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagZ(true);
-        setFlagH(false);                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagPV(isEvenNumberBits(o)); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
-        setFlagN(true);
-        reg.PC += 2;
-        return consumed;
-    }
-
-    // Decimal Adjust Accumulator
-    static inline int DAA(Z80* ctx)
-    {
-        unsigned char aH = (ctx->reg.pair.A & 0b11110000) >> 4;
-        unsigned char aL = ctx->reg.pair.A & 0b00001111;
-        unsigned beforeA = ctx->reg.pair.A;
-        bool beforeCarry = ctx->isFlagC();
-        if (ctx->isFlagN()) {
-            if (!ctx->isFlagC()) {
-                if (!ctx->isFlagH()) {
-                    if (aH < 9) {
-                        ctx->setFlagC(false);
-                        if (aL < 10) {
-                            ;
-                        } else {
-                            ctx->reg.pair.A += 0x06;
-                        }
-                    } else if (aH == 9) {
-                        if (aL < 10) {
-                            ctx->setFlagC(false);
-                        } else {
-                            ctx->reg.pair.A += 0x66;
-                            ctx->setFlagC(true);
-                        }
-                    } else {
-                        ctx->setFlagC(true);
-                        if (aL < 10) {
-                            ctx->reg.pair.A += 0x60;
-                        } else {
-                            ctx->reg.pair.A += 0x66;
-                        }
-                    }
-                } else {
-                    if (aH < 9) {
-                        ctx->setFlagC(false);
-                        ctx->reg.pair.A += 0x06;
-                    } else if (aH == 9) {
-                        if (aL < 10) {
-                            ctx->reg.pair.A += 0x06;
-                            ctx->setFlagC(false);
-                        } else {
-                            ctx->reg.pair.A += 0x66;
-                            ctx->setFlagC(true);
-                        }
-                    } else {
-                        ctx->setFlagC(true);
-                        ctx->reg.pair.A += 0x66;
-                    }
-                }
+        unsigned char o = readByte(hl);
+        if (isDebug()) {
+            if (isIncHL) {
+                log("[%04X] %s ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, isRepeat ? "OUTIR" : "OUTI", registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
             } else {
-                ctx->setFlagC(true);
-                if (!ctx->isFlagH()) {
-                    if (aL < 10) {
-                        ctx->reg.pair.A += 0x60;
-                    } else {
-                        ctx->reg.pair.A += 0x66;
-                    }
-                } else {
-                    ctx->reg.pair.A += 0x66;
-                }
-            }
-        } else {
-            if (!ctx->isFlagC()) {
-                if (!ctx->isFlagH()) {
-                    if (aH < 9) {
-                        ctx->setFlagC(false);
-                        if (aL < 10) {
-                            ;
-                        } else {
-                            ctx->reg.pair.A += 0xFA;
-                        }
-                    } else if (aH == 9) {
-                        if (aL < 10) {
-                            ctx->setFlagC(false);
-                        } else {
-                            ctx->reg.pair.A += 0x9A;
-                            ctx->setFlagC(true);
-                        }
-                    } else {
-                        ctx->setFlagC(true);
-                        if (aL < 10) {
-                            ctx->reg.pair.A += 0xA0;
-                        } else {
-                            ctx->reg.pair.A += 0x9A;
-                        }
-                    }
-                } else {
-                    if (aH < 9) {
-                        ctx->setFlagC(false);
-                        ctx->reg.pair.A += 0xFA;
-                    } else if (aH == 9) {
-                        if (aL < 10) {
-                            ctx->reg.pair.A += 0xFA;
-                            ctx->setFlagC(false);
-                        } else {
-                            ctx->reg.pair.A += 0x9A;
-                            ctx->setFlagC(true);
-                        }
-                    } else {
-                        ctx->setFlagC(true);
-                        ctx->reg.pair.A += 0x9A;
-                    }
-                }
-            } else {
-                ctx->setFlagC(true);
-                if (!ctx->isFlagH()) {
-                    if (aL < 10) {
-                        ctx->reg.pair.A += 0xA0;
-                    } else {
-                        ctx->reg.pair.A += 0x9A;
-                    }
-                } else {
-                    ctx->reg.pair.A += 0x9A;
-                }
+                log("[%04X] %s ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, isRepeat ? "OUTDR" : "OUTD", registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
             }
         }
-        ctx->log("[%04X] DAA ... A: $%02X -> $%02X, flag-n: %s, flag-h: %s, flag-c: %s -> %s", ctx->reg.PC, beforeA, ctx->reg.pair.A, ctx->isFlagN() ? "ON" : "OFF", ctx->isFlagH() ? "ON" : "OFF", beforeCarry ? "ON" : "OFF", ctx->isFlagC() ? "ON" : "OFF");
-        ctx->reg.PC++;
-        return ctx->consumeClock(4);
+        outPort(reg.pair.C, o);
+        decrementB_forRepeatIO();
+        reg.WZ = getBC() + (isIncHL ? 1 : -1);
+        hl += isIncHL ? 1 : -1;
+        setHL(hl);
+        setFlagZ(reg.pair.B == 0);
+        setFlagN(o & 0x80 ? true : false);                 // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
+        if (isRepeat && 0 != reg.pair.B) {
+            consumeClock(5);
+        } else {
+            reg.PC += 2;
+        }
+        return 0;
     }
+    inline int OUTI() { return repeatOUT(true, false); }
+    inline int OUTIR() { return repeatOUT(true, true); }
+    inline int OUTD() { return repeatOUT(false, false); }
+    inline int OUTDR() { return repeatOUT(false, true); }
+
+    // Decimal Adjust Accumulator
+    inline int daa()
+    {
+        unsigned char a = reg.pair.A;
+        unsigned char aH = (a & 0b11110000) >> 4;
+        unsigned char aL = a & 0b00001111;
+        unsigned char h = aH < 9 ? 0 : aH == 9 ? 1 : 2;
+        unsigned char l = aL < 10 ? 0 : 1;
+        unsigned char addition = 0x00;
+        switch ((isFlagC() ? 0b010 : 0) | (isFlagH() ? 0b001 : 0)) {
+            case 0b00:
+                switch (h) {
+                    case 0: addition = (0 == l) ? 0x00 : 0x06; break;
+                    case 1: addition = (0 == l) ? 0x00 : 0x66; break;
+                    case 2: addition = (0 == l) ? 0x60 : 0x66; break;
+                }
+                break;
+            case 0b01:
+                switch (h) {
+                    case 0: addition = 0x06; break;
+                    case 1: addition = (0 == l) ? 0x06 : 0x66; break;
+                    case 2: addition = 0x66; break;
+                }
+                break;
+            case 0b10: addition = (0 == l) ? 0x60 : 0x66; break;
+            case 0b11: addition = 0x66; break;
+        }
+        unsigned char addH = (addition & 0b11110000) >> 4;
+        unsigned char addL = addition & 0b00001111;
+        reg.pair.A = a + (isFlagN() ? -addition : addition);
+        setFlagH(9 < aL + addL);
+        setFlagC(9 < aH + addH);
+        setFlagS(reg.pair.A & 0x80 ? true : false);
+        setFlagZ(reg.pair.A == 0);
+        setFlagPV(isEvenNumberBits(reg.pair.A));
+        if (isDebug()) log("[%04X] DAA ... A: $%02X -> $%02X", reg.PC, a, reg.pair.A);
+        reg.PC++;
+        return 0;
+    }
+    static inline int DAA(Z80* ctx) { return ctx->daa(); }
 
     // Rotate digit Left and right between Acc. and location (HL)
     inline int RLD()
     {
         unsigned short hl = getHL();
-        unsigned char beforeN = CB.read(CB.arg, hl);
+        unsigned char beforeN = readByte(hl);
         unsigned char nH = (beforeN & 0b11110000) >> 4;
         unsigned char nL = beforeN & 0b00001111;
         unsigned char aH = (reg.pair.A & 0b11110000) >> 4;
@@ -3952,23 +3827,23 @@ class Z80
         unsigned char beforeA = reg.pair.A;
         unsigned char afterA = (aH << 4) | nH;
         unsigned char afterN = (nL << 4) | aL;
-        log("[%04X] RLD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC, beforeA, afterA, hl, beforeN, afterN);
+        if (isDebug()) log("[%04X] RLD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC, beforeA, afterA, hl, beforeN, afterN);
         reg.pair.A = afterA;
-        CB.write(CB.arg, hl, afterN);
+        writeByte(hl, afterN);
         setFlagS(reg.pair.A & 0x80 ? true : false);
         setFlagZ(reg.pair.A == 0);
         setFlagH(false);
         setFlagPV(isEvenNumberBits(reg.pair.A));
         setFlagN(false);
         reg.PC += 2;
-        return consumeClock(18);
+        return consumeClock(2);
     }
 
     // Rotate digit Right and right between Acc. and location (HL)
     inline int RRD()
     {
         unsigned short hl = getHL();
-        unsigned char beforeN = CB.read(CB.arg, hl);
+        unsigned char beforeN = readByte(hl);
         unsigned char nH = (beforeN & 0b11110000) >> 4;
         unsigned char nL = beforeN & 0b00001111;
         unsigned char aH = (reg.pair.A & 0b11110000) >> 4;
@@ -3976,16 +3851,16 @@ class Z80
         unsigned char beforeA = reg.pair.A;
         unsigned char afterA = (aH << 4) | nL;
         unsigned char afterN = (aL << 4) | nH;
-        log("[%04X] RRD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC, beforeA, afterA, hl, beforeN, afterN);
+        if (isDebug()) log("[%04X] RRD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC, beforeA, afterA, hl, beforeN, afterN);
         reg.pair.A = afterA;
-        CB.write(CB.arg, hl, afterN);
+        writeByte(hl, afterN);
         setFlagS(reg.pair.A & 0x80 ? true : false);
         setFlagZ(reg.pair.A == 0);
         setFlagH(false);
         setFlagPV(isEvenNumberBits(reg.pair.A));
         setFlagN(false);
         reg.PC += 2;
-        return consumeClock(18);
+        return consumeClock(2);
     }
 
     int (*opSet1[256])(Z80* ctx);
@@ -4060,64 +3935,69 @@ class Z80
 
     inline void checkInterrupt()
     {
+        // Interrupt processing is not executed by the instruction immediately after executing EI.
+        if (reg.execEI) {
+            return;
+        }
         // check interrupt flag
         if (reg.interrupt & 0b10000000) {
             // execute NMI
             if (reg.IFF & IFF_NMI()) {
-                reg.interrupt &= 0b00111111; // clear request flags
                 return;
             }
-            log("EXECUTE NMI: $%04X", reg.interruptAddrN);
+            reg.interrupt &= 0b01111111;
+            reg.IFF &= ~IFF_HALT();
+            if (isDebug()) log("EXECUTE NMI: $%04X", reg.interruptAddrN);
             reg.R++;
             reg.IFF |= IFF_NMI();
             reg.IFF &= ~IFF1();
             unsigned char pcL = reg.PC & 0x00FF;
             unsigned char pcH = (reg.PC & 0xFF00) >> 8;
-            CB.write(CB.arg, reg.SP - 1, pcH);
-            CB.write(CB.arg, reg.SP - 2, pcL);
+            writeByte(reg.SP - 1, pcH);
+            writeByte(reg.SP - 2, pcL);
             reg.SP -= 2;
             reg.PC = reg.interruptAddrN;
             consumeClock(11);
         } else if (reg.interrupt & 0b01000000) {
             // execute IRQ
             if (!(reg.IFF & IFF1())) {
-                reg.interrupt &= 0b00111111; // clear request flags
                 return;
             }
+            reg.interrupt &= 0b10111111;
+            reg.IFF &= ~IFF_HALT();
             reg.IFF |= IFF_IRQ();
             reg.IFF &= ~(IFF1() | IFF2());
             switch (reg.interrupt & 0b00000011) {
                 case 0: // mode 0
-                    log("EXECUTE INT MODE1 (RST TO $%04X)", reg.interruptVector * 8);
+                    if (isDebug()) log("EXECUTE INT MODE1 (RST TO $%04X)", reg.interruptVector * 8);
                     if (reg.interruptVector == 0xCD) {
                         consumeClock(7);
                     }
                     RST(reg.interruptVector);
                     break;
                 case 1: // mode 1 (13Hz)
-                    log("EXECUTE INT MODE1 (RST TO $0038)");
+                    if (isDebug()) log("EXECUTE INT MODE1 (RST TO $0038)");
                     consumeClock(1);
                     RST(7);
                     break;
                 case 2: { // mode 2
                     unsigned char pcL = reg.PC & 0x00FF;
                     unsigned char pcH = (reg.PC & 0xFF00) >> 8;
-                    CB.write(CB.arg, reg.SP - 1, pcH);
-                    CB.write(CB.arg, reg.SP - 2, pcL);
+                    writeByte(reg.SP - 1, pcH);
+                    writeByte(reg.SP - 2, pcL);
                     reg.SP -= 2;
                     unsigned short addr = reg.I;
                     addr <<= 8;
                     addr |= reg.interruptVector;
-                    unsigned short pc = CB.read(CB.arg, addr);
-                    pc += ((unsigned short)CB.read(CB.arg, addr)) << 8;
-                    log("EXECUTE INT MODE2: ($%04X) = $%04X", addr, pc);
+                    unsigned short pc = readByte(addr);
+                    pc += ((unsigned short)readByte(addr)) << 8;
+                    if (isDebug()) log("EXECUTE INT MODE2: ($%04X) = $%04X", addr, pc);
                     reg.PC = pc;
-                    consumeClock(19);
+                    consumeClock(3);
                     break;
                 }
             }
         }
-        reg.interrupt &= 0b00111111; // clear request flags
     }
 
   public: // API functions
@@ -4127,6 +4007,7 @@ class Z80
         void (*out)(void* arg, unsigned char port, unsigned char value),
         void* arg)
     {
+        ::memset(&CB, 0, sizeof(CB));
         this->CB.read = read;
         this->CB.write = write;
         this->CB.in = in;
@@ -4141,6 +4022,11 @@ class Z80
     void setDebugMessage(void (*debugMessage)(void*, const char*) = NULL)
     {
         CB.debugMessage = debugMessage;
+    }
+
+    inline bool isDebug()
+    {
+        return CB.debugMessage != NULL;
     }
 
     void addBreakPoint(unsigned short addr, void (*callback)(void*) = NULL)
@@ -4207,94 +4093,98 @@ class Z80
         reg.interruptVector = vector;
     }
 
+    void cancelIRQ()
+    {
+        reg.interrupt &= 0b10111111;
+    }
+
     void generateNMI(unsigned short addr)
     {
         reg.interrupt |= 0b10000000;
         reg.interruptAddrN = addr;
     }
 
-    int execute(int clock)
+    inline int execute(int clock)
     {
         int executed = 0;
         requestBreakFlag = false;
-        while (0 < clock && !reg.isHalt && !requestBreakFlag) {
-            checkBreakPoint();
-            int operandNumber = CB.read(CB.arg, reg.PC);
-            checkBreakOperand(operandNumber);
-            int (*op)(Z80*) = opSet1[operandNumber];
-            int consume = -1;
-            if (NULL == op) {
-                // execute an operand that register type has specified in the first byte.
-                if ((operandNumber & 0b11111000) == 0b01110000) {
-                    consume = LD_HL_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11001111) == 0b00001001) {
-                    consume = ADD_HL_RP((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11000111) == 0b00000110) {
-                    consume = LD_R_N((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11001111) == 0b00000001) {
-                    consume = LD_RP_NN((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11001111) == 0b11000101) {
-                    consume = PUSH_RP((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11001111) == 0b11000001) {
-                    consume = POP_RP((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11001111) == 0b00000011) {
-                    consume = INC_RP((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11001111) == 0b00001011) {
-                    consume = DEC_RP((operandNumber & 0b00110000) >> 4);
-                } else if ((operandNumber & 0b11000111) == 0b01000110) {
-                    consume = LD_R_HL((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b00000100) {
-                    consume = INC_R((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b00000101) {
-                    consume = DEC_R((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b11000010) {
-                    consume = JP_C_NN((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b11000100) {
-                    consume = CALL_C_NN((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b11000000) {
-                    consume = RET_C((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000111) == 0b11000111) {
-                    consume = RST((operandNumber & 0b00111000) >> 3);
-                } else if ((operandNumber & 0b11000000) == 0b01000000) {
-                    consume = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10000000) {
-                    consume = ADD_A_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10001000) {
-                    consume = ADC_A_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10010000) {
-                    consume = SUB_A_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10011000) {
-                    consume = SBC_A_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10100000) {
-                    consume = AND_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10110000) {
-                    consume = OR_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10101000) {
-                    consume = XOR_R(operandNumber & 0b00000111);
-                } else if ((operandNumber & 0b11111000) == 0b10111000) {
-                    consume = CP_R(operandNumber & 0b00000111);
-                }
+        reg.consumeClockCounter = 0;
+        while (0 < clock && !requestBreakFlag) {
+            // execute NOP while halt
+            if (reg.IFF & IFF_HALT()) {
+                reg.execEI = 0;
+                readByte(reg.PC); // NOTE: read and discard (to be consumed 4Hz)
             } else {
-                // execute an operand that the first byte is fixed.
-                consume = op(this);
+                checkBreakPoint();
+                reg.execEI = 0;
+                int operandNumber = readByte(reg.PC);
+                checkBreakOperand(operandNumber);
+                int (*op)(Z80*) = opSet1[operandNumber];
+                int ret = -1;
+                if (NULL == op) {
+                    // execute an operand that register type has specified in the first byte.
+                    if ((operandNumber & 0b11111000) == 0b01110000) {
+                        ret = LD_HL_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11001111) == 0b00001001) {
+                        ret = ADD_HL_RP((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11000111) == 0b00000110) {
+                        ret = LD_R_N((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11001111) == 0b00000001) {
+                        ret = LD_RP_NN((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11001111) == 0b11000101) {
+                        ret = PUSH_RP((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11001111) == 0b11000001) {
+                        ret = POP_RP((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11001111) == 0b00000011) {
+                        ret = INC_RP((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11001111) == 0b00001011) {
+                        ret = DEC_RP((operandNumber & 0b00110000) >> 4);
+                    } else if ((operandNumber & 0b11000111) == 0b01000110) {
+                        ret = LD_R_HL((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b00000100) {
+                        ret = INC_R((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b00000101) {
+                        ret = DEC_R((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b11000010) {
+                        ret = JP_C_NN((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b11000100) {
+                        ret = CALL_C_NN((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b11000000) {
+                        ret = RET_C((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000111) == 0b11000111) {
+                        ret = RST((operandNumber & 0b00111000) >> 3);
+                    } else if ((operandNumber & 0b11000000) == 0b01000000) {
+                        ret = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10000000) {
+                        ret = ADD_A_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10001000) {
+                        ret = ADC_A_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10010000) {
+                        ret = SUB_A_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10011000) {
+                        ret = SBC_A_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10100000) {
+                        ret = AND_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10110000) {
+                        ret = OR_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10101000) {
+                        ret = XOR_R(operandNumber & 0b00000111);
+                    } else if ((operandNumber & 0b11111000) == 0b10111000) {
+                        ret = CP_R(operandNumber & 0b00000111);
+                    }
+                } else {
+                    // execute an operand that the first byte is fixed.
+                    ret = op(this);
+                }
+                if (ret < 0) {
+                    if (isDebug()) log("[%04X] detected an invalid operand: $%02X", reg.PC, operandNumber);
+                    return 0;
+                }
             }
-            if (consume < 0) {
-                log("[%04X] detected an invalid operand: $%02X", reg.PC, operandNumber);
-                return false;
-            }
-            clock -= consume;
-            executed += consume;
+            executed += reg.consumeClockCounter;
+            clock -= reg.consumeClockCounter;
+            reg.consumeClockCounter = 0;
             checkInterrupt();
-        }
-        // execute NOP while halt
-        while (0 < clock && reg.isHalt && !requestBreakFlag) {
-            checkBreakPoint();
-            checkBreakOperand(0);
-            // execute program counter & consume 4Hz (same as NOP)
-            log("[%04X] NOP <HALT>", reg.PC);
-            CB.read(CB.arg, reg.PC); // NOTE: read and discard
-            clock -= consumeClock(4);
-            executed += 4;
         }
         return executed;
     }
@@ -4305,22 +4195,21 @@ class Z80
 
     void registerDump()
     {
-        log("===== REGISTER DUMP : START =====");
-        log("PAIR: %s %s %s %s %s %s %s", registerDump(0b111), registerDump(0b000), registerDump(0b001), registerDump(0b010), registerDump(0b011), registerDump(0b100), registerDump(0b101));
-        log("PAIR: F<$%02X> ... S:%s, Z:%s, H:%s, P/V:%s, N:%s, C:%s",
-            reg.pair.F,
-            isFlagS() ? "ON" : "OFF",
-            isFlagZ() ? "ON" : "OFF",
-            isFlagH() ? "ON" : "OFF",
-            isFlagPV() ? "ON" : "OFF",
-            isFlagN() ? "ON" : "OFF",
-            isFlagC() ? "ON" : "OFF");
-        log("BACK: %s %s %s %s %s %s %s F'<$%02X>", registerDump2(0b111), registerDump2(0b000), registerDump2(0b001), registerDump2(0b010), registerDump2(0b011), registerDump2(0b100), registerDump2(0b101), reg.back.F);
-        log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
-        log("R<$%02X> I<$%02X> IFF<$%02X>", reg.R, reg.I, reg.IFF);
-        log("isHalt: %s, interrupt: $%02X", reg.isHalt ? "YES" : "NO", reg.interrupt);
-        log("executed: %dHz", reg.consumeClockCounter);
-        log("===== REGISTER DUMP : END =====");
+        if (isDebug()) log("===== REGISTER DUMP : START =====");
+        if (isDebug()) log("PAIR: %s %s %s %s %s %s %s", registerDump(0b111), registerDump(0b000), registerDump(0b001), registerDump(0b010), registerDump(0b011), registerDump(0b100), registerDump(0b101));
+        if (isDebug()) log("PAIR: F<$%02X> ... S:%s, Z:%s, H:%s, P/V:%s, N:%s, C:%s",
+                           reg.pair.F,
+                           isFlagS() ? "ON" : "OFF",
+                           isFlagZ() ? "ON" : "OFF",
+                           isFlagH() ? "ON" : "OFF",
+                           isFlagPV() ? "ON" : "OFF",
+                           isFlagN() ? "ON" : "OFF",
+                           isFlagC() ? "ON" : "OFF");
+        if (isDebug()) log("BACK: %s %s %s %s %s %s %s F'<$%02X>", registerDump2(0b111), registerDump2(0b000), registerDump2(0b001), registerDump2(0b010), registerDump2(0b011), registerDump2(0b100), registerDump2(0b101), reg.back.F);
+        if (isDebug()) log("PC<$%04X> SP<$%04X> IX<$%04X> IY<$%04X>", reg.PC, reg.SP, reg.IX, reg.IY);
+        if (isDebug()) log("R<$%02X> I<$%02X> IFF<$%02X>", reg.R, reg.I, reg.IFF);
+        if (isDebug()) log("isHalt: %s, interrupt: $%02X", reg.IFF & IFF_HALT() ? "YES" : "NO", reg.interrupt);
+        if (isDebug()) log("===== REGISTER DUMP : END =====");
     }
 };
 

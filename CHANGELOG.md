@@ -1,5 +1,39 @@
 # Change log
 
+## Version 1.0.0 (--- --, ---- ---)
+
+- split clock synchronization timing into fine timings such as fetch and store
+  - in the process, some operands with incorrect execution clock numbers are being corrected.
+- Fixed implementation error of repeat operands (LDIR, LDDR, CPIR, CPDR, OUTIR, OUTDR, INIR, INDR)
+  - actual: Loop until B flag is 0 in instruction
+  - expected: PC cannot proceed unless B flag is 0
+- refactor: remove verbose procedure
+- refactor: make wrapper functions for memory read/write & port I/O
+- bugfix: often crush if not set debug message
+- bugfix: HALT is not released by IRQ/NMI
+- performance up
+- change register layout (disruptive change)
+- bugfix: correct the invalid clock cycle: LD SP, nn (expected: 10Hz, actual: 20Hz)
+- bugfix: missing consume clock 4Hz in CPDR
+- bugfix: memory issue will occur when execute the relative jump operands if enabled debug mode
+- bugfix: correct the invalid clock cycle: jump relative + if
+- bugfix: correct the invalid clock cycle: JP (HL), JP (IX), JP (IY)
+- bugfix: correct the invalid clock cycle: RST
+- bugfix: correct the invalid clock cycle: OUT (N), A
+- interrupt processing is not executed by the instruction immediately after executing EI
+- do not clear IRQ/NMI request when masked
+- bugfix: the status register set after executing LDI/LDD are incorrect.
+- bugfix: P/V flag after LDI/LDD is incorrect
+- bugfix: correct undocumented conditions: OUTI, OUTIR, OUTD, OUTDR
+- bugfix: INC/DEC operands are not change carry flag
+- add cancelIRQ function
+- bugfix: correct status flag conditions after repeat I/O: INI, INIR, IND, INDR, OUTI, OUTIR, OUTD, OUTDR
+- bugfix: correct carry flag conditions: CPI, CPIR, CPD, CPDR
+- bugfix: correct negative flag conditions: the all of substract/compare operands
+- bugfix: correct P/V flag conditions: CPI, CPIR, CPD, CPDR
+- bugfix: DAA
+- bugfix: correct flag conditions of 16bi calculation
+
 ## Version 0.9 (Jul 16, 2020 JST)
 
 - bugfix: invalid clock cycle in repeart operands
