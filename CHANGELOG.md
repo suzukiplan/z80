@@ -1,6 +1,10 @@
 # Change log
 
-## Version 1.0.0 (--- --, ---- ---)
+## Version 1.0.1 (Jul 25, 2020 JST)
+
+- bugfix: incorrect return address when calling RST instruction directly from code
+
+## Version 1.0.0 (Jul 25, 2020 JST)
 
 - split clock synchronization timing into fine timings such as fetch and store
   - in the process, some operands with incorrect execution clock numbers are being corrected.
