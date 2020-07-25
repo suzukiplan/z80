@@ -115,7 +115,7 @@ TEST#109:  4Hz [0000] DEC B<$01>
 TEST#110: 11Hz [0000] DEC (HL<$00E3>) = $00
 TEST#111: 23Hz [0000] DEC (IX+d<$E3E0>) = $01
 TEST#112: 23Hz [0000] DEC (IY+d<$E403>) = $01
-TEST#113:  4Hz [0000] DAA ... A: $00 -> $00, flag-n: ON, flag-h: OFF, flag-c: OFF -> OFF
+TEST#113:  4Hz [0000] DAA ... A: $00 -> $00
 TEST#114:  4Hz [0000] CPL A<$00>
 TEST#115:  8Hz [0000] NEG A<$FF>
 TEST#116:  4Hz [0000] CCF <C:ON -> OFF>

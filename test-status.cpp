@@ -95,6 +95,15 @@ void executeTest(Z80* cpu, MMU* mmu, unsigned char op1, unsigned char op2, unsig
     cpu->reg.IFF = 0;
 }
 
+void check(const char* what, int e, int a)
+{
+    if (e != a) {
+        fprintf(file, "> %s is incorrect: expected=$%X, actual=$%X\n", what, e, a);
+        fprintf(stdout, "> %s is incorrect: expected=$%X, actual=$%X\n", what, e, a);
+        exit(255);
+    }
+}
+
 int main(int argc, char* argv[])
 {
     file = fopen("test-status.txt", "w");
@@ -483,6 +492,19 @@ int main(int argc, char* argv[])
     mmu.RAM[0x205] = 0x80;                                                   // setup RAM for test
     z80.reg.pair.A = 0x00;                                                   // setup register for test
     executeTest(&z80, &mmu, 0xFD, 0x8E, 5, 0, 0xFF, 0b10000000);             // ADC A, (IY+d)
+
+    // test DAA (increment)
+    executeTest(&z80, &mmu, 0x3E, 0x99, 0, 0, 0b00000000, 0b00000000); // LD A, $99
+    executeTest(&z80, &mmu, 0x3C, 0, 0, 0, 0b00000000, 0b10001000);    // INC A
+    check("A", 0x9A, z80.reg.pair.A);                                  // check register result
+    executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10001000, 0b01011101);    // DAA
+    check("A", 0x00, z80.reg.pair.A);                                  // check register result
+
+    // test DAA (decrement)
+    executeTest(&z80, &mmu, 0x3E, 0, 0, 0, 0b00000000, 0b00000000); // LD A, $00
+    executeTest(&z80, &mmu, 0xD6, 1, 0, 0, 0b00000000, 0b10111011); // SUB A, $01
+    executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10111011, 0b10101110); // DAA
+    check("A", 0x99, z80.reg.pair.A);                               // check register result
 
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C

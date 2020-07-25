@@ -3770,125 +3770,51 @@ class Z80
     inline int OUTDR() { return repeatOUT(false, true); }
 
     // Decimal Adjust Accumulator
-    static inline int DAA(Z80* ctx)
+    inline int daa()
     {
-        unsigned char aH = (ctx->reg.pair.A & 0b11110000) >> 4;
-        unsigned char aL = ctx->reg.pair.A & 0b00001111;
-        unsigned beforeA = ctx->reg.pair.A;
-        bool beforeCarry = ctx->isFlagC();
-        if (ctx->isFlagN()) {
-            if (!ctx->isFlagC()) {
-                if (!ctx->isFlagH()) {
-                    if (aH < 9) {
-                        ctx->setFlagC(false);
-                        if (aL < 10) {
-                            ;
-                        } else {
-                            ctx->reg.pair.A += 0x06;
-                        }
-                    } else if (aH == 9) {
-                        if (aL < 10) {
-                            ctx->setFlagC(false);
-                        } else {
-                            ctx->reg.pair.A += 0x66;
-                            ctx->setFlagC(true);
-                        }
-                    } else {
-                        ctx->setFlagC(true);
-                        if (aL < 10) {
-                            ctx->reg.pair.A += 0x60;
-                        } else {
-                            ctx->reg.pair.A += 0x66;
-                        }
-                    }
-                } else {
-                    if (aH < 9) {
-                        ctx->setFlagC(false);
-                        ctx->reg.pair.A += 0x06;
-                    } else if (aH == 9) {
-                        if (aL < 10) {
-                            ctx->reg.pair.A += 0x06;
-                            ctx->setFlagC(false);
-                        } else {
-                            ctx->reg.pair.A += 0x66;
-                            ctx->setFlagC(true);
-                        }
-                    } else {
-                        ctx->setFlagC(true);
-                        ctx->reg.pair.A += 0x66;
-                    }
+        unsigned char a = reg.pair.A;
+        unsigned char aH = (a & 0b11110000) >> 4;
+        unsigned char aL = a & 0b00001111;
+        unsigned char h = aH < 9 ? 0 : aH == 9 ? 1 : 2;
+        unsigned char l = aL < 10 ? 0 : 1;
+        unsigned char addition = 0x00;
+        switch ((isFlagC() ? 0b010 : 0) | (isFlagH() ? 0b001 : 0)) {
+            case 0b00:
+                switch (h) {
+                    case 0: addition = (0 == l) ? 0x00 : 0x06; break;
+                    case 1: addition = (0 == l) ? 0x00 : 0x66; break;
+                    case 2: addition = (0 == l) ? 0x60 : 0x66; break;
                 }
-            } else {
-                ctx->setFlagC(true);
-                if (!ctx->isFlagH()) {
-                    if (aL < 10) {
-                        ctx->reg.pair.A += 0x60;
-                    } else {
-                        ctx->reg.pair.A += 0x66;
-                    }
-                } else {
-                    ctx->reg.pair.A += 0x66;
+                break;
+            case 0b01:
+                switch (h) {
+                    case 0: addition = 0x06; break;
+                    case 1: addition = (0 == l) ? 0x06 : 0x66; break;
+                    case 2: addition = 0x66; break;
                 }
-            }
-        } else {
-            if (!ctx->isFlagC()) {
-                if (!ctx->isFlagH()) {
-                    if (aH < 9) {
-                        ctx->setFlagC(false);
-                        if (aL < 10) {
-                            ;
-                        } else {
-                            ctx->reg.pair.A += 0xFA;
-                        }
-                    } else if (aH == 9) {
-                        if (aL < 10) {
-                            ctx->setFlagC(false);
-                        } else {
-                            ctx->reg.pair.A += 0x9A;
-                            ctx->setFlagC(true);
-                        }
-                    } else {
-                        ctx->setFlagC(true);
-                        if (aL < 10) {
-                            ctx->reg.pair.A += 0xA0;
-                        } else {
-                            ctx->reg.pair.A += 0x9A;
-                        }
-                    }
-                } else {
-                    if (aH < 9) {
-                        ctx->setFlagC(false);
-                        ctx->reg.pair.A += 0xFA;
-                    } else if (aH == 9) {
-                        if (aL < 10) {
-                            ctx->reg.pair.A += 0xFA;
-                            ctx->setFlagC(false);
-                        } else {
-                            ctx->reg.pair.A += 0x9A;
-                            ctx->setFlagC(true);
-                        }
-                    } else {
-                        ctx->setFlagC(true);
-                        ctx->reg.pair.A += 0x9A;
-                    }
-                }
-            } else {
-                ctx->setFlagC(true);
-                if (!ctx->isFlagH()) {
-                    if (aL < 10) {
-                        ctx->reg.pair.A += 0xA0;
-                    } else {
-                        ctx->reg.pair.A += 0x9A;
-                    }
-                } else {
-                    ctx->reg.pair.A += 0x9A;
-                }
-            }
+                break;
+            case 0b10: addition = (0 == l) ? 0x60 : 0x66; break;
+            case 0b11: addition = 0x66; break;
         }
-        if (ctx->isDebug()) ctx->log("[%04X] DAA ... A: $%02X -> $%02X, flag-n: %s, flag-h: %s, flag-c: %s -> %s", ctx->reg.PC, beforeA, ctx->reg.pair.A, ctx->isFlagN() ? "ON" : "OFF", ctx->isFlagH() ? "ON" : "OFF", beforeCarry ? "ON" : "OFF", ctx->isFlagC() ? "ON" : "OFF");
-        ctx->reg.PC++;
+        unsigned char addH = (addition & 0b11110000) >> 4;
+        unsigned char addL = addition & 0b00001111;
+        if (isFlagN()) {
+            reg.pair.A = a - addition;
+            setFlagH(aH - addH < 0);
+            setFlagC(aL - addL < 0);
+        } else {
+            reg.pair.A = a + addition;
+            setFlagH(9 < aL + addL);
+            setFlagC(9 < aH + addH);
+        }
+        setFlagS(reg.pair.A & 0x80 ? true : false);
+        setFlagZ(reg.pair.A == 0);
+        setFlagPV(isEvenNumberBits(reg.pair.A));
+        if (isDebug()) log("[%04X] DAA ... A: $%02X -> $%02X", reg.PC, a, reg.pair.A);
+        reg.PC++;
         return 0;
     }
+    static inline int DAA(Z80* ctx) { return ctx->daa(); }
 
     // Rotate digit Left and right between Acc. and location (HL)
     inline int RLD()
