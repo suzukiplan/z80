@@ -541,12 +541,32 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10111011, 0b10111111); // DAA
     check("A", 0x99, z80.reg.pair.A);                               // check register result
 
+    // test DAA (substract / not carry & not half)
+    executeTest(&z80, &mmu, 0x3E, 0x55, 0, 0, 0b00000000, 0b00000000); // LD A, $55
+    executeTest(&z80, &mmu, 0xD6, 0x23, 0, 0, 0b00000000, 0b00100010); // SUB A, $23
+    executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b00100010, 0b00100010);    // DAA
+    check("A", 0x32, z80.reg.pair.A);                                  // check register result
+
     // test DAA (substract / not carry & half)
     executeTest(&z80, &mmu, 0x3E, 0x35, 0, 0, 0b00000000, 0b00000000); // LD A, $35
     executeTest(&z80, &mmu, 0xD6, 0x06, 0, 0, 0b00000000, 0b00111010); // SUB A, $06
     check("A", 0x2F, z80.reg.pair.A);                                  // check register result
     executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b00111010, 0b00111010);    // DAA
     check("A", 0x29, z80.reg.pair.A);                                  // check register result
+
+    // test DAA (substract / carry & not half)
+    executeTest(&z80, &mmu, 0x3E, 0x35, 0, 0, 0b00000000, 0b00000000); // LD A, $35
+    executeTest(&z80, &mmu, 0xD6, 0x40, 0, 0, 0b00000000, 0b10100011); // SUB A, $40
+    check("A", 0xF5, z80.reg.pair.A);                                  // check register result
+    executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10100011, 0b10100111);    // DAA
+    check("A", 0x95, z80.reg.pair.A);                                  // check register result
+
+    // test DAA (substract / carry & half)
+    executeTest(&z80, &mmu, 0x3E, 0x35, 0, 0, 0b00000000, 0b00000000); // LD A, $35
+    executeTest(&z80, &mmu, 0xD6, 0x56, 0, 0, 0b00000000, 0b10011011); // SUB A, $56
+    check("A", 0xDF, z80.reg.pair.A);                                  // check register result
+    executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10011011, 0b00011011);    // DAA
+    check("A", 0x79, z80.reg.pair.A);                                  // check register result
 
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
