@@ -3798,15 +3798,9 @@ class Z80
         }
         unsigned char addH = (addition & 0b11110000) >> 4;
         unsigned char addL = addition & 0b00001111;
-        if (isFlagN()) {
-            reg.pair.A = a - addition;
-            setFlagH(aH - addH < 0);
-            setFlagC(aL - addL < 0);
-        } else {
-            reg.pair.A = a + addition;
-            setFlagH(9 < aL + addL);
-            setFlagC(9 < aH + addH);
-        }
+        reg.pair.A = a + (isFlagN() ? -addition : addition);
+        setFlagH(9 < aL + addL);
+        setFlagC(9 < aH + addH);
         setFlagS(reg.pair.A & 0x80 ? true : false);
         setFlagZ(reg.pair.A == 0);
         setFlagPV(isEvenNumberBits(reg.pair.A));

@@ -538,8 +538,15 @@ int main(int argc, char* argv[])
     // test DAA (decrement)
     executeTest(&z80, &mmu, 0x3E, 0, 0, 0, 0b00000000, 0b00000000); // LD A, $00
     executeTest(&z80, &mmu, 0xD6, 1, 0, 0, 0b00000000, 0b10111011); // SUB A, $01
-    executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10111011, 0b10101110); // DAA
+    executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b10111011, 0b10111111); // DAA
     check("A", 0x99, z80.reg.pair.A);                               // check register result
+
+    // test DAA (substract / not carry & half)
+    executeTest(&z80, &mmu, 0x3E, 0x35, 0, 0, 0b00000000, 0b00000000); // LD A, $35
+    executeTest(&z80, &mmu, 0xD6, 0x06, 0, 0, 0b00000000, 0b00111010); // SUB A, $06
+    check("A", 0x2F, z80.reg.pair.A);                                  // check register result
+    executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0b00111010, 0b00111010);    // DAA
+    check("A", 0x29, z80.reg.pair.A);                                  // check register result
 
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
