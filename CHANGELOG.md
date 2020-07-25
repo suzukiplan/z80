@@ -32,6 +32,7 @@
 - bugfix: correct negative flag conditions: the all of substract/compare operands
 - bugfix: correct P/V flag conditions: CPI, CPIR, CPD, CPDR
 - bugfix: DAA
+- bugfix: correct flag conditions of 16bi calculation
 
 ## Version 0.9 (Jul 16, 2020 JST)
 

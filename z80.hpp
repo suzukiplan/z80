@@ -2577,22 +2577,28 @@ class Z80
 
     inline void setFlagByAdd16(unsigned short before, unsigned short addition)
     {
-        unsigned int result32u = before;
-        result32u += addition;
-        setFlagH(0x00FF < (before & 0x00FF) + (addition & 0x00FF));
-        setFlagN(true);
-        setFlagC(65535 < result32u);
+        int result = before + addition;
+        int carrybits = before ^ addition ^ result;
+        setFlagN(false);
+        setFlagXY((result & 0xFF00) >> 8);
+        setFlagC((carrybits & 0x10000) != 0);
+        setFlagH((carrybits & 0x1000) != 0);
     }
 
     inline void setFlagByAdc16(unsigned short before, unsigned short addition)
     {
-        unsigned short result16 = before + addition;
-        signed int result32s = (signed short)before;
-        result32s += (signed short)addition;
-        setFlagByAdd16(before, addition);
-        setFlagS(result16 & 0x8000 ? true : false);
-        setFlagZ(result16 == 0);
-        setFlagPV(result32s < -32768 || 32767 < result32s);
+        int result = before + addition;
+        int carrybits = before ^ addition ^ result;
+        unsigned short finalResult = (unsigned short)(result);
+        // same as ADD
+        setFlagN(false);
+        setFlagXY((finalResult & 0xFF00) >> 8);
+        setFlagC((carrybits & 0x10000) != 0);
+        setFlagH((carrybits & 0x1000) != 0);
+        // only ADC
+        setFlagS(finalResult & 0x8000 ? true : false);
+        setFlagZ(0 == finalResult);
+        setFlagPV((((carrybits << 1) ^ carrybits) & 0x10000) != 0);
     }
 
     // Add register pair to H and L
@@ -2702,17 +2708,16 @@ class Z80
 
     inline void setFlagBySbc16(unsigned short before, unsigned short substract)
     {
-        unsigned short result16 = before - substract;
-        unsigned int result32u = before;
-        result32u -= substract;
-        signed int result32s = (signed short)before;
-        result32s += (signed short)substract;
-        setFlagH((0x00FF & (before & 0xFF00) - (substract & 0xFF00)) == 0); // TODO: これで正しいのだろうか？
-        setFlagN(false);
-        setFlagC(65535 < result32u);
-        setFlagS(result16 & 0x8000 ? true : false);
-        setFlagZ(result16 == 0);
-        setFlagPV(result32s < -32768 || 32767 < result32s);
+        int result = before - substract;
+        int carrybits = before ^ substract ^ result;
+        unsigned short finalResult = (unsigned short)result;
+        setFlagN(true);
+        setFlagXY((finalResult & 0xFF00) >> 8);
+        setFlagC((carrybits & 0x10000) != 0);
+        setFlagH((carrybits & 0x1000) != 0);
+        setFlagS(finalResult & 0x8000 ? true : false);
+        setFlagZ(0 == finalResult);
+        setFlagPV((((carrybits << 1) ^ carrybits) & 0x10000) != 0);
     }
 
     // Subtract register pair from HL with carry
