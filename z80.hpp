@@ -576,6 +576,8 @@ class Z80
             case 0b10010101: return ctx->SUB_A_IXL();
             case 0b10011100: return ctx->SBC_A_IXH();
             case 0b10011101: return ctx->SBC_A_IXL();
+            case 0b10100100: return ctx->AND_IXH();
+            case 0b10100101: return ctx->AND_IXL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -670,6 +672,8 @@ class Z80
             case 0b10010101: return ctx->SUB_A_IYL();
             case 0b10011100: return ctx->SBC_A_IYH();
             case 0b10011101: return ctx->SBC_A_IYL();
+            case 0b10100100: return ctx->AND_IYH();
+            case 0b10100101: return ctx->AND_IYL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -3341,6 +3345,50 @@ class Z80
         reg.pair.A &= *rp;
         setFlagByLogical();
         reg.PC++;
+        return 0;
+    }
+
+    // AND with register IXH
+    inline int AND_IXH()
+    {
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] AND %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
+        reg.pair.A &= ixh;
+        setFlagByLogical();
+        reg.PC += 2;
+        return 0;
+    }
+
+    // AND with register IXL
+    inline int AND_IXL()
+    {
+        unsigned char ixl = reg.IX & 0x00FF;
+        if (isDebug()) log("[%04X] AND %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
+        reg.pair.A &= ixl;
+        setFlagByLogical();
+        reg.PC += 2;
+        return 0;
+    }
+
+    // AND with register IYH
+    inline int AND_IYH()
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] AND %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
+        reg.pair.A &= iyh;
+        setFlagByLogical();
+        reg.PC += 2;
+        return 0;
+    }
+
+    // AND with register IYL
+    inline int AND_IYL()
+    {
+        unsigned char iyl = reg.IY & 0x00FF;
+        if (isDebug()) log("[%04X] AND %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
+        reg.pair.A &= iyl;
+        setFlagByLogical();
+        reg.PC += 2;
         return 0;
     }
 

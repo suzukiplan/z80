@@ -541,6 +541,10 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0x9D, 0, 0, 8);    // SBC A, IXL
     executeTest(&z80, &mmu, 0xFD, 0x9C, 0, 0, 8);    // SBC A, IYH
     executeTest(&z80, &mmu, 0xFD, 0x9D, 0, 0, 8);    // SBC A, IYL
+    executeTest(&z80, &mmu, 0xDD, 0xA4, 0, 0, 8);    // AND A, IXH
+    executeTest(&z80, &mmu, 0xDD, 0xA5, 0, 0, 8);    // AND A, IXL
+    executeTest(&z80, &mmu, 0xFD, 0xA4, 0, 0, 8);    // AND A, IYH
+    executeTest(&z80, &mmu, 0xFD, 0xA5, 0, 0, 8);    // AND A, IYL
 
     return 0;
 }
