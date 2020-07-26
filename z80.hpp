@@ -549,6 +549,8 @@ class Z80
             case 0b01100101: return ctx->LD_IXH_IXL();
             case 0b01101100: return ctx->LD_IXL_IXH();
             case 0b01101101: return ctx->LD_IXL_IXL();
+            case 0b10000100: return ctx->ADD_A_IXH();
+            case 0b10000101: return ctx->ADD_A_IXL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -620,6 +622,8 @@ class Z80
             case 0b01100101: return ctx->LD_IYH_IYL();
             case 0b01101100: return ctx->LD_IYL_IYH();
             case 0b01101101: return ctx->LD_IYL_IYL();
+            case 0b10000100: return ctx->ADD_A_IYH();
+            case 0b10000101: return ctx->ADD_A_IYL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -2421,6 +2425,50 @@ class Z80
         setFlagByAddition(reg.pair.A, *rp);
         reg.pair.A += *rp;
         reg.PC += 1;
+        return 0;
+    }
+
+    // Add IXH to Acc.
+    inline int ADD_A_IXH()
+    {
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] ADD %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
+        setFlagByAddition(reg.pair.A, ixh);
+        reg.pair.A += ixh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Add IXL to Acc.
+    inline int ADD_A_IXL()
+    {
+        unsigned char ixl = reg.IX & 0x00FF;
+        if (isDebug()) log("[%04X] ADD %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
+        setFlagByAddition(reg.pair.A, ixl);
+        reg.pair.A += ixl;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Add IYH to Acc.
+    inline int ADD_A_IYH()
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] ADD %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
+        setFlagByAddition(reg.pair.A, iyh);
+        reg.pair.A += iyh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Add IYL to Acc.
+    inline int ADD_A_IYL()
+    {
+        unsigned char iyl = reg.IY & 0x00FF;
+        if (isDebug()) log("[%04X] ADD %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
+        setFlagByAddition(reg.pair.A, iyl);
+        reg.pair.A += iyl;
+        reg.PC += 2;
         return 0;
     }
 

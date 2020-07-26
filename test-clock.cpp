@@ -505,6 +505,10 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xFD, 0x6B, 0, 0, 8);    // LD IYL, E
     executeTest(&z80, &mmu, 0xFD, 0x6C, 0, 0, 8);    // LD IYL, IYH
     executeTest(&z80, &mmu, 0xFD, 0x6D, 0, 0, 8);    // LD IYL, IYL
+    executeTest(&z80, &mmu, 0xDD, 0x84, 0, 0, 8);    // ADD A, IXH
+    executeTest(&z80, &mmu, 0xDD, 0x85, 0, 0, 8);    // ADD A, IXL
+    executeTest(&z80, &mmu, 0xFD, 0x84, 0, 0, 8);    // ADD A, IYH
+    executeTest(&z80, &mmu, 0xFD, 0x85, 0, 0, 8);    // ADD A, IYL
 
     return 0;
 }
