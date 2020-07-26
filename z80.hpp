@@ -541,6 +541,8 @@ class Z80
             // undocumented instructions
             case 0b00100100: return ctx->INC_IXH();
             case 0b00101100: return ctx->INC_IXL();
+            case 0b00100101: return ctx->DEC_IXH();
+            case 0b00101101: return ctx->DEC_IXL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -600,6 +602,8 @@ class Z80
             // undocumented instructions
             case 0b00100100: return ctx->INC_IYH();
             case 0b00101100: return ctx->INC_IYL();
+            case 0b00100101: return ctx->DEC_IYH();
+            case 0b00101101: return ctx->DEC_IYL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -2437,7 +2441,7 @@ class Z80
     // Increment register low 8 bits of IY
     inline int INC_IYL()
     {
-        unsigned char iyl = reg.IX & 0x00FF;
+        unsigned char iyl = reg.IY & 0x00FF;
         if (isDebug()) log("[%04X] INC IYL<$%02X>", reg.PC, iyl);
         setFlagByIncrement(iyl);
         iyl++;
@@ -2620,6 +2624,32 @@ class Z80
         return consumeClock(3);
     }
 
+    // Decrement high 8 bits of IX
+    inline int DEC_IXH()
+    {
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] DEC IXH<$%02X>", reg.PC, ixh);
+        setFlagByDecrement(ixh);
+        ixh--;
+        reg.IX &= 0x00FF;
+        reg.IX |= ixh * 256;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Decrement low 8 bits of IX
+    inline int DEC_IXL()
+    {
+        unsigned char ixl = reg.IX & 0x00FF;
+        if (isDebug()) log("[%04X] DEC IXL<$%02X>", reg.PC, ixl);
+        setFlagByDecrement(ixl);
+        ixl--;
+        reg.IX &= 0xFF00;
+        reg.IX |= ixl;
+        reg.PC += 2;
+        return 0;
+    }
+
     // Decrement location (IY+d)
     inline int DEC_IY()
     {
@@ -2631,6 +2661,32 @@ class Z80
         writeByte(addr, n - 1);
         reg.PC += 3;
         return consumeClock(3);
+    }
+
+    // Decrement high 8 bits of IY
+    inline int DEC_IYH()
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] DEC IYH<$%02X>", reg.PC, iyh);
+        setFlagByDecrement(iyh);
+        iyh--;
+        reg.IY &= 0x00FF;
+        reg.IY |= iyh * 256;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Decrement low 8 bits of IY
+    inline int DEC_IYL()
+    {
+        unsigned char iyl = reg.IY & 0x00FF;
+        if (isDebug()) log("[%04X] DEC IYL<$%02X>", reg.PC, iyl);
+        setFlagByDecrement(iyl);
+        iyl--;
+        reg.IY &= 0xFF00;
+        reg.IY |= iyl;
+        reg.PC += 2;
+        return 0;
     }
 
     inline void setFlagByAdd16(unsigned short before, unsigned short addition)
