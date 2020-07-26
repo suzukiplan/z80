@@ -616,6 +616,10 @@ class Z80
             case 0b00101101: return ctx->DEC_IYL();
             case 0b00100110: return ctx->LD_IYH_N();
             case 0b00101110: return ctx->LD_IYL_N();
+            case 0b01100100: return ctx->LD_IYH_IYH();
+            case 0b01100101: return ctx->LD_IYH_IYL();
+            case 0b01101100: return ctx->LD_IYL_IYH();
+            case 0b01101101: return ctx->LD_IYL_IYL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -623,6 +627,10 @@ class Z80
             return ctx->ADD_IY_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IY_R(op2 & 0b00000111);
+        } else if ((op2 & 0b11111000) == 0b01100000) {
+            return ctx->LD_IYH_R(op2 & 0b00000111);
+        } else if ((op2 & 0b11111000) == 0b01101000) {
+            return ctx->LD_IYL_R(op2 & 0b00000111);
         }
         if (ctx->isDebug()) ctx->log("detected an unknown operand: 11111101 - $%02X", op2);
         return -1;
@@ -1077,7 +1085,7 @@ class Z80
         return 0;
     }
 
-    // Load Reg. IX(high) with value IX(high)
+    // Load Reg. IX(high) with value IX(low)
     inline int LD_IXH_IXL()
     {
         unsigned char ixl = reg.IX & 0x00FF;
@@ -1121,7 +1129,7 @@ class Z80
         return 0;
     }
 
-    // Load Reg. IX(low) with value IX(high)
+    // Load Reg. IX(low) with value IX(low)
     inline int LD_IXL_IXL()
     {
         unsigned char ixl = reg.IX & 0x00FF;
@@ -1143,6 +1151,39 @@ class Z80
         return 0;
     }
 
+    // Load Reg. IY(high) with value Reg.
+    inline int LD_IYH_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) log("[%04X] LD IYH, %s", reg.PC, registerDump(r));
+        reg.IY &= 0x00FF;
+        reg.IY |= (*rp) * 256;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Load Reg. IY(high) with value IY(high)
+    inline int LD_IYH_IYH()
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] LD IYH, IYH<$%02X>", reg.PC, iyh);
+        reg.IY &= 0x00FF;
+        reg.IY |= iyh * 256;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Load Reg. IY(high) with value IY(low)
+    inline int LD_IYH_IYL()
+    {
+        unsigned char iyl = reg.IY & 0x00FF;
+        if (isDebug()) log("[%04X] LD IYH, IYH<$%02X>", reg.PC, iyl);
+        reg.IY &= 0x00FF;
+        reg.IY |= iyl * 256;
+        reg.PC += 2;
+        return 0;
+    }
+
     // Load Reg. IY(low) with value n
     inline int LD_IYL_N()
     {
@@ -1151,6 +1192,39 @@ class Z80
         reg.IY &= 0xFF00;
         reg.IY |= n;
         reg.PC += 3;
+        return 0;
+    }
+
+    // Load Reg. IY(low) with value Reg.
+    inline int LD_IYL_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) log("[%04X] LD IYL, %s", reg.PC, registerDump(r));
+        reg.IY &= 0xFF00;
+        reg.IY |= (*rp);
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Load Reg. IY(low) with value IY(high)
+    inline int LD_IYL_IYH()
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] LD IYL, IYH<$%02X>", reg.PC, iyh);
+        reg.IY &= 0xFF00;
+        reg.IY |= iyh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Load Reg. IY(low) with value IY(low)
+    inline int LD_IYL_IYL()
+    {
+        unsigned char iyl = reg.IY & 0x00FF;
+        if (isDebug()) log("[%04X] LD IYL, IYL<$%02X>", reg.PC, iyl);
+        reg.IY &= 0xFF00;
+        reg.IY |= iyl;
+        reg.PC += 2;
         return 0;
     }
 
