@@ -553,6 +553,10 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0xAD, 0, 0, 8);    // XOR A, IXL
     executeTest(&z80, &mmu, 0xFD, 0xAC, 0, 0, 8);    // XOR A, IYH
     executeTest(&z80, &mmu, 0xFD, 0xAD, 0, 0, 8);    // XOR A, IYL
+    executeTest(&z80, &mmu, 0xDD, 0xBC, 0, 0, 8);    // CP A, IXH
+    executeTest(&z80, &mmu, 0xDD, 0xBD, 0, 0, 8);    // CP A, IXL
+    executeTest(&z80, &mmu, 0xFD, 0xBC, 0, 0, 8);    // CP A, IYH
+    executeTest(&z80, &mmu, 0xFD, 0xBD, 0, 0, 8);    // CP A, IYL
 
     return 0;
 }

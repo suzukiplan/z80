@@ -582,6 +582,8 @@ class Z80
             case 0b10110101: return ctx->OR_IXL();
             case 0b10101100: return ctx->XOR_IXH();
             case 0b10101101: return ctx->XOR_IXL();
+            case 0b10111100: return ctx->CP_IXH();
+            case 0b10111101: return ctx->CP_IXL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -682,6 +684,8 @@ class Z80
             case 0b10110101: return ctx->OR_IYL();
             case 0b10101100: return ctx->XOR_IYH();
             case 0b10101101: return ctx->XOR_IYL();
+            case 0b10111100: return ctx->CP_IYH();
+            case 0b10111101: return ctx->CP_IYL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -4037,6 +4041,50 @@ class Z80
         setFlagBySubstract(reg.pair.A, *rp);
         setFlagXY(reg.pair.A);
         reg.PC += 1;
+        return 0;
+    }
+
+    // Compare Register IXH
+    inline int CP_IXH()
+    {
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] CP %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
+        setFlagBySubstract(reg.pair.A, ixh);
+        setFlagXY(reg.pair.A);
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Compare Register IXL
+    inline int CP_IXL()
+    {
+        unsigned char ixl = reg.IX & 0x00FF;
+        if (isDebug()) log("[%04X] CP %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
+        setFlagBySubstract(reg.pair.A, ixl);
+        setFlagXY(reg.pair.A);
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Compare Register IYH
+    inline int CP_IYH()
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] CP %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
+        setFlagBySubstract(reg.pair.A, iyh);
+        setFlagXY(reg.pair.A);
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Compare Register IYL
+    inline int CP_IYL()
+    {
+        unsigned char iyl = reg.IY & 0x00FF;
+        if (isDebug()) log("[%04X] CP %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
+        setFlagBySubstract(reg.pair.A, iyl);
+        setFlagXY(reg.pair.A);
+        reg.PC += 2;
         return 0;
     }
 
