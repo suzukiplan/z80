@@ -548,6 +548,26 @@ class Z80
             case 0b01100101: return ctx->LD_IXH_IXL();
             case 0b01101100: return ctx->LD_IXL_IXH();
             case 0b01101101: return ctx->LD_IXL_IXL();
+            case 0b01111100: return ctx->LD_R_IXH(0b111);
+            case 0b01000100: return ctx->LD_R_IXH(0b000);
+            case 0b01001100: return ctx->LD_R_IXH(0b001);
+            case 0b01010100: return ctx->LD_R_IXH(0b010);
+            case 0b01011100: return ctx->LD_R_IXH(0b011);
+            case 0b01111101: return ctx->LD_R_IXL(0b111);
+            case 0b01000101: return ctx->LD_R_IXL(0b000);
+            case 0b01001101: return ctx->LD_R_IXL(0b001);
+            case 0b01010101: return ctx->LD_R_IXL(0b010);
+            case 0b01011101: return ctx->LD_R_IXL(0b011);
+            case 0b01100111: return ctx->LD_IXH_R(0b111);
+            case 0b01100000: return ctx->LD_IXH_R(0b000);
+            case 0b01100001: return ctx->LD_IXH_R(0b001);
+            case 0b01100010: return ctx->LD_IXH_R(0b010);
+            case 0b01100011: return ctx->LD_IXH_R(0b011);
+            case 0b01101111: return ctx->LD_IXL_R(0b111);
+            case 0b01101000: return ctx->LD_IXL_R(0b000);
+            case 0b01101001: return ctx->LD_IXL_R(0b001);
+            case 0b01101010: return ctx->LD_IXL_R(0b010);
+            case 0b01101011: return ctx->LD_IXL_R(0b011);
             case 0b10000100: return ctx->ADD_A_IXH();
             case 0b10000101: return ctx->ADD_A_IXL();
             case 0b10001100: return ctx->ADC_A_IXH();
@@ -559,15 +579,6 @@ class Z80
             return ctx->ADD_IX_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IX_R(op2 & 0b00000111);
-        }
-        if ((op2 & 0b11000111) == 0b01000100) {
-            return ctx->LD_R_IXH((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000111) == 0b01000101) {
-            return ctx->LD_R_IXL((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11111000) == 0b01100000) {
-            return ctx->LD_IXH_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b01101000) {
-            return ctx->LD_IXL_R(op2 & 0b00000111);
         }
         if (ctx->isDebug()) ctx->log("detected an unknown operand: 0b11011101 - $%02X", op2);
         return -1;
@@ -627,6 +638,26 @@ class Z80
             case 0b01100101: return ctx->LD_IYH_IYL();
             case 0b01101100: return ctx->LD_IYL_IYH();
             case 0b01101101: return ctx->LD_IYL_IYL();
+            case 0b01111100: return ctx->LD_R_IYH(0b111);
+            case 0b01000100: return ctx->LD_R_IYH(0b000);
+            case 0b01001100: return ctx->LD_R_IYH(0b001);
+            case 0b01010100: return ctx->LD_R_IYH(0b010);
+            case 0b01011100: return ctx->LD_R_IYH(0b011);
+            case 0b01111101: return ctx->LD_R_IYL(0b111);
+            case 0b01000101: return ctx->LD_R_IYL(0b000);
+            case 0b01001101: return ctx->LD_R_IYL(0b001);
+            case 0b01010101: return ctx->LD_R_IYL(0b010);
+            case 0b01011101: return ctx->LD_R_IYL(0b011);
+            case 0b01100111: return ctx->LD_IYH_R(0b111);
+            case 0b01100000: return ctx->LD_IYH_R(0b000);
+            case 0b01100001: return ctx->LD_IYH_R(0b001);
+            case 0b01100010: return ctx->LD_IYH_R(0b010);
+            case 0b01100011: return ctx->LD_IYH_R(0b011);
+            case 0b01101111: return ctx->LD_IYL_R(0b111);
+            case 0b01101000: return ctx->LD_IYL_R(0b000);
+            case 0b01101001: return ctx->LD_IYL_R(0b001);
+            case 0b01101010: return ctx->LD_IYL_R(0b010);
+            case 0b01101011: return ctx->LD_IYL_R(0b011);
             case 0b10000100: return ctx->ADD_A_IYH();
             case 0b10000101: return ctx->ADD_A_IYL();
             case 0b10001100: return ctx->ADC_A_IYH();
@@ -638,15 +669,6 @@ class Z80
             return ctx->ADD_IY_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IY_R(op2 & 0b00000111);
-        }
-        if ((op2 & 0b11000111) == 0b01000100) {
-            return ctx->LD_R_IYH((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000111) == 0b01000101) {
-            return ctx->LD_R_IYL((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11111000) == 0b01100000) {
-            return ctx->LD_IYH_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b01101000) {
-            return ctx->LD_IYL_R(op2 & 0b00000111);
         }
         if (ctx->isDebug()) ctx->log("detected an unknown operand: 11111101 - $%02X", op2);
         return -1;
