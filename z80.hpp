@@ -550,6 +550,8 @@ class Z80
             case 0b01101101: return ctx->LD_IXL_IXL();
             case 0b10000100: return ctx->ADD_A_IXH();
             case 0b10000101: return ctx->ADD_A_IXL();
+            case 0b10001100: return ctx->ADC_A_IXH();
+            case 0b10001101: return ctx->ADC_A_IXL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -626,6 +628,8 @@ class Z80
             case 0b01101101: return ctx->LD_IYL_IYL();
             case 0b10000100: return ctx->ADD_A_IYH();
             case 0b10000101: return ctx->ADD_A_IYL();
+            case 0b10001100: return ctx->ADC_A_IYH();
+            case 0b10001101: return ctx->ADC_A_IYL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -2584,6 +2588,54 @@ class Z80
         setFlagByAddition(reg.pair.A, c + *rp);
         reg.pair.A += c + *rp;
         reg.PC += 1;
+        return 0;
+    }
+
+    // Add IXH to Acc.
+    inline int ADC_A_IXH()
+    {
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] ADC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), ixh, c ? "ON" : "OFF");
+        setFlagByAddition(reg.pair.A, c + ixh);
+        reg.pair.A += c + ixh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Add IXL to Acc.
+    inline int ADC_A_IXL()
+    {
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char ixl = reg.IX & 0x00FF;
+        if (isDebug()) log("[%04X] ADC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), ixl, c ? "ON" : "OFF");
+        setFlagByAddition(reg.pair.A, c + ixl);
+        reg.pair.A += c + ixl;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Add IYH to Acc.
+    inline int ADC_A_IYH()
+    {
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] ADC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), iyh, c ? "ON" : "OFF");
+        setFlagByAddition(reg.pair.A, c + iyh);
+        reg.pair.A += c + iyh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Add IYL to Acc.
+    inline int ADC_A_IYL()
+    {
+        unsigned char c = isFlagC() ? 1 : 0;
+        unsigned char iyl = reg.IY & 0x00FF;
+        if (isDebug()) log("[%04X] ADC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), iyl, c ? "ON" : "OFF");
+        setFlagByAddition(reg.pair.A, c + iyl);
+        reg.pair.A += c + iyl;
+        reg.PC += 2;
         return 0;
     }
 
