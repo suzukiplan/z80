@@ -572,6 +572,8 @@ class Z80
             case 0b10000101: return ctx->ADD_A_IXL();
             case 0b10001100: return ctx->ADC_A_IXH();
             case 0b10001101: return ctx->ADC_A_IXL();
+            case 0b10010100: return ctx->SUB_A_IXH();
+            case 0b10010101: return ctx->SUB_A_IXL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -662,6 +664,8 @@ class Z80
             case 0b10000101: return ctx->ADD_A_IYL();
             case 0b10001100: return ctx->ADC_A_IYH();
             case 0b10001101: return ctx->ADC_A_IYL();
+            case 0b10010100: return ctx->SUB_A_IYH();
+            case 0b10010101: return ctx->SUB_A_IYL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -2833,6 +2837,50 @@ class Z80
         setFlagBySubstract(reg.pair.A, *rp);
         reg.pair.A -= *rp;
         reg.PC += 1;
+        return 0;
+    }
+
+    // Substract IXH to Acc.
+    inline int SUB_A_IXH()
+    {
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] SUB %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
+        setFlagBySubstract(reg.pair.A, ixh);
+        reg.pair.A -= ixh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Substract IXL to Acc.
+    inline int SUB_A_IXL()
+    {
+        unsigned char ixl = reg.IX & 0x00FF;
+        if (isDebug()) log("[%04X] SUB %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
+        setFlagBySubstract(reg.pair.A, ixl);
+        reg.pair.A -= ixl;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Substract IYH to Acc.
+    inline int SUB_A_IYH()
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] SUB %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
+        setFlagBySubstract(reg.pair.A, iyh);
+        reg.pair.A -= iyh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Substract IYL to Acc.
+    inline int SUB_A_IYL()
+    {
+        unsigned char iyl = reg.IY & 0x00FF;
+        if (isDebug()) log("[%04X] SUB %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
+        setFlagBySubstract(reg.pair.A, iyl);
+        reg.pair.A -= iyl;
+        reg.PC += 2;
         return 0;
     }
 
