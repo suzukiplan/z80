@@ -2,7 +2,18 @@
 
 ## Version 1.1.0 (WIP)
 
-- implement undocumented instructions
+- implement undocumented instructions:
+  - `INC IXH/IXL/IYH/IYL`
+  - `DEC IXH/IXL/IYH/IYL`
+  - `LD IXH/IXL/IYH/IYL, nn`
+  - `LD A/B/C/D/E, IXH/IXL/IYH/IYL`
+  - `LD IXH/IXL/IYH/IYL, A/B/C/D/E/IXH/IXL/IYH/IYL`
+  - `ADD/ADC/SUB/SBC/AND/XOR/OR/CP A, IXH/IXL/IYH/IYL`
+  - `RLC (IX+nn) with LD B/C/D/E/H/L/F/A, (IX+nn)`
+  - `RRC/RL/RR/SLA/SRA/SLL/SRL (IX+nn) with LD B, (IX+nn)`
+  - `RES/SET 0/1/2/3/4/5/6/7, (IX+nn) with LD B, (IX+nn)`
+  - `SLL B/C/D/E/H/L/(HL)/A`
+  - `IN/OUT F,(C)`
 - bugfix: incorrect H status flag: OR/XOR (must reset but set)
 
 ## Version 1.0.1 (Jul 25, 2020 JST)
