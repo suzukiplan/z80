@@ -639,23 +639,45 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0x67, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, A
     check("IX", 0x0A34, z80.reg.IX);                                      // check register result
     check("PC", 2, z80.reg.PC);                                           // check register result
-    executeTest(&z80, &mmu, 0xDD, 0x68, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, B
+    executeTest(&z80, &mmu, 0xDD, 0x60, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, B
     check("IX", 0x0B34, z80.reg.IX);                                      // check register result
     check("PC", 2, z80.reg.PC);                                           // check register result
-    executeTest(&z80, &mmu, 0xDD, 0x69, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, C
+    executeTest(&z80, &mmu, 0xDD, 0x61, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, C
     check("IX", 0x0C34, z80.reg.IX);                                      // check register result
     check("PC", 2, z80.reg.PC);                                           // check register result
-    executeTest(&z80, &mmu, 0xDD, 0x6A, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, D
+    executeTest(&z80, &mmu, 0xDD, 0x62, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, D
     check("IX", 0x0D34, z80.reg.IX);                                      // check register result
     check("PC", 2, z80.reg.PC);                                           // check register result
-    executeTest(&z80, &mmu, 0xDD, 0x6B, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, E
+    executeTest(&z80, &mmu, 0xDD, 0x63, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, E
     check("IX", 0x0E34, z80.reg.IX);                                      // check register result
     check("PC", 2, z80.reg.PC);                                           // check register result
-    executeTest(&z80, &mmu, 0xDD, 0x6C, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, IXH
+    executeTest(&z80, &mmu, 0xDD, 0x64, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, IXH
     check("IX", 0x0E34, z80.reg.IX);                                      // check register result
     check("PC", 2, z80.reg.PC);                                           // check register result
-    executeTest(&z80, &mmu, 0xDD, 0x6D, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, IXL
+    executeTest(&z80, &mmu, 0xDD, 0x65, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, IXL
     check("IX", 0x03434, z80.reg.IX);                                     // check register result
+    check("PC", 2, z80.reg.PC);                                           // check register result
+    puts("tests LD IXL, A/B/C/D/E/IXH/IXL");
+    executeTest(&z80, &mmu, 0xDD, 0x6F, 0x00, 0, 0b00000000, 0b00000000); // LD IXL, A
+    check("IX", 0x340A, z80.reg.IX);                                      // check register result
+    check("PC", 2, z80.reg.PC);                                           // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x68, 0x00, 0, 0b00000000, 0b00000000); // LD IXL, B
+    check("IX", 0x340B, z80.reg.IX);                                      // check register result
+    check("PC", 2, z80.reg.PC);                                           // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x69, 0x00, 0, 0b00000000, 0b00000000); // LD IXL, C
+    check("IX", 0x340C, z80.reg.IX);                                      // check register result
+    check("PC", 2, z80.reg.PC);                                           // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x6A, 0x00, 0, 0b00000000, 0b00000000); // LD IXL, D
+    check("IX", 0x340D, z80.reg.IX);                                      // check register result
+    check("PC", 2, z80.reg.PC);                                           // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x6B, 0x00, 0, 0b00000000, 0b00000000); // LD IXL, E
+    check("IX", 0x340E, z80.reg.IX);                                      // check register result
+    check("PC", 2, z80.reg.PC);                                           // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x6C, 0x00, 0, 0b00000000, 0b00000000); // LD IXL, IXH
+    check("IX", 0x3434, z80.reg.IX);                                      // check register result
+    check("PC", 2, z80.reg.PC);                                           // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x6D, 0x00, 0, 0b00000000, 0b00000000); // LD IXL, IXL
+    check("IX", 0x3434, z80.reg.IX);                                      // check register result
     check("PC", 2, z80.reg.PC);                                           // check register result
 
     //         7 6 5 4 3 2   1 0

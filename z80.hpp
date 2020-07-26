@@ -545,8 +545,10 @@ class Z80
             case 0b00101101: return ctx->DEC_IXL();
             case 0b00100110: return ctx->LD_IXH_N();
             case 0b00101110: return ctx->LD_IXL_N();
-            case 0b01101100: return ctx->LD_IXH_IXH();
-            case 0b01101101: return ctx->LD_IXH_IXL();
+            case 0b01100100: return ctx->LD_IXH_IXH();
+            case 0b01100101: return ctx->LD_IXH_IXL();
+            case 0b01101100: return ctx->LD_IXL_IXH();
+            case 0b01101101: return ctx->LD_IXL_IXL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -554,8 +556,10 @@ class Z80
             return ctx->ADD_IX_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IX_R(op2 & 0b00000111);
-        } else if ((op2 & 0b11111000) == 0b01100000 || (op2 & 0b11111000) == 0b01101000) {
+        } else if ((op2 & 0b11111000) == 0b01100000) {
             return ctx->LD_IXH_R(op2 & 0b00000111);
+        } else if ((op2 & 0b11111000) == 0b01101000) {
+            return ctx->LD_IXL_R(op2 & 0b00000111);
         }
         if (ctx->isDebug()) ctx->log("detected an unknown operand: 0b11011101 - $%02X", op2);
         return -1;
@@ -1092,6 +1096,39 @@ class Z80
         reg.IX &= 0xFF00;
         reg.IX |= n;
         reg.PC += 3;
+        return 0;
+    }
+
+    // Load Reg. IX(low) with value Reg.
+    inline int LD_IXL_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) log("[%04X] LD IXL, %s", reg.PC, registerDump(r));
+        reg.IX &= 0xFF00;
+        reg.IX |= (*rp);
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Load Reg. IX(low) with value IX(high)
+    inline int LD_IXL_IXH()
+    {
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] LD IXL, IXH<$%02X>", reg.PC, ixh);
+        reg.IX &= 0xFF00;
+        reg.IX |= ixh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Load Reg. IX(low) with value IX(high)
+    inline int LD_IXL_IXL()
+    {
+        unsigned char ixl = reg.IX & 0x00FF;
+        if (isDebug()) log("[%04X] LD IXL, IXL<$%02X>", reg.PC, ixl);
+        reg.IX &= 0xFF00;
+        reg.IX |= ixl;
+        reg.PC += 2;
         return 0;
     }
 
