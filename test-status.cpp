@@ -608,6 +608,26 @@ int main(int argc, char* argv[])
     check("IY", 0xFFFF, z80.reg.IY);                                   // check register result
     check("PC", 2, z80.reg.PC);                                        // check register result
 
+    puts("tests LD IXH/IXL/IYH/IYL, n");
+    z80.reg.IX = 0x1234;                                                  // setup register for test
+    z80.reg.IY = 0x4321;                                                  // setup register for test
+    executeTest(&z80, &mmu, 0xDD, 0x26, 0x00, 0, 0b00000000, 0b00000000); // LD IXH, $00
+    executeTest(&z80, &mmu, 0xDD, 0x26, 0x00, 0, 0b11111111, 0b11111111); // LD IXH, $00
+    check("IX", 0x0034, z80.reg.IX);
+    check("PC", 3, z80.reg.PC);
+    executeTest(&z80, &mmu, 0xDD, 0x2E, 0x00, 0, 0b00000000, 0b00000000); // LD IXL, $00
+    executeTest(&z80, &mmu, 0xDD, 0x2E, 0x00, 0, 0b11111111, 0b11111111); // LD IXL, $00
+    check("IX", 0x0000, z80.reg.IX);
+    check("PC", 3, z80.reg.PC);
+    executeTest(&z80, &mmu, 0xFD, 0x26, 0x00, 0, 0b00000000, 0b00000000); // LD IYH, $00
+    executeTest(&z80, &mmu, 0xFD, 0x26, 0x00, 0, 0b11111111, 0b11111111); // LD IYH, $00
+    check("IY", 0x0021, z80.reg.IY);
+    check("PC", 3, z80.reg.PC);
+    executeTest(&z80, &mmu, 0xFD, 0x2E, 0x00, 0, 0b00000000, 0b00000000); // LD IYL, $00
+    executeTest(&z80, &mmu, 0xFD, 0x2E, 0x00, 0, 0b11111111, 0b11111111); // LD IYL, $00
+    check("IY", 0x0000, z80.reg.IY);
+    check("PC", 3, z80.reg.PC);
+
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
 

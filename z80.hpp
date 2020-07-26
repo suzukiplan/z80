@@ -543,6 +543,8 @@ class Z80
             case 0b00101100: return ctx->INC_IXL();
             case 0b00100101: return ctx->DEC_IXH();
             case 0b00101101: return ctx->DEC_IXL();
+            case 0b00100110: return ctx->LD_IXH_N();
+            case 0b00101110: return ctx->LD_IXL_N();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -604,6 +606,8 @@ class Z80
             case 0b00101100: return ctx->INC_IYL();
             case 0b00100101: return ctx->DEC_IYH();
             case 0b00101101: return ctx->DEC_IYL();
+            case 0b00100110: return ctx->LD_IYH_N();
+            case 0b00101110: return ctx->LD_IYL_N();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -1029,6 +1033,50 @@ class Z80
         if (isDebug()) log("[%04X] LD %s, $%02X", reg.PC, registerDump(r), n);
         if (rp) *rp = n;
         reg.PC += 2;
+        return 0;
+    }
+
+    // Load Reg. IX(high) with value n
+    inline int LD_IXH_N()
+    {
+        unsigned char n = readByte(reg.PC + 2, 3);
+        if (isDebug()) log("[%04X] LD IXH, $%02X", reg.PC, n);
+        reg.IX &= 0x00FF;
+        reg.IX |= n * 256;
+        reg.PC += 3;
+        return 0;
+    }
+
+    // Load Reg. IX(low) with value n
+    inline int LD_IXL_N()
+    {
+        unsigned char n = readByte(reg.PC + 2, 3);
+        if (isDebug()) log("[%04X] LD IXL, $%02X", reg.PC, n);
+        reg.IX &= 0xFF00;
+        reg.IX |= n;
+        reg.PC += 3;
+        return 0;
+    }
+
+    // Load Reg. IY(high) with value n
+    inline int LD_IYH_N()
+    {
+        unsigned char n = readByte(reg.PC + 2, 3);
+        if (isDebug()) log("[%04X] LD IYH, $%02X", reg.PC, n);
+        reg.IY &= 0x00FF;
+        reg.IY |= n * 256;
+        reg.PC += 3;
+        return 0;
+    }
+
+    // Load Reg. IY(low) with value n
+    inline int LD_IYL_N()
+    {
+        unsigned char n = readByte(reg.PC + 2, 3);
+        if (isDebug()) log("[%04X] LD IYL, $%02X", reg.PC, n);
+        reg.IY &= 0xFF00;
+        reg.IY |= n;
+        reg.PC += 3;
         return 0;
     }
 

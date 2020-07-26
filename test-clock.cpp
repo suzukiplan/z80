@@ -465,13 +465,17 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0b11101101, 0b01011110, 0, 0, 8);        // IM 2
 
     // undocumented instructions
-    executeTest(&z80, &mmu, 0xDD, 0x24, 0, 0, 8); // INC IXH
-    executeTest(&z80, &mmu, 0xFD, 0x24, 0, 0, 8); // INC IYH
-    executeTest(&z80, &mmu, 0xDD, 0x2C, 0, 0, 8); // INC IXL
-    executeTest(&z80, &mmu, 0xFD, 0x2C, 0, 0, 8); // INC IYL
-    executeTest(&z80, &mmu, 0xDD, 0x25, 0, 0, 8); // DEC IXH
-    executeTest(&z80, &mmu, 0xFD, 0x25, 0, 0, 8); // DEC IYH
-    executeTest(&z80, &mmu, 0xDD, 0x2D, 0, 0, 8); // DEC IXL
-    executeTest(&z80, &mmu, 0xFD, 0x2D, 0, 0, 8); // DEC IYL
+    executeTest(&z80, &mmu, 0xDD, 0x24, 0, 0, 8);    // INC IXH
+    executeTest(&z80, &mmu, 0xFD, 0x24, 0, 0, 8);    // INC IYH
+    executeTest(&z80, &mmu, 0xDD, 0x2C, 0, 0, 8);    // INC IXL
+    executeTest(&z80, &mmu, 0xFD, 0x2C, 0, 0, 8);    // INC IYL
+    executeTest(&z80, &mmu, 0xDD, 0x25, 0, 0, 8);    // DEC IXH
+    executeTest(&z80, &mmu, 0xFD, 0x25, 0, 0, 8);    // DEC IYH
+    executeTest(&z80, &mmu, 0xDD, 0x2D, 0, 0, 8);    // DEC IXL
+    executeTest(&z80, &mmu, 0xFD, 0x2D, 0, 0, 8);    // DEC IYL
+    executeTest(&z80, &mmu, 0xDD, 0x26, 123, 0, 11); // LD IXH, n
+    executeTest(&z80, &mmu, 0xFD, 0x26, 123, 0, 11); // LD IXH, n
+    executeTest(&z80, &mmu, 0xDD, 0x2E, 123, 0, 11); // LD IXL, n
+    executeTest(&z80, &mmu, 0xFD, 0x2E, 123, 0, 11); // LD IXL, n
     return 0;
 }
