@@ -1,5 +1,10 @@
 # Change log
 
+## Version 1.1.0 (WIP)
+
+- implement undocumented instructions
+- bugfix: incorrect H status flag: OR/XOR (must reset but set)
+
 ## Version 1.0.1 (Jul 25, 2020 JST)
 
 - bugfix: incorrect return address when calling RST instruction directly from code

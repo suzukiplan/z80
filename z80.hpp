@@ -3322,12 +3322,12 @@ class Z80
         return consumeClock(7);
     }
 
-    inline void setFlagByLogical()
+    inline void setFlagByLogical(bool h)
     {
         setFlagS(reg.pair.A & 0x80 ? true : false);
         setFlagZ(reg.pair.A == 0);
         setFlagXY(reg.pair.A);
-        setFlagH(true);
+        setFlagH(h);
         setFlagPV(isEvenNumberBits(reg.pair.A));
         setFlagN(false);
         setFlagC(false);
@@ -3343,7 +3343,7 @@ class Z80
         }
         if (isDebug()) log("[%04X] AND %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         reg.pair.A &= *rp;
-        setFlagByLogical();
+        setFlagByLogical(true);
         reg.PC++;
         return 0;
     }
@@ -3354,7 +3354,7 @@ class Z80
         unsigned char ixh = (reg.IX & 0xFF00) >> 8;
         if (isDebug()) log("[%04X] AND %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
         reg.pair.A &= ixh;
-        setFlagByLogical();
+        setFlagByLogical(true);
         reg.PC += 2;
         return 0;
     }
@@ -3365,7 +3365,7 @@ class Z80
         unsigned char ixl = reg.IX & 0x00FF;
         if (isDebug()) log("[%04X] AND %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
         reg.pair.A &= ixl;
-        setFlagByLogical();
+        setFlagByLogical(true);
         reg.PC += 2;
         return 0;
     }
@@ -3376,7 +3376,7 @@ class Z80
         unsigned char iyh = (reg.IY & 0xFF00) >> 8;
         if (isDebug()) log("[%04X] AND %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
         reg.pair.A &= iyh;
-        setFlagByLogical();
+        setFlagByLogical(true);
         reg.PC += 2;
         return 0;
     }
@@ -3387,7 +3387,7 @@ class Z80
         unsigned char iyl = reg.IY & 0x00FF;
         if (isDebug()) log("[%04X] AND %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
         reg.pair.A &= iyl;
-        setFlagByLogical();
+        setFlagByLogical(true);
         reg.PC += 2;
         return 0;
     }
@@ -3398,7 +3398,7 @@ class Z80
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] AND %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->reg.pair.A &= n;
-        ctx->setFlagByLogical();
+        ctx->setFlagByLogical(true);
         ctx->reg.PC += 2;
         return 0;
     }
@@ -3410,7 +3410,7 @@ class Z80
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] AND %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->reg.pair.A &= n;
-        ctx->setFlagByLogical();
+        ctx->setFlagByLogical(true);
         ctx->reg.PC++;
         return 0;
     }
@@ -3423,7 +3423,7 @@ class Z80
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         reg.pair.A &= n;
-        setFlagByLogical();
+        setFlagByLogical(true);
         reg.PC += 3;
         return consumeClock(3);
     }
@@ -3436,7 +3436,7 @@ class Z80
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         reg.pair.A &= n;
-        setFlagByLogical();
+        setFlagByLogical(true);
         reg.PC += 3;
         return consumeClock(3);
     }
@@ -3451,7 +3451,7 @@ class Z80
         }
         if (isDebug()) log("[%04X] OR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         reg.pair.A |= *rp;
-        setFlagByLogical();
+        setFlagByLogical(false);
         reg.PC++;
         return 0;
     }
@@ -3462,7 +3462,7 @@ class Z80
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] OR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->reg.pair.A |= n;
-        ctx->setFlagByLogical();
+        ctx->setFlagByLogical(false);
         ctx->reg.PC += 2;
         return 0;
     }
@@ -3474,7 +3474,7 @@ class Z80
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] OR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A | n);
         ctx->reg.pair.A |= n;
-        ctx->setFlagByLogical();
+        ctx->setFlagByLogical(false);
         ctx->reg.PC++;
         return 0;
     }
@@ -3487,7 +3487,7 @@ class Z80
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         reg.pair.A |= n;
-        setFlagByLogical();
+        setFlagByLogical(false);
         reg.PC += 3;
         return consumeClock(3);
     }
@@ -3500,7 +3500,7 @@ class Z80
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         reg.pair.A |= n;
-        setFlagByLogical();
+        setFlagByLogical(false);
         reg.PC += 3;
         return consumeClock(3);
     }
@@ -3515,7 +3515,7 @@ class Z80
         }
         if (isDebug()) log("[%04X] XOR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         reg.pair.A ^= *rp;
-        setFlagByLogical();
+        setFlagByLogical(false);
         reg.PC++;
         return 0;
     }
@@ -3526,7 +3526,7 @@ class Z80
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] XOR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
         ctx->reg.pair.A ^= n;
-        ctx->setFlagByLogical();
+        ctx->setFlagByLogical(false);
         ctx->reg.PC += 2;
         return 0;
     }
@@ -3538,7 +3538,7 @@ class Z80
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] XOR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A ^ n);
         ctx->reg.pair.A ^= n;
-        ctx->setFlagByLogical();
+        ctx->setFlagByLogical(false);
         ctx->reg.PC++;
         return 0;
     }
@@ -3551,7 +3551,7 @@ class Z80
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         reg.pair.A ^= n;
-        setFlagByLogical();
+        setFlagByLogical(false);
         reg.PC += 3;
         return consumeClock(3);
     }
@@ -3564,7 +3564,7 @@ class Z80
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         reg.pair.A ^= n;
-        setFlagByLogical();
+        setFlagByLogical(false);
         reg.PC += 3;
         return consumeClock(3);
     }
