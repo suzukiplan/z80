@@ -580,6 +580,8 @@ class Z80
             case 0b10100101: return ctx->AND_IXL();
             case 0b10110100: return ctx->OR_IXH();
             case 0b10110101: return ctx->OR_IXL();
+            case 0b10101100: return ctx->XOR_IXH();
+            case 0b10101101: return ctx->XOR_IXL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -678,6 +680,8 @@ class Z80
             case 0b10100101: return ctx->AND_IYL();
             case 0b10110100: return ctx->OR_IYH();
             case 0b10110101: return ctx->OR_IYL();
+            case 0b10101100: return ctx->XOR_IYH();
+            case 0b10101101: return ctx->XOR_IYL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -3565,6 +3569,50 @@ class Z80
         reg.pair.A ^= *rp;
         setFlagByLogical(false);
         reg.PC++;
+        return 0;
+    }
+
+    // XOR with register IXH
+    inline int XOR_IXH()
+    {
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] XOR %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
+        reg.pair.A ^= ixh;
+        setFlagByLogical(false);
+        reg.PC += 2;
+        return 0;
+    }
+
+    // XOR with register IXL
+    inline int XOR_IXL()
+    {
+        unsigned char ixl = reg.IX & 0x00FF;
+        if (isDebug()) log("[%04X] XOR %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
+        reg.pair.A ^= ixl;
+        setFlagByLogical(false);
+        reg.PC += 2;
+        return 0;
+    }
+
+    // XOR with register IYH
+    inline int XOR_IYH()
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] XOR %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
+        reg.pair.A ^= iyh;
+        setFlagByLogical(false);
+        reg.PC += 2;
+        return 0;
+    }
+
+    // XOR with register IYL
+    inline int XOR_IYL()
+    {
+        unsigned char iyl = reg.IY & 0x00FF;
+        if (isDebug()) log("[%04X] XOR %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
+        reg.pair.A ^= iyl;
+        setFlagByLogical(false);
+        reg.PC += 2;
         return 0;
     }
 
