@@ -555,14 +555,15 @@ class Z80
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000111) == 0b01000100) {
-            return ctx->LD_R_IXH((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000111) == 0b01000101) {
-            return ctx->LD_R_IXL((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11001111) == 0b00001001) {
             return ctx->ADD_IX_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IX_R(op2 & 0b00000111);
+        }
+        if ((op2 & 0b11000111) == 0b01000100) {
+            return ctx->LD_R_IXH((op2 & 0b00111000) >> 3);
+        } else if ((op2 & 0b11000111) == 0b01000101) {
+            return ctx->LD_R_IXL((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01100000) {
             return ctx->LD_IXH_R(op2 & 0b00000111);
         } else if ((op2 & 0b11111000) == 0b01101000) {
@@ -633,14 +634,15 @@ class Z80
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000111) == 0b01000100) {
-            return ctx->LD_R_IYH((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11000111) == 0b01000101) {
-            return ctx->LD_R_IYL((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11001111) == 0b00001001) {
             return ctx->ADD_IY_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IY_R(op2 & 0b00000111);
+        }
+        if ((op2 & 0b11000111) == 0b01000100) {
+            return ctx->LD_R_IYH((op2 & 0b00111000) >> 3);
+        } else if ((op2 & 0b11000111) == 0b01000101) {
+            return ctx->LD_R_IYL((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11111000) == 0b01100000) {
             return ctx->LD_IYH_R(op2 & 0b00000111);
         } else if ((op2 & 0b11111000) == 0b01101000) {
