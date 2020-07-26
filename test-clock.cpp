@@ -509,6 +509,26 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0x85, 0, 0, 8);    // ADD A, IXL
     executeTest(&z80, &mmu, 0xFD, 0x84, 0, 0, 8);    // ADD A, IYH
     executeTest(&z80, &mmu, 0xFD, 0x85, 0, 0, 8);    // ADD A, IYL
+    executeTest(&z80, &mmu, 0xDD, 0x7C, 0, 0, 8);    // LD A, IXH
+    executeTest(&z80, &mmu, 0xDD, 0x7D, 0, 0, 8);    // LD A, IXL
+    executeTest(&z80, &mmu, 0xDD, 0x44, 0, 0, 8);    // LD B, IXH
+    executeTest(&z80, &mmu, 0xDD, 0x45, 0, 0, 8);    // LD B, IXL
+    executeTest(&z80, &mmu, 0xDD, 0x4C, 0, 0, 8);    // LD C, IXH
+    executeTest(&z80, &mmu, 0xDD, 0x4D, 0, 0, 8);    // LD C, IXL
+    executeTest(&z80, &mmu, 0xDD, 0x54, 0, 0, 8);    // LD D, IXH
+    executeTest(&z80, &mmu, 0xDD, 0x55, 0, 0, 8);    // LD D, IXL
+    executeTest(&z80, &mmu, 0xDD, 0x5C, 0, 0, 8);    // LD E, IXH
+    executeTest(&z80, &mmu, 0xDD, 0x5D, 0, 0, 8);    // LD E, IXL
+    executeTest(&z80, &mmu, 0xFD, 0x7C, 0, 0, 8);    // LD A, IYH
+    executeTest(&z80, &mmu, 0xFD, 0x7D, 0, 0, 8);    // LD A, IYL
+    executeTest(&z80, &mmu, 0xFD, 0x44, 0, 0, 8);    // LD B, IYH
+    executeTest(&z80, &mmu, 0xFD, 0x45, 0, 0, 8);    // LD B, IYL
+    executeTest(&z80, &mmu, 0xFD, 0x4C, 0, 0, 8);    // LD C, IYH
+    executeTest(&z80, &mmu, 0xFD, 0x4D, 0, 0, 8);    // LD C, IYL
+    executeTest(&z80, &mmu, 0xFD, 0x54, 0, 0, 8);    // LD D, IYH
+    executeTest(&z80, &mmu, 0xFD, 0x55, 0, 0, 8);    // LD D, IYL
+    executeTest(&z80, &mmu, 0xFD, 0x5C, 0, 0, 8);    // LD E, IYH
+    executeTest(&z80, &mmu, 0xFD, 0x5D, 0, 0, 8);    // LD E, IYL
 
     return 0;
 }

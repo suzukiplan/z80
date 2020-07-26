@@ -538,7 +538,6 @@ class Z80
                     case 0b10000110: return ctx->RES_IX(op3, (op4 & 0b00111000) >> 3);
                 }
             }
-            // undocumented instructions
             case 0b00100100: return ctx->INC_IXH();
             case 0b00101100: return ctx->INC_IXL();
             case 0b00100101: return ctx->DEC_IXH();
@@ -554,6 +553,10 @@ class Z80
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
+        } else if ((op2 & 0b11000111) == 0b01000100) {
+            return ctx->LD_R_IXH((op2 & 0b00111000) >> 3);
+        } else if ((op2 & 0b11000111) == 0b01000101) {
+            return ctx->LD_R_IXL((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11001111) == 0b00001001) {
             return ctx->ADD_IX_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -611,7 +614,6 @@ class Z80
                     case 0b10000110: return ctx->RES_IY(op3, (op4 & 0b00111000) >> 3);
                 }
             }
-            // undocumented instructions
             case 0b00100100: return ctx->INC_IYH();
             case 0b00101100: return ctx->INC_IYL();
             case 0b00100101: return ctx->DEC_IYH();
@@ -627,6 +629,10 @@ class Z80
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
+        } else if ((op2 & 0b11000111) == 0b01000100) {
+            return ctx->LD_R_IYH((op2 & 0b00111000) >> 3);
+        } else if ((op2 & 0b11000111) == 0b01000101) {
+            return ctx->LD_R_IYL((op2 & 0b00111000) >> 3);
         } else if ((op2 & 0b11001111) == 0b00001001) {
             return ctx->ADD_IY_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
@@ -1255,6 +1261,28 @@ class Z80
         return consumeClock(3);
     }
 
+    // Load Reg. r with IXH
+    inline int LD_R_IXH(unsigned char r)
+    {
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) log("[%04X] LD %s, IXH<$%02X>", reg.PC, registerDump(r), ixh);
+        if (rp) *rp = ixh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Load Reg. r with IXL
+    inline int LD_R_IXL(unsigned char r)
+    {
+        unsigned char ixl = reg.IX & 0x00FF;
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) log("[%04X] LD %s, IXL<$%02X>", reg.PC, registerDump(r), ixl);
+        if (rp) *rp = ixl;
+        reg.PC += 2;
+        return 0;
+    }
+
     // Load Reg. r with location (IY+d)
     inline int LD_R_IY(unsigned char r)
     {
@@ -1265,6 +1293,28 @@ class Z80
         if (rp) *rp = n;
         reg.PC += 3;
         return consumeClock(3);
+    }
+
+    // Load Reg. r with IYH
+    inline int LD_R_IYH(unsigned char r)
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) log("[%04X] LD %s, IYH<$%02X>", reg.PC, registerDump(r), iyh);
+        if (rp) *rp = iyh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Load Reg. r with IYL
+    inline int LD_R_IYL(unsigned char r)
+    {
+        unsigned char iyl = reg.IY & 0x00FF;
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) log("[%04X] LD %s, IYL<$%02X>", reg.PC, registerDump(r), iyl);
+        if (rp) *rp = iyl;
+        reg.PC += 2;
+        return 0;
     }
 
     // Load location (HL) with Reg. r

@@ -804,6 +804,102 @@ int main(int argc, char* argv[])
     z80.reg.IY = 0x80;                                           // setup register for test
     executeTest(&z80, &mmu, 0xFD, 0x85, 0, 0, 0xFF, 0b10000000); // ADD A, IYL
 
+    puts("tests LD A/B/C/D/E, IXH");
+    z80.reg.IX = 0x1234;                                               // setup register for test
+    z80.reg.IY = 0x4321;                                               // setup register for test
+    z80.reg.pair.A = 0x0A;                                             // setup register for test
+    z80.reg.pair.B = 0x0B;                                             // setup register for test
+    z80.reg.pair.C = 0x0C;                                             // setup register for test
+    z80.reg.pair.D = 0x0D;                                             // setup register for test
+    z80.reg.pair.E = 0x0E;                                             // setup register for test
+    executeTest(&z80, &mmu, 0xDD, 0x7C, 0, 0, 0b00000000, 0b00000000); // LD A, IXH
+    check("A", 0x12, z80.reg.pair.A);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x44, 0, 0, 0b00000000, 0b00000000); // LD B, IXH
+    check("B", 0x12, z80.reg.pair.B);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x4C, 0, 0, 0b00000000, 0b00000000); // LD C, IXH
+    check("C", 0x12, z80.reg.pair.C);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x54, 0, 0, 0b00000000, 0b00000000); // LD D, IXH
+    check("D", 0x12, z80.reg.pair.D);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x5C, 0, 0, 0b00000000, 0b00000000); // LD E, IXH
+    check("E", 0x12, z80.reg.pair.E);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+
+    puts("tests LD A/B/C/D/E, IXL");
+    z80.reg.IX = 0x1234;                                               // setup register for test
+    z80.reg.IY = 0x4321;                                               // setup register for test
+    z80.reg.pair.A = 0x0A;                                             // setup register for test
+    z80.reg.pair.B = 0x0B;                                             // setup register for test
+    z80.reg.pair.C = 0x0C;                                             // setup register for test
+    z80.reg.pair.D = 0x0D;                                             // setup register for test
+    z80.reg.pair.E = 0x0E;                                             // setup register for test
+    executeTest(&z80, &mmu, 0xDD, 0x7D, 0, 0, 0b00000000, 0b00000000); // LD A, IXL
+    check("A", 0x34, z80.reg.pair.A);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x45, 0, 0, 0b00000000, 0b00000000); // LD B, IXL
+    check("B", 0x34, z80.reg.pair.B);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x4D, 0, 0, 0b00000000, 0b00000000); // LD C, IXL
+    check("C", 0x34, z80.reg.pair.C);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x55, 0, 0, 0b00000000, 0b00000000); // LD D, IXL
+    check("D", 0x34, z80.reg.pair.D);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xDD, 0x5D, 0, 0, 0b00000000, 0b00000000); // LD E, IXL
+    check("E", 0x34, z80.reg.pair.E);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+
+    puts("tests LD A/B/C/D/E, IYH");
+    z80.reg.IX = 0x1234;                                               // setup register for test
+    z80.reg.IY = 0x4321;                                               // setup register for test
+    z80.reg.pair.A = 0x0A;                                             // setup register for test
+    z80.reg.pair.B = 0x0B;                                             // setup register for test
+    z80.reg.pair.C = 0x0C;                                             // setup register for test
+    z80.reg.pair.D = 0x0D;                                             // setup register for test
+    z80.reg.pair.E = 0x0E;                                             // setup register for test
+    executeTest(&z80, &mmu, 0xFD, 0x7C, 0, 0, 0b00000000, 0b00000000); // LD A, IYH
+    check("A", 0x43, z80.reg.pair.A);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xFD, 0x44, 0, 0, 0b00000000, 0b00000000); // LD B, IYH
+    check("B", 0x43, z80.reg.pair.B);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xFD, 0x4C, 0, 0, 0b00000000, 0b00000000); // LD C, IYH
+    check("C", 0x43, z80.reg.pair.C);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xFD, 0x54, 0, 0, 0b00000000, 0b00000000); // LD D, IYH
+    check("D", 0x43, z80.reg.pair.D);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xFD, 0x5C, 0, 0, 0b00000000, 0b00000000); // LD E, IYH
+    check("E", 0x43, z80.reg.pair.E);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+
+    puts("tests LD A/B/C/D/E, IYL");
+    z80.reg.IX = 0x1234;                                               // setup register for test
+    z80.reg.IY = 0x4321;                                               // setup register for test
+    z80.reg.pair.A = 0x0A;                                             // setup register for test
+    z80.reg.pair.B = 0x0B;                                             // setup register for test
+    z80.reg.pair.C = 0x0C;                                             // setup register for test
+    z80.reg.pair.D = 0x0D;                                             // setup register for test
+    z80.reg.pair.E = 0x0E;                                             // setup register for test
+    executeTest(&z80, &mmu, 0xFD, 0x7D, 0, 0, 0b00000000, 0b00000000); // LD A, IYL
+    check("A", 0x21, z80.reg.pair.A);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xFD, 0x45, 0, 0, 0b00000000, 0b00000000); // LD B, IYL
+    check("B", 0x21, z80.reg.pair.B);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xFD, 0x4D, 0, 0, 0b00000000, 0b00000000); // LD C, IYL
+    check("C", 0x21, z80.reg.pair.C);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xFD, 0x55, 0, 0, 0b00000000, 0b00000000); // LD D, IYL
+    check("D", 0x21, z80.reg.pair.D);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+    executeTest(&z80, &mmu, 0xFD, 0x5D, 0, 0, 0b00000000, 0b00000000); // LD E, IYL
+    check("E", 0x21, z80.reg.pair.E);                                  // check register result
+    check("PC", 2, z80.reg.PC);                                        // check register result
+
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
 
