@@ -463,5 +463,11 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0b11101101, 0b01000110, 0, 0, 8);        // IM 0
     executeTest(&z80, &mmu, 0b11101101, 0b01010110, 0, 0, 8);        // IM 1
     executeTest(&z80, &mmu, 0b11101101, 0b01011110, 0, 0, 8);        // IM 2
+
+    // undocumented instructions
+    executeTest(&z80, &mmu, 0xDD, 0x24, 0, 0, 8); // INC IXH
+    executeTest(&z80, &mmu, 0xFD, 0x24, 0, 0, 8); // INC IYH
+    executeTest(&z80, &mmu, 0xDD, 0x2C, 0, 0, 8); // INC IXL
+    executeTest(&z80, &mmu, 0xFD, 0x2C, 0, 0, 8); // INC IYL
     return 0;
 }

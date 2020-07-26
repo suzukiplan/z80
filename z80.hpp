@@ -538,6 +538,9 @@ class Z80
                     case 0b10000110: return ctx->RES_IX(op3, (op4 & 0b00111000) >> 3);
                 }
             }
+            // undocumented instructions
+            case 0b00100100: return ctx->INC_IXH();
+            case 0b00101100: return ctx->INC_IXL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -594,6 +597,9 @@ class Z80
                     case 0b10000110: return ctx->RES_IY(op3, (op4 & 0b00111000) >> 3);
                 }
             }
+            // undocumented instructions
+            case 0b00100100: return ctx->INC_IYH();
+            case 0b00101100: return ctx->INC_IYL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -2376,6 +2382,32 @@ class Z80
         return consumeClock(3);
     }
 
+    // Increment register high 8 bits of IX
+    inline int INC_IXH()
+    {
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] INC IXH<$%02X>", reg.PC, ixh);
+        setFlagByIncrement(ixh);
+        ixh++;
+        reg.IX &= 0x00FF;
+        reg.IX |= ixh * 256;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Increment register low 8 bits of IX
+    inline int INC_IXL()
+    {
+        unsigned char ixl = reg.IX & 0x00FF;
+        if (isDebug()) log("[%04X] INC IXL<$%02X>", reg.PC, ixl);
+        setFlagByIncrement(ixl);
+        ixl++;
+        reg.IX &= 0xFF00;
+        reg.IX |= ixl;
+        reg.PC += 2;
+        return 0;
+    }
+
     // Increment location (IY+d)
     inline int INC_IY()
     {
@@ -2387,6 +2419,32 @@ class Z80
         writeByte(addr, n + 1);
         reg.PC += 3;
         return consumeClock(3);
+    }
+
+    // Increment register high 8 bits of IY
+    inline int INC_IYH()
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        if (isDebug()) log("[%04X] INC IYH<$%02X>", reg.PC, iyh);
+        setFlagByIncrement(iyh);
+        iyh++;
+        reg.IY &= 0x00FF;
+        reg.IY |= iyh * 256;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Increment register low 8 bits of IY
+    inline int INC_IYL()
+    {
+        unsigned char iyl = reg.IX & 0x00FF;
+        if (isDebug()) log("[%04X] INC IYL<$%02X>", reg.PC, iyl);
+        setFlagByIncrement(iyl);
+        iyl++;
+        reg.IY &= 0xFF00;
+        reg.IY |= iyl;
+        reg.PC += 2;
+        return 0;
     }
 
     // Substract Register
