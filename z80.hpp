@@ -574,6 +574,8 @@ class Z80
             case 0b10001101: return ctx->ADC_A_IXL();
             case 0b10010100: return ctx->SUB_A_IXH();
             case 0b10010101: return ctx->SUB_A_IXL();
+            case 0b10011100: return ctx->SBC_A_IXH();
+            case 0b10011101: return ctx->SBC_A_IXL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
@@ -666,6 +668,8 @@ class Z80
             case 0b10001101: return ctx->ADC_A_IYL();
             case 0b10010100: return ctx->SUB_A_IYH();
             case 0b10010101: return ctx->SUB_A_IYL();
+            case 0b10011100: return ctx->SBC_A_IYH();
+            case 0b10011101: return ctx->SBC_A_IYL();
         }
         if ((op2 & 0b11000111) == 0b01000110) {
             return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
@@ -2946,6 +2950,54 @@ class Z80
         setFlagBySubstract(reg.pair.A, c + *rp);
         reg.pair.A -= c + *rp;
         reg.PC += 1;
+        return 0;
+    }
+
+    // Substract IXH to Acc. with carry
+    inline int SBC_A_IXH()
+    {
+        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        unsigned char c = isFlagC() ? 1 : 0;
+        if (isDebug()) log("[%04X] SBC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), ixh, c ? "ON" : "OFF");
+        setFlagBySubstract(reg.pair.A, c + ixh);
+        reg.pair.A -= c + ixh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Substract IXL to Acc. with carry
+    inline int SBC_A_IXL()
+    {
+        unsigned char ixl = reg.IX & 0x00FF;
+        unsigned char c = isFlagC() ? 1 : 0;
+        if (isDebug()) log("[%04X] SBC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), ixl, c ? "ON" : "OFF");
+        setFlagBySubstract(reg.pair.A, c + ixl);
+        reg.pair.A -= c + ixl;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Substract IYH to Acc. with carry
+    inline int SBC_A_IYH()
+    {
+        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        unsigned char c = isFlagC() ? 1 : 0;
+        if (isDebug()) log("[%04X] SBC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), iyh, c ? "ON" : "OFF");
+        setFlagBySubstract(reg.pair.A, c + iyh);
+        reg.pair.A -= c + iyh;
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Substract IYL to Acc. with carry
+    inline int SBC_A_IYL()
+    {
+        unsigned char iyl = reg.IY & 0x00FF;
+        unsigned char c = isFlagC() ? 1 : 0;
+        if (isDebug()) log("[%04X] SBC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), iyl, c ? "ON" : "OFF");
+        setFlagBySubstract(reg.pair.A, c + iyl);
+        reg.pair.A -= c + iyl;
+        reg.PC += 2;
         return 0;
     }
 
