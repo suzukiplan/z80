@@ -1823,6 +1823,17 @@ class Z80
         return 0;
     }
 
+    inline void setFlagByRotate(unsigned char n, bool carry)
+    {
+        setFlagC(carry ? true : false);
+        setFlagH(false);
+        setFlagN(false);
+        setFlagS(n & 0x80 ? true : false);
+        setFlagZ(0 == n);
+        setFlagXY(n);
+        setFlagPV(isEvenNumberBits(n));
+    }
+
     // Rotate register Left Circular
     inline int RLC_R(unsigned char r)
     {
@@ -1837,13 +1848,7 @@ class Z80
         *rp &= 0b01111111;
         *rp <<= 1;
         *rp |= r7; // differ with RL
-        setFlagC(r7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((*rp & 0x80) != 0);
-        setFlagZ(*rp == 0);
-        setFlagXY(*rp);
-        setFlagPV(isEvenNumberBits(*rp));
+        setFlagByRotate(*rp, r7);
         reg.PC += 2;
         return 0;
     }
@@ -1862,13 +1867,7 @@ class Z80
         *rp &= 0b01111111;
         *rp <<= 1;
         *rp |= c; // differ with RLC
-        setFlagC(r7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((*rp & 0x80) != 0);
-        setFlagZ(*rp == 0);
-        setFlagXY(*rp);
-        setFlagPV(isEvenNumberBits(*rp));
+        setFlagByRotate(*rp, r7);
         reg.PC += 2;
         return 0;
     }
@@ -1886,13 +1885,7 @@ class Z80
         if (isDebug()) log("[%04X] SLA %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
         *rp &= 0b01111111;
         *rp <<= 1;
-        setFlagC(r7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((*rp & 0x80) != 0);
-        setFlagZ(*rp == 0);
-        setFlagXY(*rp);
-        setFlagPV(isEvenNumberBits(*rp));
+        setFlagByRotate(*rp, r7);
         reg.PC += 2;
         return 0;
     }
@@ -1911,13 +1904,7 @@ class Z80
         *rp &= 0b11111110;
         *rp >>= 1;
         *rp |= r0 ? 0x80 : 0; // differ with RR
-        setFlagC(r0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((*rp & 0x80) != 0);
-        setFlagZ(*rp == 0);
-        setFlagXY(*rp);
-        setFlagPV(isEvenNumberBits(*rp));
+        setFlagByRotate(*rp, r0);
         reg.PC += 2;
         return 0;
     }
@@ -1936,13 +1923,7 @@ class Z80
         *rp &= 0b11111110;
         *rp >>= 1;
         *rp |= c ? 0x80 : 0; // differ with RRC
-        setFlagC(r0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((*rp & 0x80) != 0);
-        setFlagZ(*rp == 0);
-        setFlagXY(*rp);
-        setFlagPV(isEvenNumberBits(*rp));
+        setFlagByRotate(*rp, r0);
         reg.PC += 2;
         return 0;
     }
@@ -1962,13 +1943,7 @@ class Z80
         *rp &= 0b11111110;
         *rp >>= 1;
         r7 ? * rp |= 0x80 : * rp &= 0x7F;
-        setFlagC(r0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((*rp & 0x80) != 0);
-        setFlagZ(*rp == 0);
-        setFlagXY(*rp);
-        setFlagPV(isEvenNumberBits(*rp));
+        setFlagByRotate(*rp, r0);
         reg.PC += 2;
         return 0;
     }
@@ -1986,13 +1961,7 @@ class Z80
         if (isDebug()) log("[%04X] SRL %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
         *rp &= 0b11111110;
         *rp >>= 1;
-        setFlagC(r0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((*rp & 0x80) != 0);
-        setFlagZ(*rp == 0);
-        setFlagXY(*rp);
-        setFlagPV(isEvenNumberBits(*rp));
+        setFlagByRotate(*rp, r0);
         reg.PC += 2;
         return 0;
     }
@@ -2009,13 +1978,7 @@ class Z80
         n <<= 1;
         n |= n7; // differ with RL (HL)
         writeByte(addr, n, 3);
-        setFlagC(n7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n7);
         reg.PC += 2;
         return 0;
     }
@@ -2032,13 +1995,7 @@ class Z80
         n <<= 1;
         n |= c; // differ with RLC (HL)
         writeByte(addr, n, 3);
-        setFlagC(n7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n7);
         reg.PC += 2;
         return 0;
     }
@@ -2054,13 +2011,7 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         writeByte(addr, n, 3);
-        setFlagC(n7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n7);
         reg.PC += 2;
         return 0;
     }
@@ -2077,13 +2028,7 @@ class Z80
         n >>= 1;
         n |= n0 ? 0x80 : 0; // differ with RR (HL)
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 2;
         return 0;
     }
@@ -2100,13 +2045,7 @@ class Z80
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (HL)
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 2;
         return 0;
     }
@@ -2124,13 +2063,7 @@ class Z80
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 2;
         return 0;
     }
@@ -2146,13 +2079,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 2;
         return 0;
     }
@@ -2162,21 +2089,14 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] RLC (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, c ? "ON" : "OFF", extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RLC (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         n &= 0b01111111;
         n <<= 1;
         n |= n7; // differ with RL (IX+d)
         if (rp) *rp = n;
         writeByte(addr, n, 3);
-        setFlagC(n7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n7);
         reg.PC += 4;
         return 0;
     }
@@ -2199,21 +2119,14 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        if (isDebug()) log("[%04X] RRC (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, c ? "ON" : "OFF", extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RRC (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         n &= 0b11111110;
         n >>= 1;
         n |= n0 ? 0x80 : 0; // differ with RR (IX+d)
         if (rp) *rp = n;
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 4;
         return 0;
     }
@@ -2243,13 +2156,7 @@ class Z80
         n <<= 1;
         n |= c; // differ with RLC (IX+d)
         writeByte(addr, n, 3);
-        setFlagC(n7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n7);
         reg.PC += 4;
         return 0;
     }
@@ -2265,13 +2172,7 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         writeByte(addr, n, 3);
-        setFlagC(n7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n7);
         reg.PC += 4;
         return 0;
     }
@@ -2288,13 +2189,7 @@ class Z80
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (IX+d)
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 4;
         return 0;
     }
@@ -2312,13 +2207,7 @@ class Z80
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 4;
         return 0;
     }
@@ -2334,13 +2223,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 4;
         return 0;
     }
@@ -2357,13 +2240,7 @@ class Z80
         n <<= 1;
         n |= n7; // differ with RL (IX+d)
         writeByte(addr, n, 3);
-        setFlagC(n7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n7);
         reg.PC += 4;
         return 0;
     }
@@ -2380,13 +2257,7 @@ class Z80
         n >>= 1;
         n |= n0 ? 0x80 : 0; // differ with RR (IX+d)
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 4;
         return 0;
     }
@@ -2403,13 +2274,7 @@ class Z80
         n <<= 1;
         n |= c; // differ with RLC (IY+d)
         writeByte(addr, n, 3);
-        setFlagC(n7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n7);
         reg.PC += 4;
         return 0;
     }
@@ -2425,13 +2290,7 @@ class Z80
         n &= 0b01111111;
         n <<= 1;
         writeByte(addr, n, 3);
-        setFlagC(n7 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n7);
         reg.PC += 4;
         return 0;
     }
@@ -2448,13 +2307,7 @@ class Z80
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (IY+d)
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 4;
         return 0;
     }
@@ -2472,13 +2325,7 @@ class Z80
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 4;
         return 0;
     }
@@ -2494,13 +2341,7 @@ class Z80
         n &= 0b11111110;
         n >>= 1;
         writeByte(addr, n, 3);
-        setFlagC(n0 ? true : false);
-        setFlagH(false);
-        setFlagN(false);
-        setFlagS((n & 0x80) != 0);
-        setFlagZ(n == 0);
-        setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        setFlagByRotate(n, n0);
         reg.PC += 4;
         return 0;
     }
