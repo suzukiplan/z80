@@ -2,7 +2,7 @@
 
 ## Version 1.1.0 (WIP)
 
-- implement undocumented instructions:
+- enhancement: implement undocumented instructions:
   - `INC IXH/IXL/IYH/IYL`
   - `DEC IXH/IXL/IYH/IYL`
   - `LD IXH/IXL/IYH/IYL, nn`
@@ -15,6 +15,8 @@
   - `SLL B/C/D/E/H/L/(HL)/A`
   - `IN/OUT F,(C)`
 - bugfix: incorrect H status flag: OR/XOR (must reset but set)
+- refactor: make common flag setting function for rotate result
+- change-feature: remove carry log from RRC/RLC operands because not effort
 
 ## Version 1.0.1 (Jul 25, 2020 JST)
 
