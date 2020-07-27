@@ -560,6 +560,14 @@ class Z80
                     case 0b10101000: return ctx->RES_IX_with_LD(op3, 5, 0b000);
                     case 0b10110000: return ctx->RES_IX_with_LD(op3, 6, 0b000);
                     case 0b10111000: return ctx->RES_IX_with_LD(op3, 7, 0b000);
+                    case 0b11000000: return ctx->SET_IX_with_LD(op3, 0, 0b000);
+                    case 0b11001000: return ctx->SET_IX_with_LD(op3, 1, 0b000);
+                    case 0b11010000: return ctx->SET_IX_with_LD(op3, 2, 0b000);
+                    case 0b11011000: return ctx->SET_IX_with_LD(op3, 3, 0b000);
+                    case 0b11100000: return ctx->SET_IX_with_LD(op3, 4, 0b000);
+                    case 0b11101000: return ctx->SET_IX_with_LD(op3, 5, 0b000);
+                    case 0b11110000: return ctx->SET_IX_with_LD(op3, 6, 0b000);
+                    case 0b11111000: return ctx->SET_IX_with_LD(op3, 7, 0b000);
                 }
             }
             case 0b00100100: return ctx->INC_IXH();
@@ -3891,11 +3899,11 @@ class Z80
     }
 
     // SET bit b of lacation (IX+d)
-    inline int SET_IX(signed char d, unsigned char bit)
+    inline int SET_IX(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        if (isDebug()) log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
             case 0: n |= 0b00000001; break;
             case 1: n |= 0b00000010; break;
@@ -3906,9 +3914,23 @@ class Z80
             case 6: n |= 0b01000000; break;
             case 7: n |= 0b10000000; break;
         }
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         reg.PC += 4;
         return 0;
+    }
+
+    // SET bit b of lacation (IX+d) with load Reg.
+    inline int SET_IX_with_LD(signed char d, unsigned char bit, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return SET_IX(d, bit, rp, buf);
     }
 
     // SET bit b of lacation (IY+d)

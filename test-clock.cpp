@@ -587,6 +587,14 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xA8, 23); // RES 5, (IX+d) with LD B
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xB0, 23); // RES 6, (IX+d) with LD B
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xB8, 23); // RES 7, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xC0, 23); // SET 0, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xC8, 23); // SET 1, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xD0, 23); // SET 2, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xD8, 23); // SET 3, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xE0, 23); // SET 4, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xE8, 23); // SET 5, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xF0, 23); // SET 6, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xF8, 23); // SET 7, (IX+d) with LD B
 
     return 0;
 }

@@ -1488,22 +1488,43 @@ int main(int argc, char* argv[])
     z80.reg.pair.B = 0;                                                      // setup register for test
     z80.reg.IX = 0x8034;                                                     // setup register for test
     mmu.RAM[0x80AA] = 0b11111111;                                            // setup RAM for test
-    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x80, 0b00000000, 0b00000000); // SRL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x80, 0b00000000, 0b00000000); // RES (IX+d) with LD B
     check("B", 0b11111110, z80.reg.pair.B);                                  // check result
-    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x88, 0b11111111, 0b11111111); // SRL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x88, 0b11111111, 0b11111111); // RES (IX+d) with LD B
     check("B", 0b11111100, z80.reg.pair.B);                                  // check result
-    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x90, 0b00000000, 0b00000000); // SRL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x90, 0b00000000, 0b00000000); // RES (IX+d) with LD B
     check("B", 0b11111000, z80.reg.pair.B);                                  // check result
-    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x98, 0b11111111, 0b11111111); // SRL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x98, 0b11111111, 0b11111111); // RES (IX+d) with LD B
     check("B", 0b11110000, z80.reg.pair.B);                                  // check result
-    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xA0, 0b00000000, 0b00000000); // SRL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xA0, 0b00000000, 0b00000000); // RES (IX+d) with LD B
     check("B", 0b11100000, z80.reg.pair.B);                                  // check result
-    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xA8, 0b11111111, 0b11111111); // SRL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xA8, 0b11111111, 0b11111111); // RES (IX+d) with LD B
     check("B", 0b11000000, z80.reg.pair.B);                                  // check result
-    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xB0, 0b00000000, 0b00000000); // SRL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xB0, 0b00000000, 0b00000000); // RES (IX+d) with LD B
     check("B", 0b10000000, z80.reg.pair.B);                                  // check result
-    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xB8, 0b00000000, 0b00000000); // SRL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xB8, 0b00000000, 0b00000000); // RES (IX+d) with LD B
     check("B", 0b00000000, z80.reg.pair.B);                                  // check result
+
+    puts("tests SET 0~7, (IX+d) with LD B");
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.IX = 0x8034;                                                     // setup register for test
+    mmu.RAM[0x80AA] = 0;                                                     // setup RAM for test
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xC0, 0b00000000, 0b00000000); // SET (IX+d) with LD B
+    check("B", 0b00000001, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xC8, 0b11111111, 0b11111111); // SET (IX+d) with LD B
+    check("B", 0b00000011, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xD0, 0b00000000, 0b00000000); // SET (IX+d) with LD B
+    check("B", 0b00000111, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xD8, 0b11111111, 0b11111111); // SET (IX+d) with LD B
+    check("B", 0b00001111, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xE0, 0b00000000, 0b00000000); // SET (IX+d) with LD B
+    check("B", 0b00011111, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xE8, 0b11111111, 0b11111111); // SET (IX+d) with LD B
+    check("B", 0b00111111, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xF0, 0b00000000, 0b00000000); // SET (IX+d) with LD B
+    check("B", 0b01111111, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xF8, 0b00000000, 0b00000000); // SET (IX+d) with LD B
+    check("B", 0b11111111, z80.reg.pair.B);                                  // check result
 
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
