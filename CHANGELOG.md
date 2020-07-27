@@ -1,6 +1,6 @@
 # Change log
 
-## Version 1.1.0 (WIP)
+## Version 1.1.0 (Jul 27, 2020 JST)
 
 - enhancement: implement undocumented instructions:
   - `INC IXH/IXL/IYH/IYL`
