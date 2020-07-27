@@ -1881,9 +1881,8 @@ class Z80
             if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r7 = *rp & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] SLA %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SLA %s", reg.PC, registerDump(r));
         *rp &= 0b01111111;
         *rp <<= 1;
         setFlagByRotate(*rp, r7);
@@ -1936,10 +1935,9 @@ class Z80
             if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r0 = *rp & 0x01;
         unsigned char r7 = *rp & 0x80;
-        if (isDebug()) log("[%04X] SRA %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRA %s", reg.PC, registerDump(r));
         *rp &= 0b11111110;
         *rp >>= 1;
         r7 ? * rp |= 0x80 : * rp &= 0x7F;
@@ -2004,9 +2002,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] SLA (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SLA (HL<$%04X>) = $%02X", reg.PC, addr, n);
         n &= 0b01111111;
         n <<= 1;
         writeByte(addr, n, 3);
@@ -2053,10 +2050,9 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         unsigned char n7 = n & 0x80;
-        if (isDebug()) log("[%04X] SRA (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRA (HL<$%04X>) = $%02X", reg.PC, addr, n);
         n &= 0b11111110;
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
@@ -2205,13 +2201,12 @@ class Z80
     }
 
     // Shift operand location (IX+d) left Arithmetic
-    inline int SLA_IX(signed char d)
+    inline int SLA_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] SLA (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SLA (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         n &= 0b01111111;
         n <<= 1;
         writeByte(addr, n, 3);
@@ -2225,10 +2220,9 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         unsigned char n7 = n & 0x80;
-        if (isDebug()) log("[%04X] SRA (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRA (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n);
         n &= 0b11111110;
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
@@ -2308,9 +2302,8 @@ class Z80
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] SLA (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SLA (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         n &= 0b01111111;
         n <<= 1;
         writeByte(addr, n, 3);
@@ -2341,10 +2334,9 @@ class Z80
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
         unsigned char n7 = n & 0x80;
-        if (isDebug()) log("[%04X] SRA (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRA (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         n &= 0b11111110;
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
