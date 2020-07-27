@@ -742,6 +742,16 @@ class Z80
             case 0b11000000: return ctx->SET_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
             case 0b10000000: return ctx->RES_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
         }
+        switch (op2) {
+            case 0b00110000: return ctx->SLL_R(0b000);
+            case 0b00110001: return ctx->SLL_R(0b001);
+            case 0b00110010: return ctx->SLL_R(0b010);
+            case 0b00110011: return ctx->SLL_R(0b011);
+            case 0b00110100: return ctx->SLL_R(0b100);
+            case 0b00110101: return ctx->SLL_R(0b101);
+            case 0b00110110: return ctx->SLL_HL();
+            case 0b00110111: return ctx->SLL_R(0b111);
+        }
         if (ctx->isDebug()) ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
         return -1;
     }
@@ -1965,6 +1975,23 @@ class Z80
         return 0;
     }
 
+    // Shift operand register Left Logical
+    inline int SLL_R(unsigned char r)
+    {
+        unsigned char* rp = getRegisterPointer(r);
+        if (!rp) {
+            if (isDebug()) log("specified an unknown register (%d)", r);
+            return -1;
+        }
+        unsigned char r7 = *rp & 0x80;
+        if (isDebug()) log("[%04X] SLL %s", reg.PC, registerDump(r));
+        *rp &= 0b01111111;
+        *rp <<= 1;
+        setFlagByRotate(*rp, r7);
+        reg.PC += 2;
+        return 0;
+    }
+
     // Rotate memory (HL) Left Circular
     inline int RLC_HL()
     {
@@ -2074,6 +2101,21 @@ class Z80
         n >>= 1;
         writeByte(addr, n, 3);
         setFlagByRotate(n, n0);
+        reg.PC += 2;
+        return 0;
+    }
+
+    // Shift operand location (HL) Left Logical
+    inline int SLL_HL()
+    {
+        unsigned short addr = getHL();
+        unsigned char n = readByte(addr);
+        unsigned char n7 = n & 0x80;
+        if (isDebug()) log("[%04X] SLL (HL<$%04X>) = $%02X", reg.PC, addr, n);
+        n &= 0b01111111;
+        n <<= 1;
+        writeByte(addr, n, 3);
+        setFlagByRotate(n, n7);
         reg.PC += 2;
         return 0;
     }
