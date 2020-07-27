@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.2.0 (WIP)
+
+- Enhancement for make more strict getting clock cycle consuming.
+
 ## Version 1.1.0 (Jul 27, 2020 JST)
 
 - enhancement: implement undocumented instructions:
