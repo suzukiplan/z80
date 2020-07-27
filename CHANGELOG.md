@@ -16,7 +16,7 @@
   - `IN/OUT F,(C)`
 - bugfix: incorrect H status flag: OR/XOR (must reset but set)
 - refactor: make common flag setting function for rotate result
-- change-feature: remove carry log from RRC/RLC/SRA/SLA operands because not effort
+- change-feature: remove carry log from RRC/RLC/SRA/SLA/SRL operands because not effort
 
 ## Version 1.0.1 (Jul 25, 2020 JST)
 

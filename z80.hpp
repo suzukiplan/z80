@@ -1956,9 +1956,8 @@ class Z80
             if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r0 = *rp & 0x01;
-        if (isDebug()) log("[%04X] SRL %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRL %s", reg.PC, registerDump(r));
         *rp &= 0b11111110;
         *rp >>= 1;
         setFlagByRotate(*rp, r0);
@@ -2069,9 +2068,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        if (isDebug()) log("[%04X] SRL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRL (HL<$%04X>) = $%02X", reg.PC, addr, n);
         n &= 0b11111110;
         n >>= 1;
         writeByte(addr, n, 3);
@@ -2267,9 +2265,8 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        if (isDebug()) log("[%04X] SRL (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRL (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
         n &= 0b11111110;
         n >>= 1;
         writeByte(addr, n, 3);
@@ -2381,9 +2378,8 @@ class Z80
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        if (isDebug()) log("[%04X] SRL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SRL (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         n &= 0b11111110;
         n >>= 1;
         writeByte(addr, n, 3);
