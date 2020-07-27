@@ -1388,6 +1388,18 @@ int main(int argc, char* argv[])
     z80.reg.IY = 0x80;                                           // setup register for test
     executeTest(&z80, &mmu, 0xFD, 0xBD, 0, 0, 0xFF, 0b10000111); // CP A, IYL
 
+    puts("tests RLC (IX+d) with LD A");
+    z80.reg.pair.A = 0;                                                      // setup register for test
+    z80.reg.IX = 0x8034;                                                     // setup register for test
+    mmu.RAM[0x80AA] = 0b10101010;                                            // setup RAM for test
+    mmu.RAM[0x8033] = 0b11110001;                                            // setup RAM for test
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x07, 0b00000000, 0b00000101); // RLC (IX+d) with LD A
+    check("A", 0b01010101, z80.reg.pair.A);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x07, 0b00000101, 0b10101100); // RLC (IX+d) with LD A
+    check("A", 0b10101010, z80.reg.pair.A);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0xFF, 0x07, 0b00000000, 0b10100001); // RLC (IX+d) with LD A
+    check("A", 0b11100011, z80.reg.pair.A);                                  // check result
+
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
 

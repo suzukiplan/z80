@@ -531,6 +531,13 @@ class Z80
                     case 0b00100110: return ctx->SLA_IX(op3);
                     case 0b00101110: return ctx->SRA_IX(op3);
                     case 0b00111110: return ctx->SRL_IX(op3);
+                    case 0b00000000: return ctx->RLC_IX_with_LD(op3, 0b000);
+                    case 0b00000001: return ctx->RLC_IX_with_LD(op3, 0b001);
+                    case 0b00000010: return ctx->RLC_IX_with_LD(op3, 0b010);
+                    case 0b00000011: return ctx->RLC_IX_with_LD(op3, 0b011);
+                    case 0b00000100: return ctx->RLC_IX_with_LD(op3, 0b100);
+                    case 0b00000101: return ctx->RLC_IX_with_LD(op3, 0b101);
+                    case 0b00000111: return ctx->RLC_IX_with_LD(op3, 0b111);
                 }
                 switch (op4 & 0b11000111) {
                     case 0b01000110: return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
@@ -1013,8 +1020,9 @@ class Z80
         static char E[16];
         static char H[16];
         static char L[16];
-        static char unknown[2] = "?";
-        switch (r) {
+        static char F[16];
+        static char unknown[2];
+        switch (r & 0b111) {
             case 0b111: sprintf(A, "A<$%02X>", reg.pair.A); return A;
             case 0b000: sprintf(B, "B<$%02X>", reg.pair.B); return B;
             case 0b001: sprintf(C, "C<$%02X>", reg.pair.C); return C;
@@ -1022,8 +1030,11 @@ class Z80
             case 0b011: sprintf(E, "E<$%02X>", reg.pair.E); return E;
             case 0b100: sprintf(H, "H<$%02X>", reg.pair.H); return H;
             case 0b101: sprintf(L, "L<$%02X>", reg.pair.L); return L;
-            default: return unknown;
+            case 0b110: sprintf(F, "F<$%02X>", reg.pair.F); return F;
         }
+        unknown[0] = '?';
+        unknown[1] = '\0';
+        return unknown;
     }
 
     inline char* conditionDump(unsigned char c)
@@ -2146,16 +2157,17 @@ class Z80
     }
 
     // Rotate memory (IX+d) Left Circular
-    inline int RLC_IX(signed char d)
+    inline int RLC_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] RLC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RLC (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, c ? "ON" : "OFF", extraLog ? extraLog : "");
         n &= 0b01111111;
         n <<= 1;
         n |= n7; // differ with RL (IX+d)
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         setFlagC(n7 ? true : false);
         setFlagH(false);
@@ -2165,6 +2177,20 @@ class Z80
         setFlagXY(n);
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
+        return 0;
+    }
+
+    // Rotate memory (IX+d) Left Circular with load to Reg A/B/C/D/E/H/L/F
+    inline int RLC_IX_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        RLC_IX(d, rp, buf);
         return 0;
     }
 
