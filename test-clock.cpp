@@ -595,6 +595,8 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xE8, 23); // SET 5, (IX+d) with LD B
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xF0, 23); // SET 6, (IX+d) with LD B
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xF8, 23); // SET 7, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xED, 0x70, 0, 0, 12);      // IN F,(C)
+    executeTest(&z80, &mmu, 0xED, 0x71, 0, 0, 12);      // OUT F,(C)
 
     return 0;
 }

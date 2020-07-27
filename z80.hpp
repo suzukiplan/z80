@@ -1041,6 +1041,7 @@ class Z80
             case 0b011: return &reg.pair.E;
             case 0b100: return &reg.pair.H;
             case 0b101: return &reg.pair.L;
+            case 0b110: return &reg.pair.F;
         }
         if (isDebug()) log("detected an unknown register number: $%02X", r);
         return NULL;

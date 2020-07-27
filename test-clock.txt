@@ -423,3 +423,5 @@ TEST#380: 23Hz [0000] SET (IX+d<$7BF6>) = $0F of bit-4 --> B<$0F>
 TEST#381: 23Hz [0000] SET (IX+d<$7BF6>) = $1F of bit-5 --> B<$1F>
 TEST#382: 23Hz [0000] SET (IX+d<$7BF6>) = $3F of bit-6 --> B<$3F>
 TEST#383: 23Hz [0000] SET (IX+d<$7BF6>) = $7F of bit-7 --> B<$7F>
+TEST#384: 12Hz [0000] IN F<$44>, (C<$00>) = $BB
+TEST#385: 12Hz [0000] OUT (C<$00>), F<$AD>
