@@ -4457,12 +4457,13 @@ class Z80
     }
 
     // Interrupt
-    inline int RST(unsigned char t)
+    inline int RST(unsigned char t, bool incrementPC)
     {
         unsigned short addr = t * 8;
+        if (isDebug()) log("[%04X] RST $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
+        if (incrementPC) reg.PC++;
         unsigned char pcH = (reg.PC & 0xFF00) >> 8;
         unsigned char pcL = reg.PC & 0x00FF;
-        if (isDebug()) log("[%04X] RST $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         writeByte(reg.SP - 1, pcH);
         writeByte(reg.SP - 2, pcL, 3);
         reg.SP -= 2;
@@ -4807,12 +4808,12 @@ class Z80
                     if (reg.interruptVector == 0xCD) {
                         consumeClock(7);
                     }
-                    RST(reg.interruptVector);
+                    RST(reg.interruptVector, false);
                     break;
                 case 1: // mode 1 (13Hz)
                     if (isDebug()) log("EXECUTE INT MODE1 (RST TO $0038)");
                     consumeClock(1);
-                    RST(7);
+                    RST(7, false);
                     break;
                 case 2: { // mode 2
                     unsigned char pcL = reg.PC & 0x00FF;
@@ -4986,8 +4987,7 @@ class Z80
                     } else if ((operandNumber & 0b11000111) == 0b11000000) {
                         ret = RET_C((operandNumber & 0b00111000) >> 3);
                     } else if ((operandNumber & 0b11000111) == 0b11000111) {
-                        reg.PC++;
-                        ret = RST((operandNumber & 0b00111000) >> 3);
+                        ret = RST((operandNumber & 0b00111000) >> 3, true);
                     } else if ((operandNumber & 0b11000000) == 0b01000000) {
                         ret = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
                     } else if ((operandNumber & 0b11111000) == 0b10000000) {

@@ -13,8 +13,9 @@
   - `RRC/RL/RR/SLA/SRA/SLL/SRL (IX+nn) with LD B, (IX+nn)`
   - `RES/SET 0/1/2/3/4/5/6/7, (IX+nn) with LD B, (IX+nn)`
   - `SLL B/C/D/E/H/L/(HL)/A`
-  - `IN/OUT F,(C)`
+  - `IN F,(C)`
 - bugfix: incorrect H status flag: OR/XOR (must reset but set)
+- bugfix: logging PC of RST is incorrect
 - refactor: make common flag setting function for rotate result
 - change-feature: remove carry log from RRC/RLC/SRA/SLA/SRL operands because not effort
 
