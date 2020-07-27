@@ -392,3 +392,4 @@ TEST#349: 23Hz [0000] RLC (IX+d<$7BF6>) = $00 <C:OFF> --> D<$7B>
 TEST#350: 23Hz [0000] RLC (IX+d<$7BF6>) = $00 <C:OFF> --> E<$7B>
 TEST#351: 23Hz [0000] RLC (IX+d<$7BF6>) = $00 <C:OFF> --> H<$00>
 TEST#352: 23Hz [0000] RLC (IX+d<$7BF6>) = $00 <C:OFF> --> L<$00>
+TEST#353: 23Hz [0000] RRC (IX+d<$7BF6>) = $00 <C:OFF> --> B<$00>

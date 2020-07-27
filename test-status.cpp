@@ -1400,6 +1400,18 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0xCB, 0xFF, 0x07, 0b00000000, 0b10100001); // RLC (IX+d) with LD A
     check("A", 0b11100011, z80.reg.pair.A);                                  // check result
 
+    puts("tests RLC (IX+d) with LD B");
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.IX = 0x8034;                                                     // setup register for test
+    mmu.RAM[0x80AA] = 0b10101010;                                            // setup RAM for test
+    mmu.RAM[0x8033] = 0b11110001;                                            // setup RAM for test
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x08, 0b00000000, 0b00000100); // RRC (IX+d) with LD B
+    check("B", 0b01010101, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x08, 0b00000101, 0b10101101); // RRC (IX+d) with LD B
+    check("B", 0b10101010, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0xFF, 0x08, 0b00000000, 0b10101001); // RRC (IX+d) with LD B
+    check("B", 0b11111000, z80.reg.pair.B);                                  // check result
+
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
 

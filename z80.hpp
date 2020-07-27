@@ -538,6 +538,7 @@ class Z80
                     case 0b00000100: return ctx->RLC_IX_with_LD(op3, 0b100);
                     case 0b00000101: return ctx->RLC_IX_with_LD(op3, 0b101);
                     case 0b00000111: return ctx->RLC_IX_with_LD(op3, 0b111);
+                    case 0b00001000: return ctx->RRC_IX_with_LD(op3, 0b000);
                 }
                 switch (op4 & 0b11000111) {
                     case 0b01000110: return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
@@ -2190,21 +2191,21 @@ class Z80
         } else {
             buf[0] = '\0';
         }
-        RLC_IX(d, rp, buf);
-        return 0;
+        return RLC_IX(d, rp, buf);
     }
 
     // Rotate memory (IX+d) Right Circular
-    inline int RRC_IX(signed char d)
+    inline int RRC_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        if (isDebug()) log("[%04X] RRC (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RRC (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, c ? "ON" : "OFF", extraLog ? extraLog : "");
         n &= 0b11111110;
         n >>= 1;
         n |= n0 ? 0x80 : 0; // differ with RR (IX+d)
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         setFlagC(n0 ? true : false);
         setFlagH(false);
@@ -2215,6 +2216,19 @@ class Z80
         setFlagPV(isEvenNumberBits(n));
         reg.PC += 4;
         return 0;
+    }
+
+    // Rotate memory (IX+d) Right Circular with load to Reg A/B/C/D/E/H/L/F
+    inline int RRC_IX_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return RRC_IX(d, rp, buf);
     }
 
     // Rotate Left memory
