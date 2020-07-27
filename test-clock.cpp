@@ -577,6 +577,8 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xCB, 0x35, 0, 0, 8);       // SLL L
     executeTest(&z80, &mmu, 0xCB, 0x36, 0, 0, 15);      // SLL (HL)
     executeTest(&z80, &mmu, 0xCB, 0x37, 0, 0, 8);       // SLL A
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x30, 23); // SLL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x38, 23); // SRL (IX+d) with LD B
 
     return 0;
 }

@@ -543,6 +543,8 @@ class Z80
                     case 0b00011000: return ctx->RR_IX_with_LD(op3, 0b000);
                     case 0b00100000: return ctx->SLA_IX_with_LD(op3, 0b000);
                     case 0b00101000: return ctx->SRA_IX_with_LD(op3, 0b000);
+                    case 0b00110000: return ctx->SLL_IX_with_LD(op3, 0b000);
+                    case 0b00111000: return ctx->SRL_IX_with_LD(op3, 0b000);
                 }
                 switch (op4 & 0b11000111) {
                     case 0b01000110: return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
@@ -2303,18 +2305,62 @@ class Z80
     }
 
     // Shift operand location (IX+d) Right Logical
-    inline int SRL_IX(signed char d)
+    inline int SRL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         unsigned char n0 = n & 0x01;
-        if (isDebug()) log("[%04X] SRL (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] SRL (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         n &= 0b11111110;
         n >>= 1;
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         setFlagByRotate(n, n0);
         reg.PC += 4;
         return 0;
+    }
+
+    // Shift operand location (IX+d) Right Logical with load Reg.
+    inline int SRL_IX_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return SRL_IX(d, rp, buf);
+    }
+
+    // Shift operand location (IX+d) Left Logical
+    // NOTE: this function is only for SLL_IX_with_LD
+    inline int SLL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    {
+        unsigned short addr = reg.IX + d;
+        unsigned char n = readByte(addr);
+        unsigned char n7 = n & 0x80;
+        if (isDebug()) log("[%04X] SLL (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        n &= 0b011111111;
+        n <<= 1;
+        if (rp) *rp = n;
+        writeByte(addr, n, 3);
+        setFlagByRotate(n, n7);
+        reg.PC += 4;
+        return 0;
+    }
+
+    // Shift operand location (IX+d) Left Logical with load Reg.
+    inline int SLL_IX_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return SLL_IX(d, rp, buf);
     }
 
     // Rotate memory (IY+d) Left Circular
