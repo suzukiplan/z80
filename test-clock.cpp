@@ -579,6 +579,14 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xCB, 0x37, 0, 0, 8);       // SLL A
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x30, 23); // SLL (IX+d) with LD B
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x38, 23); // SRL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x80, 23); // RES 0, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x88, 23); // RES 1, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x90, 23); // RES 2, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x98, 23); // RES 3, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xA0, 23); // RES 4, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xA8, 23); // RES 5, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xB0, 23); // RES 6, (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0xB8, 23); // RES 7, (IX+d) with LD B
 
     return 0;
 }

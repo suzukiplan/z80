@@ -1484,6 +1484,27 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0xCB, 0xFF, 0x38, 0b00000000, 0b00101101); // SRL (IX+d) with LD B
     check("B", 0b01111000, z80.reg.pair.B);                                  // check result
 
+    puts("tests RES 0~7, (IX+d) with LD B");
+    z80.reg.pair.B = 0;                                                      // setup register for test
+    z80.reg.IX = 0x8034;                                                     // setup register for test
+    mmu.RAM[0x80AA] = 0b11111111;                                            // setup RAM for test
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x80, 0b00000000, 0b00000000); // SRL (IX+d) with LD B
+    check("B", 0b11111110, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x88, 0b11111111, 0b11111111); // SRL (IX+d) with LD B
+    check("B", 0b11111100, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x90, 0b00000000, 0b00000000); // SRL (IX+d) with LD B
+    check("B", 0b11111000, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x98, 0b11111111, 0b11111111); // SRL (IX+d) with LD B
+    check("B", 0b11110000, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xA0, 0b00000000, 0b00000000); // SRL (IX+d) with LD B
+    check("B", 0b11100000, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xA8, 0b11111111, 0b11111111); // SRL (IX+d) with LD B
+    check("B", 0b11000000, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xB0, 0b00000000, 0b00000000); // SRL (IX+d) with LD B
+    check("B", 0b10000000, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0xB8, 0b00000000, 0b00000000); // SRL (IX+d) with LD B
+    check("B", 0b00000000, z80.reg.pair.B);                                  // check result
+
     //         7 6 5 4 3 2   1 0
     // status: S Z * H * P/V N C
 

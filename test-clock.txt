@@ -407,3 +407,11 @@ TEST#364: 15Hz [0000] SLL (HL<$0000>) = $CB
 TEST#365:  8Hz [0000] SLL A<$00>
 TEST#366: 23Hz [0000] SLL (IX+d<$7BF6>) = $00 --> B<$00>
 TEST#367: 23Hz [0000] SRL (IX+d<$7BF6>) = $00 --> B<$00>
+TEST#368: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-0 --> B<$00>
+TEST#369: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-1 --> B<$00>
+TEST#370: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-2 --> B<$00>
+TEST#371: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-3 --> B<$00>
+TEST#372: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-4 --> B<$00>
+TEST#373: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-5 --> B<$00>
+TEST#374: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-6 --> B<$00>
+TEST#375: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-7 --> B<$00>
