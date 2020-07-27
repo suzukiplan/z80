@@ -565,6 +565,8 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x04, 23); // RLC (IX+d) with LD H
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x05, 23); // RLC (IX+d) with LD L
     executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x08, 23); // RRC (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x10, 23); // RL (IX+d) with LD B
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 123, 0x18, 23); // RR (IX+d) with LD B
 
     return 0;
 }
