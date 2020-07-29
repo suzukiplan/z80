@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.1.1 (Jul 29, 2020 JST)
+
+- bugfix: R register not increment after executed opcode.
+
 ## Version 1.1.0 (Jul 27, 2020 JST)
 
 - enhancement: implement undocumented instructions:

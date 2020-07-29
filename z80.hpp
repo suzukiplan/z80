@@ -5019,6 +5019,7 @@ class Z80
             executed += reg.consumeClockCounter;
             clock -= reg.consumeClockCounter;
             reg.consumeClockCounter = 0;
+            reg.R = ((reg.R + 1) & 0x7F) | (reg.R & 0x80);
             checkInterrupt();
         }
         return executed;
