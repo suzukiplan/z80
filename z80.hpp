@@ -68,12 +68,12 @@ class Z80
         unsigned char reserved8[2];
     } reg;
 
-    inline unsigned char flagS() { return 0b10000000; }
+    inline unsigned char flagS() { return isLR35902 ? 0 : 0b10000000; }
     inline unsigned char flagZ() { return 0b01000000; }
-    inline unsigned char flagY() { return 0b00100000; }
+    inline unsigned char flagY() { return isLR35902 ? 0 : 0b00100000; }
     inline unsigned char flagH() { return 0b00010000; }
-    inline unsigned char flagX() { return 0b00001000; }
-    inline unsigned char flagPV() { return 0b00000100; }
+    inline unsigned char flagX() { return isLR35902 ? 0 : 0b00001000; }
+    inline unsigned char flagPV() { return isLR35902 ? 0 : 0b00000100; }
     inline unsigned char flagN() { return 0b00000010; }
     inline unsigned char flagC() { return 0b00000001; }
 
