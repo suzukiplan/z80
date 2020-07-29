@@ -342,6 +342,7 @@ class Z80
 
     inline int consumeClock(int hz)
     {
+        hz = isLR35902 ? 4 : hz; // LR35902 is always 4Hz for a machine cycle
         reg.consumeClockCounter += hz;
         if (CB.consumeClock) CB.consumeClock(CB.arg, hz);
         return hz;
@@ -350,14 +351,14 @@ class Z80
     inline unsigned char readByte(unsigned short addr, int clock = 4)
     {
         unsigned char byte = CB.read(CB.arg, addr);
-        consumeClock(isLR35902 ? 4 : clock); // LR35902 is always 4Hz for read memory
+        consumeClock(clock);
         return byte;
     }
 
     inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
     {
         CB.write(CB.arg, addr, value);
-        consumeClock(isLR35902 ? 4 : clock); // LR35902 is always 4Hz for write memory
+        consumeClock(isLR35902 ? 4 : clock);
     }
 
     inline unsigned char inPort(unsigned char port, int clock = 4)
