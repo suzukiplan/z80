@@ -4783,7 +4783,7 @@ class Z80
             reg.interrupt &= 0b01111111;
             reg.IFF &= ~IFF_HALT();
             if (isDebug()) log("EXECUTE NMI: $%04X", reg.interruptAddrN);
-            reg.R++;
+            reg.R = ((reg.R + 1) & 0x7F) | (reg.R & 0x80);
             reg.IFF |= IFF_NMI();
             reg.IFF &= ~IFF1();
             unsigned char pcL = reg.PC & 0x00FF;
@@ -4802,6 +4802,7 @@ class Z80
             reg.IFF &= ~IFF_HALT();
             reg.IFF |= IFF_IRQ();
             reg.IFF &= ~(IFF1() | IFF2());
+            reg.R = ((reg.R + 1) & 0x7F) | (reg.R & 0x80);
             switch (reg.interrupt & 0b00000011) {
                 case 0: // mode 0
                     if (isDebug()) log("EXECUTE INT MODE1 (RST TO $%04X)", reg.interruptVector * 8);
