@@ -79,6 +79,24 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0x1D, 0, 0, 0, 0, 4);        // DEC D
     executeTest(&z80, &mmu, 0x1E, 12, 0, 0, 0, 8);       // LD E,d8
     executeTest(&z80, &mmu, 0x1F, 0, 0, 0, 0, 4);        // RRA
+    executeTest(&z80, &mmu, 0x20, 0, 0, 0, 0x40, 8);     // JR NZ,r8
+    executeTest(&z80, &mmu, 0x20, 0, 0, 0, 0x00, 12);    // JR NZ,r8
+    executeTest(&z80, &mmu, 0x21, 0x34, 0x12, 0, 0, 12); // LD HL,d16
+    executeTest(&z80, &mmu, 0x22, 0, 0, 0, 0, 8);        // LD (HL+),A
+    executeTest(&z80, &mmu, 0x23, 0, 0, 0, 0, 8);        // INC HL
+    executeTest(&z80, &mmu, 0x24, 0, 0, 0, 0, 4);        // INC H
+    executeTest(&z80, &mmu, 0x25, 0, 0, 0, 0, 4);        // DEC H
+    executeTest(&z80, &mmu, 0x26, 0x33, 0, 0, 0, 8);     // LD H,d8
+    executeTest(&z80, &mmu, 0x27, 0, 0, 0, 0, 4);        // DAA
+    executeTest(&z80, &mmu, 0x28, 0, 0, 0, 0x00, 8);     // JR Z,r8
+    executeTest(&z80, &mmu, 0x28, 0, 0, 0, 0x40, 12);    // JR Z,r8
+    executeTest(&z80, &mmu, 0x29, 0, 0, 0, 0, 8);        // ADD HL,HL
+    executeTest(&z80, &mmu, 0x2A, 0, 0, 0, 0, 8);        // LD A,(HL+)
+    executeTest(&z80, &mmu, 0x2B, 0, 0, 0, 0, 8);        // DEC HL
+    executeTest(&z80, &mmu, 0x2C, 0, 0, 0, 0, 4);        // INC L
+    executeTest(&z80, &mmu, 0x2D, 0, 0, 0, 0, 4);        // DEC L
+    executeTest(&z80, &mmu, 0x2E, 12, 0, 0, 0, 8);       // LD L,d8
+    executeTest(&z80, &mmu, 0x2F, 0, 0, 0, 0, 4);        // CPL
     // TODO: execute other tests...
 
     return 0;
