@@ -4,6 +4,7 @@ all:
 	rm z80.hpp.bak
 	make test-clock
 	make test-status
+	make test-clock-gb
 
 test-clock:
 	clang -std=c++11 -Wall -Wfloat-equal -Wshadow -Werror test-clock.cpp -lstdc++
