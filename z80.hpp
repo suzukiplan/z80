@@ -4436,6 +4436,7 @@ class Z80
             reg.PC++;
             return consumeClock(1);
         }
+        if (isLR35902) consumeClock(4);
         unsigned char nL = readByte(reg.SP);
         unsigned char nH = readByte(reg.SP + 1, 3);
         unsigned short addr = (nH << 8) + nL;
@@ -4443,6 +4444,7 @@ class Z80
         reg.SP += 2;
         reg.PC = addr;
         reg.WZ = addr;
+        if (isLR35902) consumeClock(4);
         return 0;
     }
 

@@ -195,3 +195,5 @@ TEST#193:  4Hz [0000] CP A<$37>, H<$37>
 TEST#194:  4Hz [0000] CP A<$37>, L<$37>
 TEST#195:  8Hz [0000] CP A<$37>, (HL<$3737>) = $37
 TEST#196:  4Hz [0000] CP A<$37>, A<$37>
+TEST#197:  8Hz [0000] RET NZ <execute:NO>
+TEST#198: 20Hz [0000] RET NZ to $0000 (SP<$1122>) <execute:YES>

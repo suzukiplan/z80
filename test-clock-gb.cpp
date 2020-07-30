@@ -243,6 +243,8 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xBD, 0, 0, 0, 0, 4);        // CP A,L
     executeTest(&z80, &mmu, 0xBE, 0, 0, 0, 0, 8);        // CP A,(HL)
     executeTest(&z80, &mmu, 0xBF, 0, 0, 0, 0, 4);        // CP A,A
+    executeTest(&z80, &mmu, 0xC0, 0, 0, 0, 0x40, 8);     // RET NZ
+    executeTest(&z80, &mmu, 0xC0, 0, 0, 0, 0x00, 20);    // RET NZ
     // TODO: execute other tests...
 
     return 0;
