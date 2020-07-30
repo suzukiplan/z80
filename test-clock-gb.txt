@@ -500,3 +500,6 @@ TEST#498:  8Hz [0000] LDH ($FF00+C<$FF>), A<$77>
 TEST#499:  4Hz [0000] detected an invalid operand: $E3
 TEST#500:  4Hz [0000] detected an invalid operand: $E4
 TEST#501: 12Hz [0000] PUSH HL<$0001> <SP:$111E>
+TEST#502:  8Hz [0000] AND A<$77>, $AA
+TEST#503: 16Hz [0000] RST $0020 (SP<$111C>)
+TEST#504: 16Hz [0000] ADD SP<$0000>, $FFFFFFFB

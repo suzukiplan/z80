@@ -548,6 +548,10 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xE3, 0, 0, 0, 0, 4);           // n/a
     executeTest(&z80, &mmu, 0xE4, 0, 0, 0, 0, 4);           // n/a
     executeTest(&z80, &mmu, 0xE5, 0, 0, 0, 0, 12);          // PUSH HL
+    executeTest(&z80, &mmu, 0xE6, 0xAA, 0, 0, 0, 8);        // AND d8
+    executeTest(&z80, &mmu, 0xE7, 0, 0, 0, 0, 16);          // RST 20H
+    executeTest(&z80, &mmu, 0xE8, -5, 0, 0, 0, 16);         // ADD SP,r8
+
     // TODO: execute other tests...
 
     return 0;

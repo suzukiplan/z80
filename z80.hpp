@@ -4852,8 +4852,10 @@ class Z80
         ctx->setFlagByAdd16(ctx->reg.SP, (unsigned short)d);
         ctx->setFlagZ(false);
         ctx->setFlagN(false);
+        if (ctx->isLR35902) ctx->consumeClock(4);
         ctx->reg.SP += d;
         ctx->reg.PC += 2;
+        if (ctx->isLR35902) ctx->consumeClock(4);
         return 0;
     }
 
