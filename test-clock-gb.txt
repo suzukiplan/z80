@@ -508,3 +508,5 @@ TEST#506: 16Hz [0000] LD ($1234), A<$22>
 TEST#507:  4Hz [0000] detected an invalid operand: $EB
 TEST#508:  4Hz [0000] detected an invalid operand: $EC
 TEST#509:  4Hz [0000] detected an invalid operand: $ED
+TEST#510:  8Hz [0000] XOR A<$22>, $AA
+TEST#511: 16Hz [0000] RST $0028 (SP<$1115>)

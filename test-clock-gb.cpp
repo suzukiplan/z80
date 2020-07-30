@@ -556,6 +556,8 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xEB, 0, 0, 0, 0, 4);           // n/a
     executeTest(&z80, &mmu, 0xEC, 0, 0, 0, 0, 4);           // n/a
     executeTest(&z80, &mmu, 0xED, 0, 0, 0, 0, 4);           // n/a
+    executeTest(&z80, &mmu, 0xEE, 0xAA, 0, 0, 0, 8);        // XOR d8
+    executeTest(&z80, &mmu, 0xEF, 0, 0, 0, 0, 16);          // RST 28H
     // TODO: execute other tests...
 
     return 0;
