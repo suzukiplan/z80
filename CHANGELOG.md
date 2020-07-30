@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.2.0 (Jul 30, 2020 JST)
+
+- support LR35902 (GBZ80) compatible mode
+
 ## Version 1.1.1 (Jul 29, 2020 JST)
 
 - bugfix: R register not increment after executed opcode.
