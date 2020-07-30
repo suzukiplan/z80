@@ -18,6 +18,7 @@ It is not just a relic of the past, but continues to be used in embedded systems
 > - [8 ビット CPU Z80](http://www.yamamo10.jp/yamamoto/comp/Z80/index.php) of [山本研究所](http://www.yamamo10.jp/yamamoto/index.html)
 > - [Z80 Code Refference](http://mydocuments.g2.xrea.com/html/p6/z80ref.html) of [Bookworm's Library](http://mydocuments.g2.xrea.com/index.html)
 > - [Zilog Z80 DAA Result Table](http://ver0.sakura.ne.jp/doc/daa.html) of [Version 0](http://ver0.sakura.ne.jp/)
+> - [gbz80 — CPU opcode reference](https://rednex.github.io/rgbds/gbz80.7.html) of [RGBDS](https://github.com/rednex/rgbds)
 
 ## How to test
 
