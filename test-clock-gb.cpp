@@ -518,6 +518,8 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xCC, 0x34, 0x12, 0, 0x00, 12); // CALL Z,a16
     executeTest(&z80, &mmu, 0xCC, 0x34, 0x12, 0, 0x40, 24); // CALL Z,a16
     executeTest(&z80, &mmu, 0xCD, 0x34, 0x12, 0, 0, 24);    // CALL a16
+    executeTest(&z80, &mmu, 0xCE, 0xFF, 0, 0, 0, 8);        // ADC A,d8
+    executeTest(&z80, &mmu, 0xCF, 0, 0, 0, 0, 16);          // RST 08H
     // TODO: execute other tests...
 
     return 0;
