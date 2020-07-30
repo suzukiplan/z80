@@ -486,3 +486,11 @@ TEST#484: 16Hz [0000] RST $0010 (SP<$111E>)
 TEST#485:  8Hz [0000] RET C <execute:NO>
 TEST#486: 20Hz [0000] RET C to $0001 (SP<$111C>) <execute:YES>
 TEST#487: 16Hz [0000] RETI to $0003 (SP<$111E>)
+TEST#488: 12Hz [0000] JP C, $0000
+TEST#489: 16Hz [0000] JP C, $0000
+TEST#490:  4Hz [0000] detected an invalid operand: $DB
+TEST#491: 12Hz [0000] CALL C, $0000 (SP<$1120>) <execute:NO>
+TEST#492: 24Hz [0000] CALL C, $0000 (SP<$1120>) <execute:YES>
+TEST#493:  4Hz [0000] detected an invalid operand: $DD
+TEST#494:  8Hz [0000] SBC A<$FF>, $88 <C:OFF>
+TEST#495: 16Hz [0000] RST $0018 (SP<$111E>)
