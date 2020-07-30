@@ -257,6 +257,8 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xC8, 0, 0, 0, 0x00, 8);     // RET N
     executeTest(&z80, &mmu, 0xC8, 0, 0, 0, 0x40, 20);    // RET Z
     executeTest(&z80, &mmu, 0xC9, 0, 0, 0, 0, 16);       // RET
+    executeTest(&z80, &mmu, 0xCA, 0, 0, 0, 0x00, 12);    // JP Z,a16
+    executeTest(&z80, &mmu, 0xCA, 0, 0, 0, 0x40, 16);    // JP Z,a16
     // TODO: execute other tests...
 
     return 0;
