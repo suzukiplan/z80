@@ -19,6 +19,7 @@ It is not just a relic of the past, but continues to be used in embedded systems
 > - [Z80 Code Refference](http://mydocuments.g2.xrea.com/html/p6/z80ref.html) of [Bookworm's Library](http://mydocuments.g2.xrea.com/index.html)
 > - [Zilog Z80 DAA Result Table](http://ver0.sakura.ne.jp/doc/daa.html) of [Version 0](http://ver0.sakura.ne.jp/)
 > - [gbz80 — CPU opcode reference](https://rednex.github.io/rgbds/gbz80.7.html) of [RGBDS](https://github.com/rednex/rgbds)
+> - [Gameboy CPU (LR35902) instruction set](https://pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
 
 ## How to test
 
