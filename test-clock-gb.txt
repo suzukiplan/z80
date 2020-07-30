@@ -467,3 +467,6 @@ TEST#465:  8Hz [0000] SET H<$7F> of bit-7
 TEST#466:  8Hz [0000] SET L<$7F> of bit-7
 TEST#467: 16Hz [0000] SET (HL<$FFFF>) = $00 of bit-7
 TEST#468:  8Hz [0000] SET A<$7F> of bit-7
+TEST#469: 12Hz [0000] CALL Z, $1234 (SP<$1124>) <execute:NO>
+TEST#470: 24Hz [0000] CALL Z, $1234 (SP<$1124>) <execute:YES>
+TEST#471: 24Hz [0000] CALL $1234 (SP<$1122>)

@@ -4370,6 +4370,7 @@ class Z80
         ctx->reg.SP -= 2;
         ctx->reg.WZ = addr;
         ctx->reg.PC = addr;
+        if (ctx->isLR35902) ctx->consumeClock(4);
         return 0;
     }
 
