@@ -4500,6 +4500,7 @@ class Z80
         reg.SP -= 2;
         reg.WZ = addr;
         reg.PC = addr;
+        if (isLR35902) consumeClock(4);
         return 0;
     }
 
