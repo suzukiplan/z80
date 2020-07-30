@@ -91,7 +91,7 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 }
 ```
 
-### 3. Make Z80 instance
+### 3. Make Z80 or LR35902 instance
 
 ```c++
     MMU mmu;
@@ -108,7 +108,7 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 > Specify NULL to inPort and outPort, if you'd like to use as LR35902:
 >
 > ```c++
->    Z80 lr35902(readByte, writeByte, NULL, NULL, &mmu);
+>    Z80 gbz80(readByte, writeByte, NULL, NULL, &mmu);
 > ```
 >
 > _LR35902: known as CPU for Nintendo GameBoy series._
