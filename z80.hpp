@@ -4230,6 +4230,7 @@ class Z80
         if (ctx->isDebug()) ctx->log("[%04X] JP $%04X", ctx->reg.PC, addr);
         ctx->reg.PC = addr;
         ctx->reg.WZ = addr;
+        if (ctx->isLR35902) ctx->consumeClock(4);
         return 0;
     }
 

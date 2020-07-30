@@ -248,6 +248,7 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xC1, 0, 0, 0, 0, 12);       // POP BC
     executeTest(&z80, &mmu, 0xC2, 0, 0, 0, 0x40, 12);    // JP NZ,a16
     executeTest(&z80, &mmu, 0xC2, 0, 0, 0, 0x00, 16);    // JP NZ,a16
+    executeTest(&z80, &mmu, 0xC3, 0x34, 0x12, 0, 0, 16); // JP HL
     // TODO: execute other tests...
 
     return 0;
