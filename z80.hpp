@@ -4415,6 +4415,7 @@ class Z80
             reg.PC = addr;
         }
         reg.WZ = addr;
+        if (isLR35902 && execute) consumeClock(4);
         return 0;
     }
 
