@@ -5192,7 +5192,11 @@ class Z80
                 }
                 if (ret < 0) {
                     if (isDebug()) log("[%04X] detected an invalid operand: $%02X", reg.PC, operandNumber);
-                    return 0;
+                    if (isLR35902) {
+                        reg.consumeClockCounter = consumeClock(4);
+                    } else {
+                        return 0;
+                    }
                 }
             }
             executed += reg.consumeClockCounter;
