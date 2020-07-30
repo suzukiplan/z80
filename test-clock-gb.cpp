@@ -526,6 +526,14 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xD2, 0, 0, 0, 0x01, 12);       // JP NC,a16
     executeTest(&z80, &mmu, 0xD2, 0, 0, 0, 0x00, 16);       // JP NC,a16
     executeTest(&z80, &mmu, 0xD3, 0, 0, 0, 0, 4);           // n/a
+    executeTest(&z80, &mmu, 0xD4, 0, 0, 0, 0x01, 12);       // CALL NC,a16
+    executeTest(&z80, &mmu, 0xD4, 0, 0, 0, 0x00, 24);       // CALL NC,a16
+    executeTest(&z80, &mmu, 0xD5, 0, 0, 0, 0, 12);          // PUSH DE
+    executeTest(&z80, &mmu, 0xD6, 0xFF, 0, 0, 0, 8);        // SUB d8
+    executeTest(&z80, &mmu, 0xD7, 0, 0, 0, 0, 16);          // RST 10H
+    executeTest(&z80, &mmu, 0xD8, 0, 0, 0, 0x00, 8);        // RET C
+    executeTest(&z80, &mmu, 0xD8, 0, 0, 0, 0x01, 20);       // RET C
+    executeTest(&z80, &mmu, 0xD9, 0, 0, 0, 0, 16);          // RETI
     // TODO: execute other tests...
 
     return 0;

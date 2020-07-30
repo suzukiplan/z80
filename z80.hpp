@@ -4464,6 +4464,7 @@ class Z80
         reg.PC = addr;
         reg.WZ = addr;
         reg.IFF &= ~IFF_IRQ();
+        if (isLR35902) consumeClock(4);
         return 0;
     }
 
