@@ -4848,7 +4848,7 @@ class Z80
     inline int add_sp_n(bool isLoadHL)
     {
         signed char d = readByte(reg.PC + 1);
-        if (isDebug()) log("[%04X] %s SP<$%04X>, $%02X", reg.PC, isLoadHL ? "LDHL" : "ADD", reg.PC, d);
+        if (isDebug()) log("[%04X] %s SP<$%04X>, $%02X", reg.PC, isLoadHL ? "LDHL" : "ADD", reg.SP, d);
         setFlagByAdd16(reg.SP, (unsigned short)d);
         setFlagZ(false);
         setFlagN(false);
