@@ -510,3 +510,13 @@ TEST#508:  4Hz [0000] detected an invalid operand: $EC
 TEST#509:  4Hz [0000] detected an invalid operand: $ED
 TEST#510:  8Hz [0000] XOR A<$22>, $AA
 TEST#511: 16Hz [0000] RST $0028 (SP<$1115>)
+TEST#512: 12Hz [0000] LDH A<$88>, ($FF00+$33)
+TEST#513: 12Hz [0000] POP AF <SP:$1113> = $0001
+TEST#514:  8Hz [0000] LDH A<$00>, ($FF00+C<$FF>)
+TEST#515:  4Hz [0000] DI
+TEST#516:  4Hz [0000] detected an invalid operand: $F4
+TEST#517: 12Hz [0000] PUSH AF<$7700> <SP:$1115>
+TEST#518:  8Hz [0000] OR A<$77>, $AA
+TEST#519: 16Hz [0000] RST $0030 (SP<$1113>)
+TEST#520: 12Hz [0000] LDHL SP<$0000>, $11
+TEST#521: 16Hz [0000] RST $0038 (SP<$1122>)

@@ -4845,27 +4845,25 @@ class Z80
     }
 
     // function for LR35902
-    static inline int ADD_SP_N(Z80* ctx)
+    inline int add_sp_n(bool isLoadHL)
     {
-        signed char d = ctx->readByte(ctx->reg.PC + 1);
-        if (ctx->isDebug()) ctx->log("[%04X] ADD SP<$%04X>, $%02X", ctx->reg.PC, ctx->reg.PC, d);
-        ctx->setFlagByAdd16(ctx->reg.SP, (unsigned short)d);
-        ctx->setFlagZ(false);
-        ctx->setFlagN(false);
-        if (ctx->isLR35902) ctx->consumeClock(4);
-        ctx->reg.SP += d;
-        ctx->reg.PC += 2;
-        if (ctx->isLR35902) ctx->consumeClock(4);
+        signed char d = readByte(reg.PC + 1);
+        if (isDebug()) log("[%04X] %s SP<$%04X>, $%02X", reg.PC, isLoadHL ? "LDHL" : "ADD", reg.PC, d);
+        setFlagByAdd16(reg.SP, (unsigned short)d);
+        setFlagZ(false);
+        setFlagN(false);
+        if (isLR35902) consumeClock(4);
+        reg.SP += d;
+        reg.PC += 2;
+        if (isLoadHL) {
+            setHL(reg.SP);
+        } else {
+            consumeClock(4);
+        }
         return 0;
     }
-
-    // function for LR35902
-    static inline int LDHL_SP_N(Z80* ctx)
-    {
-        ctx->ADD_SP_N(ctx);
-        ctx->setHL(ctx->reg.SP);
-        return 0;
-    }
+    static inline int ADD_SP_N(Z80* ctx) { return ctx->add_sp_n(false); }
+    static inline int LDHL_SP_N(Z80* ctx) { return ctx->add_sp_n(true); }
 
     // function for LR35902
     static inline int LR35902_RETI(Z80* ctx) { return ctx->RETI(); }
