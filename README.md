@@ -3,9 +3,9 @@
 The Z80 is an 8-bit CPU developed by Zilog corporation, released in 1976, and widely used in computers and game consoles in the 1980s.
 It is not just a relic of the past, but continues to be used in embedded systems that require accuracy in processing execution time, such as real-time systems.
 
-__SUZUKI PLAN - Z80 Emulator__ is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80:
+**SUZUKI PLAN - Z80 Emulator** is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80, 8080 or LR35902:
 
-__(FOUR EASY GUIDELINES FOR EASILY)__
+**(FOUR EASY GUIDELINES FOR EASILY)**
 
 1. Make emulator implementation `EASY` & simple (Realized by providing single header: [z80.hpp](z80.hpp))
 2. `EASILY` debugging the Z80 programs (Realized by having [dynamic disassemble feature](#dynamic-disassemble-for-debug))
@@ -13,9 +13,9 @@ __(FOUR EASY GUIDELINES FOR EASILY)__
 4. Provide under the license that `EASY` to adopt in various programs ([MIT](LICENSE.txt))
 
 > Since I do not have deep knowledge about Z80 myself, I'm implementing it with reference to the information on the following web sites:
-> 
+>
 > - [Z80 CPU User Manual - Zilog](https://www.zilog.com/manage_directlink.php?filepath=docs/z80/um0080&extn=.pdf)
-> - [8ビット CPU Z80](http://www.yamamo10.jp/yamamoto/comp/Z80/index.php) of [山本研究所](http://www.yamamo10.jp/yamamoto/index.html)
+> - [8 ビット CPU Z80](http://www.yamamo10.jp/yamamoto/comp/Z80/index.php) of [山本研究所](http://www.yamamo10.jp/yamamoto/index.html)
 > - [Z80 Code Refference](http://mydocuments.g2.xrea.com/html/p6/z80ref.html) of [Bookworm's Library](http://mydocuments.g2.xrea.com/index.html)
 > - [Zilog Z80 DAA Result Table](http://ver0.sakura.ne.jp/doc/daa.html) of [Version 0](http://ver0.sakura.ne.jp/)
 
@@ -103,6 +103,14 @@ void outPort(void* arg, unsigned char port, unsigned char value)
     Z80 z80(readByte, writeByte, inPort, outPort, &mmu);
 ```
 
+> Specify NULL to inPort and outPort, if you'd like to use as LR35902:
+>
+> ```c++
+>    Z80 lr35902(readByte, writeByte, NULL, NULL, &mmu);
+> ```
+>
+> _LR35902: known as CPU for Nintendo GameBoy series._
+
 ### 4. Execute
 
 ```c++
@@ -143,7 +151,7 @@ Debug message contains dynamic disassembly results step by step.
 
 ### Use break point
 
-If you want to execute processing just before executing an instruction of specific program counter value _(in this ex: $008E)_, you can set a breakpoint as follows:
+If you want to execute processing just before executing an instruction of specific program counter value _(in this ex: \$008E)_, you can set a breakpoint as follows:
 
 ```c++
     z80.addBreakPoint(0x008E, [](void* arg) -> void {
@@ -158,7 +166,7 @@ If you want to execute processing just before executing an instruction of specif
 
 ### Use break operand
 
-If you want to execute processing just before executing an instruction of specific operand number _(in this ex: $00; NOP)_, you can set a breakpoint as follows:
+If you want to execute processing just before executing an instruction of specific operand number _(in this ex: \$00; NOP)_, you can set a breakpoint as follows:
 
 ```c++
     z80.addBreakOperand(0x00, [](void* arg) -> void {
