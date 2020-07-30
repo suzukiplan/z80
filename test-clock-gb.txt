@@ -227,3 +227,243 @@ TEST#225:  8Hz [0000] RRC H<$6E>
 TEST#226:  8Hz [0000] RRC L<$6E>
 TEST#227: 16Hz [0000] RRC (HL<$3737>) = $37
 TEST#228:  8Hz [0000] RRC A<$6C>
+TEST#229:  8Hz [0000] RL B<$00> <C:OFF>
+TEST#230:  8Hz [0000] RL C<$00> <C:OFF>
+TEST#231:  8Hz [0000] RL D<$37> <C:OFF>
+TEST#232:  8Hz [0000] RL E<$37> <C:OFF>
+TEST#233:  8Hz [0000] RL H<$37> <C:OFF>
+TEST#234:  8Hz [0000] RL L<$37> <C:OFF>
+TEST#235: 16Hz [0000] RL (HL<$6E6E>) = $00 <C:OFF>
+TEST#236:  8Hz [0000] RL A<$36> <C:OFF>
+TEST#237:  8Hz [0000] RR B<$00> <C:OFF>
+TEST#238:  8Hz [0000] RR C<$00> <C:OFF>
+TEST#239:  8Hz [0000] RR D<$6E> <C:OFF>
+TEST#240:  8Hz [0000] RR E<$6E> <C:OFF>
+TEST#241:  8Hz [0000] RR H<$6E> <C:OFF>
+TEST#242:  8Hz [0000] RR L<$6E> <C:OFF>
+TEST#243: 16Hz [0000] RR (HL<$3737>) = $9B <C:OFF>
+TEST#244:  8Hz [0000] RR A<$6C> <C:OFF>
+TEST#245:  8Hz [0000] SLA B<$00>
+TEST#246:  8Hz [0000] SLA C<$00>
+TEST#247:  8Hz [0000] SLA D<$37>
+TEST#248:  8Hz [0000] SLA E<$37>
+TEST#249:  8Hz [0000] SLA H<$37>
+TEST#250:  8Hz [0000] SLA L<$37>
+TEST#251: 16Hz [0000] SLA (HL<$6E6E>) = $00
+TEST#252:  8Hz [0000] SLA A<$36>
+TEST#253:  8Hz [0000] SRA B<$00>
+TEST#254:  8Hz [0000] SRA C<$00>
+TEST#255:  8Hz [0000] SRA D<$6E>
+TEST#256:  8Hz [0000] SRA E<$6E>
+TEST#257:  8Hz [0000] SRA H<$6E>
+TEST#258:  8Hz [0000] SRA L<$6E>
+TEST#259: 16Hz [0000] SRA (HL<$3737>) = $4D
+TEST#260:  8Hz [0000] SRA A<$6C>
+TEST#261:  8Hz [0000] SWAP B<$00>
+TEST#262:  8Hz [0000] SWAP C<$00>
+TEST#263:  8Hz [0000] SWAP D<$37>
+TEST#264:  8Hz [0000] SWAP E<$37>
+TEST#265:  8Hz [0000] SWAP H<$37>
+TEST#266:  8Hz [0000] SWAP L<$37>
+TEST#267: 16Hz [0000] SWAP HL<$0000> = $CB
+TEST#268:  8Hz [0000] SWAP A<$36>
+TEST#269:  8Hz [0000] SRL B<$00>
+TEST#270:  8Hz [0000] SRL C<$00>
+TEST#271:  8Hz [0000] SRL D<$00>
+TEST#272:  8Hz [0000] SRL E<$00>
+TEST#273:  8Hz [0000] SRL H<$00>
+TEST#274:  8Hz [0000] SRL L<$00>
+TEST#275: 16Hz [0000] SRL (HL<$0000>) = $CB
+TEST#276:  8Hz [0000] SRL A<$00>
+TEST#277:  8Hz [0000] BIT B<$00> of bit-0
+TEST#278:  8Hz [0000] BIT C<$00> of bit-0
+TEST#279:  8Hz [0000] BIT D<$00> of bit-0
+TEST#280:  8Hz [0000] BIT E<$00> of bit-0
+TEST#281:  8Hz [0000] BIT H<$00> of bit-0
+TEST#282:  8Hz [0000] BIT L<$00> of bit-0
+TEST#283: 12Hz [0000] BIT (HL<$0000>) = $CB of bit-0
+TEST#284:  8Hz [0000] BIT A<$00> of bit-0
+TEST#285:  8Hz [0000] BIT B<$00> of bit-1
+TEST#286:  8Hz [0000] BIT C<$00> of bit-1
+TEST#287:  8Hz [0000] BIT D<$00> of bit-1
+TEST#288:  8Hz [0000] BIT E<$00> of bit-1
+TEST#289:  8Hz [0000] BIT H<$00> of bit-1
+TEST#290:  8Hz [0000] BIT L<$00> of bit-1
+TEST#291: 12Hz [0000] BIT (HL<$0000>) = $CB of bit-1
+TEST#292:  8Hz [0000] BIT A<$00> of bit-1
+TEST#293:  8Hz [0000] BIT B<$00> of bit-2
+TEST#294:  8Hz [0000] BIT C<$00> of bit-2
+TEST#295:  8Hz [0000] BIT D<$00> of bit-2
+TEST#296:  8Hz [0000] BIT E<$00> of bit-2
+TEST#297:  8Hz [0000] BIT H<$00> of bit-2
+TEST#298:  8Hz [0000] BIT L<$00> of bit-2
+TEST#299: 12Hz [0000] BIT (HL<$0000>) = $CB of bit-2
+TEST#300:  8Hz [0000] BIT A<$00> of bit-2
+TEST#301:  8Hz [0000] BIT B<$00> of bit-3
+TEST#302:  8Hz [0000] BIT C<$00> of bit-3
+TEST#303:  8Hz [0000] BIT D<$00> of bit-3
+TEST#304:  8Hz [0000] BIT E<$00> of bit-3
+TEST#305:  8Hz [0000] BIT H<$00> of bit-3
+TEST#306:  8Hz [0000] BIT L<$00> of bit-3
+TEST#307: 12Hz [0000] BIT (HL<$0000>) = $CB of bit-3
+TEST#308:  8Hz [0000] BIT A<$00> of bit-3
+TEST#309:  8Hz [0000] BIT B<$00> of bit-4
+TEST#310:  8Hz [0000] BIT C<$00> of bit-4
+TEST#311:  8Hz [0000] BIT D<$00> of bit-4
+TEST#312:  8Hz [0000] BIT E<$00> of bit-4
+TEST#313:  8Hz [0000] BIT H<$00> of bit-4
+TEST#314:  8Hz [0000] BIT L<$00> of bit-4
+TEST#315: 12Hz [0000] BIT (HL<$0000>) = $CB of bit-4
+TEST#316:  8Hz [0000] BIT A<$00> of bit-4
+TEST#317:  8Hz [0000] BIT B<$00> of bit-5
+TEST#318:  8Hz [0000] BIT C<$00> of bit-5
+TEST#319:  8Hz [0000] BIT D<$00> of bit-5
+TEST#320:  8Hz [0000] BIT E<$00> of bit-5
+TEST#321:  8Hz [0000] BIT H<$00> of bit-5
+TEST#322:  8Hz [0000] BIT L<$00> of bit-5
+TEST#323: 12Hz [0000] BIT (HL<$0000>) = $CB of bit-5
+TEST#324:  8Hz [0000] BIT A<$00> of bit-5
+TEST#325:  8Hz [0000] BIT B<$00> of bit-6
+TEST#326:  8Hz [0000] BIT C<$00> of bit-6
+TEST#327:  8Hz [0000] BIT D<$00> of bit-6
+TEST#328:  8Hz [0000] BIT E<$00> of bit-6
+TEST#329:  8Hz [0000] BIT H<$00> of bit-6
+TEST#330:  8Hz [0000] BIT L<$00> of bit-6
+TEST#331: 12Hz [0000] BIT (HL<$0000>) = $CB of bit-6
+TEST#332:  8Hz [0000] BIT A<$00> of bit-6
+TEST#333:  8Hz [0000] BIT B<$00> of bit-7
+TEST#334:  8Hz [0000] BIT C<$00> of bit-7
+TEST#335:  8Hz [0000] BIT D<$00> of bit-7
+TEST#336:  8Hz [0000] BIT E<$00> of bit-7
+TEST#337:  8Hz [0000] BIT H<$00> of bit-7
+TEST#338:  8Hz [0000] BIT L<$00> of bit-7
+TEST#339: 12Hz [0000] BIT (HL<$0000>) = $CB of bit-7
+TEST#340:  8Hz [0000] BIT A<$00> of bit-7
+TEST#341:  8Hz [0000] RES B<$00> of bit-0
+TEST#342:  8Hz [0000] RES C<$00> of bit-0
+TEST#343:  8Hz [0000] RES D<$00> of bit-0
+TEST#344:  8Hz [0000] RES E<$00> of bit-0
+TEST#345:  8Hz [0000] RES H<$00> of bit-0
+TEST#346:  8Hz [0000] RES L<$00> of bit-0
+TEST#347: 16Hz [0000] RES (HL<$0000>) = $CB of bit-0
+TEST#348:  8Hz [0000] RES A<$00> of bit-0
+TEST#349:  8Hz [0000] RES B<$00> of bit-1
+TEST#350:  8Hz [0000] RES C<$00> of bit-1
+TEST#351:  8Hz [0000] RES D<$00> of bit-1
+TEST#352:  8Hz [0000] RES E<$00> of bit-1
+TEST#353:  8Hz [0000] RES H<$00> of bit-1
+TEST#354:  8Hz [0000] RES L<$00> of bit-1
+TEST#355: 16Hz [0000] RES (HL<$0000>) = $CB of bit-1
+TEST#356:  8Hz [0000] RES A<$00> of bit-1
+TEST#357:  8Hz [0000] RES B<$00> of bit-2
+TEST#358:  8Hz [0000] RES C<$00> of bit-2
+TEST#359:  8Hz [0000] RES D<$00> of bit-2
+TEST#360:  8Hz [0000] RES E<$00> of bit-2
+TEST#361:  8Hz [0000] RES H<$00> of bit-2
+TEST#362:  8Hz [0000] RES L<$00> of bit-2
+TEST#363: 16Hz [0000] RES (HL<$0000>) = $CB of bit-2
+TEST#364:  8Hz [0000] RES A<$00> of bit-2
+TEST#365:  8Hz [0000] RES B<$00> of bit-3
+TEST#366:  8Hz [0000] RES C<$00> of bit-3
+TEST#367:  8Hz [0000] RES D<$00> of bit-3
+TEST#368:  8Hz [0000] RES E<$00> of bit-3
+TEST#369:  8Hz [0000] RES H<$00> of bit-3
+TEST#370:  8Hz [0000] RES L<$00> of bit-3
+TEST#371: 16Hz [0000] RES (HL<$0000>) = $CB of bit-3
+TEST#372:  8Hz [0000] RES A<$00> of bit-3
+TEST#373:  8Hz [0000] RES B<$00> of bit-4
+TEST#374:  8Hz [0000] RES C<$00> of bit-4
+TEST#375:  8Hz [0000] RES D<$00> of bit-4
+TEST#376:  8Hz [0000] RES E<$00> of bit-4
+TEST#377:  8Hz [0000] RES H<$00> of bit-4
+TEST#378:  8Hz [0000] RES L<$00> of bit-4
+TEST#379: 16Hz [0000] RES (HL<$0000>) = $CB of bit-4
+TEST#380:  8Hz [0000] RES A<$00> of bit-4
+TEST#381:  8Hz [0000] RES B<$00> of bit-5
+TEST#382:  8Hz [0000] RES C<$00> of bit-5
+TEST#383:  8Hz [0000] RES D<$00> of bit-5
+TEST#384:  8Hz [0000] RES E<$00> of bit-5
+TEST#385:  8Hz [0000] RES H<$00> of bit-5
+TEST#386:  8Hz [0000] RES L<$00> of bit-5
+TEST#387: 16Hz [0000] RES (HL<$0000>) = $CB of bit-5
+TEST#388:  8Hz [0000] RES A<$00> of bit-5
+TEST#389:  8Hz [0000] RES B<$00> of bit-6
+TEST#390:  8Hz [0000] RES C<$00> of bit-6
+TEST#391:  8Hz [0000] RES D<$00> of bit-6
+TEST#392:  8Hz [0000] RES E<$00> of bit-6
+TEST#393:  8Hz [0000] RES H<$00> of bit-6
+TEST#394:  8Hz [0000] RES L<$00> of bit-6
+TEST#395: 16Hz [0000] RES (HL<$0000>) = $CB of bit-6
+TEST#396:  8Hz [0000] RES A<$00> of bit-6
+TEST#397:  8Hz [0000] RES B<$00> of bit-7
+TEST#398:  8Hz [0000] RES C<$00> of bit-7
+TEST#399:  8Hz [0000] RES D<$00> of bit-7
+TEST#400:  8Hz [0000] RES E<$00> of bit-7
+TEST#401:  8Hz [0000] RES H<$00> of bit-7
+TEST#402:  8Hz [0000] RES L<$00> of bit-7
+TEST#403: 16Hz [0000] RES (HL<$0000>) = $CB of bit-7
+TEST#404:  8Hz [0000] RES A<$00> of bit-7
+TEST#405:  8Hz [0000] SET B<$00> of bit-0
+TEST#406:  8Hz [0000] SET C<$00> of bit-0
+TEST#407:  8Hz [0000] SET D<$00> of bit-0
+TEST#408:  8Hz [0000] SET E<$00> of bit-0
+TEST#409:  8Hz [0000] SET H<$00> of bit-0
+TEST#410:  8Hz [0000] SET L<$00> of bit-0
+TEST#411: 16Hz [0000] SET (HL<$0101>) = $00 of bit-0
+TEST#412:  8Hz [0000] SET A<$00> of bit-0
+TEST#413:  8Hz [0000] SET B<$01> of bit-1
+TEST#414:  8Hz [0000] SET C<$01> of bit-1
+TEST#415:  8Hz [0000] SET D<$01> of bit-1
+TEST#416:  8Hz [0000] SET E<$01> of bit-1
+TEST#417:  8Hz [0000] SET H<$01> of bit-1
+TEST#418:  8Hz [0000] SET L<$01> of bit-1
+TEST#419: 16Hz [0000] SET (HL<$0303>) = $00 of bit-1
+TEST#420:  8Hz [0000] SET A<$01> of bit-1
+TEST#421:  8Hz [0000] SET B<$03> of bit-2
+TEST#422:  8Hz [0000] SET C<$03> of bit-2
+TEST#423:  8Hz [0000] SET D<$03> of bit-2
+TEST#424:  8Hz [0000] SET E<$03> of bit-2
+TEST#425:  8Hz [0000] SET H<$03> of bit-2
+TEST#426:  8Hz [0000] SET L<$03> of bit-2
+TEST#427: 16Hz [0000] SET (HL<$0707>) = $00 of bit-2
+TEST#428:  8Hz [0000] SET A<$03> of bit-2
+TEST#429:  8Hz [0000] SET B<$07> of bit-3
+TEST#430:  8Hz [0000] SET C<$07> of bit-3
+TEST#431:  8Hz [0000] SET D<$07> of bit-3
+TEST#432:  8Hz [0000] SET E<$07> of bit-3
+TEST#433:  8Hz [0000] SET H<$07> of bit-3
+TEST#434:  8Hz [0000] SET L<$07> of bit-3
+TEST#435: 16Hz [0000] SET (HL<$0F0F>) = $00 of bit-3
+TEST#436:  8Hz [0000] SET A<$07> of bit-3
+TEST#437:  8Hz [0000] SET B<$0F> of bit-4
+TEST#438:  8Hz [0000] SET C<$0F> of bit-4
+TEST#439:  8Hz [0000] SET D<$0F> of bit-4
+TEST#440:  8Hz [0000] SET E<$0F> of bit-4
+TEST#441:  8Hz [0000] SET H<$0F> of bit-4
+TEST#442:  8Hz [0000] SET L<$0F> of bit-4
+TEST#443: 16Hz [0000] SET (HL<$1F1F>) = $00 of bit-4
+TEST#444:  8Hz [0000] SET A<$0F> of bit-4
+TEST#445:  8Hz [0000] SET B<$1F> of bit-5
+TEST#446:  8Hz [0000] SET C<$1F> of bit-5
+TEST#447:  8Hz [0000] SET D<$1F> of bit-5
+TEST#448:  8Hz [0000] SET E<$1F> of bit-5
+TEST#449:  8Hz [0000] SET H<$1F> of bit-5
+TEST#450:  8Hz [0000] SET L<$1F> of bit-5
+TEST#451: 16Hz [0000] SET (HL<$3F3F>) = $00 of bit-5
+TEST#452:  8Hz [0000] SET A<$1F> of bit-5
+TEST#453:  8Hz [0000] SET B<$3F> of bit-6
+TEST#454:  8Hz [0000] SET C<$3F> of bit-6
+TEST#455:  8Hz [0000] SET D<$3F> of bit-6
+TEST#456:  8Hz [0000] SET E<$3F> of bit-6
+TEST#457:  8Hz [0000] SET H<$3F> of bit-6
+TEST#458:  8Hz [0000] SET L<$3F> of bit-6
+TEST#459: 16Hz [0000] SET (HL<$7F7F>) = $00 of bit-6
+TEST#460:  8Hz [0000] SET A<$3F> of bit-6
+TEST#461:  8Hz [0000] SET B<$7F> of bit-7
+TEST#462:  8Hz [0000] SET C<$7F> of bit-7
+TEST#463:  8Hz [0000] SET D<$7F> of bit-7
+TEST#464:  8Hz [0000] SET E<$7F> of bit-7
+TEST#465:  8Hz [0000] SET H<$7F> of bit-7
+TEST#466:  8Hz [0000] SET L<$7F> of bit-7
+TEST#467: 16Hz [0000] SET (HL<$FFFF>) = $00 of bit-7
+TEST#468:  8Hz [0000] SET A<$7F> of bit-7
