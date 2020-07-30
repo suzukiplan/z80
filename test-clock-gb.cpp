@@ -542,6 +542,12 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xDD, 0, 0, 0, 0, 4);           // n/a
     executeTest(&z80, &mmu, 0xDE, 0x88, 0, 0, 0, 8);        // SBC A,d8
     executeTest(&z80, &mmu, 0xDF, 0, 0, 0, 0, 16);          // RST 18H
+    executeTest(&z80, &mmu, 0xE0, 0x33, 0, 0, 0, 12);       // LDH (a8),A
+    executeTest(&z80, &mmu, 0xE1, 0, 0, 0, 0, 12);          // POP HL
+    executeTest(&z80, &mmu, 0xE2, 0, 0, 0, 0, 8);           // LD (C),A
+    executeTest(&z80, &mmu, 0xE3, 0, 0, 0, 0, 4);           // n/a
+    executeTest(&z80, &mmu, 0xE4, 0, 0, 0, 0, 4);           // n/a
+    executeTest(&z80, &mmu, 0xE5, 0, 0, 0, 0, 12);          // PUSH HL
     // TODO: execute other tests...
 
     return 0;

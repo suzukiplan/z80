@@ -494,3 +494,9 @@ TEST#492: 24Hz [0000] CALL C, $0000 (SP<$1120>) <execute:YES>
 TEST#493:  4Hz [0000] detected an invalid operand: $DD
 TEST#494:  8Hz [0000] SBC A<$FF>, $88 <C:OFF>
 TEST#495: 16Hz [0000] RST $0018 (SP<$111E>)
+TEST#496: 12Hz [0000] LDH ($FF00+$33), A<$77>
+TEST#497: 12Hz [0000] POP HL<$FFFF> <SP:$111C> = $FFFF
+TEST#498:  8Hz [0000] LDH ($FF00+C<$FF>), A<$77>
+TEST#499:  4Hz [0000] detected an invalid operand: $E3
+TEST#500:  4Hz [0000] detected an invalid operand: $E4
+TEST#501: 12Hz [0000] PUSH HL<$0001> <SP:$111E>

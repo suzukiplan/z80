@@ -5163,7 +5163,9 @@ class Z80
                     } else if ((operandNumber & 0b11000111) == 0b11000010) {
                         ret = JP_C_NN((operandNumber & 0b00111000) >> 3);
                     } else if ((operandNumber & 0b11000111) == 0b11000100) {
-                        ret = CALL_C_NN((operandNumber & 0b00111000) >> 3);
+                        if (!isLR35902 || operandNumber != 0xE4) {
+                            ret = CALL_C_NN((operandNumber & 0b00111000) >> 3);
+                        }
                     } else if ((operandNumber & 0b11000111) == 0b11000000) {
                         ret = RET_C((operandNumber & 0b00111000) >> 3);
                     } else if ((operandNumber & 0b11000111) == 0b11000111) {
