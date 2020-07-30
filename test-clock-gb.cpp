@@ -551,7 +551,11 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xE6, 0xAA, 0, 0, 0, 8);        // AND d8
     executeTest(&z80, &mmu, 0xE7, 0, 0, 0, 0, 16);          // RST 20H
     executeTest(&z80, &mmu, 0xE8, -5, 0, 0, 0, 16);         // ADD SP,r8
-
+    executeTest(&z80, &mmu, 0xE9, 0, 0, 0, 0, 4);           // JP (HL)
+    executeTest(&z80, &mmu, 0xEA, 0x34, 0x12, 0, 0, 16);    // LD (a16),A
+    executeTest(&z80, &mmu, 0xEB, 0, 0, 0, 0, 4);           // n/a
+    executeTest(&z80, &mmu, 0xEC, 0, 0, 0, 0, 4);           // n/a
+    executeTest(&z80, &mmu, 0xED, 0, 0, 0, 0, 4);           // n/a
     // TODO: execute other tests...
 
     return 0;

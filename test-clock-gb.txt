@@ -503,3 +503,8 @@ TEST#501: 12Hz [0000] PUSH HL<$0001> <SP:$111E>
 TEST#502:  8Hz [0000] AND A<$77>, $AA
 TEST#503: 16Hz [0000] RST $0020 (SP<$111C>)
 TEST#504: 16Hz [0000] ADD SP<$0000>, $FFFFFFFB
+TEST#505:  4Hz [0000] JP HL<$0001>
+TEST#506: 16Hz [0000] LD ($1234), A<$22>
+TEST#507:  4Hz [0000] detected an invalid operand: $EB
+TEST#508:  4Hz [0000] detected an invalid operand: $EC
+TEST#509:  4Hz [0000] detected an invalid operand: $ED
