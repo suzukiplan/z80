@@ -179,7 +179,70 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0x7D, 0, 0, 0, 0, 4);        // LD A,L
     executeTest(&z80, &mmu, 0x7E, 0, 0, 0, 0, 8);        // LD A,(HL)
     executeTest(&z80, &mmu, 0x7F, 0, 0, 0, 0, 4);        // LD A,A
-
+    executeTest(&z80, &mmu, 0x80, 0, 0, 0, 0, 4);        // ADD A,B
+    executeTest(&z80, &mmu, 0x81, 0, 0, 0, 0, 4);        // ADD A,C
+    executeTest(&z80, &mmu, 0x82, 0, 0, 0, 0, 4);        // ADD A,D
+    executeTest(&z80, &mmu, 0x83, 0, 0, 0, 0, 4);        // ADD A,E
+    executeTest(&z80, &mmu, 0x84, 0, 0, 0, 0, 4);        // ADD A,H
+    executeTest(&z80, &mmu, 0x85, 0, 0, 0, 0, 4);        // ADD A,L
+    executeTest(&z80, &mmu, 0x86, 0, 0, 0, 0, 8);        // ADD A,(HL)
+    executeTest(&z80, &mmu, 0x87, 0, 0, 0, 0, 4);        // ADD A,A
+    executeTest(&z80, &mmu, 0x88, 0, 0, 0, 0, 4);        // ADC A,B
+    executeTest(&z80, &mmu, 0x89, 0, 0, 0, 0, 4);        // ADC A,C
+    executeTest(&z80, &mmu, 0x8A, 0, 0, 0, 0, 4);        // ADC A,D
+    executeTest(&z80, &mmu, 0x8B, 0, 0, 0, 0, 4);        // ADC A,E
+    executeTest(&z80, &mmu, 0x8C, 0, 0, 0, 0, 4);        // ADC A,H
+    executeTest(&z80, &mmu, 0x8D, 0, 0, 0, 0, 4);        // ADC A,L
+    executeTest(&z80, &mmu, 0x8E, 0, 0, 0, 0, 8);        // ADC A,(HL)
+    executeTest(&z80, &mmu, 0x8F, 0, 0, 0, 0, 4);        // ADC A,A
+    executeTest(&z80, &mmu, 0x90, 0, 0, 0, 0, 4);        // SUB A,B
+    executeTest(&z80, &mmu, 0x91, 0, 0, 0, 0, 4);        // SUB A,C
+    executeTest(&z80, &mmu, 0x92, 0, 0, 0, 0, 4);        // SUB A,D
+    executeTest(&z80, &mmu, 0x93, 0, 0, 0, 0, 4);        // SUB A,E
+    executeTest(&z80, &mmu, 0x94, 0, 0, 0, 0, 4);        // SUB A,H
+    executeTest(&z80, &mmu, 0x95, 0, 0, 0, 0, 4);        // SUB A,L
+    executeTest(&z80, &mmu, 0x96, 0, 0, 0, 0, 8);        // SUB A,(HL)
+    executeTest(&z80, &mmu, 0x97, 0, 0, 0, 0, 4);        // SUB A,A
+    executeTest(&z80, &mmu, 0x98, 0, 0, 0, 0, 4);        // SBC A,B
+    executeTest(&z80, &mmu, 0x99, 0, 0, 0, 0, 4);        // SBC A,C
+    executeTest(&z80, &mmu, 0x9A, 0, 0, 0, 0, 4);        // SBC A,D
+    executeTest(&z80, &mmu, 0x9B, 0, 0, 0, 0, 4);        // SBC A,E
+    executeTest(&z80, &mmu, 0x9C, 0, 0, 0, 0, 4);        // SBC A,H
+    executeTest(&z80, &mmu, 0x9D, 0, 0, 0, 0, 4);        // SBC A,L
+    executeTest(&z80, &mmu, 0x9E, 0, 0, 0, 0, 8);        // SBC A,(HL)
+    executeTest(&z80, &mmu, 0x9F, 0, 0, 0, 0, 4);        // SBC A,A
+    executeTest(&z80, &mmu, 0xA0, 0, 0, 0, 0, 4);        // AND A,B
+    executeTest(&z80, &mmu, 0xA1, 0, 0, 0, 0, 4);        // AND A,C
+    executeTest(&z80, &mmu, 0xA2, 0, 0, 0, 0, 4);        // AND A,D
+    executeTest(&z80, &mmu, 0xA3, 0, 0, 0, 0, 4);        // AND A,E
+    executeTest(&z80, &mmu, 0xA4, 0, 0, 0, 0, 4);        // AND A,H
+    executeTest(&z80, &mmu, 0xA5, 0, 0, 0, 0, 4);        // AND A,L
+    executeTest(&z80, &mmu, 0xA6, 0, 0, 0, 0, 8);        // AND A,(HL)
+    executeTest(&z80, &mmu, 0xA7, 0, 0, 0, 0, 4);        // AND A,A
+    executeTest(&z80, &mmu, 0xA8, 0, 0, 0, 0, 4);        // XOR A,B
+    executeTest(&z80, &mmu, 0xA9, 0, 0, 0, 0, 4);        // XOR A,C
+    executeTest(&z80, &mmu, 0xAA, 0, 0, 0, 0, 4);        // XOR A,D
+    executeTest(&z80, &mmu, 0xAB, 0, 0, 0, 0, 4);        // XOR A,E
+    executeTest(&z80, &mmu, 0xAC, 0, 0, 0, 0, 4);        // XOR A,H
+    executeTest(&z80, &mmu, 0xAD, 0, 0, 0, 0, 4);        // XOR A,L
+    executeTest(&z80, &mmu, 0xAE, 0, 0, 0, 0, 8);        // XOR A,(HL)
+    executeTest(&z80, &mmu, 0xAF, 0, 0, 0, 0, 4);        // XOR A,A
+    executeTest(&z80, &mmu, 0xB0, 0, 0, 0, 0, 4);        // OR A,B
+    executeTest(&z80, &mmu, 0xB1, 0, 0, 0, 0, 4);        // OR A,C
+    executeTest(&z80, &mmu, 0xB2, 0, 0, 0, 0, 4);        // OR A,D
+    executeTest(&z80, &mmu, 0xB3, 0, 0, 0, 0, 4);        // OR A,E
+    executeTest(&z80, &mmu, 0xB4, 0, 0, 0, 0, 4);        // OR A,H
+    executeTest(&z80, &mmu, 0xB5, 0, 0, 0, 0, 4);        // OR A,L
+    executeTest(&z80, &mmu, 0xB6, 0, 0, 0, 0, 8);        // OR A,(HL)
+    executeTest(&z80, &mmu, 0xB7, 0, 0, 0, 0, 4);        // OR A,A
+    executeTest(&z80, &mmu, 0xB8, 0, 0, 0, 0, 4);        // CP A,B
+    executeTest(&z80, &mmu, 0xB9, 0, 0, 0, 0, 4);        // CP A,C
+    executeTest(&z80, &mmu, 0xBA, 0, 0, 0, 0, 4);        // CP A,D
+    executeTest(&z80, &mmu, 0xBB, 0, 0, 0, 0, 4);        // CP A,E
+    executeTest(&z80, &mmu, 0xBC, 0, 0, 0, 0, 4);        // CP A,H
+    executeTest(&z80, &mmu, 0xBD, 0, 0, 0, 0, 4);        // CP A,L
+    executeTest(&z80, &mmu, 0xBE, 0, 0, 0, 0, 8);        // CP A,(HL)
+    executeTest(&z80, &mmu, 0xBF, 0, 0, 0, 0, 4);        // CP A,A
     // TODO: execute other tests...
 
     return 0;
