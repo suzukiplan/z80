@@ -567,6 +567,12 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xF6, 0xAA, 0, 0, 0, 8);        // OR d8
     executeTest(&z80, &mmu, 0xF7, 0, 0, 0, 0, 16);          // RST 30H
     executeTest(&z80, &mmu, 0xF8, 0x11, 0, 0, 0, 12);       // LD HL,SP+r8
+    executeTest(&z80, &mmu, 0xF9, 0, 0, 0, 0, 8);           // LD SP,HL
+    executeTest(&z80, &mmu, 0xFA, 0x34, 0x12, 0, 0, 16);    // LD A,(a16)
+    executeTest(&z80, &mmu, 0xFB, 0, 0, 0, 0, 4);           // EI
+    executeTest(&z80, &mmu, 0xFC, 0, 0, 0, 0, 4);           // n/a
+    executeTest(&z80, &mmu, 0xFD, 0, 0, 0, 0, 4);           // n/a
+    executeTest(&z80, &mmu, 0xFE, 0xAA, 0, 0, 0, 8);        // CP d8
     executeTest(&z80, &mmu, 0xFF, 0, 0, 0, 0, 16);          // RST 38H
     // TODO: execute other tests...
 
