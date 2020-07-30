@@ -259,6 +259,22 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xC9, 0, 0, 0, 0, 16);       // RET
     executeTest(&z80, &mmu, 0xCA, 0, 0, 0, 0x00, 12);    // JP Z,a16
     executeTest(&z80, &mmu, 0xCA, 0, 0, 0, 0x40, 16);    // JP Z,a16
+    executeTest(&z80, &mmu, 0xCB, 0x00, 0, 0, 0, 8);     // RLC B
+    executeTest(&z80, &mmu, 0xCB, 0x01, 0, 0, 0, 8);     // RLC C
+    executeTest(&z80, &mmu, 0xCB, 0x02, 0, 0, 0, 8);     // RLC D
+    executeTest(&z80, &mmu, 0xCB, 0x03, 0, 0, 0, 8);     // RLC E
+    executeTest(&z80, &mmu, 0xCB, 0x04, 0, 0, 0, 8);     // RLC H
+    executeTest(&z80, &mmu, 0xCB, 0x05, 0, 0, 0, 8);     // RLC L
+    executeTest(&z80, &mmu, 0xCB, 0x06, 0, 0, 0, 16);    // RLC (HL)
+    executeTest(&z80, &mmu, 0xCB, 0x07, 0, 0, 0, 8);     // RLC A
+    executeTest(&z80, &mmu, 0xCB, 0x08, 0, 0, 0, 8);     // RRC B
+    executeTest(&z80, &mmu, 0xCB, 0x09, 0, 0, 0, 8);     // RRC C
+    executeTest(&z80, &mmu, 0xCB, 0x0A, 0, 0, 0, 8);     // RRC D
+    executeTest(&z80, &mmu, 0xCB, 0x0B, 0, 0, 0, 8);     // RRC E
+    executeTest(&z80, &mmu, 0xCB, 0x0C, 0, 0, 0, 8);     // RRC H
+    executeTest(&z80, &mmu, 0xCB, 0x0D, 0, 0, 0, 8);     // RRC L
+    executeTest(&z80, &mmu, 0xCB, 0x0E, 0, 0, 0, 16);    // RRC (HL)
+    executeTest(&z80, &mmu, 0xCB, 0x0F, 0, 0, 0, 8);     // RRC A
     // TODO: execute other tests...
 
     return 0;
