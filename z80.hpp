@@ -4258,6 +4258,7 @@ class Z80
             reg.PC += 3;
         }
         reg.WZ = addr;
+        if (isLR35902 && jump) consumeClock(4);
         return 0;
     }
 

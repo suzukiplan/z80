@@ -245,6 +245,9 @@ int main(int argc, char* argv[])
     executeTest(&z80, &mmu, 0xBF, 0, 0, 0, 0, 4);        // CP A,A
     executeTest(&z80, &mmu, 0xC0, 0, 0, 0, 0x40, 8);     // RET NZ
     executeTest(&z80, &mmu, 0xC0, 0, 0, 0, 0x00, 20);    // RET NZ
+    executeTest(&z80, &mmu, 0xC1, 0, 0, 0, 0, 12);       // POP BC
+    executeTest(&z80, &mmu, 0xC2, 0, 0, 0, 0x40, 12);    // JP NZ,a16
+    executeTest(&z80, &mmu, 0xC2, 0, 0, 0, 0x00, 16);    // JP NZ,a16
     // TODO: execute other tests...
 
     return 0;
