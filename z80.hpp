@@ -4478,6 +4478,7 @@ class Z80
         reg.SP += 2;
         reg.PC = addr;
         reg.WZ = addr;
+        reg.IFF &= ~IFF_NMI();
         if (!((reg.IFF & IFF1()) && (reg.IFF & IFF2()))) {
             reg.IFF |= IFF1();
         } else {

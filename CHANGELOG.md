@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.2.1 (Aug 4, 2020 JST)
+
+- bugfix: NMI will not generate after 2nd times or later (NMI flag did not clear by RETN)
+
 ## Version 1.2.0 (Jul 30, 2020 JST)
 
 - support LR35902 (GBZ80) compatible mode
