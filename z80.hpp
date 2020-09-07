@@ -1120,7 +1120,9 @@ class Z80
     {
         static char buf[80];
         if (e < 0) {
-            sprintf(buf, "$%04X - %d = $%04X", reg.PC, -e + 2, reg.PC + e + 2);
+            int ee = -e;
+            ee -= 2;
+            sprintf(buf, "$%04X - %d = $%04X", reg.PC, ee, reg.PC + e + 2);
         } else {
             sprintf(buf, "$%04X + %d = $%04X", reg.PC, e + 2, reg.PC + e + 2);
         }
