@@ -1120,9 +1120,9 @@ class Z80
     {
         static char buf[80];
         if (e < 0) {
-            sprintf(buf, "$%04X - %d = $%04X", reg.PC, -e, reg.PC + e);
+            sprintf(buf, "$%04X - %d = $%04X", reg.PC, -e + 2, reg.PC + e + 2);
         } else {
-            sprintf(buf, "$%04X + %d = $%04X", reg.PC, e, reg.PC + e);
+            sprintf(buf, "$%04X + %d = $%04X", reg.PC, e + 2, reg.PC + e + 2);
         }
         return buf;
     }
@@ -4266,53 +4266,66 @@ class Z80
     // Jump Relative to PC+e
     static inline int JR_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1);
         if (ctx->isDebug()) ctx->log("[%04X] JR %s", ctx->reg.PC, ctx->relativeDump(e));
         ctx->reg.PC += e;
+        ctx->reg.PC += 2;
         return ctx->consumeClock(4);
     }
 
     // Jump Relative to PC+e, if carry
     static inline int JR_C_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3);
         bool execute = ctx->isFlagC();
         if (ctx->isDebug()) ctx->log("[%04X] JR C, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
-        ctx->reg.PC += execute ? e : 2;
-        if (execute) ctx->consumeClock(5);
+        ctx->reg.PC += 2;
+        if (execute) {
+            ctx->reg.PC += e;
+            ctx->consumeClock(5);
+        }
         return 0;
     }
 
     // Jump Relative to PC+e, if not carry
     static inline int JR_NC_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3);
         bool execute = !ctx->isFlagC();
         if (ctx->isDebug()) ctx->log("[%04X] JR NC, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
-        ctx->reg.PC += execute ? e : 2;
-        if (execute) ctx->consumeClock(5);
+        ctx->reg.PC += 2;
+        if (execute) {
+            ctx->reg.PC += e;
+            ctx->consumeClock(5);
+        }
         return 0;
     }
 
     // Jump Relative to PC+e, if zero
     static inline int JR_Z_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3);
         bool execute = ctx->isFlagZ();
         if (ctx->isDebug()) ctx->log("[%04X] JR Z, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
-        ctx->reg.PC += execute ? e : 2;
-        if (execute) ctx->consumeClock(5);
+        ctx->reg.PC += 2;
+        if (execute) {
+            ctx->reg.PC += e;
+            ctx->consumeClock(5);
+        }
         return 0;
     }
 
     // Jump Relative to PC+e, if zero
     static inline int JR_NZ_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1, 3) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1, 3);
         bool execute = !ctx->isFlagZ();
         if (ctx->isDebug()) ctx->log("[%04X] JR NZ, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
-        ctx->reg.PC += execute ? e : 2;
-        if (execute) ctx->consumeClock(5);
+        ctx->reg.PC += 2;
+        if (execute) {
+            ctx->reg.PC += e;
+            ctx->consumeClock(5);
+        }
         return 0;
     }
 
@@ -4343,14 +4356,13 @@ class Z80
     // 	Decrement B and Jump relative if B=0
     static inline int DJNZ_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1) + 2;
+        signed char e = ctx->readByte(ctx->reg.PC + 1);
         if (ctx->isDebug()) ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC, ctx->relativeDump(e), ctx->registerDump(0b000));
         ctx->reg.pair.B--;
+        ctx->reg.PC += 2;
         if (ctx->reg.pair.B) {
             ctx->reg.PC += e;
             ctx->consumeClock(5);
-        } else {
-            ctx->reg.PC += 2;
         }
         return 0;
     }

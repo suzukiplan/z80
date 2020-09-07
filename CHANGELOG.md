@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.2.2 (Spt 7, 2020 JST)
+
+- Fixed a bug that jumps to an invalid address when a relative jump destination address e of JR and DJNZ are a boundary case.
+
 ## Version 1.2.1 (Aug 4, 2020 JST)
 
 - bugfix: NMI will not generate after 2nd times or later (NMI flag did not clear by RETN)
