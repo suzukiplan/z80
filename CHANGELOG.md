@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.2.3 (Jan 21, 2021 JST)
+
+- bugfix: P/V flag condition of after CPI/CPD/CPIR/CPDR instruction has incorrect
+
 ## Version 1.2.2 (Spt 7, 2020 JST)
 
 - Fixed a bug that jumps to an invalid address when a relative jump destination address e of JR and DJNZ are a boundary case.

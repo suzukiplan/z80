@@ -4100,7 +4100,7 @@ class Z80
         setHL(hl + (isIncHL ? 1 : -1));
         bc--;
         setBC(bc);
-        setFlagPV(0 == bc);
+        setFlagPV(0 != bc);
         consumeClock(4);
         if (isRepeat && !isFlagZ() && 0 != getBC()) {
             consumeClock(5);
