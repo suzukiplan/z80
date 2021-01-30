@@ -1831,9 +1831,9 @@ class Z80
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        if (isDebug()) log("[%04X] POP %s <SP:$%04X> = $%02X%02X", reg.PC, registerPairDump(rp), sp, *h, *l);
         *l = readByte(reg.SP++, 3);
         *h = readByte(reg.SP++, 3);
+        if (isDebug()) log("[%04X] POP %s <SP:$%04X> = $%02X%02X", reg.PC, registerPairDump(rp), sp, *h, *l);
         reg.PC++;
         return 0;
     }

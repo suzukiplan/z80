@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.2.4 (Jan 30, 2021 JST)
+
+- bugfix: incorrect log POP 16bit register
+
 ## Version 1.2.3 (Jan 21, 2021 JST)
 
 - bugfix: P/V flag condition of after CPI/CPD/CPIR/CPDR instruction has incorrect
