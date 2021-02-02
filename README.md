@@ -193,6 +193,8 @@ If you want to implement stricter synchronization, you can capture the CPU clock
 
 - call `setConsumeClockCallback(NULL)` if you want to remove the detector.
 
+> With this callback, the CPU cycle (clock) can be synchronized in units of 3 to 4 Hz, and while the execution of a single Z80 instruction requires approximately 10 to 20 Hz of CPU cycle (time), the SUZUKI PLAN - Z80 Emulator can synchronize the CPU cycle (time) for fetch, execution, write back, etc. However, the SUZUKI PLAN - Z80 Emulator can synchronize fetches, executions, writes, backs, etc. in smaller units. This makes it easy to implement severe timing emulation.
+
 ### If implement quick save/load
 
 Save the member variable `reg` when quick saving:
