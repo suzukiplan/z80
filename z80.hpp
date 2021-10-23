@@ -5021,7 +5021,7 @@ class Z80
                     addr <<= 8;
                     addr |= reg.interruptVector;
                     unsigned short pc = readByte(addr);
-                    pc += ((unsigned short)readByte(addr)) << 8;
+                    pc += ((unsigned short)readByte(addr + 1)) << 8;
                     if (isDebug()) log("EXECUTE INT MODE2: ($%04X) = $%04X", addr, pc);
                     reg.PC = pc;
                     consumeClock(3);
