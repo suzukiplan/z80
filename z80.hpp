@@ -145,6 +145,34 @@ class Z80
         }
     };
 
+    class ReturnHandler
+    {
+      public:
+        void (*callback)(void* arg);
+        ReturnHandler(void (*callback)(void* arg)) { this->callback = callback; }
+    };
+
+    inline void invokeReturnHandlers()
+    {
+        for (auto handler : this->CB.returnHandlers) {
+            handler->callback(this->CB.arg);
+        }
+    }
+
+    class CallHandler
+    {
+      public:
+        void (*callback)(void* arg);
+        CallHandler(void (*callback)(void* arg)) { this->callback = callback; }
+    };
+
+    inline void invokeCallHandlers()
+    {
+        for (auto handler : this->CB.returnHandlers) {
+            handler->callback(this->CB.arg);
+        }
+    }
+
     struct Callback {
         unsigned char (*read)(void* arg, unsigned short addr);
         void (*write)(void* arg, unsigned short addr, unsigned char value);
@@ -154,6 +182,8 @@ class Z80
         void (*consumeClock)(void* arg, int clock);
         std::vector<BreakPoint*> breakPoints;
         std::vector<BreakOperand*> breakOperands;
+        std::vector<ReturnHandler*> returnHandlers;
+        std::vector<CallHandler*> callHandlers;
         void* arg;
     } CB;
 
@@ -4387,12 +4417,14 @@ class Z80
         ctx->reg.WZ = addr;
         ctx->reg.PC = addr;
         if (ctx->isLR35902) ctx->consumeClock(4);
+        ctx->invokeCallHandlers();
         return 0;
     }
 
     // Return
     static inline int RET(Z80* ctx)
     {
+        ctx->invokeReturnHandlers();
         unsigned char nL = ctx->readByte(ctx->reg.SP, 3);
         unsigned char nH = ctx->readByte(ctx->reg.SP + 1, 3);
         unsigned short addr = (nH << 8) + nL;
@@ -4431,6 +4463,7 @@ class Z80
             writeByte(reg.SP - 2, pcL, 3);
             reg.SP -= 2;
             reg.PC = addr;
+            invokeCallHandlers();
         }
         reg.WZ = addr;
         if (isLR35902 && execute) consumeClock(4);
@@ -4457,6 +4490,7 @@ class Z80
             reg.PC++;
             return consumeClock(1);
         }
+        invokeReturnHandlers();
         if (isLR35902) consumeClock(4);
         unsigned char nL = readByte(reg.SP);
         unsigned char nH = readByte(reg.SP + 1, 3);
@@ -4472,6 +4506,7 @@ class Z80
     // Return from interrupt
     inline int RETI()
     {
+        invokeReturnHandlers();
         unsigned char nL = readByte(reg.SP, 3);
         unsigned char nH = readByte(reg.SP + 1, 3);
         unsigned short addr = (nH << 8) + nL;
@@ -4487,6 +4522,7 @@ class Z80
     // Return from non maskable interrupt
     inline int RETN()
     {
+        invokeReturnHandlers();
         unsigned char nL = readByte(reg.SP, 3);
         unsigned char nH = readByte(reg.SP + 1, 3);
         unsigned short addr = (nH << 8) + nL;
@@ -4521,6 +4557,7 @@ class Z80
         reg.WZ = addr;
         reg.PC = addr;
         if (isLR35902) consumeClock(4);
+        invokeCallHandlers();
         return 0;
     }
 
@@ -4988,6 +5025,7 @@ class Z80
             reg.SP -= 2;
             reg.PC = reg.interruptAddrN;
             consumeClock(11);
+            invokeCallHandlers();
         } else if (reg.interrupt & 0b01000000) {
             // execute IRQ
             if (!(reg.IFF & IFF1())) {
@@ -5025,6 +5063,7 @@ class Z80
                     if (isDebug()) log("EXECUTE INT MODE2: ($%04X) = $%04X", addr, pc);
                     reg.PC = pc;
                     consumeClock(3);
+                    invokeCallHandlers();
                     break;
                 }
             }
@@ -5107,6 +5146,54 @@ class Z80
     {
         for (auto bo : CB.breakOperands) delete bo;
         CB.breakOperands.clear();
+    }
+
+    void addReturnHandler(void (*callback)(void*))
+    {
+        CB.returnHandlers.push_back(new ReturnHandler(callback));
+    }
+
+    void removeReturnHandler(void (*callback)(void*))
+    {
+        int index = 0;
+        for (auto handler : CB.returnHandlers) {
+            if (handler->callback == callback) {
+                CB.returnHandlers.erase(CB.returnHandlers.begin() + index);
+                delete handler;
+                return;
+            }
+            index++;
+        }
+    }
+
+    void removeAllReturnHandlers()
+    {
+        for (auto handler : CB.returnHandlers) delete handler;
+        CB.returnHandlers.clear();
+    }
+
+    void addCallHandler(void (*callback)(void*))
+    {
+        CB.callHandlers.push_back(new CallHandler(callback));
+    }
+
+    void removeCallHandler(void (*callback)(void*))
+    {
+        int index = 0;
+        for (auto handler : CB.callHandlers) {
+            if (handler->callback == callback) {
+                CB.callHandlers.erase(CB.callHandlers.begin() + index);
+                delete handler;
+                return;
+            }
+            index++;
+        }
+    }
+
+    void removeAllCallHandlers()
+    {
+        for (auto handler : CB.callHandlers) delete handler;
+        CB.callHandlers.clear();
     }
 
     void setConsumeClockCallback(void (*consumeClock)(void*, int) = NULL)
