@@ -168,7 +168,7 @@ class Z80
 
     inline void invokeCallHandlers()
     {
-        for (auto handler : this->CB.returnHandlers) {
+        for (auto handler : this->CB.callHandlers) {
             handler->callback(this->CB.arg);
         }
     }
