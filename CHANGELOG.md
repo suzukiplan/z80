@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.2.7 (Nov 30, 2021 JST)
+
+- bugfix: memory leak when using `addBreakOperand`, `addBreakPoint`, `addCallHandler` or `addReturnHandler`, and not remove them
+
 ## Version 1.2.6 (Nov 30, 2021 JST)
 
 - Make the `readByte` and `writeByte` methods public instead of private for allow external programs to read and write memory via the CPU (synchronously). 
