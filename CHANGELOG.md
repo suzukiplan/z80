@@ -1,6 +1,6 @@
 # Change log
 
-## Version 1.2.7 (Nov 30, 2021 JST)
+## Version 1.2.7 (Dec 1, 2021 JST)
 
 - bugfix: memory leak when using `addBreakOperand`, `addBreakPoint`, `addCallHandler` or `addReturnHandler`, and not remove them
 
