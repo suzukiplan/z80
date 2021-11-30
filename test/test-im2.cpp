@@ -42,22 +42,18 @@ int main()
         printf("Executed a CALL instruction:\n");
         printf("- Branched to: $%04X\n", ((Z80*)arg)->reg.PC);
         unsigned short sp = ((Z80*)arg)->reg.SP;
-        unsigned short returnAddrL = ((Z80*)arg)->readByte(sp);
-        sp++;
-        unsigned short returnAddr = ((Z80*)arg)->readByte(sp);
+        unsigned short returnAddr = ((Z80*)arg)->readByte(sp + 1);
         returnAddr <<= 8;
-        returnAddr |= returnAddrL;
+        returnAddr |= ((Z80*)arg)->readByte(sp);
         printf("- Return to: $%04X\n", returnAddr);
     });
     z80.addReturnHandler([](void* arg) {
         printf("Detected a RET instruction:\n");
         printf("- Branch from: $%04X\n", ((Z80*)arg)->reg.PC);
         unsigned short sp = ((Z80*)arg)->reg.SP;
-        unsigned short returnAddrL = ((Z80*)arg)->readByte(sp);
-        sp++;
-        unsigned short returnAddr = ((Z80*)arg)->readByte(sp);
+        unsigned short returnAddr = ((Z80*)arg)->readByte(sp + 1);
         returnAddr <<= 8;
-        returnAddr |= returnAddrL;
+        returnAddr |= ((Z80*)arg)->readByte(sp);
         printf("- Return to: $%04X\n", returnAddr);
     });
     z80.execute(100);
