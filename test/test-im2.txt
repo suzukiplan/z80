@@ -15,6 +15,12 @@
 [0007] NOP
 [0008] JP $0007
 EXECUTE INT MODE2: ($8000) = $8002
+Executed a CALL instruction:
+- Branched to: $8002
+- Return to: $0007
+Detected a RET instruction:
+- Branch from: $8002
+- Return to: $0007
 [8002] RETI to $0007 (SP<$FFFE>)
 [0007] NOP
 [0008] JP $0007
@@ -22,6 +28,3 @@ EXECUTE INT MODE2: ($8000) = $8002
 [0008] JP $0007
 [0007] NOP
 [0008] JP $0007
-[0007] NOP
-[0008] JP $0007
-[0007] NOP

@@ -1,5 +1,10 @@
 # Change log
 
+## Version 1.2.6 (Nov 30, 2021 JST)
+
+- Make the `readByte` and `writeByte` methods public instead of private for allow external programs to read and write memory via the CPU (synchronously). 
+- Add the ability to handle CALL/RET
+
 ## Version 1.2.5 (Oct 23, 2021 JST)
 
 - bugfix: interrupt mode 2 (IM2) did not work as expected.

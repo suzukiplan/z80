@@ -209,6 +209,53 @@ Extract to the member variable `reg` when quick loading:
     fread(&z80.reg, sizeof(z80.reg), 1, fp);
 ```
 
+### Handling of CALL instructions
+
+The occurrence of the branches by the CALL instructions can be captured by the CallHandler.
+CallHandler will be called back immediately **after** a branch by a CALL instruction occurs.
+
+> CallHandle will called back after the return address is stacked in the RAM.
+
+```c++
+    z80.addCallHandler([](void* arg) -> void {
+        printf("Executed a CALL instruction:\n");
+        printf("- Branched to: $%04X\n", ((Z80*)arg)->reg.PC);
+        unsigned short sp = ((Z80*)arg)->reg.SP;
+        unsigned short returnAddr = ((Z80*)arg)->readByte(sp + 1);
+        returnAddr <<= 8;
+        returnAddr |= ((Z80*)arg)->readByte(sp);
+        printf("- Return to: $%04X\n", returnAddr);
+    });
+```
+
+- `addCallHandler` can set multiple CallHandlers.
+- call `removeCallHandler` or `removeAllCallHandlers` if you want to remove the CallHandler(s).
+- CallHandler also catches branches caused by interrupts.
+- In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
+
+### Handling of RET instructions
+
+The occurrence of the branches by the RET instructions can be captured by the ReturnHandler.
+ReturnHandler will be called back immediately **before** a branch by a RET instruction occurs.
+
+> ReturnHandle will called back while the return address is stacked in the RAM.
+
+```c++
+    z80.addReturnHandler([](void* arg) -> void {
+        printf("Detected a RET instruction:\n");
+        printf("- Branch from: $%04X\n", ((Z80*)arg)->reg.PC);
+        unsigned short sp = ((Z80*)arg)->reg.SP;
+        unsigned short returnAddr = ((Z80*)arg)->readByte(sp + 1);
+        returnAddr <<= 8;
+        returnAddr |= ((Z80*)arg)->readByte(sp);
+        printf("- Return to: $%04X\n", returnAddr);
+    });
+```
+
+- `addReturnHandler` can set multiple ReturnHandlers.
+- call `removeReturnHandler` or `removeAllReturnHandlers` if you want to remove the ReturnHandler(s).
+- In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
+
 ## License
 
 [MIT](LICENSE.txt)

@@ -1,0 +1,29 @@
+ 0 [0000] CALL $0004 (SP<$0000>)
+Executed a CALL instruction:
+- Branched to: $0004
+- Return to: $0003
+ 1 * [0004] CALL $0011 (SP<$FFFE>)
+Executed a CALL instruction:
+- Branched to: $0011
+- Return to: $0007
+ 2 ** [0011] LD A<$00>, $01
+Detected a RET instruction:
+- Branch from: $0013
+- Return to: $0007
+ 1 * [0013] RET to $0007 (SP<$FFFC>)
+ 1 * [0007] CP A<$01>, $FF
+ 1 * [0009] CALL C, $0014 (SP<$FFFE>) <execute:YES>
+Executed a CALL instruction:
+- Branched to: $0014
+- Return to: $000C
+ 2 ** [0014] LD A<$01>, $02
+Detected a RET instruction:
+- Branch from: $0016
+- Return to: $000C
+ 1 * [0016] RET to $000C (SP<$FFFC>)
+ 1 * [000C] CALL NC, $0017 (SP<$FFFE>) <execute:NO>
+ 1 * [000F] RET Z <execute:NO>
+Detected a RET instruction:
+- Branch from: $0010
+- Return to: $0003
+ 0 [0010] RET NZ to $0003 (SP<$FFFE>) <execute:YES>
