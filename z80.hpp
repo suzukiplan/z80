@@ -5088,7 +5088,13 @@ class Z80
         setupOpSet1();
     }
 
-    ~Z80() {}
+    ~Z80()
+    {
+        removeAllBreakOperands();
+        removeAllBreakPoints();
+        removeAllCallHandlers();
+        removeAllReturnHandlers();
+    }
 
     void setDebugMessage(void (*debugMessage)(void*, const char*) = NULL)
     {
