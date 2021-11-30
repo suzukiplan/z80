@@ -209,6 +209,35 @@ Extract to the member variable `reg` when quick loading:
     fread(&z80.reg, sizeof(z80.reg), 1, fp);
 ```
 
+### Handling of CALL instructions
+
+The occurrence of the branches by the CALL instructions can be captured by the CallHandler.
+CallHandler will be called back immediately **after** a branch by a CALL instruction occurs.
+
+> In other words, when CallHandler is called back, the return address is stacked in RAM.
+> It behaves in such a way as to allow the CallHandler to analyze the stack area.
+
+```c++
+    z80.addCallHandler([](void* arg) -> void {
+        printf("Detect CALL instructions:\n");
+        printf("- Branched addres: $%04X\n", ((Z80*)arg)->reg.PC);
+        unsigned short sp = ((Z80*)arg)->reg.SP;
+        sp++;
+        unsigned short returnAddr = ((Z80*)arg)->readByte(sp);
+        returnAddr <<= 8;
+        sp++;
+        returnAddr |= ((Z80*)arg)->readByte(sp);
+        printf("- Return address: $%04X\n", returnAddr);
+    });
+```
+
+- `addCallHandler` can set multiple CallHandlers.
+- call `removeCallHandler` or `removeAllCallHandlers` if you want to remove the CallHandler(s).
+- CallHandler also catches branches caused by interrupts.
+- In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
+
+### Handling of RET instructions
+
 ## License
 
 [MIT](LICENSE.txt)
