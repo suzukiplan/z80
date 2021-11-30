@@ -218,14 +218,14 @@ CallHandler will be called back immediately **after** a branch by a CALL instruc
 
 ```c++
     z80.addCallHandler([](void* arg) -> void {
-        printf("Detect a CALL instruction:\n");
+        printf("Executed a CALL instruction:\n");
         printf("- Branched to: $%04X\n", ((Z80*)arg)->reg.PC);
         unsigned short sp = ((Z80*)arg)->reg.SP;
+        unsigned short returnAddrL = ((Z80*)arg)->readByte(sp);
         sp++;
         unsigned short returnAddr = ((Z80*)arg)->readByte(sp);
         returnAddr <<= 8;
-        sp++;
-        returnAddr |= ((Z80*)arg)->readByte(sp);
+        returnAddr |= returnAddrL;
         printf("- Return to: $%04X\n", returnAddr);
     });
 ```
@@ -244,14 +244,14 @@ ReturnHandler will be called back immediately **before** a branch by a RET instr
 
 ```c++
     z80.addReturnHandler([](void* arg) -> void {
-        printf("Detect a RET instruction:\n");
+        printf("Detected a RET instruction:\n");
         printf("- Branch from: $%04X\n", ((Z80*)arg)->reg.PC);
         unsigned short sp = ((Z80*)arg)->reg.SP;
+        unsigned short returnAddrL = ((Z80*)arg)->readByte(sp);
         sp++;
         unsigned short returnAddr = ((Z80*)arg)->readByte(sp);
         returnAddr <<= 8;
-        sp++;
-        returnAddr |= ((Z80*)arg)->readByte(sp);
+        returnAddr |= returnAddrL;
         printf("- Return to: $%04X\n", returnAddr);
     });
 ```
