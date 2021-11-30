@@ -77,6 +77,19 @@ class Z80
     inline unsigned char flagN() { return 0b00000010; }
     inline unsigned char flagC() { return 0b00000001; }
 
+    inline unsigned char readByte(unsigned short addr, int clock = 4)
+    {
+        unsigned char byte = CB.read(CB.arg, addr);
+        consumeClock(clock);
+        return byte;
+    }
+
+    inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
+    {
+        CB.write(CB.arg, addr, value);
+        consumeClock(isLR35902 ? 4 : clock);
+    }
+
   private: // Internal functions & variables
     // flag setter
     inline void setFlagS(bool on) { on ? reg.pair.F |= flagS() : reg.pair.F &= ~flagS(); }
@@ -346,19 +359,6 @@ class Z80
         reg.consumeClockCounter += hz;
         if (CB.consumeClock) CB.consumeClock(CB.arg, hz);
         return hz;
-    }
-
-    inline unsigned char readByte(unsigned short addr, int clock = 4)
-    {
-        unsigned char byte = CB.read(CB.arg, addr);
-        consumeClock(clock);
-        return byte;
-    }
-
-    inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
-    {
-        CB.write(CB.arg, addr, value);
-        consumeClock(isLR35902 ? 4 : clock);
     }
 
     inline unsigned char inPort(unsigned char port, int clock = 4)
