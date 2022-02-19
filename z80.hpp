@@ -5084,6 +5084,9 @@ class Z80
         this->CB.out = out;
         this->CB.arg = arg;
         ::memset(&reg, 0, sizeof(reg));
+        reg.pair.A = 0xff;
+        reg.pair.F = 0xff;
+        reg.SP = 0xffff;
         this->isLR35902 = (NULL == in && NULL == out);
         setupOpSet1();
     }
