@@ -4224,7 +4224,7 @@ class Z80
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] CP %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->setFlagBySubtract(ctx->reg.pair.A, n);
-        ctx->setFlagXY(ctx->reg.pair.A);
+        ctx->setFlagXY(n);
         ctx->reg.PC += 1;
         return 0;
     }
