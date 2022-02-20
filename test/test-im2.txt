@@ -1,4 +1,4 @@
-[0000] LD A<$00>, $80
+[0000] LD A<$FF>, $80
 [0002] LD I<$00>, A<$80>
 [0004] IM 2
 [0006] EI
@@ -21,7 +21,7 @@ Executed a CALL instruction:
 Detected a RET instruction:
 - Branch from: $8002
 - Return to: $0007
-[8002] RETI to $0007 (SP<$FFFE>)
+[8002] RETI to $0007 (SP<$FFFD>)
 [0007] NOP
 [0008] JP $0007
 [0007] NOP
