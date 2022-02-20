@@ -2569,10 +2569,10 @@ class Z80
         if (setCarry) setFlagC((carry & 0x100) != 0);
     }
 
-    inline void setFlagBySubstract(unsigned char before, unsigned char substract, bool setCarry = true)
+    inline void setFlagBySubtract(unsigned char before, unsigned char subtract, bool setCarry = true)
     {
-        int result = ((int)before) - substract;
-        int carry = before ^ substract ^ result;
+        int result = ((int)before) - subtract;
+        int carry = before ^ subtract ^ result;
         unsigned char finalResult = (unsigned char)result;
         setFlagN(true);
         setFlagZ(0 == finalResult);
@@ -2935,7 +2935,7 @@ class Z80
         return 0;
     }
 
-    // Substract Register
+    // Subtract Register
     inline int SUB_A_R(unsigned char r)
     {
         if (isDebug()) log("[%04X] SUB %s, %s", reg.PC, registerDump(0b111), registerDump(r));
@@ -2944,106 +2944,106 @@ class Z80
             if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        setFlagBySubstract(reg.pair.A, *rp);
+        setFlagBySubtract(reg.pair.A, *rp);
         reg.pair.A -= *rp;
         reg.PC += 1;
         return 0;
     }
 
-    // Substract IXH to Acc.
+    // Subtract IXH to Acc.
     inline int SUB_A_IXH()
     {
         unsigned char ixh = (reg.IX & 0xFF00) >> 8;
         if (isDebug()) log("[%04X] SUB %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
-        setFlagBySubstract(reg.pair.A, ixh);
+        setFlagBySubtract(reg.pair.A, ixh);
         reg.pair.A -= ixh;
         reg.PC += 2;
         return 0;
     }
 
-    // Substract IXL to Acc.
+    // Subtract IXL to Acc.
     inline int SUB_A_IXL()
     {
         unsigned char ixl = reg.IX & 0x00FF;
         if (isDebug()) log("[%04X] SUB %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
-        setFlagBySubstract(reg.pair.A, ixl);
+        setFlagBySubtract(reg.pair.A, ixl);
         reg.pair.A -= ixl;
         reg.PC += 2;
         return 0;
     }
 
-    // Substract IYH to Acc.
+    // Subtract IYH to Acc.
     inline int SUB_A_IYH()
     {
         unsigned char iyh = (reg.IY & 0xFF00) >> 8;
         if (isDebug()) log("[%04X] SUB %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
-        setFlagBySubstract(reg.pair.A, iyh);
+        setFlagBySubtract(reg.pair.A, iyh);
         reg.pair.A -= iyh;
         reg.PC += 2;
         return 0;
     }
 
-    // Substract IYL to Acc.
+    // Subtract IYL to Acc.
     inline int SUB_A_IYL()
     {
         unsigned char iyl = reg.IY & 0x00FF;
         if (isDebug()) log("[%04X] SUB %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
-        setFlagBySubstract(reg.pair.A, iyl);
+        setFlagBySubtract(reg.pair.A, iyl);
         reg.pair.A -= iyl;
         reg.PC += 2;
         return 0;
     }
 
-    // Substract immediate
+    // Subtract immediate
     static inline int SUB_A_N(Z80* ctx)
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] SUB %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
-        ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->setFlagBySubtract(ctx->reg.pair.A, n);
         ctx->reg.pair.A -= n;
         ctx->reg.PC += 2;
         return 0;
     }
 
-    // Substract memory
+    // Subtract memory
     static inline int SUB_A_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] SUB %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
-        ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->setFlagBySubtract(ctx->reg.pair.A, n);
         ctx->reg.pair.A -= n;
         ctx->reg.PC += 1;
         return 0;
     }
 
-    // Substract memory
+    // Subtract memory
     inline int SUB_A_IX()
     {
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SUB %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
-        setFlagBySubstract(reg.pair.A, n);
+        setFlagBySubtract(reg.pair.A, n);
         reg.pair.A -= n;
         reg.PC += 3;
         return consumeClock(3);
     }
 
-    // Substract memory
+    // Subtract memory
     inline int SUB_A_IY()
     {
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SUB %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
-        setFlagBySubstract(reg.pair.A, n);
+        setFlagBySubtract(reg.pair.A, n);
         reg.pair.A -= n;
         reg.PC += 3;
         return consumeClock(3);
     }
 
-    // Substract Resister with carry
+    // Subtract Resister with carry
     inline int SBC_A_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -3053,86 +3053,86 @@ class Z80
             return -1;
         }
         if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
-        setFlagBySubstract(reg.pair.A, c + *rp);
+        setFlagBySubtract(reg.pair.A, c + *rp);
         reg.pair.A -= c + *rp;
         reg.PC += 1;
         return 0;
     }
 
-    // Substract IXH to Acc. with carry
+    // Subtract IXH to Acc. with carry
     inline int SBC_A_IXH()
     {
         unsigned char ixh = (reg.IX & 0xFF00) >> 8;
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), ixh, c ? "ON" : "OFF");
-        setFlagBySubstract(reg.pair.A, c + ixh);
+        setFlagBySubtract(reg.pair.A, c + ixh);
         reg.pair.A -= c + ixh;
         reg.PC += 2;
         return 0;
     }
 
-    // Substract IXL to Acc. with carry
+    // Subtract IXL to Acc. with carry
     inline int SBC_A_IXL()
     {
         unsigned char ixl = reg.IX & 0x00FF;
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), ixl, c ? "ON" : "OFF");
-        setFlagBySubstract(reg.pair.A, c + ixl);
+        setFlagBySubtract(reg.pair.A, c + ixl);
         reg.pair.A -= c + ixl;
         reg.PC += 2;
         return 0;
     }
 
-    // Substract IYH to Acc. with carry
+    // Subtract IYH to Acc. with carry
     inline int SBC_A_IYH()
     {
         unsigned char iyh = (reg.IY & 0xFF00) >> 8;
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), iyh, c ? "ON" : "OFF");
-        setFlagBySubstract(reg.pair.A, c + iyh);
+        setFlagBySubtract(reg.pair.A, c + iyh);
         reg.pair.A -= c + iyh;
         reg.PC += 2;
         return 0;
     }
 
-    // Substract IYL to Acc. with carry
+    // Subtract IYL to Acc. with carry
     inline int SBC_A_IYL()
     {
         unsigned char iyl = reg.IY & 0x00FF;
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), iyl, c ? "ON" : "OFF");
-        setFlagBySubstract(reg.pair.A, c + iyl);
+        setFlagBySubtract(reg.pair.A, c + iyl);
         reg.pair.A -= c + iyl;
         reg.PC += 2;
         return 0;
     }
 
-    // Substract immediate with carry
+    // Subtract immediate with carry
     static inline int SBC_A_N(Z80* ctx)
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         if (ctx->isDebug()) ctx->log("[%04X] SBC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
-        ctx->setFlagBySubstract(ctx->reg.pair.A, c + n);
+        ctx->setFlagBySubtract(ctx->reg.pair.A, c + n);
         ctx->reg.pair.A -= c + n;
         ctx->reg.PC += 2;
         return 0;
     }
 
-    // Substract memory with carry
+    // Subtract memory with carry
     static inline int SBC_A_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
         if (ctx->isDebug()) ctx->log("[%04X] SBC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
-        ctx->setFlagBySubstract(ctx->reg.pair.A, c + n);
+        ctx->setFlagBySubtract(ctx->reg.pair.A, c + n);
         ctx->reg.pair.A -= c + n;
         ctx->reg.PC += 1;
         return 0;
     }
 
-    // Substract memory with carry
+    // Subtract memory with carry
     inline int SBC_A_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3140,13 +3140,13 @@ class Z80
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
-        setFlagBySubstract(reg.pair.A, c + n);
+        setFlagBySubtract(reg.pair.A, c + n);
         reg.pair.A -= c + n;
         reg.PC += 3;
         return consumeClock(3);
     }
 
-    // Substract memory with carry
+    // Subtract memory with carry
     inline int SBC_A_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3154,7 +3154,7 @@ class Z80
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
-        setFlagBySubstract(reg.pair.A, c + n);
+        setFlagBySubtract(reg.pair.A, c + n);
         reg.pair.A -= c + n;
         reg.PC += 3;
         return consumeClock(3);
@@ -3396,10 +3396,10 @@ class Z80
         return consumeClock(2);
     }
 
-    inline void setFlagBySbc16(unsigned short before, unsigned short substract)
+    inline void setFlagBySbc16(unsigned short before, unsigned short subtract)
     {
-        int result = before - substract;
-        int carrybits = before ^ substract ^ result;
+        int result = before - subtract;
+        int carrybits = before ^ subtract ^ result;
         unsigned short finalResult = (unsigned short)result;
         setFlagN(true);
         setFlagXY((finalResult & 0xFF00) >> 8);
@@ -3777,7 +3777,7 @@ class Z80
         if (isDebug()) log("[%04X] NEG %s", reg.PC, registerDump(0b111));
         unsigned char a = reg.pair.A;
         reg.pair.A = 0;
-        setFlagBySubstract(reg.pair.A, a);
+        setFlagBySubtract(reg.pair.A, a);
         reg.pair.A -= a;
         reg.PC += 2;
         return 0;
@@ -4128,7 +4128,7 @@ class Z80
                 log("[%04X] %s ... %s, %s = $%02X, %s", reg.PC, isRepeat ? "CPDR" : "CPD", registerDump(0b111), registerPairDump(0b10), n, registerPairDump(0b00));
             }
         }
-        setFlagBySubstract(reg.pair.A, n, false);
+        setFlagBySubtract(reg.pair.A, n, false);
         setHL(hl + (isIncHL ? 1 : -1));
         bc--;
         setBC(bc);
@@ -4156,7 +4156,7 @@ class Z80
             if (isDebug()) log("specified an unknown register (%d)", r);
             return -1;
         }
-        setFlagBySubstract(reg.pair.A, *rp);
+        setFlagBySubtract(reg.pair.A, *rp);
         setFlagXY(reg.pair.A);
         reg.PC += 1;
         return 0;
@@ -4167,7 +4167,7 @@ class Z80
     {
         unsigned char ixh = (reg.IX & 0xFF00) >> 8;
         if (isDebug()) log("[%04X] CP %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
-        setFlagBySubstract(reg.pair.A, ixh);
+        setFlagBySubtract(reg.pair.A, ixh);
         setFlagXY(reg.pair.A);
         reg.PC += 2;
         return 0;
@@ -4178,7 +4178,7 @@ class Z80
     {
         unsigned char ixl = reg.IX & 0x00FF;
         if (isDebug()) log("[%04X] CP %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
-        setFlagBySubstract(reg.pair.A, ixl);
+        setFlagBySubtract(reg.pair.A, ixl);
         setFlagXY(reg.pair.A);
         reg.PC += 2;
         return 0;
@@ -4189,7 +4189,7 @@ class Z80
     {
         unsigned char iyh = (reg.IY & 0xFF00) >> 8;
         if (isDebug()) log("[%04X] CP %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
-        setFlagBySubstract(reg.pair.A, iyh);
+        setFlagBySubtract(reg.pair.A, iyh);
         setFlagXY(reg.pair.A);
         reg.PC += 2;
         return 0;
@@ -4200,7 +4200,7 @@ class Z80
     {
         unsigned char iyl = reg.IY & 0x00FF;
         if (isDebug()) log("[%04X] CP %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
-        setFlagBySubstract(reg.pair.A, iyl);
+        setFlagBySubtract(reg.pair.A, iyl);
         setFlagXY(reg.pair.A);
         reg.PC += 2;
         return 0;
@@ -4211,7 +4211,7 @@ class Z80
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] CP %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
-        ctx->setFlagBySubstract(ctx->reg.pair.A, n);
+        ctx->setFlagBySubtract(ctx->reg.pair.A, n);
         ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC += 2;
         return 0;
@@ -4223,8 +4223,8 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] CP %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
-        ctx->setFlagBySubstract(ctx->reg.pair.A, n);
-        ctx->setFlagXY(ctx->reg.pair.A);
+        ctx->setFlagBySubtract(ctx->reg.pair.A, n);
+        ctx->setFlagXY(n);
         ctx->reg.PC += 1;
         return 0;
     }
@@ -4236,7 +4236,7 @@ class Z80
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] CP %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
-        setFlagBySubstract(reg.pair.A, n);
+        setFlagBySubtract(reg.pair.A, n);
         setFlagXY(reg.pair.A);
         reg.PC += 3;
         return consumeClock(3);
@@ -4249,7 +4249,7 @@ class Z80
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] CP %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
-        setFlagBySubstract(reg.pair.A, n);
+        setFlagBySubtract(reg.pair.A, n);
         setFlagXY(reg.pair.A);
         reg.PC += 3;
         return consumeClock(3);
@@ -5084,6 +5084,9 @@ class Z80
         this->CB.out = out;
         this->CB.arg = arg;
         ::memset(&reg, 0, sizeof(reg));
+        reg.pair.A = 0xff;
+        reg.pair.F = 0xff;
+        reg.SP = 0xffff;
         this->isLR35902 = (NULL == in && NULL == out);
         setupOpSet1();
     }
