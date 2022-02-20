@@ -3,7 +3,6 @@
 ## Version 1.2.8 (Feb 20, 2022 JST)
 
 - implemented undocumented features: https://github.com/suzukiplan/z80/pull/27
-- update test codes
 
 ## Version 1.2.7 (Dec 1, 2021 JST)
 
