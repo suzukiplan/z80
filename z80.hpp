@@ -460,7 +460,7 @@ class Z80
     {
         if (isDebug()) log("[%04X] LD A<$%02X>, I<$%02X>", reg.PC, reg.pair.A, reg.I);
         reg.pair.A = reg.I;
-        setFlagPV(reg.IFF & IFF1() ? true : false);
+        setFlagPV(reg.IFF & IFF2() ? true : false);
         reg.PC += 2;
         return consumeClock(1);
     }
