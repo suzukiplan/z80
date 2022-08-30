@@ -53,7 +53,7 @@ class CPM {
     void writeMemory(unsigned short addr, unsigned char value) { memory[addr] = value; }
 
     unsigned char inPort(unsigned char port) {
-        printf("Unimplemented Input Port $0x%02X\n", port);
+        printf("Unimplemented Input Port $%02X\n", port);
         return 0x00;
     }
 
@@ -69,7 +69,7 @@ class CPM {
                 clearLineBuffer();
             }
         } else {
-            printf("Unimplemented Output Port $0x%02X <- $%02X\n", port, value);
+            printf("Unimplemented Output Port $%02X <- $%02X\n", port, value);
         }
     }
 
