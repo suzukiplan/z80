@@ -2616,7 +2616,7 @@ class Z80
         setFlagH((carry & 0x10) != 0);
         setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
         setFlagXY(finalResult);
-        setFlagC((carry & 0x100) != 0);
+        if (setCarry) setFlagC((carry & 0x100) != 0);
     }
 
     inline void setFlagByAddition(unsigned char before, unsigned char addition)
