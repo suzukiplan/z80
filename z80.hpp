@@ -1243,7 +1243,7 @@ class Z80
         switch (ptn & 0b11) {
             case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
             case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
-            case 0b10: sprintf(IY, "IY<$%04X>", reg.IX); return IY;
+            case 0b10: sprintf(IY, "IY<$%04X>", reg.IY); return IY;
             case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
             default: return unknown;
         }
