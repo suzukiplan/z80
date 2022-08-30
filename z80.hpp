@@ -2629,7 +2629,7 @@ class Z80
     {
         setFlagByArithmetic8(before, subtract, before - subtract, setCarry);
         setFlagN(true);
-   }
+    }
 
     inline void setFlagByIncrement(unsigned char before)
     {
