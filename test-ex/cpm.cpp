@@ -3,8 +3,12 @@
 // CP/M Emulator (minimum implementation)
 class CPM {
   public:
+    char lineBuffer[0x101];
+    unsigned char linePointer = 0;
     unsigned char memory[0x10000];
     bool halted;
+    bool error;
+    void (*lineCallback)(CPM*, char*);
 
     bool init(char* cimPath) {
         // read cim file
@@ -29,6 +33,10 @@ class CPM {
         }
         fclose(fp);
         initBios();
+        halted = false;
+        error = false;
+        clearLineBuffer();
+        lineCallback = NULL;
         return true;
     }
 
@@ -52,9 +60,22 @@ class CPM {
     void outPort(unsigned char port, unsigned char value) {
         if (0x00 == port) {
             putc(value, stdout);
+            if (value != '\n') {
+                lineBuffer[linePointer++] = value;
+            } else {
+                if (lineCallback) {
+                    lineCallback(this, lineBuffer);
+                }
+                clearLineBuffer();
+            }
         } else {
             printf("Unimplemented Output Port $0x%02X <- $%02X\n", port, value);
         }
+    }
+
+    void clearLineBuffer() {
+        memset(lineBuffer, 0, sizeof(lineBuffer));
+        linePointer = 0;
     }
 };
 
@@ -77,16 +98,21 @@ int main(int argc, char* argv[])
         return -1;
     }
     z80.reg.PC = 0x0100;
-    cpm.halted = false;
     z80.addBreakOperand(0x76, [](void* arg) {
         ((CPM*)arg)->halted = true;
     });
+    cpm.lineCallback = [](CPM* cpm, char* line) {
+        if (strstr(line, "ERROR")) {
+            cpm->halted = true;
+            cpm->error = true;
+        }
+    };
     while (true) {
-        z80.execute(INT_MAX);
+        z80.execute(100);
         if (cpm.halted) {
             printf("CPM halted at $0x%04X\n", z80.reg.PC);
             break;
         }
     }
-    return 0;
+    return cpm.error ? -1 : 0;
 }
