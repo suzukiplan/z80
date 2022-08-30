@@ -2619,15 +2619,15 @@ class Z80
         if (setCarry) setFlagC((carry & 0x100) != 0);
     }
 
-    inline void setFlagByAddition(unsigned char before, unsigned char addition)
+    inline void setFlagByAddition(int before, int addition)
     {
-        setFlagByArithmetic8(before, addition, ((int)before) + addition, true);
+        setFlagByArithmetic8(before, addition, before + addition, true);
         setFlagN(false);
     }
 
-    inline void setFlagBySubtract(unsigned char before, unsigned char subtract, bool setCarry = true)
+    inline void setFlagBySubtract(int before, int subtract, bool setCarry = true)
     {
-        setFlagByArithmetic8(before, subtract, ((int)before) - subtract, setCarry);
+        setFlagByArithmetic8(before, subtract, before - subtract, setCarry);
         setFlagN(true);
    }
 
