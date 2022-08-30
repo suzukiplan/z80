@@ -2607,28 +2607,20 @@ class Z80
         return 0;
     }
 
-    inline void setFlagByArithmetic8(int before, int addition, int result, bool setCarry)
+    inline void setFlagByAddition(int before, int addition) { setFlagByArithmetic8(false, before, addition, true); }
+    inline void setFlagBySubtract(int before, int subtract, bool setCarry = true) { setFlagByArithmetic8(true, before, subtract, setCarry); }
+    inline void setFlagByArithmetic8(bool negative, int before, int addition, bool setCarry)
     {
+        int result = before + (negative ? -addition : addition);
         int carry = before ^ addition ^ result;
         unsigned char finalResult = result & 0xFF;
         setFlagZ(0 == finalResult);
+        setFlagN(negative);
         setFlagS(0x80 & finalResult ? true : false);
         setFlagH((carry & 0x10) != 0);
         setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
         setFlagXY(finalResult);
         if (setCarry) setFlagC((carry & 0x100) != 0);
-    }
-
-    inline void setFlagByAddition(int before, int addition)
-    {
-        setFlagByArithmetic8(before, addition, before + addition, true);
-        setFlagN(false);
-    }
-
-    inline void setFlagBySubtract(int before, int subtract, bool setCarry = true)
-    {
-        setFlagByArithmetic8(before, subtract, before - subtract, setCarry);
-        setFlagN(true);
     }
 
     inline void setFlagByIncrement(unsigned char before)
