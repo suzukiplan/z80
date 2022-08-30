@@ -107,12 +107,20 @@ int main(int argc, char* argv[])
             cpm->error = true;
         }
     };
-    while (true) {
-        z80.execute(100);
-        if (cpm.halted) {
+    char animePattern[] = { '/', '-', '\\', '|' };
+    int anime = 0;
+    do {
+        z80.execute(35795450); // 10sec in Z80A
+        if (cpm.error) {
+            printf("\rCPM detected an error at $0x%04X\n", z80.reg.PC);
+        } else if (cpm.halted) {
             printf("CPM halted at $0x%04X\n", z80.reg.PC);
-            break;
+        } else {
+            putc(animePattern[anime++], stdout);
+            anime &= 3;
+            fflush(stdout);
+            putc(0x08, stdout);
         }
-    }
+    } while (!cpm.halted && !cpm.error);
     return cpm.error ? -1 : 0;
 }
