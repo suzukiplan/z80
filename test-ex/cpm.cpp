@@ -112,9 +112,9 @@ int main(int argc, char* argv[])
     do {
         z80.execute(35795450); // 10sec in Z80A
         if (cpm.error) {
-            printf("\rCPM detected an error at $0x%04X\n", z80.reg.PC);
+            printf("\rCPM detected an error at $%04X\n", z80.reg.PC);
         } else if (cpm.halted) {
-            printf("CPM halted at $0x%04X\n", z80.reg.PC);
+            printf("CPM halted at $%04X\n", z80.reg.PC);
         } else {
             putc(animePattern[anime++], stdout);
             anime &= 3;
