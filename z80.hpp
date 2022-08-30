@@ -1985,10 +1985,6 @@ class Z80
     inline int RLC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         unsigned char r7 = *rp & 0x80 ? 1 : 0;
         if (isDebug()) log("[%04X] RLC %s", reg.PC, registerDump(r));
         *rp &= 0b01111111;
@@ -2003,10 +1999,6 @@ class Z80
     inline int RL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r7 = *rp & 0x80 ? 1 : 0;
         if (isDebug()) log("[%04X] RL %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
@@ -2022,10 +2014,6 @@ class Z80
     inline int SLA_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         unsigned char r7 = *rp & 0x80 ? 1 : 0;
         if (isDebug()) log("[%04X] SLA %s", reg.PC, registerDump(r));
         *rp &= 0b01111111;
@@ -2039,10 +2027,6 @@ class Z80
     inline int RRC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         unsigned char r0 = *rp & 0x01;
         if (isDebug()) log("[%04X] RRC %s", reg.PC, registerDump(r));
         *rp &= 0b11111110;
@@ -2057,10 +2041,6 @@ class Z80
     inline int RR_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char r0 = *rp & 0x01;
         if (isDebug()) log("[%04X] RR %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
@@ -2076,10 +2056,6 @@ class Z80
     inline int SRA_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         unsigned char r0 = *rp & 0x01;
         unsigned char r7 = *rp & 0x80;
         if (isDebug()) log("[%04X] SRA %s", reg.PC, registerDump(r));
@@ -2095,10 +2071,6 @@ class Z80
     inline int SRL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         unsigned char r0 = *rp & 0x01;
         if (isDebug()) log("[%04X] SRL %s", reg.PC, registerDump(r));
         *rp &= 0b11111110;
@@ -2112,10 +2084,6 @@ class Z80
     inline int SLL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         unsigned char r7 = *rp & 0x80;
         if (isDebug()) log("[%04X] SLL %s", reg.PC, registerDump(r));
         *rp &= 0b01111111;
@@ -2650,10 +2618,6 @@ class Z80
     {
         if (isDebug()) log("[%04X] ADD %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         setFlagByAddition(reg.pair.A, *rp);
         reg.pair.A += *rp;
         reg.PC += 1;
@@ -2758,10 +2722,6 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char c = isFlagC() ? 1 : 0;
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
         setFlagByAddition(reg.pair.A, c + *rp);
         reg.pair.A += c + *rp;
@@ -2874,10 +2834,6 @@ class Z80
     inline int INC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] INC %s", reg.PC, registerDump(r));
         setFlagByIncrement(*rp);
         (*rp)++;
@@ -2980,10 +2936,6 @@ class Z80
     {
         if (isDebug()) log("[%04X] SUB %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         setFlagBySubtract(reg.pair.A, *rp);
         reg.pair.A -= *rp;
         reg.PC += 1;
@@ -3088,10 +3040,6 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char c = isFlagC() ? 1 : 0;
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
         setFlagBySubtract(reg.pair.A, c + *rp);
         reg.pair.A -= c + *rp;
@@ -3204,10 +3152,6 @@ class Z80
     inline int DEC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] DEC %s", reg.PC, registerDump(r));
         setFlagByDecrement(*rp);
         (*rp)--;
@@ -3479,10 +3423,6 @@ class Z80
     inline int AND_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] AND %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         reg.pair.A &= *rp;
         setFlagByLogical(true);
@@ -3587,10 +3527,6 @@ class Z80
     inline int OR_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] OR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         reg.pair.A |= *rp;
         setFlagByLogical(false);
@@ -3695,10 +3631,6 @@ class Z80
     inline int XOR_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] XOR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         reg.pair.A ^= *rp;
         setFlagByLogical(false);
@@ -3851,10 +3783,6 @@ class Z80
     inline int BIT_R(unsigned char r, unsigned char bit)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] BIT %s of bit-%d", reg.PC, registerDump(r), bit);
         unsigned char n = 0;
         switch (bit) {
@@ -3959,10 +3887,6 @@ class Z80
     inline int SET_R(unsigned char r, unsigned char bit)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] SET %s of bit-%d", reg.PC, registerDump(r), bit);
         switch (bit) {
             case 0: *rp |= 0b00000001; break;
@@ -4059,10 +3983,6 @@ class Z80
     inline int RES_R(unsigned char r, unsigned char bit)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] RES %s of bit-%d", reg.PC, registerDump(r), bit);
         switch (bit) {
             case 0: *rp &= 0b11111110; break;
@@ -4192,10 +4112,6 @@ class Z80
     {
         if (isDebug()) log("[%04X] CP %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         setFlagBySubtract(reg.pair.A, *rp);
         setFlagXY(reg.pair.A);
         reg.PC += 1;
@@ -4616,10 +4532,6 @@ class Z80
     inline int IN_R_C(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         unsigned char i = inPort(reg.pair.C);
         if (isDebug()) log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
         *rp = i;
@@ -4694,10 +4606,6 @@ class Z80
     inline int OUT_C_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (!rp) {
-            if (isDebug()) log("specified an unknown register (%d)", r);
-            return -1;
-        }
         if (isDebug()) log("[%04X] OUT (%s), %s", reg.PC, registerDump(0b001), registerDump(r));
         outPort(reg.pair.C, *rp);
         reg.PC += 2;
