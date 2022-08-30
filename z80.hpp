@@ -2607,12 +2607,10 @@ class Z80
         return 0;
     }
 
-    inline void setFlagByAddition(unsigned char before, unsigned char addition)
+    inline void setFlagByArithmetic8(int before, int addition, int result, bool setCarry)
     {
-        int result = ((int)before) + addition;
         int carry = before ^ addition ^ result;
-        unsigned char finalResult = (unsigned char)result;
-        setFlagN(false);
+        unsigned char finalResult = result & 0xFF;
         setFlagZ(0 == finalResult);
         setFlagS(0x80 & finalResult ? true : false);
         setFlagH((carry & 0x10) != 0);
@@ -2621,19 +2619,17 @@ class Z80
         setFlagC((carry & 0x100) != 0);
     }
 
+    inline void setFlagByAddition(unsigned char before, unsigned char addition)
+    {
+        setFlagByArithmetic8(before, addition, ((int)before) + addition, true);
+        setFlagN(false);
+    }
+
     inline void setFlagBySubtract(unsigned char before, unsigned char subtract, bool setCarry = true)
     {
-        int result = ((int)before) - subtract;
-        int carry = before ^ subtract ^ result;
-        unsigned char finalResult = (unsigned char)result;
+        setFlagByArithmetic8(before, subtract, ((int)before) - subtract, setCarry);
         setFlagN(true);
-        setFlagZ(0 == finalResult);
-        setFlagS(0x80 & finalResult ? true : false);
-        setFlagH((carry & 0x10) != 0);
-        setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
-        setFlagXY(finalResult);
-        if (setCarry) setFlagC((carry & 0x100) != 0);
-    }
+   }
 
     inline void setFlagByIncrement(unsigned char before)
     {
