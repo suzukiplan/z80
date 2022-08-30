@@ -344,6 +344,26 @@ class Z80
         }
     }
 
+    inline unsigned short getRPIX(unsigned char rp)
+    {
+        switch (rp & 0b11) {
+            case 0b00: return (reg.pair.B << 8) + reg.pair.C;
+            case 0b01: return (reg.pair.D << 8) + reg.pair.E;
+            case 0b10: return reg.IX;
+            default: return reg.SP;
+        }
+    }
+
+    inline unsigned short getRPIY(unsigned char rp)
+    {
+        switch (rp & 0b11) {
+            case 0b00: return (reg.pair.B << 8) + reg.pair.C;
+            case 0b01: return (reg.pair.D << 8) + reg.pair.E;
+            case 0b10: return reg.IY;
+            default: return reg.SP;
+        }
+    }
+
     inline void setRP(unsigned char rp, unsigned short value)
     {
         unsigned char h = (value & 0xFF00) >> 8;
@@ -1192,6 +1212,38 @@ class Z80
             case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
             case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
             case 0b10: sprintf(HL, "HL<$%02X%02X>", reg.pair.H, reg.pair.L); return HL;
+            case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
+            default: return unknown;
+        }
+    }
+
+    inline char* registerPairDumpIX(unsigned char ptn)
+    {
+        static char BC[16];
+        static char DE[16];
+        static char IX[16];
+        static char SP[16];
+        static char unknown[2] = "?";
+        switch (ptn & 0b11) {
+            case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
+            case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
+            case 0b10: sprintf(IX, "IX<$%04X>", reg.IX); return IX;
+            case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
+            default: return unknown;
+        }
+    }
+
+    inline char* registerPairDumpIY(unsigned char ptn)
+    {
+        static char BC[16];
+        static char DE[16];
+        static char IY[16];
+        static char SP[16];
+        static char unknown[2] = "?";
+        switch (ptn & 0b11) {
+            case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
+            case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
+            case 0b10: sprintf(IY, "IY<$%04X>", reg.IX); return IY;
             case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
             default: return unknown;
         }
@@ -3321,8 +3373,8 @@ class Z80
     // Add register pair to IX
     inline int ADD_IX_RP(unsigned char rp)
     {
-        if (isDebug()) log("[%04X] ADD IX<$%04X>, %s", reg.PC, reg.IX, registerPairDump(rp));
-        unsigned short nn = getRP(rp);
+        if (isDebug()) log("[%04X] ADD IX<$%04X>, %s", reg.PC, reg.IX, registerPairDumpIX(rp));
+        unsigned short nn = getRPIX(rp);
         setFlagByAdd16(reg.IX, nn);
         reg.IX += nn;
         reg.PC += 2;
@@ -3332,8 +3384,8 @@ class Z80
     // Add register pair to IY
     inline int ADD_IY_RP(unsigned char rp)
     {
-        if (isDebug()) log("[%04X] ADD IY<$%04X>, %s", reg.PC, reg.IY, registerPairDump(rp));
-        unsigned short nn = getRP(rp);
+        if (isDebug()) log("[%04X] ADD IY<$%04X>, %s", reg.PC, reg.IY, registerPairDumpIY(rp));
+        unsigned short nn = getRPIY(rp);
         setFlagByAdd16(reg.IY, nn);
         reg.IY += nn;
         reg.PC += 2;
