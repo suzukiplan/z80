@@ -2607,7 +2607,7 @@ class Z80
         return 0;
     }
 
-    inline void setFlagByAddition(unsigned char before, unsigned char addition, bool setCarry = true)
+    inline void setFlagByAddition(unsigned char before, unsigned char addition)
     {
         int result = ((int)before) + addition;
         int carry = before ^ addition ^ result;
@@ -2618,7 +2618,7 @@ class Z80
         setFlagH((carry & 0x10) != 0);
         setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
         setFlagXY(finalResult);
-        if (setCarry) setFlagC((carry & 0x100) != 0);
+        setFlagC((carry & 0x100) != 0);
     }
 
     inline void setFlagBySubtract(unsigned char before, unsigned char subtract, bool setCarry = true)
