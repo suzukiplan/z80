@@ -2589,8 +2589,12 @@ class Z80
         setFlagH((carry & 0x10) != 0);
         setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
         if (setCarry) setFlagC((carry & 0x100) != 0);
-        if (setResult) reg.pair.A = finalResult;
-        setFlagXY(reg.pair.A);
+        if (setResult) {
+            reg.pair.A = finalResult;
+            setFlagXY(reg.pair.A);
+        } else {
+            setFlagXY(addition);
+        }
     }
 
     inline void setFlagByIncrement(unsigned char before)
