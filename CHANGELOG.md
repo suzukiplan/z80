@@ -1,5 +1,12 @@
 # Change log
 
+## Version 1.3.0 (WIP)
+
+- bugfix: `LD A,I` Incorrect P/V flag after execution #29
+- bugfix: incorrect `ADD IX,IX` and `ADD IY,IY` #32
+- add test case: [Z80 Instruction Exerciser](https://mdfs.net/Software/Z80/Exerciser/) #31
+- refactored several code
+
 ## Version 1.2.8 (Feb 20, 2022 JST)
 
 - implemented undocumented features: https://github.com/suzukiplan/z80/pull/27
