@@ -4055,6 +4055,11 @@ class Z80
             }
         }
         subtract8(n, false, false);
+        int nn = reg.pair.A;
+        nn -= n;
+        nn -= isFlagH() ? 1 : 0;
+        setFlagY(nn & 0b00000010 ? true : false);
+        setFlagX(nn & 0b00001000 ? true : false);
         setHL(hl + (isIncHL ? 1 : -1));
         bc--;
         setBC(bc);
