@@ -8,6 +8,7 @@ class CPM {
     unsigned char memory[0x10000];
     bool halted;
     bool error;
+    bool checkError;
     void (*lineCallback)(CPM*, char*);
 
     bool init(char* cimPath) {
@@ -35,6 +36,7 @@ class CPM {
         initBios();
         halted = false;
         error = false;
+        checkError = false;
         clearLineBuffer();
         lineCallback = NULL;
         return true;
@@ -87,13 +89,30 @@ static inline void outPort(void* arg, unsigned char port, unsigned char value) {
 
 int main(int argc, char* argv[])
 {
-    if (argc < 2) {
+    char* cimPath = NULL;
+    bool checkError = false;
+    for (int i = 1; i < argc; i++) {
+        if ('-' == argv[i][0]) {
+            switch (argv[i][1]) {
+                case 'e':
+                    checkError = true;
+                    break;
+                default:
+                    printf("unsupported option: %s\n", argv[i]);
+                    return 1;
+            }
+        } else {
+            cimPath = argv[i];
+        }
+    }
+    if (!cimPath) {
         puts("usage: cpm path/to/file.cim");
         return 1;
     }
     CPM cpm;
+    cpm.checkError = checkError;
     Z80 z80(readMemory, writeMemory, inPort, outPort, &cpm);
-    if (!cpm.init(argv[1])) {
+    if (!cpm.init(cimPath)) {
         puts("Cannot initialized");
         return -1;
     }
@@ -101,8 +120,11 @@ int main(int argc, char* argv[])
     z80.addBreakOperand(0x76, [](void* arg) {
         ((CPM*)arg)->halted = true;
     });
+    z80.addBreakPoint(0xFF04, [](void* arg) {
+        ((CPM*)arg)->halted = true;
+    });
     cpm.lineCallback = [](CPM* cpm, char* line) {
-        if (strstr(line, "ERROR")) {
+        if (cpm->checkError && strstr(line, "ERROR")) {
             cpm->halted = true;
             cpm->error = true;
         }
