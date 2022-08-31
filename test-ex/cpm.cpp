@@ -110,12 +110,12 @@ int main(int argc, char* argv[])
         return 1;
     }
     CPM cpm;
-    cpm.checkError = checkError;
     Z80 z80(readMemory, writeMemory, inPort, outPort, &cpm);
     if (!cpm.init(cimPath)) {
         puts("Cannot initialized");
         return -1;
     }
+    cpm.checkError = checkError;
     z80.reg.PC = 0x0100;
     z80.addBreakOperand(0x76, [](void* arg) {
         ((CPM*)arg)->halted = true;
