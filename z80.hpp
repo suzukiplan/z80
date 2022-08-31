@@ -2586,9 +2586,9 @@ class Z80
         setFlagZ(0 == finalResult);
         setFlagN(negative);
         setFlagS(0x80 & finalResult);
-        setFlagH((carry & 0x10) != 0);
-        setFlagPV((((carry << 1) ^ carry) & 0x100) != 0);
-        if (setCarry) setFlagC((carry & 0x100) != 0);
+        setFlagH(carry & 0x10);
+        setFlagPV(((carry << 1) ^ carry) & 0x100);
+        if (setCarry) setFlagC(carry & 0x100);
         if (setResult) {
             reg.pair.A = finalResult;
             setFlagXY(reg.pair.A);
