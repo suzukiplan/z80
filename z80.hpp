@@ -3396,6 +3396,27 @@ class Z80
         setFlagC(false);
     }
 
+    inline void and8(unsigned char n, int pc)
+    {
+        reg.pair.A &= n;
+        setFlagByLogical(true);
+        reg.PC += pc;
+    }
+
+    inline void or8(unsigned char n, int pc)
+    {
+        reg.pair.A |= n;
+        setFlagByLogical(false);
+        reg.PC += pc;
+    }
+
+    inline void xor8(unsigned char n, int pc)
+    {
+        reg.pair.A ^= n;
+        setFlagByLogical(false);
+        reg.PC += pc;
+    }
+
     // AND Register
     static inline int AND_B(Z80* ctx) { return ctx->AND_R(0b000); }
     static inline int AND_C(Z80* ctx) { return ctx->AND_R(0b001); }
@@ -3408,9 +3429,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] AND %s, %s", reg.PC, registerDump(0b111), registerDump(r));
-        reg.pair.A &= *rp;
-        setFlagByLogical(true);
-        reg.PC++;
+        and8(*rp, 1);
         return 0;
     }
 
@@ -3418,9 +3437,7 @@ class Z80
     inline int AND_IXH()
     {
         if (isDebug()) log("[%04X] AND %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
-        reg.pair.A &= getIXH();
-        setFlagByLogical(true);
-        reg.PC += 2;
+        and8(getIXH(), 2);
         return 0;
     }
 
@@ -3428,9 +3445,7 @@ class Z80
     inline int AND_IXL()
     {
         if (isDebug()) log("[%04X] AND %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
-        reg.pair.A &= getIXL();
-        setFlagByLogical(true);
-        reg.PC += 2;
+        and8(getIXL(), 2);
         return 0;
     }
 
@@ -3438,9 +3453,7 @@ class Z80
     inline int AND_IYH()
     {
         if (isDebug()) log("[%04X] AND %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
-        reg.pair.A &= getIYH();
-        setFlagByLogical(true);
-        reg.PC += 2;
+        and8(getIYH(), 2);
         return 0;
     }
 
@@ -3448,9 +3461,7 @@ class Z80
     inline int AND_IYL()
     {
         if (isDebug()) log("[%04X] AND %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
-        reg.pair.A &= getIYL();
-        setFlagByLogical(true);
-        reg.PC += 2;
+        and8(getIYL(), 2);
         return 0;
     }
 
@@ -3459,9 +3470,7 @@ class Z80
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] AND %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
-        ctx->reg.pair.A &= n;
-        ctx->setFlagByLogical(true);
-        ctx->reg.PC += 2;
+        ctx->and8(n, 2);
         return 0;
     }
 
@@ -3471,9 +3480,7 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] AND %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
-        ctx->reg.pair.A &= n;
-        ctx->setFlagByLogical(true);
-        ctx->reg.PC++;
+        ctx->and8(n, 1);
         return 0;
     }
 
@@ -3484,9 +3491,7 @@ class Z80
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
-        reg.pair.A &= n;
-        setFlagByLogical(true);
-        reg.PC += 3;
+        and8(n, 3);
         return consumeClock(3);
     }
 
@@ -3497,9 +3502,7 @@ class Z80
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
-        reg.pair.A &= n;
-        setFlagByLogical(true);
-        reg.PC += 3;
+        and8(n, 3);
         return consumeClock(3);
     }
 
@@ -3515,9 +3518,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] OR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
-        reg.pair.A |= *rp;
-        setFlagByLogical(false);
-        reg.PC++;
+        or8(*rp, 1);
         return 0;
     }
 
@@ -3525,9 +3526,7 @@ class Z80
     inline int OR_IXH()
     {
         if (isDebug()) log("[%04X] OR %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
-        reg.pair.A |= getIXH();
-        setFlagByLogical(false);
-        reg.PC += 2;
+        or8(getIXH(), 2);
         return 0;
     }
 
@@ -3535,9 +3534,7 @@ class Z80
     inline int OR_IXL()
     {
         if (isDebug()) log("[%04X] OR %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
-        reg.pair.A |= getIXL();
-        setFlagByLogical(false);
-        reg.PC += 2;
+        or8(getIXL(), 2);
         return 0;
     }
 
@@ -3545,9 +3542,7 @@ class Z80
     inline int OR_IYH()
     {
         if (isDebug()) log("[%04X] OR %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
-        reg.pair.A |= getIYH();
-        setFlagByLogical(false);
-        reg.PC += 2;
+        or8(getIYH(), 2);
         return 0;
     }
 
@@ -3555,9 +3550,7 @@ class Z80
     inline int OR_IYL()
     {
         if (isDebug()) log("[%04X] OR %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
-        reg.pair.A |= getIYL();
-        setFlagByLogical(false);
-        reg.PC += 2;
+        or8(getIYL(), 2);
         return 0;
     }
 
@@ -3566,9 +3559,7 @@ class Z80
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] OR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
-        ctx->reg.pair.A |= n;
-        ctx->setFlagByLogical(false);
-        ctx->reg.PC += 2;
+        ctx->or8(n, 2);
         return 0;
     }
 
@@ -3578,9 +3569,7 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] OR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A | n);
-        ctx->reg.pair.A |= n;
-        ctx->setFlagByLogical(false);
-        ctx->reg.PC++;
+        ctx->or8(n, 1);
         return 0;
     }
 
@@ -3591,9 +3580,7 @@ class Z80
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
-        reg.pair.A |= n;
-        setFlagByLogical(false);
-        reg.PC += 3;
+        or8(n, 3);
         return consumeClock(3);
     }
 
@@ -3604,9 +3591,7 @@ class Z80
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
-        reg.pair.A |= n;
-        setFlagByLogical(false);
-        reg.PC += 3;
+        or8(n, 3);
         return consumeClock(3);
     }
 
@@ -3622,9 +3607,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] XOR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
-        reg.pair.A ^= *rp;
-        setFlagByLogical(false);
-        reg.PC++;
+        xor8(*rp, 1);
         return 0;
     }
 
@@ -3632,9 +3615,7 @@ class Z80
     inline int XOR_IXH()
     {
         if (isDebug()) log("[%04X] XOR %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
-        reg.pair.A ^= getIXH();
-        setFlagByLogical(false);
-        reg.PC += 2;
+        xor8(getIXH(), 2);
         return 0;
     }
 
@@ -3642,9 +3623,7 @@ class Z80
     inline int XOR_IXL()
     {
         if (isDebug()) log("[%04X] XOR %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
-        reg.pair.A ^= getIXL();
-        setFlagByLogical(false);
-        reg.PC += 2;
+        xor8(getIXL(), 2);
         return 0;
     }
 
@@ -3652,9 +3631,7 @@ class Z80
     inline int XOR_IYH()
     {
         if (isDebug()) log("[%04X] XOR %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
-        reg.pair.A ^= getIYH();
-        setFlagByLogical(false);
-        reg.PC += 2;
+        xor8(getIYH(), 2);
         return 0;
     }
 
@@ -3662,9 +3639,7 @@ class Z80
     inline int XOR_IYL()
     {
         if (isDebug()) log("[%04X] XOR %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
-        reg.pair.A ^= getIYL();
-        setFlagByLogical(false);
-        reg.PC += 2;
+        xor8(getIYL(), 2);
         return 0;
     }
 
@@ -3673,9 +3648,7 @@ class Z80
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] XOR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
-        ctx->reg.pair.A ^= n;
-        ctx->setFlagByLogical(false);
-        ctx->reg.PC += 2;
+        ctx->xor8(n, 2);
         return 0;
     }
 
@@ -3685,9 +3658,7 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] XOR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A ^ n);
-        ctx->reg.pair.A ^= n;
-        ctx->setFlagByLogical(false);
-        ctx->reg.PC++;
+        ctx->xor8(n, 1);
         return 0;
     }
 
@@ -3698,9 +3669,7 @@ class Z80
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
-        reg.pair.A ^= n;
-        setFlagByLogical(false);
-        reg.PC += 3;
+        xor8(n, 3);
         return consumeClock(3);
     }
 
@@ -3711,9 +3680,7 @@ class Z80
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
-        reg.pair.A ^= n;
-        setFlagByLogical(false);
-        reg.PC += 3;
+        xor8(n, 3);
         return consumeClock(3);
     }
 
