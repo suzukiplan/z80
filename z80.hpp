@@ -3772,7 +3772,6 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        setFlagXY(n);
         if (isDebug()) log("[%04X] BIT (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
@@ -3789,6 +3788,7 @@ class Z80
         setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
+        setFlagXY((reg.WZ & 0xFF00) >> 8);
         reg.PC += 4;
         return 0;
     }
@@ -3798,7 +3798,6 @@ class Z80
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        setFlagXY(n);
         if (isDebug()) log("[%04X] BIT (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
@@ -3815,6 +3814,7 @@ class Z80
         setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
+        setFlagXY((reg.WZ & 0xFF00) >> 8);
         reg.PC += 4;
         return 0;
     }

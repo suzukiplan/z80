@@ -5,6 +5,7 @@
 - bugfix: `LD A,I` Incorrect P/V flag after execution #29
 - bugfix: incorrect `ADD IX,IX` and `ADD IY,IY` #32
 - bugfix: incorrect X/Y flags after `CP` operands #34
+- bugfix: incorrect X/Y flags after `BIT (IX/IY+d)` operands
 - bugfix: incorrect X/Y flags after `LDD/LDI` operands
 - bugfix: incorrect X/Y flags after `RRD/RLD/RLA/RRA/RLCA/RRCA` operands
 - bugfix: incorrect carry flag after `DAA` operand
