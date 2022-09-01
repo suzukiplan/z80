@@ -6,6 +6,7 @@
 - bugfix: incorrect `ADD IX,IX` and `ADD IY,IY` #32
 - bugfix: incorrect X/Y flags after `CP` operands #34
 - bugfix: incorrect X/Y flags after `LDD/LDI` operands
+- bugfix: incorrect X/Y flags after `RRD/RLD/RLA/RRA/RLCA/RRCA` operands
 - bugfix: incorrect carry flag after `DAA` operand
 - add test case: [Z80 Instruction Exerciser](https://mdfs.net/Software/Z80/Exerciser/) #31
 - refactored several code

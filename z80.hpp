@@ -1088,6 +1088,7 @@ class Z80
         ctx->setFlagC(a7);
         ctx->setFlagH(false);
         ctx->setFlagN(false);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -1103,6 +1104,7 @@ class Z80
         ctx->setFlagC(a0);
         ctx->setFlagH(false);
         ctx->setFlagN(false);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -1118,6 +1120,7 @@ class Z80
         ctx->setFlagC(a7);
         ctx->setFlagH(false);
         ctx->setFlagN(false);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -1133,6 +1136,7 @@ class Z80
         ctx->setFlagC(a0);
         ctx->setFlagH(false);
         ctx->setFlagN(false);
+        ctx->setFlagXY(ctx->reg.pair.A);
         ctx->reg.PC++;
         return 0;
     }
@@ -4608,6 +4612,7 @@ class Z80
         reg.pair.A = afterA;
         writeByte(hl, afterN);
         setFlagS(reg.pair.A & 0x80);
+        setFlagXY(reg.pair.A);
         setFlagZ(reg.pair.A == 0);
         setFlagH(false);
         setFlagPV(isEvenNumberBits(reg.pair.A));
@@ -4632,6 +4637,7 @@ class Z80
         reg.pair.A = afterA;
         writeByte(hl, afterN);
         setFlagS(reg.pair.A & 0x80);
+        setFlagXY(reg.pair.A);
         setFlagZ(reg.pair.A == 0);
         setFlagH(false);
         setFlagPV(isEvenNumberBits(reg.pair.A));
