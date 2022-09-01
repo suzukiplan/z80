@@ -1822,7 +1822,9 @@ class Z80
         setFlagH(false);
         setFlagPV(bc != 0);
         setFlagN(false);
-        setFlagXY(reg.pair.A + n);
+        unsigned char an = reg.pair.A + n;
+        setFlagY(an & 0b00000010);
+        setFlagX(an & 0b00001000);
         if (isRepeat && 0 != bc) {
             consumeClock(5);
         } else {
