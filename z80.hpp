@@ -2928,6 +2928,13 @@ class Z80
     }
 
     // Subtract Register
+    static inline int SUB_A_B(Z80* ctx) { return ctx->SUB_A_R(0b000); }
+    static inline int SUB_A_C(Z80* ctx) { return ctx->SUB_A_R(0b001); }
+    static inline int SUB_A_D(Z80* ctx) { return ctx->SUB_A_R(0b010); }
+    static inline int SUB_A_E(Z80* ctx) { return ctx->SUB_A_R(0b011); }
+    static inline int SUB_A_H(Z80* ctx) { return ctx->SUB_A_R(0b100); }
+    static inline int SUB_A_L(Z80* ctx) { return ctx->SUB_A_R(0b101); }
+    static inline int SUB_A_A(Z80* ctx) { return ctx->SUB_A_R(0b111); }
     inline int SUB_A_R(unsigned char r)
     {
         if (isDebug()) log("[%04X] SUB %s, %s", reg.PC, registerDump(0b111), registerDump(r));
@@ -4845,7 +4852,14 @@ class Z80
         opSet1[0b10001000 + 0b101] = ADC_A_L;
         opSet1[0b10001000 + 0b110] = ADC_A_HL;
         opSet1[0b10001000 + 0b111] = ADC_A_A;
-        opSet1[0b10010110] = SUB_A_HL;
+        opSet1[0b10010000 + 0b000] = SUB_A_B;
+        opSet1[0b10010000 + 0b001] = SUB_A_C;
+        opSet1[0b10010000 + 0b010] = SUB_A_D;
+        opSet1[0b10010000 + 0b011] = SUB_A_E;
+        opSet1[0b10010000 + 0b100] = SUB_A_H;
+        opSet1[0b10010000 + 0b101] = SUB_A_L;
+        opSet1[0b10010000 + 0b110] = SUB_A_HL;
+        opSet1[0b10010000 + 0b111] = SUB_A_A;
         opSet1[0b10011110] = SBC_A_HL;
         opSet1[0b10100110] = AND_HL;
         opSet1[0b10101110] = XOR_HL;
@@ -5173,8 +5187,6 @@ class Z80
                         ret = RST((operandNumber & 0b00111000) >> 3, true);
                     } else if ((operandNumber & 0b11000000) == 0b01000000) {
                         ret = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
-                    } else if ((operandNumber & 0b11111000) == 0b10010000) {
-                        ret = SUB_A_R(operandNumber & 0b00000111);
                     } else if ((operandNumber & 0b11111000) == 0b10011000) {
                         ret = SBC_A_R(operandNumber & 0b00000111);
                     } else if ((operandNumber & 0b11111000) == 0b10100000) {
