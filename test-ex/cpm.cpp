@@ -123,6 +123,7 @@ int main(int argc, char* argv[])
     z80.addBreakPoint(0xFF04, [](void* arg) {
         ((CPM*)arg)->halted = true;
     });
+    z80.skipIllegalInstructions = true;
     cpm.lineCallback = [](CPM* cpm, char* line) {
         if (cpm->checkError && strstr(line, "ERROR")) {
             cpm->halted = true;

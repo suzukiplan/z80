@@ -90,6 +90,9 @@ class Z80
         consumeClock(isLR35902 ? 4 : clock);
     }
 
+    // Normally false (zexdoc/zexall executes some undefined instructions, so set to true if you want to skip them)
+    bool skipIllegalInstructions;
+
   private: // Internal functions & variables
     // flag setter
     inline void setFlagS(bool on) { on ? reg.pair.F |= flagS() : reg.pair.F &= ~flagS(); }
@@ -562,6 +565,11 @@ class Z80
             case 0b01000000: return ctx->IN_R_C((mode & 0b00111000) >> 3);
             case 0b01000001: return ctx->OUT_C_R((mode & 0b00111000) >> 3);
         }
+        if (ctx->skipIllegalInstructions) {
+            if (ctx->isDebug()) ctx->log("Skipped an illegal ED instruction: $ED%02X", mode);
+            ctx->reg.PC += 2;
+            return 0;
+        }
         if (ctx->isDebug()) ctx->log("unknown EXTRA: $%02X", mode);
         return -1;
     }
@@ -695,6 +703,10 @@ class Z80
             return ctx->ADD_IX_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IX_R(op2 & 0b00000111);
+        } else if (ctx->skipIllegalInstructions) {
+            if (ctx->isDebug()) ctx->log("Skipped an illegal IX instruction: $DD%02X", op2);
+            ctx->reg.PC += 2;
+            return 0;
         }
         if (ctx->isDebug()) ctx->log("detected an unknown operand: 0b11011101 - $%02X", op2);
         return -1;
@@ -797,6 +809,10 @@ class Z80
             return ctx->ADD_IY_RP((op2 & 0b00110000) >> 4);
         } else if ((op2 & 0b11111000) == 0b01110000) {
             return ctx->LD_IY_R(op2 & 0b00000111);
+        } else if (ctx->skipIllegalInstructions) {
+            if (ctx->isDebug()) ctx->log("Skipped an illegal IY instruction: $DD%02X", op2);
+            ctx->reg.PC += 2;
+            return 0;
         }
         if (ctx->isDebug()) ctx->log("detected an unknown operand: 11111101 - $%02X", op2);
         return -1;
@@ -856,6 +872,11 @@ class Z80
                 case 0b00110110: return ctx->SLL_HL();
                 case 0b00110111: return ctx->SLL_R(0b111);
             }
+        }
+        if (ctx->skipIllegalInstructions) {
+            if (ctx->isDebug()) ctx->log("Skipped an illegal CB instruction: $CB%02X", op2);
+            ctx->reg.PC += 2;
+            return 0;
         }
         if (ctx->isDebug()) ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
         return -1;
@@ -4937,6 +4958,7 @@ class Z80
         reg.pair.F = 0xff;
         reg.SP = 0xffff;
         this->isLR35902 = (NULL == in && NULL == out);
+        this->skipIllegalInstructions = false;
         setupOpSet1();
     }
 
@@ -5150,6 +5172,10 @@ class Z80
                         ret = XOR_R(operandNumber & 0b00000111);
                     } else if ((operandNumber & 0b11111000) == 0b10111000) {
                         ret = CP_R(operandNumber & 0b00000111);
+                    } else if (skipIllegalInstructions) {
+                        if (isDebug()) log("Skipped an illegal instruction: $%02X", op);
+                        reg.PC += 1;
+                        ret = 0;                        
                     }
                 } else {
                     // execute an operand that the first byte is fixed.
