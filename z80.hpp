@@ -388,6 +388,15 @@ class Z80
         }
     }
 
+    inline unsigned char getIXH() { return (reg.IX & 0xFF00) >> 8; }
+    inline unsigned char getIXL() { return reg.IX & 0x00Ff; }
+    inline unsigned char getIYH() { return (reg.IY & 0xFF00) >> 8; }
+    inline unsigned char getIYL() { return reg.IY & 0x00Ff; }
+    inline void setIXH(unsigned char v) { reg.IX = (reg.IX & 0x00FF) + v * 256; }
+    inline void setIXL(unsigned char v) { reg.IX = (reg.IX & 0xFF00) + v; }
+    inline void setIYH(unsigned char v) { reg.IY = (reg.IY & 0x00FF) + v * 256; }
+    inline void setIYL(unsigned char v) { reg.IY = (reg.IY & 0xFF00) + v; }
+
     inline bool isEvenNumberBits(unsigned char value)
     {
         int on = 0;
@@ -1276,8 +1285,7 @@ class Z80
     {
         unsigned char n = readByte(reg.PC + 2, 3);
         if (isDebug()) log("[%04X] LD IXH, $%02X", reg.PC, n);
-        reg.IX &= 0x00FF;
-        reg.IX |= n * 256;
+        setIXH(n);
         reg.PC += 3;
         return 0;
     }
@@ -1287,8 +1295,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] LD IXH, %s", reg.PC, registerDump(r));
-        reg.IX &= 0x00FF;
-        reg.IX |= (*rp) * 256;
+        setIXH(*rp);
         reg.PC += 2;
         return 0;
     }
@@ -1296,10 +1303,8 @@ class Z80
     // Load Reg. IX(high) with value IX(high)
     inline int LD_IXH_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] LD IXH, IXH<$%02X>", reg.PC, ixh);
-        reg.IX &= 0x00FF;
-        reg.IX |= ixh * 256;
+        if (isDebug()) log("[%04X] LD IXH, IXH<$%02X>", reg.PC, getIXH());
+        // nothing to do
         reg.PC += 2;
         return 0;
     }
@@ -1307,10 +1312,8 @@ class Z80
     // Load Reg. IX(high) with value IX(low)
     inline int LD_IXH_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
-        if (isDebug()) log("[%04X] LD IXH, IXL<$%02X>", reg.PC, ixl);
-        reg.IX &= 0x00FF;
-        reg.IX |= ixl * 256;
+        if (isDebug()) log("[%04X] LD IXH, IXL<$%02X>", reg.PC, getIXL());
+        setIXH(getIXL());
         reg.PC += 2;
         return 0;
     }
@@ -1320,8 +1323,7 @@ class Z80
     {
         unsigned char n = readByte(reg.PC + 2, 3);
         if (isDebug()) log("[%04X] LD IXL, $%02X", reg.PC, n);
-        reg.IX &= 0xFF00;
-        reg.IX |= n;
+        setIXL(n);
         reg.PC += 3;
         return 0;
     }
@@ -1331,8 +1333,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] LD IXL, %s", reg.PC, registerDump(r));
-        reg.IX &= 0xFF00;
-        reg.IX |= (*rp);
+        setIXL(*rp);
         reg.PC += 2;
         return 0;
     }
@@ -1340,10 +1341,8 @@ class Z80
     // Load Reg. IX(low) with value IX(high)
     inline int LD_IXL_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] LD IXL, IXH<$%02X>", reg.PC, ixh);
-        reg.IX &= 0xFF00;
-        reg.IX |= ixh;
+        if (isDebug()) log("[%04X] LD IXL, IXH<$%02X>", reg.PC, getIXH());
+        setIXL(getIXH());
         reg.PC += 2;
         return 0;
     }
@@ -1351,10 +1350,8 @@ class Z80
     // Load Reg. IX(low) with value IX(low)
     inline int LD_IXL_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
-        if (isDebug()) log("[%04X] LD IXL, IXL<$%02X>", reg.PC, ixl);
-        reg.IX &= 0xFF00;
-        reg.IX |= ixl;
+        if (isDebug()) log("[%04X] LD IXL, IXL<$%02X>", reg.PC, getIXL());
+        // nothing to do
         reg.PC += 2;
         return 0;
     }
@@ -1364,8 +1361,7 @@ class Z80
     {
         unsigned char n = readByte(reg.PC + 2, 3);
         if (isDebug()) log("[%04X] LD IYH, $%02X", reg.PC, n);
-        reg.IY &= 0x00FF;
-        reg.IY |= n * 256;
+        setIYH(n);
         reg.PC += 3;
         return 0;
     }
@@ -1375,8 +1371,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] LD IYH, %s", reg.PC, registerDump(r));
-        reg.IY &= 0x00FF;
-        reg.IY |= (*rp) * 256;
+        setIYH(*rp);
         reg.PC += 2;
         return 0;
     }
@@ -1384,10 +1379,8 @@ class Z80
     // Load Reg. IY(high) with value IY(high)
     inline int LD_IYH_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] LD IYH, IYH<$%02X>", reg.PC, iyh);
-        reg.IY &= 0x00FF;
-        reg.IY |= iyh * 256;
+        if (isDebug()) log("[%04X] LD IYH, IYH<$%02X>", reg.PC, getIYH());
+        // nothing to do
         reg.PC += 2;
         return 0;
     }
@@ -1395,10 +1388,8 @@ class Z80
     // Load Reg. IY(high) with value IY(low)
     inline int LD_IYH_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
-        if (isDebug()) log("[%04X] LD IYH, IYH<$%02X>", reg.PC, iyl);
-        reg.IY &= 0x00FF;
-        reg.IY |= iyl * 256;
+        if (isDebug()) log("[%04X] LD IYH, IYL<$%02X>", reg.PC, getIYL());
+        setIYH(getIYL());
         reg.PC += 2;
         return 0;
     }
@@ -1408,8 +1399,7 @@ class Z80
     {
         unsigned char n = readByte(reg.PC + 2, 3);
         if (isDebug()) log("[%04X] LD IYL, $%02X", reg.PC, n);
-        reg.IY &= 0xFF00;
-        reg.IY |= n;
+        setIYL(n);
         reg.PC += 3;
         return 0;
     }
@@ -1419,8 +1409,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] LD IYL, %s", reg.PC, registerDump(r));
-        reg.IY &= 0xFF00;
-        reg.IY |= (*rp);
+        setIYL(*rp);
         reg.PC += 2;
         return 0;
     }
@@ -1428,10 +1417,8 @@ class Z80
     // Load Reg. IY(low) with value IY(high)
     inline int LD_IYL_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] LD IYL, IYH<$%02X>", reg.PC, iyh);
-        reg.IY &= 0xFF00;
-        reg.IY |= iyh;
+        if (isDebug()) log("[%04X] LD IYL, IYH<$%02X>", reg.PC, getIYH());
+        setIYL(getIYH());
         reg.PC += 2;
         return 0;
     }
@@ -1439,10 +1426,8 @@ class Z80
     // Load Reg. IY(low) with value IY(low)
     inline int LD_IYL_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
-        if (isDebug()) log("[%04X] LD IYL, IYL<$%02X>", reg.PC, iyl);
-        reg.IY &= 0xFF00;
-        reg.IY |= iyl;
+        if (isDebug()) log("[%04X] LD IYL, IYL<$%02X>", reg.PC, getIYL());
+        // nothing to do
         reg.PC += 2;
         return 0;
     }
@@ -1473,10 +1458,9 @@ class Z80
     // Load Reg. r with IXH
     inline int LD_R_IXH(unsigned char r)
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] LD %s, IXH<$%02X>", reg.PC, registerDump(r), ixh);
-        if (rp) *rp = ixh;
+        if (isDebug()) log("[%04X] LD %s, IXH<$%02X>", reg.PC, registerDump(r), getIXH());
+        if (rp) *rp = getIXH();
         reg.PC += 2;
         return 0;
     }
@@ -1484,10 +1468,9 @@ class Z80
     // Load Reg. r with IXL
     inline int LD_R_IXL(unsigned char r)
     {
-        unsigned char ixl = reg.IX & 0x00FF;
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] LD %s, IXL<$%02X>", reg.PC, registerDump(r), ixl);
-        if (rp) *rp = ixl;
+        if (isDebug()) log("[%04X] LD %s, IXL<$%02X>", reg.PC, registerDump(r), getIXL());
+        if (rp) *rp = getIXL();
         reg.PC += 2;
         return 0;
     }
@@ -2632,9 +2615,8 @@ class Z80
     // Add IXH to Acc.
     inline int ADD_A_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] ADD %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
-        addition8(ixh);
+        if (isDebug()) log("[%04X] ADD %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
+        addition8(getIXH());
         reg.PC += 2;
         return 0;
     }
@@ -2642,9 +2624,8 @@ class Z80
     // Add IXL to Acc.
     inline int ADD_A_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
-        if (isDebug()) log("[%04X] ADD %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
-        addition8(ixl);
+        if (isDebug()) log("[%04X] ADD %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
+        addition8(getIXL());
         reg.PC += 2;
         return 0;
     }
@@ -2652,9 +2633,8 @@ class Z80
     // Add IYH to Acc.
     inline int ADD_A_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] ADD %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
-        addition8(iyh);
+        if (isDebug()) log("[%04X] ADD %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
+        addition8(getIYH());
         reg.PC += 2;
         return 0;
     }
@@ -2662,9 +2642,8 @@ class Z80
     // Add IYL to Acc.
     inline int ADD_A_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
-        if (isDebug()) log("[%04X] ADD %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
-        addition8(iyl);
+        if (isDebug()) log("[%04X] ADD %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
+        addition8(getIYL());
         reg.PC += 2;
         return 0;
     }
@@ -2729,9 +2708,8 @@ class Z80
     inline int ADC_A_IXH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] ADC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), ixh, c ? "ON" : "OFF");
-        addition8(c + ixh);
+        if (isDebug()) log("[%04X] ADC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXH(), c ? "ON" : "OFF");
+        addition8(c + getIXH());
         reg.PC += 2;
         return 0;
     }
@@ -2740,9 +2718,8 @@ class Z80
     inline int ADC_A_IXL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
-        unsigned char ixl = reg.IX & 0x00FF;
-        if (isDebug()) log("[%04X] ADC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), ixl, c ? "ON" : "OFF");
-        addition8(c + ixl);
+        if (isDebug()) log("[%04X] ADC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXL(), c ? "ON" : "OFF");
+        addition8(c + getIXL());
         reg.PC += 2;
         return 0;
     }
@@ -2751,9 +2728,8 @@ class Z80
     inline int ADC_A_IYH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] ADC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), iyh, c ? "ON" : "OFF");
-        addition8(c + iyh);
+        if (isDebug()) log("[%04X] ADC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYH(), c ? "ON" : "OFF");
+        addition8(c + getIYH());
         reg.PC += 2;
         return 0;
     }
@@ -2762,9 +2738,8 @@ class Z80
     inline int ADC_A_IYL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
-        unsigned char iyl = reg.IY & 0x00FF;
-        if (isDebug()) log("[%04X] ADC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), iyl, c ? "ON" : "OFF");
-        addition8(c + iyl);
+        if (isDebug()) log("[%04X] ADC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYL(), c ? "ON" : "OFF");
+        addition8(c + getIYL());
         reg.PC += 2;
         return 0;
     }
@@ -2857,12 +2832,10 @@ class Z80
     // Increment register high 8 bits of IX
     inline int INC_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        unsigned char ixh = getIXH();
         if (isDebug()) log("[%04X] INC IXH<$%02X>", reg.PC, ixh);
-        setFlagByIncrement(ixh);
-        ixh++;
-        reg.IX &= 0x00FF;
-        reg.IX |= ixh * 256;
+        setFlagByIncrement(ixh++);
+        setIXH(ixh);
         reg.PC += 2;
         return 0;
     }
@@ -2870,12 +2843,10 @@ class Z80
     // Increment register low 8 bits of IX
     inline int INC_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
+        unsigned char ixl = getIXL();
         if (isDebug()) log("[%04X] INC IXL<$%02X>", reg.PC, ixl);
-        setFlagByIncrement(ixl);
-        ixl++;
-        reg.IX &= 0xFF00;
-        reg.IX |= ixl;
+        setFlagByIncrement(ixl++);
+        setIXL(ixl);
         reg.PC += 2;
         return 0;
     }
@@ -2896,12 +2867,10 @@ class Z80
     // Increment register high 8 bits of IY
     inline int INC_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        unsigned char iyh = getIYH();
         if (isDebug()) log("[%04X] INC IYH<$%02X>", reg.PC, iyh);
-        setFlagByIncrement(iyh);
-        iyh++;
-        reg.IY &= 0x00FF;
-        reg.IY |= iyh * 256;
+        setFlagByIncrement(iyh++);
+        setIYH(iyh);
         reg.PC += 2;
         return 0;
     }
@@ -2909,12 +2878,10 @@ class Z80
     // Increment register low 8 bits of IY
     inline int INC_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
+        unsigned char iyl = getIYL();
         if (isDebug()) log("[%04X] INC IYL<$%02X>", reg.PC, iyl);
-        setFlagByIncrement(iyl);
-        iyl++;
-        reg.IY &= 0xFF00;
-        reg.IY |= iyl;
+        setFlagByIncrement(iyl++);
+        setIYL(iyl);
         reg.PC += 2;
         return 0;
     }
@@ -2932,9 +2899,8 @@ class Z80
     // Subtract IXH to Acc.
     inline int SUB_A_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] SUB %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
-        subtract8(ixh);
+        if (isDebug()) log("[%04X] SUB %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
+        subtract8(getIXH());
         reg.PC += 2;
         return 0;
     }
@@ -2942,9 +2908,8 @@ class Z80
     // Subtract IXL to Acc.
     inline int SUB_A_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
-        if (isDebug()) log("[%04X] SUB %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
-        subtract8(ixl);
+        if (isDebug()) log("[%04X] SUB %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
+        subtract8(getIXL());
         reg.PC += 2;
         return 0;
     }
@@ -2952,9 +2917,8 @@ class Z80
     // Subtract IYH to Acc.
     inline int SUB_A_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] SUB %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
-        subtract8(iyh);
+        if (isDebug()) log("[%04X] SUB %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
+        subtract8(getIYH());
         reg.PC += 2;
         return 0;
     }
@@ -2962,9 +2926,8 @@ class Z80
     // Subtract IYL to Acc.
     inline int SUB_A_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
-        if (isDebug()) log("[%04X] SUB %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
-        subtract8(iyl);
+        if (isDebug()) log("[%04X] SUB %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
+        subtract8(getIYL());
         reg.PC += 2;
         return 0;
     }
@@ -3028,10 +2991,9 @@ class Z80
     // Subtract IXH to Acc. with carry
     inline int SBC_A_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), ixh, c ? "ON" : "OFF");
-        subtract8(c + ixh);
+        if (isDebug()) log("[%04X] SBC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXH(), c ? "ON" : "OFF");
+        subtract8(c + getIXH());
         reg.PC += 2;
         return 0;
     }
@@ -3039,10 +3001,9 @@ class Z80
     // Subtract IXL to Acc. with carry
     inline int SBC_A_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), ixl, c ? "ON" : "OFF");
-        subtract8(c + ixl);
+        if (isDebug()) log("[%04X] SBC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXL(), c ? "ON" : "OFF");
+        subtract8(c + getIXL());
         reg.PC += 2;
         return 0;
     }
@@ -3050,10 +3011,9 @@ class Z80
     // Subtract IYH to Acc. with carry
     inline int SBC_A_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), iyh, c ? "ON" : "OFF");
-        subtract8(c + iyh);
+        if (isDebug()) log("[%04X] SBC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYH(), c ? "ON" : "OFF");
+        subtract8(c + getIYH());
         reg.PC += 2;
         return 0;
     }
@@ -3061,10 +3021,9 @@ class Z80
     // Subtract IYL to Acc. with carry
     inline int SBC_A_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), iyl, c ? "ON" : "OFF");
-        subtract8(c + iyl);
+        if (isDebug()) log("[%04X] SBC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYL(), c ? "ON" : "OFF");
+        subtract8(c + getIYL());
         reg.PC += 2;
         return 0;
     }
@@ -3158,12 +3117,10 @@ class Z80
     // Decrement high 8 bits of IX
     inline int DEC_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
+        unsigned char ixh = getIXH();
         if (isDebug()) log("[%04X] DEC IXH<$%02X>", reg.PC, ixh);
-        setFlagByDecrement(ixh);
-        ixh--;
-        reg.IX &= 0x00FF;
-        reg.IX |= ixh * 256;
+        setFlagByDecrement(ixh--);
+        setIXH(ixh);
         reg.PC += 2;
         return 0;
     }
@@ -3171,12 +3128,10 @@ class Z80
     // Decrement low 8 bits of IX
     inline int DEC_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
+        unsigned char ixl = getIXL();
         if (isDebug()) log("[%04X] DEC IXL<$%02X>", reg.PC, ixl);
-        setFlagByDecrement(ixl);
-        ixl--;
-        reg.IX &= 0xFF00;
-        reg.IX |= ixl;
+        setFlagByDecrement(ixl--);
+        setIXL(ixl);
         reg.PC += 2;
         return 0;
     }
@@ -3197,12 +3152,10 @@ class Z80
     // Decrement high 8 bits of IY
     inline int DEC_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        unsigned char iyh = getIYH();
         if (isDebug()) log("[%04X] DEC IYH<$%02X>", reg.PC, iyh);
-        setFlagByDecrement(iyh);
-        iyh--;
-        reg.IY &= 0x00FF;
-        reg.IY |= iyh * 256;
+        setFlagByDecrement(iyh--);
+        setIYH(iyh);
         reg.PC += 2;
         return 0;
     }
@@ -3210,12 +3163,10 @@ class Z80
     // Decrement low 8 bits of IY
     inline int DEC_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
+        unsigned char iyl = getIYL();
         if (isDebug()) log("[%04X] DEC IYL<$%02X>", reg.PC, iyl);
-        setFlagByDecrement(iyl);
-        iyl--;
-        reg.IY &= 0xFF00;
-        reg.IY |= iyl;
+        setFlagByDecrement(iyl--);
+        setIYL(iyl);
         reg.PC += 2;
         return 0;
     }
@@ -3404,9 +3355,8 @@ class Z80
     // AND with register IXH
     inline int AND_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] AND %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
-        reg.pair.A &= ixh;
+        if (isDebug()) log("[%04X] AND %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
+        reg.pair.A &= getIXH();
         setFlagByLogical(true);
         reg.PC += 2;
         return 0;
@@ -3415,9 +3365,8 @@ class Z80
     // AND with register IXL
     inline int AND_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
-        if (isDebug()) log("[%04X] AND %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
-        reg.pair.A &= ixl;
+        if (isDebug()) log("[%04X] AND %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
+        reg.pair.A &= getIXL();
         setFlagByLogical(true);
         reg.PC += 2;
         return 0;
@@ -3426,9 +3375,8 @@ class Z80
     // AND with register IYH
     inline int AND_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] AND %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
-        reg.pair.A &= iyh;
+        if (isDebug()) log("[%04X] AND %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
+        reg.pair.A &= getIYH();
         setFlagByLogical(true);
         reg.PC += 2;
         return 0;
@@ -3437,9 +3385,8 @@ class Z80
     // AND with register IYL
     inline int AND_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
-        if (isDebug()) log("[%04X] AND %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
-        reg.pair.A &= iyl;
+        if (isDebug()) log("[%04X] AND %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
+        reg.pair.A &= getIYL();
         setFlagByLogical(true);
         reg.PC += 2;
         return 0;
@@ -3508,9 +3455,8 @@ class Z80
     // OR with register IXH
     inline int OR_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] OR %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
-        reg.pair.A |= ixh;
+        if (isDebug()) log("[%04X] OR %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
+        reg.pair.A |= getIXH();
         setFlagByLogical(false);
         reg.PC += 2;
         return 0;
@@ -3519,9 +3465,8 @@ class Z80
     // OR with register IXL
     inline int OR_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
-        if (isDebug()) log("[%04X] OR %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
-        reg.pair.A |= ixl;
+        if (isDebug()) log("[%04X] OR %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
+        reg.pair.A |= getIXL();
         setFlagByLogical(false);
         reg.PC += 2;
         return 0;
@@ -3530,9 +3475,8 @@ class Z80
     // OR with register IYH
     inline int OR_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] OR %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
-        reg.pair.A |= iyh;
+        if (isDebug()) log("[%04X] OR %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
+        reg.pair.A |= getIYH();
         setFlagByLogical(false);
         reg.PC += 2;
         return 0;
@@ -3541,9 +3485,8 @@ class Z80
     // OR with register IYL
     inline int OR_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
-        if (isDebug()) log("[%04X] OR %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
-        reg.pair.A |= iyl;
+        if (isDebug()) log("[%04X] OR %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
+        reg.pair.A |= getIYL();
         setFlagByLogical(false);
         reg.PC += 2;
         return 0;
@@ -3612,9 +3555,8 @@ class Z80
     // XOR with register IXH
     inline int XOR_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] XOR %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
-        reg.pair.A ^= ixh;
+        if (isDebug()) log("[%04X] XOR %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
+        reg.pair.A ^= getIXH();
         setFlagByLogical(false);
         reg.PC += 2;
         return 0;
@@ -3623,9 +3565,8 @@ class Z80
     // XOR with register IXL
     inline int XOR_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
-        if (isDebug()) log("[%04X] XOR %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
-        reg.pair.A ^= ixl;
+        if (isDebug()) log("[%04X] XOR %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
+        reg.pair.A ^= getIXL();
         setFlagByLogical(false);
         reg.PC += 2;
         return 0;
@@ -3634,9 +3575,8 @@ class Z80
     // XOR with register IYH
     inline int XOR_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] XOR %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
-        reg.pair.A ^= iyh;
+        if (isDebug()) log("[%04X] XOR %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
+        reg.pair.A ^= getIYH();
         setFlagByLogical(false);
         reg.PC += 2;
         return 0;
@@ -3645,9 +3585,8 @@ class Z80
     // XOR with register IYL
     inline int XOR_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
-        if (isDebug()) log("[%04X] XOR %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
-        reg.pair.A ^= iyl;
+        if (isDebug()) log("[%04X] XOR %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
+        reg.pair.A ^= getIYL();
         setFlagByLogical(false);
         reg.PC += 2;
         return 0;
@@ -4095,9 +4034,8 @@ class Z80
     // Compare Register IXH
     inline int CP_IXH()
     {
-        unsigned char ixh = (reg.IX & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] CP %s, IXH<$%02X>", reg.PC, registerDump(0b111), ixh);
-        subtract8(ixh, true, false);
+        if (isDebug()) log("[%04X] CP %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
+        subtract8(getIXH(), true, false);
         reg.PC += 2;
         return 0;
     }
@@ -4105,9 +4043,8 @@ class Z80
     // Compare Register IXL
     inline int CP_IXL()
     {
-        unsigned char ixl = reg.IX & 0x00FF;
-        if (isDebug()) log("[%04X] CP %s, IXL<$%02X>", reg.PC, registerDump(0b111), ixl);
-        subtract8(ixl, true, false);
+        if (isDebug()) log("[%04X] CP %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
+        subtract8(getIXL(), true, false);
         reg.PC += 2;
         return 0;
     }
@@ -4115,9 +4052,8 @@ class Z80
     // Compare Register IYH
     inline int CP_IYH()
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
-        if (isDebug()) log("[%04X] CP %s, IYH<$%02X>", reg.PC, registerDump(0b111), iyh);
-        subtract8(iyh, true, false);
+        if (isDebug()) log("[%04X] CP %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
+        subtract8(getIYH(), true, false);
         reg.PC += 2;
         return 0;
     }
@@ -4125,9 +4061,8 @@ class Z80
     // Compare Register IYL
     inline int CP_IYL()
     {
-        unsigned char iyl = reg.IY & 0x00FF;
-        if (isDebug()) log("[%04X] CP %s, IYL<$%02X>", reg.PC, registerDump(0b111), iyl);
-        subtract8(iyl, true, false);
+        if (isDebug()) log("[%04X] CP %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
+        subtract8(getIYL(), true, false);
         reg.PC += 2;
         return 0;
     }
