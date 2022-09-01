@@ -3504,6 +3504,13 @@ class Z80
     }
 
     // OR Register
+    static inline int OR_B(Z80* ctx) { return ctx->OR_R(0b000); }
+    static inline int OR_C(Z80* ctx) { return ctx->OR_R(0b001); }
+    static inline int OR_D(Z80* ctx) { return ctx->OR_R(0b010); }
+    static inline int OR_E(Z80* ctx) { return ctx->OR_R(0b011); }
+    static inline int OR_H(Z80* ctx) { return ctx->OR_R(0b100); }
+    static inline int OR_L(Z80* ctx) { return ctx->OR_R(0b101); }
+    static inline int OR_A(Z80* ctx) { return ctx->OR_R(0b111); }
     inline int OR_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -4905,7 +4912,14 @@ class Z80
         opSet1[0b10101000 + 0b101] = XOR_L;
         opSet1[0b10101000 + 0b110] = XOR_HL;
         opSet1[0b10101000 + 0b111] = XOR_A;
-        opSet1[0b10110110] = OR_HL;
+        opSet1[0b10110000 + 0b000] = OR_B;
+        opSet1[0b10110000 + 0b001] = OR_C;
+        opSet1[0b10110000 + 0b010] = OR_D;
+        opSet1[0b10110000 + 0b011] = OR_E;
+        opSet1[0b10110000 + 0b100] = OR_H;
+        opSet1[0b10110000 + 0b101] = OR_L;
+        opSet1[0b10110000 + 0b110] = OR_HL;
+        opSet1[0b10110000 + 0b111] = OR_A;
         opSet1[0b10111110] = CP_HL;
         opSet1[0b11000011] = JP_NN;
         opSet1[0b11000110] = ADD_A_N;
@@ -5229,8 +5243,6 @@ class Z80
                         ret = RST((operandNumber & 0b00111000) >> 3, true);
                     } else if ((operandNumber & 0b11000000) == 0b01000000) {
                         ret = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
-                    } else if ((operandNumber & 0b11111000) == 0b10110000) {
-                        ret = OR_R(operandNumber & 0b00000111);
                     } else if ((operandNumber & 0b11111000) == 0b10111000) {
                         ret = CP_R(operandNumber & 0b00000111);
                     } else if (skipIllegalInstructions) {
