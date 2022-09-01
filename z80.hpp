@@ -4571,39 +4571,20 @@ class Z80
     // Decimal Adjust Accumulator
     inline int daa()
     {
-        unsigned char a = reg.pair.A;
-        unsigned char aH = (a & 0b11110000) >> 4;
-        unsigned char aL = a & 0b00001111;
-        unsigned char h = aH < 9 ? 0 : aH == 9 ? 1 : 2;
-        unsigned char l = aL < 10 ? 0 : 1;
-        unsigned char addition = 0x00;
-        switch ((isFlagC() ? 0b010 : 0) | (isFlagH() ? 0b001 : 0)) {
-            case 0b00:
-                switch (h) {
-                    case 0: addition = (0 == l) ? 0x00 : 0x06; break;
-                    case 1: addition = (0 == l) ? 0x00 : 0x66; break;
-                    case 2: addition = (0 == l) ? 0x60 : 0x66; break;
-                }
-                break;
-            case 0b01:
-                switch (h) {
-                    case 0: addition = 0x06; break;
-                    case 1: addition = (0 == l) ? 0x06 : 0x66; break;
-                    case 2: addition = 0x66; break;
-                }
-                break;
-            case 0b10: addition = (0 == l) ? 0x60 : 0x66; break;
-            case 0b11: addition = 0x66; break;
-        }
-        unsigned char addH = (addition & 0b11110000) >> 4;
-        unsigned char addL = addition & 0b00001111;
-        reg.pair.A = a + (isFlagN() ? -addition : addition);
-        setFlagH(9 < aL + addL);
-        setFlagC(9 < aH + addH);
-        setFlagS(reg.pair.A & 0x80);
-        setFlagZ(reg.pair.A == 0);
-        setFlagPV(isEvenNumberBits(reg.pair.A));
-        if (isDebug()) log("[%04X] DAA ... A: $%02X -> $%02X", reg.PC, a, reg.pair.A);
+        int a = reg.pair.A;
+        bool c = isFlagC();
+        bool ac = reg.pair.A > 0x99;
+        int add = (isFlagH() || (a & 0x0F) > 9 ? 0x06 : 0x00) + (c || ac ? 0x60 : 0x00);
+        a += isFlagN() ? -add : add;
+        a &= 0xFF;
+        setFlagS(a & 0x80);
+        setFlagXY(a);
+        setFlagZ(0 == a);
+        setFlagH((a ^ reg.pair.A) & flagH());
+        setFlagPV(isEvenNumberBits(a));
+        setFlagC(c | ac);
+        if (isDebug()) log("[%04X] DAA ... A: $%02X -> $%02X", reg.PC, reg.pair.A, a);
+        reg.pair.A = a;
         reg.PC++;
         return 0;
     }
@@ -5175,7 +5156,7 @@ class Z80
                     } else if (skipIllegalInstructions) {
                         if (isDebug()) log("Skipped an illegal instruction: $%02X", op);
                         reg.PC += 1;
-                        ret = 0;                        
+                        ret = 0;
                     }
                 } else {
                     // execute an operand that the first byte is fixed.
