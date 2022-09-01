@@ -575,140 +575,74 @@ class Z80
     }
 
     // operand of using IX (first byte is 0b11011101)
-    static inline int OP_IX(Z80* ctx)
+    static inline int OP_IX(Z80* ctx) { return ctx->opSetIX[ctx->readByte(ctx->reg.PC + 1)](ctx); }
+    static inline int OP_IX_illegal(Z80* ctx)
     {
-        unsigned char op2 = ctx->readByte(ctx->reg.PC + 1);
-        switch (op2) {
-            case 0b00100010: return ctx->LD_ADDR_IX();
-            case 0b00100011: return ctx->INC_IX_reg();
-            case 0b00101010: return ctx->LD_IX_ADDR();
-            case 0b00101011: return ctx->DEC_IX_reg();
-            case 0b00110110: return ctx->LD_IX_N();
-            case 0b00100001: return ctx->LD_IX_NN();
-            case 0b00110100: return ctx->INC_IX();
-            case 0b00110101: return ctx->DEC_IX();
-            case 0b10000110: return ctx->ADD_A_IX();
-            case 0b10001110: return ctx->ADC_A_IX();
-            case 0b10010110: return ctx->SUB_A_IX();
-            case 0b10011110: return ctx->SBC_A_IX();
-            case 0b10100110: return ctx->AND_IX();
-            case 0b10101110: return ctx->XOR_IX();
-            case 0b10110110: return ctx->OR_IX();
-            case 0b10111110: return ctx->CP_IX();
-            case 0b11100001: return ctx->POP_IX();
-            case 0b11100011: return ctx->EX_SP_IX();
-            case 0b11100101: return ctx->PUSH_IX();
-            case 0b11101001: return ctx->JP_IX();
-            case 0b11111001: return ctx->LD_SP_IX();
-            case 0b11001011: {
-                unsigned char op3 = ctx->readByte(ctx->reg.PC + 2);
-                unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
-                switch (op4) {
-                    case 0b00000110: return ctx->RLC_IX(op3);
-                    case 0b00001110: return ctx->RRC_IX(op3);
-                    case 0b00010110: return ctx->RL_IX(op3);
-                    case 0b00011110: return ctx->RR_IX(op3);
-                    case 0b00100110: return ctx->SLA_IX(op3);
-                    case 0b00101110: return ctx->SRA_IX(op3);
-                    case 0b00111110: return ctx->SRL_IX(op3);
-                    case 0b00000000: return ctx->RLC_IX_with_LD(op3, 0b000);
-                    case 0b00000001: return ctx->RLC_IX_with_LD(op3, 0b001);
-                    case 0b00000010: return ctx->RLC_IX_with_LD(op3, 0b010);
-                    case 0b00000011: return ctx->RLC_IX_with_LD(op3, 0b011);
-                    case 0b00000100: return ctx->RLC_IX_with_LD(op3, 0b100);
-                    case 0b00000101: return ctx->RLC_IX_with_LD(op3, 0b101);
-                    case 0b00000111: return ctx->RLC_IX_with_LD(op3, 0b111);
-                    case 0b00001000: return ctx->RRC_IX_with_LD(op3, 0b000);
-                    case 0b00010000: return ctx->RL_IX_with_LD(op3, 0b000);
-                    case 0b00011000: return ctx->RR_IX_with_LD(op3, 0b000);
-                    case 0b00100000: return ctx->SLA_IX_with_LD(op3, 0b000);
-                    case 0b00101000: return ctx->SRA_IX_with_LD(op3, 0b000);
-                    case 0b00110000: return ctx->SLL_IX_with_LD(op3, 0b000);
-                    case 0b00111000: return ctx->SRL_IX_with_LD(op3, 0b000);
-                }
-                switch (op4 & 0b11000111) {
-                    case 0b01000110: return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
-                    case 0b11000110: return ctx->SET_IX(op3, (op4 & 0b00111000) >> 3);
-                    case 0b10000110: return ctx->RES_IX(op3, (op4 & 0b00111000) >> 3);
-                }
-                switch (op4) {
-                    case 0b10000000: return ctx->RES_IX_with_LD(op3, 0, 0b000);
-                    case 0b10001000: return ctx->RES_IX_with_LD(op3, 1, 0b000);
-                    case 0b10010000: return ctx->RES_IX_with_LD(op3, 2, 0b000);
-                    case 0b10011000: return ctx->RES_IX_with_LD(op3, 3, 0b000);
-                    case 0b10100000: return ctx->RES_IX_with_LD(op3, 4, 0b000);
-                    case 0b10101000: return ctx->RES_IX_with_LD(op3, 5, 0b000);
-                    case 0b10110000: return ctx->RES_IX_with_LD(op3, 6, 0b000);
-                    case 0b10111000: return ctx->RES_IX_with_LD(op3, 7, 0b000);
-                    case 0b11000000: return ctx->SET_IX_with_LD(op3, 0, 0b000);
-                    case 0b11001000: return ctx->SET_IX_with_LD(op3, 1, 0b000);
-                    case 0b11010000: return ctx->SET_IX_with_LD(op3, 2, 0b000);
-                    case 0b11011000: return ctx->SET_IX_with_LD(op3, 3, 0b000);
-                    case 0b11100000: return ctx->SET_IX_with_LD(op3, 4, 0b000);
-                    case 0b11101000: return ctx->SET_IX_with_LD(op3, 5, 0b000);
-                    case 0b11110000: return ctx->SET_IX_with_LD(op3, 6, 0b000);
-                    case 0b11111000: return ctx->SET_IX_with_LD(op3, 7, 0b000);
-                }
-            }
-            case 0b00100100: return ctx->INC_IXH();
-            case 0b00101100: return ctx->INC_IXL();
-            case 0b00100101: return ctx->DEC_IXH();
-            case 0b00101101: return ctx->DEC_IXL();
-            case 0b00100110: return ctx->LD_IXH_N();
-            case 0b00101110: return ctx->LD_IXL_N();
-            case 0b01100100: return ctx->LD_IXH_IXH();
-            case 0b01100101: return ctx->LD_IXH_IXL();
-            case 0b01101100: return ctx->LD_IXL_IXH();
-            case 0b01101101: return ctx->LD_IXL_IXL();
-            case 0b01111100: return ctx->LD_R_IXH(0b111);
-            case 0b01000100: return ctx->LD_R_IXH(0b000);
-            case 0b01001100: return ctx->LD_R_IXH(0b001);
-            case 0b01010100: return ctx->LD_R_IXH(0b010);
-            case 0b01011100: return ctx->LD_R_IXH(0b011);
-            case 0b01111101: return ctx->LD_R_IXL(0b111);
-            case 0b01000101: return ctx->LD_R_IXL(0b000);
-            case 0b01001101: return ctx->LD_R_IXL(0b001);
-            case 0b01010101: return ctx->LD_R_IXL(0b010);
-            case 0b01011101: return ctx->LD_R_IXL(0b011);
-            case 0b01100111: return ctx->LD_IXH_R(0b111);
-            case 0b01100000: return ctx->LD_IXH_R(0b000);
-            case 0b01100001: return ctx->LD_IXH_R(0b001);
-            case 0b01100010: return ctx->LD_IXH_R(0b010);
-            case 0b01100011: return ctx->LD_IXH_R(0b011);
-            case 0b01101111: return ctx->LD_IXL_R(0b111);
-            case 0b01101000: return ctx->LD_IXL_R(0b000);
-            case 0b01101001: return ctx->LD_IXL_R(0b001);
-            case 0b01101010: return ctx->LD_IXL_R(0b010);
-            case 0b01101011: return ctx->LD_IXL_R(0b011);
-            case 0b10000100: return ctx->ADD_A_IXH();
-            case 0b10000101: return ctx->ADD_A_IXL();
-            case 0b10001100: return ctx->ADC_A_IXH();
-            case 0b10001101: return ctx->ADC_A_IXL();
-            case 0b10010100: return ctx->SUB_A_IXH();
-            case 0b10010101: return ctx->SUB_A_IXL();
-            case 0b10011100: return ctx->SBC_A_IXH();
-            case 0b10011101: return ctx->SBC_A_IXL();
-            case 0b10100100: return ctx->AND_IXH();
-            case 0b10100101: return ctx->AND_IXL();
-            case 0b10110100: return ctx->OR_IXH();
-            case 0b10110101: return ctx->OR_IXL();
-            case 0b10101100: return ctx->XOR_IXH();
-            case 0b10101101: return ctx->XOR_IXL();
-            case 0b10111100: return ctx->CP_IXH();
-            case 0b10111101: return ctx->CP_IXL();
-        }
-        if ((op2 & 0b11000111) == 0b01000110) {
-            return ctx->LD_R_IX((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11001111) == 0b00001001) {
-            return ctx->ADD_IX_RP((op2 & 0b00110000) >> 4);
-        } else if ((op2 & 0b11111000) == 0b01110000) {
-            return ctx->LD_IX_R(op2 & 0b00000111);
-        } else if (ctx->skipIllegalInstructions) {
-            if (ctx->isDebug()) ctx->log("Skipped an illegal IX instruction: $DD%02X", op2);
+        if (ctx->skipIllegalInstructions) {
+            if (ctx->isDebug()) ctx->log("Skipped an illegal IX(2) instruction");
             ctx->reg.PC += 2;
             return 0;
         }
-        if (ctx->isDebug()) ctx->log("detected an unknown operand: 0b11011101 - $%02X", op2);
+        if (ctx->isDebug()) ctx->log("detected an illegal IX(2) instruction");
+        return -1;
+    }
+
+    static inline int OP_IX4(Z80* ctx)
+    {
+        unsigned char op3 = ctx->readByte(ctx->reg.PC + 2);
+        unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
+        switch (op4) {
+            case 0b00000110: return ctx->RLC_IX(op3);
+            case 0b00001110: return ctx->RRC_IX(op3);
+            case 0b00010110: return ctx->RL_IX(op3);
+            case 0b00011110: return ctx->RR_IX(op3);
+            case 0b00100110: return ctx->SLA_IX(op3);
+            case 0b00101110: return ctx->SRA_IX(op3);
+            case 0b00111110: return ctx->SRL_IX(op3);
+            case 0b00000000: return ctx->RLC_IX_with_LD(op3, 0b000);
+            case 0b00000001: return ctx->RLC_IX_with_LD(op3, 0b001);
+            case 0b00000010: return ctx->RLC_IX_with_LD(op3, 0b010);
+            case 0b00000011: return ctx->RLC_IX_with_LD(op3, 0b011);
+            case 0b00000100: return ctx->RLC_IX_with_LD(op3, 0b100);
+            case 0b00000101: return ctx->RLC_IX_with_LD(op3, 0b101);
+            case 0b00000111: return ctx->RLC_IX_with_LD(op3, 0b111);
+            case 0b00001000: return ctx->RRC_IX_with_LD(op3, 0b000);
+            case 0b00010000: return ctx->RL_IX_with_LD(op3, 0b000);
+            case 0b00011000: return ctx->RR_IX_with_LD(op3, 0b000);
+            case 0b00100000: return ctx->SLA_IX_with_LD(op3, 0b000);
+            case 0b00101000: return ctx->SRA_IX_with_LD(op3, 0b000);
+            case 0b00110000: return ctx->SLL_IX_with_LD(op3, 0b000);
+            case 0b00111000: return ctx->SRL_IX_with_LD(op3, 0b000);
+        }
+        switch (op4 & 0b11000111) {
+            case 0b01000110: return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
+            case 0b11000110: return ctx->SET_IX(op3, (op4 & 0b00111000) >> 3);
+            case 0b10000110: return ctx->RES_IX(op3, (op4 & 0b00111000) >> 3);
+        }
+        switch (op4) {
+            case 0b10000000: return ctx->RES_IX_with_LD(op3, 0, 0b000);
+            case 0b10001000: return ctx->RES_IX_with_LD(op3, 1, 0b000);
+            case 0b10010000: return ctx->RES_IX_with_LD(op3, 2, 0b000);
+            case 0b10011000: return ctx->RES_IX_with_LD(op3, 3, 0b000);
+            case 0b10100000: return ctx->RES_IX_with_LD(op3, 4, 0b000);
+            case 0b10101000: return ctx->RES_IX_with_LD(op3, 5, 0b000);
+            case 0b10110000: return ctx->RES_IX_with_LD(op3, 6, 0b000);
+            case 0b10111000: return ctx->RES_IX_with_LD(op3, 7, 0b000);
+            case 0b11000000: return ctx->SET_IX_with_LD(op3, 0, 0b000);
+            case 0b11001000: return ctx->SET_IX_with_LD(op3, 1, 0b000);
+            case 0b11010000: return ctx->SET_IX_with_LD(op3, 2, 0b000);
+            case 0b11011000: return ctx->SET_IX_with_LD(op3, 3, 0b000);
+            case 0b11100000: return ctx->SET_IX_with_LD(op3, 4, 0b000);
+            case 0b11101000: return ctx->SET_IX_with_LD(op3, 5, 0b000);
+            case 0b11110000: return ctx->SET_IX_with_LD(op3, 6, 0b000);
+            case 0b11111000: return ctx->SET_IX_with_LD(op3, 7, 0b000);
+        }
+        if (ctx->skipIllegalInstructions) {
+            if (ctx->isDebug()) ctx->log("Skipped an illegal IX instruction: $DD%02X%02X%02X", 0b11001011, op3, op4);
+            ctx->reg.PC += 2;
+            return 0;
+        }
+        if (ctx->isDebug()) ctx->log("detected an unknown operand: 0b11011101 - $%02X%02X%02X", 0b11001011, op3, op4);
         return -1;
     }
 
@@ -1306,6 +1240,7 @@ class Z80
     }
 
     // Load Reg. IX(high) with value n
+    static inline int LD_IXH_N_(Z80* ctx) { return ctx->LD_IXH_N(); }
     inline int LD_IXH_N()
     {
         unsigned char n = readByte(reg.PC + 2, 3);
@@ -1316,6 +1251,11 @@ class Z80
     }
 
     // Load Reg. IX(high) with value Reg.
+    static inline int LD_IXH_A(Z80* ctx) { return ctx->LD_IXH_R(0b111); }
+    static inline int LD_IXH_B(Z80* ctx) { return ctx->LD_IXH_R(0b000); }
+    static inline int LD_IXH_C(Z80* ctx) { return ctx->LD_IXH_R(0b001); }
+    static inline int LD_IXH_D(Z80* ctx) { return ctx->LD_IXH_R(0b010); }
+    static inline int LD_IXH_E(Z80* ctx) { return ctx->LD_IXH_R(0b011); }
     inline int LD_IXH_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1326,6 +1266,7 @@ class Z80
     }
 
     // Load Reg. IX(high) with value IX(high)
+    static inline int LD_IXH_IXH_(Z80* ctx) { return ctx->LD_IXH_IXH(); }
     inline int LD_IXH_IXH()
     {
         if (isDebug()) log("[%04X] LD IXH, IXH<$%02X>", reg.PC, getIXH());
@@ -1335,6 +1276,7 @@ class Z80
     }
 
     // Load Reg. IX(high) with value IX(low)
+    static inline int LD_IXH_IXL_(Z80* ctx) { return ctx->LD_IXH_IXL(); }
     inline int LD_IXH_IXL()
     {
         if (isDebug()) log("[%04X] LD IXH, IXL<$%02X>", reg.PC, getIXL());
@@ -1344,6 +1286,7 @@ class Z80
     }
 
     // Load Reg. IX(low) with value n
+    static inline int LD_IXL_N_(Z80* ctx) { return ctx->LD_IXL_N(); }
     inline int LD_IXL_N()
     {
         unsigned char n = readByte(reg.PC + 2, 3);
@@ -1354,6 +1297,11 @@ class Z80
     }
 
     // Load Reg. IX(low) with value Reg.
+    static inline int LD_IXL_A(Z80* ctx) { return ctx->LD_IXL_R(0b111); }
+    static inline int LD_IXL_B(Z80* ctx) { return ctx->LD_IXL_R(0b000); }
+    static inline int LD_IXL_C(Z80* ctx) { return ctx->LD_IXL_R(0b001); }
+    static inline int LD_IXL_D(Z80* ctx) { return ctx->LD_IXL_R(0b010); }
+    static inline int LD_IXL_E(Z80* ctx) { return ctx->LD_IXL_R(0b011); }
     inline int LD_IXL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1364,6 +1312,7 @@ class Z80
     }
 
     // Load Reg. IX(low) with value IX(high)
+    static inline int LD_IXL_IXH_(Z80* ctx) { return ctx->LD_IXL_IXH(); }
     inline int LD_IXL_IXH()
     {
         if (isDebug()) log("[%04X] LD IXL, IXH<$%02X>", reg.PC, getIXH());
@@ -1373,6 +1322,7 @@ class Z80
     }
 
     // Load Reg. IX(low) with value IX(low)
+    static inline int LD_IXL_IXL_(Z80* ctx) { return ctx->LD_IXL_IXL(); }
     inline int LD_IXL_IXL()
     {
         if (isDebug()) log("[%04X] LD IXL, IXL<$%02X>", reg.PC, getIXL());
@@ -1469,6 +1419,13 @@ class Z80
     }
 
     // Load Reg. r with location (IX+d)
+    static inline int LD_A_IX(Z80* ctx) { return ctx->LD_R_IX(0b111); }
+    static inline int LD_B_IX(Z80* ctx) { return ctx->LD_R_IX(0b000); }
+    static inline int LD_C_IX(Z80* ctx) { return ctx->LD_R_IX(0b001); }
+    static inline int LD_D_IX(Z80* ctx) { return ctx->LD_R_IX(0b010); }
+    static inline int LD_E_IX(Z80* ctx) { return ctx->LD_R_IX(0b011); }
+    static inline int LD_H_IX(Z80* ctx) { return ctx->LD_R_IX(0b100); }
+    static inline int LD_L_IX(Z80* ctx) { return ctx->LD_R_IX(0b101); }
     inline int LD_R_IX(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1481,6 +1438,11 @@ class Z80
     }
 
     // Load Reg. r with IXH
+    static inline int LD_A_IXH(Z80* ctx) { return ctx->LD_R_IXH(0b111); }
+    static inline int LD_B_IXH(Z80* ctx) { return ctx->LD_R_IXH(0b000); }
+    static inline int LD_C_IXH(Z80* ctx) { return ctx->LD_R_IXH(0b001); }
+    static inline int LD_D_IXH(Z80* ctx) { return ctx->LD_R_IXH(0b010); }
+    static inline int LD_E_IXH(Z80* ctx) { return ctx->LD_R_IXH(0b011); }
     inline int LD_R_IXH(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1491,6 +1453,11 @@ class Z80
     }
 
     // Load Reg. r with IXL
+    static inline int LD_A_IXL(Z80* ctx) { return ctx->LD_R_IXL(0b111); }
+    static inline int LD_B_IXL(Z80* ctx) { return ctx->LD_R_IXL(0b000); }
+    static inline int LD_C_IXL(Z80* ctx) { return ctx->LD_R_IXL(0b001); }
+    static inline int LD_D_IXL(Z80* ctx) { return ctx->LD_R_IXL(0b010); }
+    static inline int LD_E_IXL(Z80* ctx) { return ctx->LD_R_IXL(0b011); }
     inline int LD_R_IXL(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1546,6 +1513,13 @@ class Z80
     }
 
     // 	Load location (IX+d) with Reg. r
+    static inline int LD_IX_A(Z80* ctx) { return ctx->LD_IX_R(0b111); }
+    static inline int LD_IX_B(Z80* ctx) { return ctx->LD_IX_R(0b000); }
+    static inline int LD_IX_C(Z80* ctx) { return ctx->LD_IX_R(0b001); }
+    static inline int LD_IX_D(Z80* ctx) { return ctx->LD_IX_R(0b010); }
+    static inline int LD_IX_E(Z80* ctx) { return ctx->LD_IX_R(0b011); }
+    static inline int LD_IX_H(Z80* ctx) { return ctx->LD_IX_R(0b100); }
+    static inline int LD_IX_L(Z80* ctx) { return ctx->LD_IX_R(0b101); }
     inline int LD_IX_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1570,6 +1544,7 @@ class Z80
     }
 
     // Load location (IX+d) with value n
+    static inline int LD_IX_N_(Z80* ctx) { return ctx->LD_IX_N(); }
     inline int LD_IX_N()
     {
         signed char d = readByte(reg.PC + 2);
@@ -1630,6 +1605,7 @@ class Z80
         return 0;
     }
 
+    static inline int LD_IX_NN_(Z80* ctx) { return ctx->LD_IX_NN(); }
     inline int LD_IX_NN()
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
@@ -1722,6 +1698,7 @@ class Z80
     }
 
     // Load IX with location (nn)
+    static inline int LD_IX_ADDR_(Z80* ctx) { return ctx->LD_IX_ADDR(); }
     inline int LD_IX_ADDR()
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
@@ -1749,6 +1726,7 @@ class Z80
         return 0;
     }
 
+    static inline int LD_ADDR_IX_(Z80* ctx) { return ctx->LD_ADDR_IX(); }
     inline int LD_ADDR_IX()
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
@@ -1778,6 +1756,7 @@ class Z80
     }
 
     // Load SP with IX.
+    static inline int LD_SP_IX_(Z80* ctx) { return ctx->LD_SP_IX(); }
     inline int LD_SP_IX()
     {
         unsigned short value = reg.IX;
@@ -1842,6 +1821,7 @@ class Z80
     inline int LDDR() { return repeatLD(false, true); }
 
     // Exchange stack top with IX
+    static inline int EX_SP_IX_(Z80* ctx) { return ctx->EX_SP_IX(); }
     inline int EX_SP_IX()
     {
         unsigned char l = readByte(reg.SP);
@@ -1933,6 +1913,7 @@ class Z80
     }
 
     // Push Reg. IX on Stack.
+    static inline int PUSH_IX_(Z80* ctx) { return ctx->PUSH_IX(); }
     inline int PUSH_IX()
     {
         if (isDebug()) log("[%04X] PUSH IX<$%04X> <SP:$%04X>", reg.PC, reg.IX, reg.SP);
@@ -1945,6 +1926,7 @@ class Z80
     }
 
     // Pop Reg. IX from Stack.
+    static inline int POP_IX_(Z80* ctx) { return ctx->POP_IX(); }
     inline int POP_IX()
     {
         unsigned short sp = reg.SP;
@@ -2647,6 +2629,7 @@ class Z80
     }
 
     // Add IXH to Acc.
+    static inline int ADD_A_IXH_(Z80* ctx) { return ctx->ADD_A_IXH(); }
     inline int ADD_A_IXH()
     {
         if (isDebug()) log("[%04X] ADD %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
@@ -2656,6 +2639,7 @@ class Z80
     }
 
     // Add IXL to Acc.
+    static inline int ADD_A_IXL_(Z80* ctx) { return ctx->ADD_A_IXL(); }
     inline int ADD_A_IXL()
     {
         if (isDebug()) log("[%04X] ADD %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
@@ -2704,6 +2688,7 @@ class Z80
     }
 
     // Add location (IX+d) to Acc.
+    static inline int ADD_A_IX_(Z80* ctx) { return ctx->ADD_A_IX(); }
     inline int ADD_A_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -2746,6 +2731,7 @@ class Z80
     }
 
     // Add IXH to Acc.
+    static inline int ADC_A_IXH_(Z80* ctx) { return ctx->ADC_A_IXH(); }
     inline int ADC_A_IXH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
@@ -2756,6 +2742,7 @@ class Z80
     }
 
     // Add IXL to Acc.
+    static inline int ADC_A_IXL_(Z80* ctx) { return ctx->ADC_A_IXL(); }
     inline int ADC_A_IXL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
@@ -2809,6 +2796,7 @@ class Z80
     }
 
     // Add memory with carry
+    static inline int ADC_A_IX_(Z80* ctx) { return ctx->ADC_A_IX(); }
     inline int ADC_A_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -2858,6 +2846,7 @@ class Z80
     }
 
     // Increment location (IX+d)
+    static inline int INC_IX_(Z80* ctx) { return ctx->INC_IX(); }
     inline int INC_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -2871,6 +2860,7 @@ class Z80
     }
 
     // Increment register high 8 bits of IX
+    static inline int INC_IXH_(Z80* ctx) { return ctx->INC_IXH(); }
     inline int INC_IXH()
     {
         unsigned char ixh = getIXH();
@@ -2882,6 +2872,7 @@ class Z80
     }
 
     // Increment register low 8 bits of IX
+    static inline int INC_IXL_(Z80* ctx) { return ctx->INC_IXL(); }
     inline int INC_IXL()
     {
         unsigned char ixl = getIXL();
@@ -2945,6 +2936,7 @@ class Z80
     }
 
     // Subtract IXH to Acc.
+    static inline int SUB_A_IXH_(Z80* ctx) { return ctx->SUB_A_IXH(); }
     inline int SUB_A_IXH()
     {
         if (isDebug()) log("[%04X] SUB %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
@@ -2954,6 +2946,7 @@ class Z80
     }
 
     // Subtract IXL to Acc.
+    static inline int SUB_A_IXL_(Z80* ctx) { return ctx->SUB_A_IXL(); }
     inline int SUB_A_IXL()
     {
         if (isDebug()) log("[%04X] SUB %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
@@ -3002,6 +2995,7 @@ class Z80
     }
 
     // Subtract memory
+    static inline int SUB_A_IX_(Z80* ctx) { return ctx->SUB_A_IX(); }
     inline int SUB_A_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3044,6 +3038,7 @@ class Z80
     }
 
     // Subtract IXH to Acc. with carry
+    static inline int SBC_A_IXH_(Z80* ctx) { return ctx->SBC_A_IXH(); }
     inline int SBC_A_IXH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
@@ -3054,6 +3049,7 @@ class Z80
     }
 
     // Subtract IXL to Acc. with carry
+    static inline int SBC_A_IXL_(Z80* ctx) { return ctx->SBC_A_IXL(); }
     inline int SBC_A_IXL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
@@ -3107,6 +3103,7 @@ class Z80
     }
 
     // Subtract memory with carry
+    static inline int SBC_A_IX_(Z80* ctx) { return ctx->SBC_A_IX(); }
     inline int SBC_A_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3157,6 +3154,7 @@ class Z80
     }
 
     // Decrement location (IX+d)
+    static inline int DEC_IX_(Z80* ctx) { return ctx->DEC_IX(); }
     inline int DEC_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3170,6 +3168,7 @@ class Z80
     }
 
     // Decrement high 8 bits of IX
+    static inline int DEC_IXH_(Z80* ctx) { return ctx->DEC_IXH(); }
     inline int DEC_IXH()
     {
         unsigned char ixh = getIXH();
@@ -3181,6 +3180,7 @@ class Z80
     }
 
     // Decrement low 8 bits of IX
+    static inline int DEC_IXL_(Z80* ctx) { return ctx->DEC_IXL(); }
     inline int DEC_IXL()
     {
         unsigned char ixl = getIXL();
@@ -3280,6 +3280,10 @@ class Z80
     }
 
     // Add register pair to IX
+    static inline int ADD_IX_BC(Z80* ctx) { return ctx->ADD_IX_RP(0b00); }
+    static inline int ADD_IX_DE(Z80* ctx) { return ctx->ADD_IX_RP(0b01); }
+    static inline int ADD_IX_IX(Z80* ctx) { return ctx->ADD_IX_RP(0b10); }
+    static inline int ADD_IX_SP(Z80* ctx) { return ctx->ADD_IX_RP(0b11); }
     inline int ADD_IX_RP(unsigned char rp)
     {
         if (isDebug()) log("[%04X] ADD IX<$%04X>, %s", reg.PC, reg.IX, registerPairDumpIX(rp));
@@ -3312,6 +3316,7 @@ class Z80
     }
 
     // Increment IX
+    static inline int INC_IX_reg_(Z80* ctx) { return ctx->INC_IX_reg(); }
     inline int INC_IX_reg()
     {
         if (isDebug()) log("[%04X] INC IX<$%04X>", reg.PC, reg.IX);
@@ -3340,6 +3345,7 @@ class Z80
     }
 
     // Decrement IX
+    static inline int DEC_IX_reg_(Z80* ctx) { return ctx->DEC_IX_reg(); }
     inline int DEC_IX_reg()
     {
         if (isDebug()) log("[%04X] DEC IX<$%04X>", reg.PC, reg.IX);
@@ -3434,6 +3440,7 @@ class Z80
     }
 
     // AND with register IXH
+    static inline int AND_IXH_(Z80* ctx) { return ctx->AND_IXH(); }
     inline int AND_IXH()
     {
         if (isDebug()) log("[%04X] AND %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
@@ -3442,6 +3449,7 @@ class Z80
     }
 
     // AND with register IXL
+    static inline int AND_IXL_(Z80* ctx) { return ctx->AND_IXL(); }
     inline int AND_IXL()
     {
         if (isDebug()) log("[%04X] AND %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
@@ -3485,6 +3493,7 @@ class Z80
     }
 
     // AND Memory
+    static inline int AND_IX_(Z80* ctx) { return ctx->AND_IX(); }
     inline int AND_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3523,6 +3532,7 @@ class Z80
     }
 
     // OR with register IXH
+    static inline int OR_IXH_(Z80* ctx) { return ctx->OR_IXH(); }
     inline int OR_IXH()
     {
         if (isDebug()) log("[%04X] OR %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
@@ -3531,6 +3541,7 @@ class Z80
     }
 
     // OR with register IXL
+    static inline int OR_IXL_(Z80* ctx) { return ctx->OR_IXL(); }
     inline int OR_IXL()
     {
         if (isDebug()) log("[%04X] OR %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
@@ -3574,6 +3585,7 @@ class Z80
     }
 
     // OR Memory
+    static inline int OR_IX_(Z80* ctx) { return ctx->OR_IX(); }
     inline int OR_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3612,6 +3624,7 @@ class Z80
     }
 
     // XOR with register IXH
+    static inline int XOR_IXH_(Z80* ctx) { return ctx->XOR_IXH(); }
     inline int XOR_IXH()
     {
         if (isDebug()) log("[%04X] XOR %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
@@ -3620,6 +3633,7 @@ class Z80
     }
 
     // XOR with register IXL
+    static inline int XOR_IXL_(Z80* ctx) { return ctx->XOR_IXL(); }
     inline int XOR_IXL()
     {
         if (isDebug()) log("[%04X] XOR %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
@@ -3663,6 +3677,7 @@ class Z80
     }
 
     // XOR Memory
+    static inline int XOR_IX_(Z80* ctx) { return ctx->XOR_IX(); }
     inline int XOR_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -4082,6 +4097,7 @@ class Z80
     }
 
     // Compare Register IXH
+    static inline int CP_IXH_(Z80* ctx) { return ctx->CP_IXH(); }
     inline int CP_IXH()
     {
         if (isDebug()) log("[%04X] CP %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
@@ -4091,6 +4107,7 @@ class Z80
     }
 
     // Compare Register IXL
+    static inline int CP_IXL_(Z80* ctx) { return ctx->CP_IXL(); }
     inline int CP_IXL()
     {
         if (isDebug()) log("[%04X] CP %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
@@ -4139,6 +4156,7 @@ class Z80
     }
 
     // Compare memory
+    static inline int CP_IX_(Z80* ctx) { return ctx->CP_IX(); }
     inline int CP_IX()
     {
         signed char d = readByte(reg.PC + 2);
@@ -4279,6 +4297,7 @@ class Z80
     }
 
     // Jump to IX
+    static inline int JP_IX_(Z80* ctx) { return ctx->JP_IX(); }
     inline int JP_IX()
     {
         if (isDebug()) log("[%04X] JP IX<$%04X>", reg.PC, reg.IX);
@@ -4805,6 +4824,7 @@ class Z80
     static inline int LR35902_RETI(Z80* ctx) { return ctx->RETI(); }
 
     int (*opSet1[256])(Z80* ctx);
+    int (*opSetIX[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
     void setupOpSet1()
@@ -4936,6 +4956,101 @@ class Z80
         opSet1[0b11111011] = EI;
         opSet1[0b11111101] = isLR35902 ? NULL : OP_IY;
         opSet1[0b11111110] = CP_N;
+        for (int i = 0; i < 256; i++) { opSetIX[i] = OP_IX_illegal; }
+        opSetIX[0b00100010] = LD_ADDR_IX_;
+        opSetIX[0b00100011] = INC_IX_reg_;
+        opSetIX[0b00101010] = LD_IX_ADDR_;
+        opSetIX[0b00101011] = DEC_IX_reg_;
+        opSetIX[0b00110110] = LD_IX_N_;
+        opSetIX[0b00100001] = LD_IX_NN_;
+        opSetIX[0b00110100] = INC_IX_;
+        opSetIX[0b00110101] = DEC_IX_;
+        opSetIX[0b10000110] = ADD_A_IX_;
+        opSetIX[0b10001110] = ADC_A_IX_;
+        opSetIX[0b10010110] = SUB_A_IX_;
+        opSetIX[0b10011110] = SBC_A_IX_;
+        opSetIX[0b10100110] = AND_IX_;
+        opSetIX[0b10101110] = XOR_IX_;
+        opSetIX[0b10110110] = OR_IX_;
+        opSetIX[0b10111110] = CP_IX_;
+        opSetIX[0b11100001] = POP_IX_;
+        opSetIX[0b11100011] = EX_SP_IX_;
+        opSetIX[0b11100101] = PUSH_IX_;
+        opSetIX[0b11101001] = JP_IX_;
+        opSetIX[0b11111001] = LD_SP_IX_;
+        opSetIX[0b11001011] = OP_IX4;
+        opSetIX[0b00100100] = INC_IXH_;
+        opSetIX[0b00101100] = INC_IXL_;
+        opSetIX[0b00100101] = DEC_IXH_;
+        opSetIX[0b00101101] = DEC_IXL_;
+        opSetIX[0b00100110] = LD_IXH_N_;
+        opSetIX[0b00101110] = LD_IXL_N_;
+        opSetIX[0b01100100] = LD_IXH_IXH_;
+        opSetIX[0b01100101] = LD_IXH_IXL_;
+        opSetIX[0b01101100] = LD_IXL_IXH_;
+        opSetIX[0b01101101] = LD_IXL_IXL_;
+        opSetIX[0b01111100] = LD_A_IXH;
+        opSetIX[0b01000100] = LD_B_IXH;
+        opSetIX[0b01001100] = LD_C_IXH;
+        opSetIX[0b01010100] = LD_D_IXH;
+        opSetIX[0b01011100] = LD_E_IXH;
+        opSetIX[0b01100100] = LD_IXH_IXH_;
+        opSetIX[0b01101100] = LD_IXL_IXH_;
+        opSetIX[0b01111101] = LD_A_IXL;
+        opSetIX[0b01000101] = LD_B_IXL;
+        opSetIX[0b01001101] = LD_C_IXL;
+        opSetIX[0b01010101] = LD_D_IXL;
+        opSetIX[0b01011101] = LD_E_IXL;
+        opSetIX[0b01100101] = LD_IXL_IXH_;
+        opSetIX[0b01101101] = LD_IXL_IXL_;
+        opSetIX[0b01100111] = LD_IXH_A;
+        opSetIX[0b01100000] = LD_IXH_B;
+        opSetIX[0b01100001] = LD_IXH_C;
+        opSetIX[0b01100010] = LD_IXH_D;
+        opSetIX[0b01100011] = LD_IXH_E;
+        opSetIX[0b01100100] = LD_IXH_IXH_;
+        opSetIX[0b01100101] = LD_IXH_IXL_;
+        opSetIX[0b01101111] = LD_IXL_A;
+        opSetIX[0b01101000] = LD_IXL_B;
+        opSetIX[0b01101001] = LD_IXL_C;
+        opSetIX[0b01101010] = LD_IXL_D;
+        opSetIX[0b01101011] = LD_IXL_E;
+        opSetIX[0b01101100] = LD_IXL_IXH_;
+        opSetIX[0b01101101] = LD_IXL_IXL_;
+        opSetIX[0b10000100] = ADD_A_IXH_;
+        opSetIX[0b10000101] = ADD_A_IXL_;
+        opSetIX[0b10001100] = ADC_A_IXH_;
+        opSetIX[0b10001101] = ADC_A_IXL_;
+        opSetIX[0b10010100] = SUB_A_IXH_;
+        opSetIX[0b10010101] = SUB_A_IXL_;
+        opSetIX[0b10011100] = SBC_A_IXH_;
+        opSetIX[0b10011101] = SBC_A_IXL_;
+        opSetIX[0b10100100] = AND_IXH_;
+        opSetIX[0b10100101] = AND_IXL_;
+        opSetIX[0b10110100] = OR_IXH_;
+        opSetIX[0b10110101] = OR_IXL_;
+        opSetIX[0b10101100] = XOR_IXH_;
+        opSetIX[0b10101101] = XOR_IXL_;
+        opSetIX[0b10111100] = CP_IXH_;
+        opSetIX[0b10111101] = CP_IXL_;
+        opSetIX[0b01111110] = LD_A_IX;
+        opSetIX[0b01000110] = LD_B_IX;
+        opSetIX[0b01001110] = LD_C_IX;
+        opSetIX[0b01010110] = LD_D_IX;
+        opSetIX[0b01011110] = LD_E_IX;
+        opSetIX[0b01100110] = LD_H_IX;
+        opSetIX[0b01101110] = LD_L_IX;
+        opSetIX[0b00001001] = ADD_IX_BC;
+        opSetIX[0b00011001] = ADD_IX_DE;
+        opSetIX[0b00101001] = ADD_IX_IX;
+        opSetIX[0b00111001] = ADD_IX_SP;
+        opSetIX[0b01110111] = LD_IX_A;
+        opSetIX[0b01110000] = LD_IX_B;
+        opSetIX[0b01110001] = LD_IX_C;
+        opSetIX[0b01110010] = LD_IX_D;
+        opSetIX[0b01110011] = LD_IX_E;
+        opSetIX[0b01110100] = LD_IX_H;
+        opSetIX[0b01110101] = LD_IX_L;
     }
 
     inline void checkInterrupt()
