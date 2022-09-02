@@ -3616,6 +3616,10 @@ class Z80
     }
 
     // Increment register pair
+    static inline int INC_RP_BC(Z80* ctx) { return ctx->INC_RP(0b00); }
+    static inline int INC_RP_DE(Z80* ctx) { return ctx->INC_RP(0b01); }
+    static inline int INC_RP_HL(Z80* ctx) { return ctx->INC_RP(0b10); }
+    static inline int INC_RP_SP(Z80* ctx) { return ctx->INC_RP(0b11); }
     inline int INC_RP(unsigned char rp)
     {
         if (isDebug()) log("[%04X] INC %s", reg.PC, registerPairDump(rp));
@@ -5319,6 +5323,11 @@ class Z80
         opSet1[0b00100001] = LD_HL_NN;
         opSet1[0b00110001] = LD_SP_NN;
 
+        opSet1[0b00000011] = INC_RP_BC;
+        opSet1[0b00010011] = INC_RP_DE;
+        opSet1[0b00100011] = INC_RP_HL;
+        opSet1[0b00110011] = INC_RP_SP;
+
         opSet1[0b11000101] = PUSH_BC;
         opSet1[0b11010101] = PUSH_DE;
         opSet1[0b11100101] = PUSH_HL;
@@ -5800,9 +5809,7 @@ class Z80
                 int ret = -1;
                 if (NULL == op) {
                     // execute an operand that register type has specified in the first byte.
-                    if ((operandNumber & 0b11001111) == 0b00000011) {
-                        ret = INC_RP((operandNumber & 0b00110000) >> 4);
-                    } else if ((operandNumber & 0b11001111) == 0b00001011) {
+                    if ((operandNumber & 0b11001111) == 0b00001011) {
                         ret = DEC_RP((operandNumber & 0b00110000) >> 4);
                     } else if ((operandNumber & 0b11000111) == 0b01000110) {
                         ret = LD_R_HL((operandNumber & 0b00111000) >> 3);
