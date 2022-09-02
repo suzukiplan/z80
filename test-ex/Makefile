@@ -11,3 +11,7 @@ zexdoc: cpm
 
 zexall: cpm
 	./cpm -e zexall.cim
+
+full: cpm
+	./cpm zexall.cim
+
