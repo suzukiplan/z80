@@ -596,133 +596,11 @@ class Z80
 
     // operand of using IY (first byte is 0b11111101)
     static inline int OP_IY(Z80* ctx) { return ctx->opSetIY[ctx->readByte(ctx->reg.PC + 1)](ctx); }
-    static inline int OP_IY_illegal(Z80* ctx)
-    {
-        if (ctx->skipIllegalInstructions) {
-            if (ctx->isDebug()) ctx->log("Skipped an illegal IY(2) instruction");
-            ctx->reg.PC += 2;
-            return 0;
-        }
-        if (ctx->isDebug()) ctx->log("detected an illegal IY(2) instruction");
-        return -1;
-    }
-
     static inline int OP_IY4(Z80* ctx)
     {
-        unsigned char op3 = ctx->readByte(ctx->reg.PC + 2);
+        signed char op3 = ctx->readByte(ctx->reg.PC + 2);
         unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
-        switch (op4) {
-            case 0b00000110: return ctx->RLC_IY(op3);
-            case 0b00001110: return ctx->RRC_IY(op3);
-            case 0b00010110: return ctx->RL_IY(op3);
-            case 0b00011110: return ctx->RR_IY(op3);
-            case 0b00100110: return ctx->SLA_IY(op3);
-            case 0b00101110: return ctx->SRA_IY(op3);
-            case 0b00111110: return ctx->SRL_IY(op3);
-            case 0b00000000: return ctx->RLC_IY_with_LD(op3, 0b000);
-            case 0b00000001: return ctx->RLC_IY_with_LD(op3, 0b001);
-            case 0b00000010: return ctx->RLC_IY_with_LD(op3, 0b010);
-            case 0b00000011: return ctx->RLC_IY_with_LD(op3, 0b011);
-            case 0b00000100: return ctx->RLC_IY_with_LD(op3, 0b100);
-            case 0b00000101: return ctx->RLC_IY_with_LD(op3, 0b101);
-            case 0b00000111: return ctx->RLC_IY_with_LD(op3, 0b111);
-            case 0b00001000: return ctx->RRC_IY_with_LD(op3, 0b000);
-            case 0b00001001: return ctx->RRC_IY_with_LD(op3, 0b001);
-            case 0b00001010: return ctx->RRC_IY_with_LD(op3, 0b010);
-            case 0b00001011: return ctx->RRC_IY_with_LD(op3, 0b011);
-            case 0b00001100: return ctx->RRC_IY_with_LD(op3, 0b100);
-            case 0b00001101: return ctx->RRC_IY_with_LD(op3, 0b101);
-            case 0b00001111: return ctx->RRC_IY_with_LD(op3, 0b111);
-            case 0b00010000: return ctx->RL_IY_with_LD(op3, 0b000);
-            case 0b00010001: return ctx->RL_IY_with_LD(op3, 0b001);
-            case 0b00010010: return ctx->RL_IY_with_LD(op3, 0b010);
-            case 0b00010011: return ctx->RL_IY_with_LD(op3, 0b011);
-            case 0b00010100: return ctx->RL_IY_with_LD(op3, 0b100);
-            case 0b00010101: return ctx->RL_IY_with_LD(op3, 0b101);
-            case 0b00010111: return ctx->RL_IY_with_LD(op3, 0b111);
-            case 0b00011000: return ctx->RR_IY_with_LD(op3, 0b000);
-            case 0b00011001: return ctx->RR_IY_with_LD(op3, 0b001);
-            case 0b00011010: return ctx->RR_IY_with_LD(op3, 0b010);
-            case 0b00011011: return ctx->RR_IY_with_LD(op3, 0b011);
-            case 0b00011100: return ctx->RR_IY_with_LD(op3, 0b100);
-            case 0b00011101: return ctx->RR_IY_with_LD(op3, 0b101);
-            case 0b00011111: return ctx->RR_IY_with_LD(op3, 0b111);
-            case 0b00100000: return ctx->SLA_IY_with_LD(op3, 0b000);
-            case 0b00100001: return ctx->SLA_IY_with_LD(op3, 0b001);
-            case 0b00100010: return ctx->SLA_IY_with_LD(op3, 0b010);
-            case 0b00100011: return ctx->SLA_IY_with_LD(op3, 0b011);
-            case 0b00100100: return ctx->SLA_IY_with_LD(op3, 0b100);
-            case 0b00100101: return ctx->SLA_IY_with_LD(op3, 0b101);
-            case 0b00100111: return ctx->SLA_IY_with_LD(op3, 0b111);
-            case 0b00101000: return ctx->SRA_IY_with_LD(op3, 0b000);
-            case 0b00101001: return ctx->SRA_IY_with_LD(op3, 0b001);
-            case 0b00101010: return ctx->SRA_IY_with_LD(op3, 0b010);
-            case 0b00101011: return ctx->SRA_IY_with_LD(op3, 0b011);
-            case 0b00101100: return ctx->SRA_IY_with_LD(op3, 0b100);
-            case 0b00101101: return ctx->SRA_IY_with_LD(op3, 0b101);
-            case 0b00101111: return ctx->SRA_IY_with_LD(op3, 0b111);
-            case 0b00110000: return ctx->SLL_IY_with_LD(op3, 0b000);
-            case 0b00110001: return ctx->SLL_IY_with_LD(op3, 0b001);
-            case 0b00110010: return ctx->SLL_IY_with_LD(op3, 0b010);
-            case 0b00110011: return ctx->SLL_IY_with_LD(op3, 0b011);
-            case 0b00110100: return ctx->SLL_IY_with_LD(op3, 0b100);
-            case 0b00110101: return ctx->SLL_IY_with_LD(op3, 0b101);
-            case 0b00110111: return ctx->SLL_IY_with_LD(op3, 0b111);
-            case 0b00111000: return ctx->SRL_IY_with_LD(op3, 0b000);
-            case 0b00111001: return ctx->SRL_IY_with_LD(op3, 0b001);
-            case 0b00111010: return ctx->SRL_IY_with_LD(op3, 0b010);
-            case 0b00111011: return ctx->SRL_IY_with_LD(op3, 0b011);
-            case 0b00111100: return ctx->SRL_IY_with_LD(op3, 0b100);
-            case 0b00111101: return ctx->SRL_IY_with_LD(op3, 0b101);
-            case 0b00111111: return ctx->SRL_IY_with_LD(op3, 0b111);
-            case 0b10000000: return ctx->RES_IY_with_LD(op3, 0, 0b000);
-            case 0b10001000: return ctx->RES_IY_with_LD(op3, 1, 0b000);
-            case 0b10010000: return ctx->RES_IY_with_LD(op3, 2, 0b000);
-            case 0b10011000: return ctx->RES_IY_with_LD(op3, 3, 0b000);
-            case 0b10100000: return ctx->RES_IY_with_LD(op3, 4, 0b000);
-            case 0b10101000: return ctx->RES_IY_with_LD(op3, 5, 0b000);
-            case 0b10110000: return ctx->RES_IY_with_LD(op3, 6, 0b000);
-            case 0b10111000: return ctx->RES_IY_with_LD(op3, 7, 0b000);
-            case 0b11000000: return ctx->SET_IY_with_LD(op3, 0, 0b000);
-            case 0b11001000: return ctx->SET_IY_with_LD(op3, 1, 0b000);
-            case 0b11010000: return ctx->SET_IY_with_LD(op3, 2, 0b000);
-            case 0b11011000: return ctx->SET_IY_with_LD(op3, 3, 0b000);
-            case 0b11100000: return ctx->SET_IY_with_LD(op3, 4, 0b000);
-            case 0b11101000: return ctx->SET_IY_with_LD(op3, 5, 0b000);
-            case 0b11110000: return ctx->SET_IY_with_LD(op3, 6, 0b000);
-            case 0b11111000: return ctx->SET_IY_with_LD(op3, 7, 0b000);
-            case 0b01000110: return ctx->BIT_IY(op3, 0b000);
-            case 0b01001110: return ctx->BIT_IY(op3, 0b001);
-            case 0b01010110: return ctx->BIT_IY(op3, 0b010);
-            case 0b01011110: return ctx->BIT_IY(op3, 0b011);
-            case 0b01100110: return ctx->BIT_IY(op3, 0b100);
-            case 0b01101110: return ctx->BIT_IY(op3, 0b101);
-            case 0b01110110: return ctx->BIT_IY(op3, 0b110);
-            case 0b01111110: return ctx->BIT_IY(op3, 0b111);
-            case 0b11000110: return ctx->SET_IY(op3, 0b000);
-            case 0b11001110: return ctx->SET_IY(op3, 0b001);
-            case 0b11010110: return ctx->SET_IY(op3, 0b010);
-            case 0b11011110: return ctx->SET_IY(op3, 0b011);
-            case 0b11100110: return ctx->SET_IY(op3, 0b100);
-            case 0b11101110: return ctx->SET_IY(op3, 0b101);
-            case 0b11110110: return ctx->SET_IY(op3, 0b110);
-            case 0b11111110: return ctx->SET_IY(op3, 0b111);
-            case 0b10000110: return ctx->RES_IY(op3, 0b000);
-            case 0b10001110: return ctx->RES_IY(op3, 0b001);
-            case 0b10010110: return ctx->RES_IY(op3, 0b010);
-            case 0b10011110: return ctx->RES_IY(op3, 0b011);
-            case 0b10100110: return ctx->RES_IY(op3, 0b100);
-            case 0b10101110: return ctx->RES_IY(op3, 0b101);
-            case 0b10110110: return ctx->RES_IY(op3, 0b110);
-            case 0b10111110: return ctx->RES_IY(op3, 0b111);
-        }
-        if (ctx->skipIllegalInstructions) {
-            if (ctx->isDebug()) ctx->log("Skipped an illegal IY instruction: $DD%02X%02X%02X", 0b11001011, op3, op4);
-            ctx->reg.PC += 2;
-            return 0;
-        }
-        if (ctx->isDebug()) ctx->log("detected an unknown operand: IY - $%02X%02X%02X", 0b11001011, op3, op4);
-        return -1;
+        return ctx->opSetIY4[op4](ctx, op3);
     }
 
     // operand of using other register (first byte is 0b11001011)
@@ -2388,6 +2266,13 @@ class Z80
     }
 
     // Rotate memory (IY+d) Left Circular with load to Reg A/B/C/D/E/H/L/F
+    static inline int RLC_IY_with_LD_B(Z80* ctx, signed char d) { return ctx->RLC_IY_with_LD(d, 0b000); }
+    static inline int RLC_IY_with_LD_C(Z80* ctx, signed char d) { return ctx->RLC_IY_with_LD(d, 0b001); }
+    static inline int RLC_IY_with_LD_D(Z80* ctx, signed char d) { return ctx->RLC_IY_with_LD(d, 0b010); }
+    static inline int RLC_IY_with_LD_E(Z80* ctx, signed char d) { return ctx->RLC_IY_with_LD(d, 0b011); }
+    static inline int RLC_IY_with_LD_H(Z80* ctx, signed char d) { return ctx->RLC_IY_with_LD(d, 0b100); }
+    static inline int RLC_IY_with_LD_L(Z80* ctx, signed char d) { return ctx->RLC_IY_with_LD(d, 0b101); }
+    static inline int RLC_IY_with_LD_A(Z80* ctx, signed char d) { return ctx->RLC_IY_with_LD(d, 0b111); }
     inline int RLC_IY_with_LD(signed char d, unsigned char r)
     {
         char buf[80];
@@ -2439,6 +2324,13 @@ class Z80
     }
 
     // Rotate memory (IY+d) Right Circular with load to Reg A/B/C/D/E/H/L/F
+    static inline int RRC_IY_with_LD_B(Z80* ctx, signed char d) { return ctx->RRC_IY_with_LD(d, 0b000); }
+    static inline int RRC_IY_with_LD_C(Z80* ctx, signed char d) { return ctx->RRC_IY_with_LD(d, 0b001); }
+    static inline int RRC_IY_with_LD_D(Z80* ctx, signed char d) { return ctx->RRC_IY_with_LD(d, 0b010); }
+    static inline int RRC_IY_with_LD_E(Z80* ctx, signed char d) { return ctx->RRC_IY_with_LD(d, 0b011); }
+    static inline int RRC_IY_with_LD_H(Z80* ctx, signed char d) { return ctx->RRC_IY_with_LD(d, 0b100); }
+    static inline int RRC_IY_with_LD_L(Z80* ctx, signed char d) { return ctx->RRC_IY_with_LD(d, 0b101); }
+    static inline int RRC_IY_with_LD_A(Z80* ctx, signed char d) { return ctx->RRC_IY_with_LD(d, 0b111); }
     inline int RRC_IY_with_LD(signed char d, unsigned char r)
     {
         char buf[80];
@@ -2491,6 +2383,13 @@ class Z80
     }
 
     // Rotate Left memory with load Reg.
+    static inline int RL_IY_with_LD_B(Z80* ctx, signed char d) { return ctx->RL_IY_with_LD(d, 0b000); }
+    static inline int RL_IY_with_LD_C(Z80* ctx, signed char d) { return ctx->RL_IY_with_LD(d, 0b001); }
+    static inline int RL_IY_with_LD_D(Z80* ctx, signed char d) { return ctx->RL_IY_with_LD(d, 0b010); }
+    static inline int RL_IY_with_LD_E(Z80* ctx, signed char d) { return ctx->RL_IY_with_LD(d, 0b011); }
+    static inline int RL_IY_with_LD_H(Z80* ctx, signed char d) { return ctx->RL_IY_with_LD(d, 0b100); }
+    static inline int RL_IY_with_LD_L(Z80* ctx, signed char d) { return ctx->RL_IY_with_LD(d, 0b101); }
+    static inline int RL_IY_with_LD_A(Z80* ctx, signed char d) { return ctx->RL_IY_with_LD(d, 0b111); }
     inline int RL_IY_with_LD(signed char d, unsigned char r)
     {
         char buf[80];
@@ -2543,6 +2442,13 @@ class Z80
     }
 
     // Rotate Right memory with load Reg.
+    static inline int RR_IY_with_LD_B(Z80* ctx, signed char d) { return ctx->RR_IY_with_LD(d, 0b000); }
+    static inline int RR_IY_with_LD_C(Z80* ctx, signed char d) { return ctx->RR_IY_with_LD(d, 0b001); }
+    static inline int RR_IY_with_LD_D(Z80* ctx, signed char d) { return ctx->RR_IY_with_LD(d, 0b010); }
+    static inline int RR_IY_with_LD_E(Z80* ctx, signed char d) { return ctx->RR_IY_with_LD(d, 0b011); }
+    static inline int RR_IY_with_LD_H(Z80* ctx, signed char d) { return ctx->RR_IY_with_LD(d, 0b100); }
+    static inline int RR_IY_with_LD_L(Z80* ctx, signed char d) { return ctx->RR_IY_with_LD(d, 0b101); }
+    static inline int RR_IY_with_LD_A(Z80* ctx, signed char d) { return ctx->RR_IY_with_LD(d, 0b111); }
     inline int RR_IY_with_LD(signed char d, unsigned char r)
     {
         char buf[80];
@@ -2593,6 +2499,13 @@ class Z80
     }
 
     // Shift operand location (IY+d) left Arithmetic with load Reg.
+    static inline int SLA_IY_with_LD_B(Z80* ctx, signed char d) { return ctx->SLA_IY_with_LD(d, 0b000); }
+    static inline int SLA_IY_with_LD_C(Z80* ctx, signed char d) { return ctx->SLA_IY_with_LD(d, 0b001); }
+    static inline int SLA_IY_with_LD_D(Z80* ctx, signed char d) { return ctx->SLA_IY_with_LD(d, 0b010); }
+    static inline int SLA_IY_with_LD_E(Z80* ctx, signed char d) { return ctx->SLA_IY_with_LD(d, 0b011); }
+    static inline int SLA_IY_with_LD_H(Z80* ctx, signed char d) { return ctx->SLA_IY_with_LD(d, 0b100); }
+    static inline int SLA_IY_with_LD_L(Z80* ctx, signed char d) { return ctx->SLA_IY_with_LD(d, 0b101); }
+    static inline int SLA_IY_with_LD_A(Z80* ctx, signed char d) { return ctx->SLA_IY_with_LD(d, 0b111); }
     inline int SLA_IY_with_LD(signed char d, unsigned char r)
     {
         char buf[80];
@@ -2645,6 +2558,13 @@ class Z80
     }
 
     // Shift operand location (IY+d) right Arithmetic with load Reg.
+    static inline int SRA_IY_with_LD_B(Z80* ctx, signed char d) { return ctx->SRA_IY_with_LD(d, 0b000); }
+    static inline int SRA_IY_with_LD_C(Z80* ctx, signed char d) { return ctx->SRA_IY_with_LD(d, 0b001); }
+    static inline int SRA_IY_with_LD_D(Z80* ctx, signed char d) { return ctx->SRA_IY_with_LD(d, 0b010); }
+    static inline int SRA_IY_with_LD_E(Z80* ctx, signed char d) { return ctx->SRA_IY_with_LD(d, 0b011); }
+    static inline int SRA_IY_with_LD_H(Z80* ctx, signed char d) { return ctx->SRA_IY_with_LD(d, 0b100); }
+    static inline int SRA_IY_with_LD_L(Z80* ctx, signed char d) { return ctx->SRA_IY_with_LD(d, 0b101); }
+    static inline int SRA_IY_with_LD_A(Z80* ctx, signed char d) { return ctx->SRA_IY_with_LD(d, 0b111); }
     inline int SRA_IY_with_LD(signed char d, unsigned char r)
     {
         char buf[80];
@@ -2695,6 +2615,13 @@ class Z80
     }
 
     // Shift operand location (IY+d) Right Logical with load Reg.
+    static inline int SRL_IY_with_LD_B(Z80* ctx, signed char d) { return ctx->SRL_IY_with_LD(d, 0b000); }
+    static inline int SRL_IY_with_LD_C(Z80* ctx, signed char d) { return ctx->SRL_IY_with_LD(d, 0b001); }
+    static inline int SRL_IY_with_LD_D(Z80* ctx, signed char d) { return ctx->SRL_IY_with_LD(d, 0b010); }
+    static inline int SRL_IY_with_LD_E(Z80* ctx, signed char d) { return ctx->SRL_IY_with_LD(d, 0b011); }
+    static inline int SRL_IY_with_LD_H(Z80* ctx, signed char d) { return ctx->SRL_IY_with_LD(d, 0b100); }
+    static inline int SRL_IY_with_LD_L(Z80* ctx, signed char d) { return ctx->SRL_IY_with_LD(d, 0b101); }
+    static inline int SRL_IY_with_LD_A(Z80* ctx, signed char d) { return ctx->SRL_IY_with_LD(d, 0b111); }
     inline int SRL_IY_with_LD(signed char d, unsigned char r)
     {
         char buf[80];
@@ -2747,6 +2674,7 @@ class Z80
 
     // Shift operand location (IY+d) Left Logical
     // NOTE: this function is only for SLL_IY_with_LD
+    static inline int SLL_IY_(Z80* ctx, signed char d) { return ctx->SLL_IY(d); }
     inline int SLL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
@@ -2763,6 +2691,13 @@ class Z80
     }
 
     // Shift operand location (IY+d) Left Logical with load Reg.
+    static inline int SLL_IY_with_LD_B(Z80* ctx, signed char d) { return ctx->SLL_IY_with_LD(d, 0b000); }
+    static inline int SLL_IY_with_LD_C(Z80* ctx, signed char d) { return ctx->SLL_IY_with_LD(d, 0b001); }
+    static inline int SLL_IY_with_LD_D(Z80* ctx, signed char d) { return ctx->SLL_IY_with_LD(d, 0b010); }
+    static inline int SLL_IY_with_LD_E(Z80* ctx, signed char d) { return ctx->SLL_IY_with_LD(d, 0b011); }
+    static inline int SLL_IY_with_LD_H(Z80* ctx, signed char d) { return ctx->SLL_IY_with_LD(d, 0b100); }
+    static inline int SLL_IY_with_LD_L(Z80* ctx, signed char d) { return ctx->SLL_IY_with_LD(d, 0b101); }
+    static inline int SLL_IY_with_LD_A(Z80* ctx, signed char d) { return ctx->SLL_IY_with_LD(d, 0b111); }
     inline int SLL_IY_with_LD(signed char d, unsigned char r)
     {
         char buf[80];
@@ -2776,6 +2711,7 @@ class Z80
     }
 
     // Rotate memory (IY+d) Left Circular
+    static inline int RLC_IY_(Z80* ctx, signed char d) { return ctx->RLC_IY(d); }
     inline int RLC_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
@@ -2793,6 +2729,7 @@ class Z80
     }
 
     // Rotate memory (IY+d) Right Circular
+    static inline int RRC_IY_(Z80* ctx, signed char d) { return ctx->RRC_IY(d); }
     inline int RRC_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
@@ -2810,6 +2747,7 @@ class Z80
     }
 
     // Rotate Left memory
+    static inline int RL_IY_(Z80* ctx, signed char d) { return ctx->RL_IY(d); }
     inline int RL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
@@ -2828,6 +2766,7 @@ class Z80
     }
 
     // Shift operand location (IY+d) left Arithmetic
+    static inline int SLA_IY_(Z80* ctx, signed char d) { return ctx->SLA_IY(d); }
     inline int SLA_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
@@ -2844,6 +2783,7 @@ class Z80
     }
 
     // Rotate Right memory
+    static inline int RR_IY_(Z80* ctx, signed char d) { return ctx->RR_IY(d); }
     inline int RR_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
@@ -2862,6 +2802,7 @@ class Z80
     }
 
     // Shift operand location (IY+d) Right Arithmetic
+    static inline int SRA_IY_(Z80* ctx, signed char d) { return ctx->SRA_IY(d); }
     inline int SRA_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
@@ -2880,6 +2821,7 @@ class Z80
     }
 
     // Shift operand location (IY+d) Right Logical
+    static inline int SRL_IY_(Z80* ctx, signed char d) { return ctx->SRL_IY(d); }
     inline int SRL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
@@ -4333,6 +4275,14 @@ class Z80
     }
 
     // Test BIT b of lacation (IY+d)
+    static inline int BIT_IY_0(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 0); }
+    static inline int BIT_IY_1(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 1); }
+    static inline int BIT_IY_2(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 2); }
+    static inline int BIT_IY_3(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 3); }
+    static inline int BIT_IY_4(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 4); }
+    static inline int BIT_IY_5(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 5); }
+    static inline int BIT_IY_6(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 6); }
+    static inline int BIT_IY_7(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 7); }
     inline int BIT_IY(signed char d, unsigned char bit)
     {
         unsigned short addr = reg.IY + d;
@@ -4562,6 +4512,14 @@ class Z80
     }
 
     // SET bit b of lacation (IY+d)
+    static inline int SET_IY_0(Z80* ctx, signed char d) { return ctx->SET_IY(d, 0); }
+    static inline int SET_IY_1(Z80* ctx, signed char d) { return ctx->SET_IY(d, 1); }
+    static inline int SET_IY_2(Z80* ctx, signed char d) { return ctx->SET_IY(d, 2); }
+    static inline int SET_IY_3(Z80* ctx, signed char d) { return ctx->SET_IY(d, 3); }
+    static inline int SET_IY_4(Z80* ctx, signed char d) { return ctx->SET_IY(d, 4); }
+    static inline int SET_IY_5(Z80* ctx, signed char d) { return ctx->SET_IY(d, 5); }
+    static inline int SET_IY_6(Z80* ctx, signed char d) { return ctx->SET_IY(d, 6); }
+    static inline int SET_IY_7(Z80* ctx, signed char d) { return ctx->SET_IY(d, 7); }
     inline int SET_IY(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
@@ -4584,6 +4542,62 @@ class Z80
     }
 
     // SET bit b of lacation (IY+d) with load Reg.
+    static inline int SET_IY_0_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 0, 0b000); }
+    static inline int SET_IY_1_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 1, 0b000); }
+    static inline int SET_IY_2_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 2, 0b000); }
+    static inline int SET_IY_3_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 3, 0b000); }
+    static inline int SET_IY_4_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 4, 0b000); }
+    static inline int SET_IY_5_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 5, 0b000); }
+    static inline int SET_IY_6_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 6, 0b000); }
+    static inline int SET_IY_7_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 7, 0b000); }
+    static inline int SET_IY_0_with_LD_C(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 0, 0b001); }
+    static inline int SET_IY_1_with_LD_C(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 1, 0b001); }
+    static inline int SET_IY_2_with_LD_C(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 2, 0b001); }
+    static inline int SET_IY_3_with_LD_C(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 3, 0b001); }
+    static inline int SET_IY_4_with_LD_C(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 4, 0b001); }
+    static inline int SET_IY_5_with_LD_C(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 5, 0b001); }
+    static inline int SET_IY_6_with_LD_C(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 6, 0b001); }
+    static inline int SET_IY_7_with_LD_C(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 7, 0b001); }
+    static inline int SET_IY_0_with_LD_D(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 0, 0b010); }
+    static inline int SET_IY_1_with_LD_D(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 1, 0b010); }
+    static inline int SET_IY_2_with_LD_D(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 2, 0b010); }
+    static inline int SET_IY_3_with_LD_D(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 3, 0b010); }
+    static inline int SET_IY_4_with_LD_D(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 4, 0b010); }
+    static inline int SET_IY_5_with_LD_D(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 5, 0b010); }
+    static inline int SET_IY_6_with_LD_D(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 6, 0b010); }
+    static inline int SET_IY_7_with_LD_D(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 7, 0b010); }
+    static inline int SET_IY_0_with_LD_E(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 0, 0b011); }
+    static inline int SET_IY_1_with_LD_E(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 1, 0b011); }
+    static inline int SET_IY_2_with_LD_E(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 2, 0b011); }
+    static inline int SET_IY_3_with_LD_E(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 3, 0b011); }
+    static inline int SET_IY_4_with_LD_E(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 4, 0b011); }
+    static inline int SET_IY_5_with_LD_E(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 5, 0b011); }
+    static inline int SET_IY_6_with_LD_E(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 6, 0b011); }
+    static inline int SET_IY_7_with_LD_E(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 7, 0b011); }
+    static inline int SET_IY_0_with_LD_H(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 0, 0b100); }
+    static inline int SET_IY_1_with_LD_H(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 1, 0b100); }
+    static inline int SET_IY_2_with_LD_H(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 2, 0b100); }
+    static inline int SET_IY_3_with_LD_H(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 3, 0b100); }
+    static inline int SET_IY_4_with_LD_H(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 4, 0b100); }
+    static inline int SET_IY_5_with_LD_H(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 5, 0b100); }
+    static inline int SET_IY_6_with_LD_H(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 6, 0b100); }
+    static inline int SET_IY_7_with_LD_H(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 7, 0b100); }
+    static inline int SET_IY_0_with_LD_L(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 0, 0b101); }
+    static inline int SET_IY_1_with_LD_L(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 1, 0b101); }
+    static inline int SET_IY_2_with_LD_L(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 2, 0b101); }
+    static inline int SET_IY_3_with_LD_L(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 3, 0b101); }
+    static inline int SET_IY_4_with_LD_L(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 4, 0b101); }
+    static inline int SET_IY_5_with_LD_L(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 5, 0b101); }
+    static inline int SET_IY_6_with_LD_L(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 6, 0b101); }
+    static inline int SET_IY_7_with_LD_L(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 7, 0b101); }
+    static inline int SET_IY_0_with_LD_A(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 0, 0b111); }
+    static inline int SET_IY_1_with_LD_A(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 1, 0b111); }
+    static inline int SET_IY_2_with_LD_A(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 2, 0b111); }
+    static inline int SET_IY_3_with_LD_A(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 3, 0b111); }
+    static inline int SET_IY_4_with_LD_A(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 4, 0b111); }
+    static inline int SET_IY_5_with_LD_A(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 5, 0b111); }
+    static inline int SET_IY_6_with_LD_A(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 6, 0b111); }
+    static inline int SET_IY_7_with_LD_A(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 7, 0b111); }
     inline int SET_IY_with_LD(signed char d, unsigned char bit, unsigned char r)
     {
         char buf[80];
@@ -4800,6 +4814,62 @@ class Z80
     }
 
     // RESET bit b of lacation (IY+d) with load Reg.
+    static inline int RES_IY_0_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 0, 0b000); }
+    static inline int RES_IY_1_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 1, 0b000); }
+    static inline int RES_IY_2_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 2, 0b000); }
+    static inline int RES_IY_3_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 3, 0b000); }
+    static inline int RES_IY_4_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 4, 0b000); }
+    static inline int RES_IY_5_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 5, 0b000); }
+    static inline int RES_IY_6_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 6, 0b000); }
+    static inline int RES_IY_7_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 7, 0b000); }
+    static inline int RES_IY_0_with_LD_C(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 0, 0b001); }
+    static inline int RES_IY_1_with_LD_C(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 1, 0b001); }
+    static inline int RES_IY_2_with_LD_C(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 2, 0b001); }
+    static inline int RES_IY_3_with_LD_C(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 3, 0b001); }
+    static inline int RES_IY_4_with_LD_C(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 4, 0b001); }
+    static inline int RES_IY_5_with_LD_C(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 5, 0b001); }
+    static inline int RES_IY_6_with_LD_C(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 6, 0b001); }
+    static inline int RES_IY_7_with_LD_C(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 7, 0b001); }
+    static inline int RES_IY_0_with_LD_D(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 0, 0b010); }
+    static inline int RES_IY_1_with_LD_D(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 1, 0b010); }
+    static inline int RES_IY_2_with_LD_D(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 2, 0b010); }
+    static inline int RES_IY_3_with_LD_D(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 3, 0b010); }
+    static inline int RES_IY_4_with_LD_D(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 4, 0b010); }
+    static inline int RES_IY_5_with_LD_D(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 5, 0b010); }
+    static inline int RES_IY_6_with_LD_D(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 6, 0b010); }
+    static inline int RES_IY_7_with_LD_D(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 7, 0b010); }
+    static inline int RES_IY_0_with_LD_E(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 0, 0b011); }
+    static inline int RES_IY_1_with_LD_E(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 1, 0b011); }
+    static inline int RES_IY_2_with_LD_E(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 2, 0b011); }
+    static inline int RES_IY_3_with_LD_E(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 3, 0b011); }
+    static inline int RES_IY_4_with_LD_E(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 4, 0b011); }
+    static inline int RES_IY_5_with_LD_E(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 5, 0b011); }
+    static inline int RES_IY_6_with_LD_E(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 6, 0b011); }
+    static inline int RES_IY_7_with_LD_E(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 7, 0b011); }
+    static inline int RES_IY_0_with_LD_H(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 0, 0b100); }
+    static inline int RES_IY_1_with_LD_H(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 1, 0b100); }
+    static inline int RES_IY_2_with_LD_H(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 2, 0b100); }
+    static inline int RES_IY_3_with_LD_H(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 3, 0b100); }
+    static inline int RES_IY_4_with_LD_H(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 4, 0b100); }
+    static inline int RES_IY_5_with_LD_H(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 5, 0b100); }
+    static inline int RES_IY_6_with_LD_H(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 6, 0b100); }
+    static inline int RES_IY_7_with_LD_H(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 7, 0b100); }
+    static inline int RES_IY_0_with_LD_L(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 0, 0b101); }
+    static inline int RES_IY_1_with_LD_L(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 1, 0b101); }
+    static inline int RES_IY_2_with_LD_L(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 2, 0b101); }
+    static inline int RES_IY_3_with_LD_L(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 3, 0b101); }
+    static inline int RES_IY_4_with_LD_L(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 4, 0b101); }
+    static inline int RES_IY_5_with_LD_L(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 5, 0b101); }
+    static inline int RES_IY_6_with_LD_L(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 6, 0b101); }
+    static inline int RES_IY_7_with_LD_L(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 7, 0b101); }
+    static inline int RES_IY_0_with_LD_A(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 0, 0b111); }
+    static inline int RES_IY_1_with_LD_A(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 1, 0b111); }
+    static inline int RES_IY_2_with_LD_A(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 2, 0b111); }
+    static inline int RES_IY_3_with_LD_A(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 3, 0b111); }
+    static inline int RES_IY_4_with_LD_A(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 4, 0b111); }
+    static inline int RES_IY_5_with_LD_A(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 5, 0b111); }
+    static inline int RES_IY_6_with_LD_A(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 6, 0b111); }
+    static inline int RES_IY_7_with_LD_A(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 7, 0b111); }
     inline int RES_IY_with_LD(signed char d, unsigned char bit, unsigned char r)
     {
         char buf[80];
@@ -4813,6 +4883,14 @@ class Z80
     }
 
     // RESET bit b of lacation (IY+d)
+    static inline int RES_IY_0(Z80* ctx, signed char d) { return ctx->RES_IY(d, 0); }
+    static inline int RES_IY_1(Z80* ctx, signed char d) { return ctx->RES_IY(d, 1); }
+    static inline int RES_IY_2(Z80* ctx, signed char d) { return ctx->RES_IY(d, 2); }
+    static inline int RES_IY_3(Z80* ctx, signed char d) { return ctx->RES_IY(d, 3); }
+    static inline int RES_IY_4(Z80* ctx, signed char d) { return ctx->RES_IY(d, 4); }
+    static inline int RES_IY_5(Z80* ctx, signed char d) { return ctx->RES_IY(d, 5); }
+    static inline int RES_IY_6(Z80* ctx, signed char d) { return ctx->RES_IY(d, 6); }
+    static inline int RES_IY_7(Z80* ctx, signed char d) { return ctx->RES_IY(d, 7); }
     inline int RES_IY(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
@@ -5781,7 +5859,6 @@ class Z80
         NULL, JP_IY_, NULL, NULL, NULL, NULL, NULL, NULL,
         NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
         NULL, LD_SP_IY_, NULL, NULL, NULL, NULL, NULL, NULL};
-
     int (*opSetIX4[256])(Z80* ctx, signed char d) = {
         RLC_IX_with_LD_B, RLC_IX_with_LD_C, RLC_IX_with_LD_D, RLC_IX_with_LD_E, RLC_IX_with_LD_H, RLC_IX_with_LD_L, RLC_IX_, RLC_IX_with_LD_A,
         RRC_IX_with_LD_B, RRC_IX_with_LD_C, RRC_IX_with_LD_D, RRC_IX_with_LD_E, RRC_IX_with_LD_H, RRC_IX_with_LD_L, RRC_IX_, RRC_IX_with_LD_A,
@@ -5815,6 +5892,39 @@ class Z80
         SET_IX_5_with_LD_B, SET_IX_5_with_LD_C, SET_IX_5_with_LD_D, SET_IX_5_with_LD_E, SET_IX_5_with_LD_H, SET_IX_5_with_LD_L, SET_IX_5, SET_IX_5_with_LD_A,
         SET_IX_6_with_LD_B, SET_IX_6_with_LD_C, SET_IX_6_with_LD_D, SET_IX_6_with_LD_E, SET_IX_6_with_LD_H, SET_IX_6_with_LD_L, SET_IX_6, SET_IX_6_with_LD_A,
         SET_IX_7_with_LD_B, SET_IX_7_with_LD_C, SET_IX_7_with_LD_D, SET_IX_7_with_LD_E, SET_IX_7_with_LD_H, SET_IX_7_with_LD_L, SET_IX_7, SET_IX_7_with_LD_A};
+    int (*opSetIY4[256])(Z80* ctx, signed char d) = {
+        RLC_IY_with_LD_B, RLC_IY_with_LD_C, RLC_IY_with_LD_D, RLC_IY_with_LD_E, RLC_IY_with_LD_H, RLC_IY_with_LD_L, RLC_IY_, RLC_IY_with_LD_A,
+        RRC_IY_with_LD_B, RRC_IY_with_LD_C, RRC_IY_with_LD_D, RRC_IY_with_LD_E, RRC_IY_with_LD_H, RRC_IY_with_LD_L, RRC_IY_, RRC_IY_with_LD_A,
+        RL_IY_with_LD_B, RL_IY_with_LD_C, RL_IY_with_LD_D, RL_IY_with_LD_E, RL_IY_with_LD_H, RL_IY_with_LD_L, RL_IY_, RL_IY_with_LD_A,
+        RR_IY_with_LD_B, RR_IY_with_LD_C, RR_IY_with_LD_D, RR_IY_with_LD_E, RR_IY_with_LD_H, RR_IY_with_LD_L, RR_IY_, RR_IY_with_LD_A,
+        SLA_IY_with_LD_B, SLA_IY_with_LD_C, SLA_IY_with_LD_D, SLA_IY_with_LD_E, SLA_IY_with_LD_H, SLA_IY_with_LD_L, SLA_IY_, SLA_IY_with_LD_A,
+        SRA_IY_with_LD_B, SRA_IY_with_LD_C, SRA_IY_with_LD_D, SRA_IY_with_LD_E, SRA_IY_with_LD_H, SRA_IY_with_LD_L, SRA_IY_, SRA_IY_with_LD_A,
+        SLL_IY_with_LD_B, SLL_IY_with_LD_C, SLL_IY_with_LD_D, SLL_IY_with_LD_E, SLL_IY_with_LD_H, SLL_IY_with_LD_L, SLL_IY_, SLL_IY_with_LD_A,
+        SRL_IY_with_LD_B, SRL_IY_with_LD_C, SRL_IY_with_LD_D, SRL_IY_with_LD_E, SRL_IY_with_LD_H, SRL_IY_with_LD_L, SRL_IY_, SRL_IY_with_LD_A,
+        BIT_IY_0, BIT_IY_0, BIT_IY_0, BIT_IY_0, BIT_IY_0, BIT_IY_0, BIT_IY_0, BIT_IY_0,
+        BIT_IY_1, BIT_IY_1, BIT_IY_1, BIT_IY_1, BIT_IY_1, BIT_IY_1, BIT_IY_1, BIT_IY_1,
+        BIT_IY_2, BIT_IY_2, BIT_IY_2, BIT_IY_2, BIT_IY_2, BIT_IY_2, BIT_IY_2, BIT_IY_2,
+        BIT_IY_3, BIT_IY_3, BIT_IY_3, BIT_IY_3, BIT_IY_3, BIT_IY_3, BIT_IY_3, BIT_IY_3,
+        BIT_IY_4, BIT_IY_4, BIT_IY_4, BIT_IY_4, BIT_IY_4, BIT_IY_4, BIT_IY_4, BIT_IY_4,
+        BIT_IY_5, BIT_IY_5, BIT_IY_5, BIT_IY_5, BIT_IY_5, BIT_IY_5, BIT_IY_5, BIT_IY_5,
+        BIT_IY_6, BIT_IY_6, BIT_IY_6, BIT_IY_6, BIT_IY_6, BIT_IY_6, BIT_IY_6, BIT_IY_6,
+        BIT_IY_7, BIT_IY_7, BIT_IY_7, BIT_IY_7, BIT_IY_7, BIT_IY_7, BIT_IY_7, BIT_IY_7,
+        RES_IY_0_with_LD_B, RES_IY_0_with_LD_C, RES_IY_0_with_LD_D, RES_IY_0_with_LD_E, RES_IY_0_with_LD_H, RES_IY_0_with_LD_L, RES_IY_0, RES_IY_0_with_LD_A,
+        RES_IY_1_with_LD_B, RES_IY_1_with_LD_C, RES_IY_1_with_LD_D, RES_IY_1_with_LD_E, RES_IY_1_with_LD_H, RES_IY_1_with_LD_L, RES_IY_1, RES_IY_1_with_LD_A,
+        RES_IY_2_with_LD_B, RES_IY_2_with_LD_C, RES_IY_2_with_LD_D, RES_IY_2_with_LD_E, RES_IY_2_with_LD_H, RES_IY_2_with_LD_L, RES_IY_2, RES_IY_2_with_LD_A,
+        RES_IY_3_with_LD_B, RES_IY_3_with_LD_C, RES_IY_3_with_LD_D, RES_IY_3_with_LD_E, RES_IY_3_with_LD_H, RES_IY_3_with_LD_L, RES_IY_3, RES_IY_3_with_LD_A,
+        RES_IY_4_with_LD_B, RES_IY_4_with_LD_C, RES_IY_4_with_LD_D, RES_IY_4_with_LD_E, RES_IY_4_with_LD_H, RES_IY_4_with_LD_L, RES_IY_4, RES_IY_4_with_LD_A,
+        RES_IY_5_with_LD_B, RES_IY_5_with_LD_C, RES_IY_5_with_LD_D, RES_IY_5_with_LD_E, RES_IY_5_with_LD_H, RES_IY_5_with_LD_L, RES_IY_5, RES_IY_5_with_LD_A,
+        RES_IY_6_with_LD_B, RES_IY_6_with_LD_C, RES_IY_6_with_LD_D, RES_IY_6_with_LD_E, RES_IY_6_with_LD_H, RES_IY_6_with_LD_L, RES_IY_6, RES_IY_6_with_LD_A,
+        RES_IY_7_with_LD_B, RES_IY_7_with_LD_C, RES_IY_7_with_LD_D, RES_IY_7_with_LD_E, RES_IY_7_with_LD_H, RES_IY_7_with_LD_L, RES_IY_7, RES_IY_7_with_LD_A,
+        SET_IY_0_with_LD_B, SET_IY_0_with_LD_C, SET_IY_0_with_LD_D, SET_IY_0_with_LD_E, SET_IY_0_with_LD_H, SET_IY_0_with_LD_L, SET_IY_0, SET_IY_0_with_LD_A,
+        SET_IY_1_with_LD_B, SET_IY_1_with_LD_C, SET_IY_1_with_LD_D, SET_IY_1_with_LD_E, SET_IY_1_with_LD_H, SET_IY_1_with_LD_L, SET_IY_1, SET_IY_1_with_LD_A,
+        SET_IY_2_with_LD_B, SET_IY_2_with_LD_C, SET_IY_2_with_LD_D, SET_IY_2_with_LD_E, SET_IY_2_with_LD_H, SET_IY_2_with_LD_L, SET_IY_2, SET_IY_2_with_LD_A,
+        SET_IY_3_with_LD_B, SET_IY_3_with_LD_C, SET_IY_3_with_LD_D, SET_IY_3_with_LD_E, SET_IY_3_with_LD_H, SET_IY_3_with_LD_L, SET_IY_3, SET_IY_3_with_LD_A,
+        SET_IY_4_with_LD_B, SET_IY_4_with_LD_C, SET_IY_4_with_LD_D, SET_IY_4_with_LD_E, SET_IY_4_with_LD_H, SET_IY_4_with_LD_L, SET_IY_4, SET_IY_4_with_LD_A,
+        SET_IY_5_with_LD_B, SET_IY_5_with_LD_C, SET_IY_5_with_LD_D, SET_IY_5_with_LD_E, SET_IY_5_with_LD_H, SET_IY_5_with_LD_L, SET_IY_5, SET_IY_5_with_LD_A,
+        SET_IY_6_with_LD_B, SET_IY_6_with_LD_C, SET_IY_6_with_LD_D, SET_IY_6_with_LD_E, SET_IY_6_with_LD_H, SET_IY_6_with_LD_L, SET_IY_6, SET_IY_6_with_LD_A,
+        SET_IY_7_with_LD_B, SET_IY_7_with_LD_C, SET_IY_7_with_LD_D, SET_IY_7_with_LD_E, SET_IY_7_with_LD_H, SET_IY_7_with_LD_L, SET_IY_7, SET_IY_7_with_LD_A};
 
     // setup the operands or operand groups that detectable in fixed single byte
     void setupOperandTable()
