@@ -3120,6 +3120,13 @@ class Z80
     }
 
     // Increment Register
+    static inline int INC_B(Z80* ctx) { return ctx->INC_R(0b000); }
+    static inline int INC_C(Z80* ctx) { return ctx->INC_R(0b001); }
+    static inline int INC_D(Z80* ctx) { return ctx->INC_R(0b010); }
+    static inline int INC_E(Z80* ctx) { return ctx->INC_R(0b011); }
+    static inline int INC_H(Z80* ctx) { return ctx->INC_R(0b100); }
+    static inline int INC_L(Z80* ctx) { return ctx->INC_R(0b101); }
+    static inline int INC_A(Z80* ctx) { return ctx->INC_R(0b111); }
     inline int INC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -5342,6 +5349,14 @@ class Z80
         opSet1[0b00100001] = LD_HL_NN;
         opSet1[0b00110001] = LD_SP_NN;
 
+        opSet1[0b00000100] = INC_B;
+        opSet1[0b00001100] = INC_C;
+        opSet1[0b00010100] = INC_D;
+        opSet1[0b00011100] = INC_E;
+        opSet1[0b00100100] = INC_H;
+        opSet1[0b00101100] = INC_L;
+        opSet1[0b00111100] = INC_A;
+
         opSet1[0b00000011] = INC_RP_BC;
         opSet1[0b00010011] = INC_RP_DE;
         opSet1[0b00100011] = INC_RP_HL;
@@ -5834,9 +5849,7 @@ class Z80
                 int ret = -1;
                 if (NULL == op) {
                     // execute an operand that register type has specified in the first byte.
-                    if ((operandNumber & 0b11000111) == 0b00000100) {
-                        ret = INC_R((operandNumber & 0b00111000) >> 3);
-                    } else if ((operandNumber & 0b11000111) == 0b00000101) {
+                    if ((operandNumber & 0b11000111) == 0b00000101) {
                         ret = DEC_R((operandNumber & 0b00111000) >> 3);
                     } else if ((operandNumber & 0b11000111) == 0b11000010) {
                         ret = JP_C_NN((operandNumber & 0b00111000) >> 3);
