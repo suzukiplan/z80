@@ -4575,6 +4575,14 @@ class Z80
     }
 
     // Conditional Jump
+    static inline int JP_C0_NN(Z80* ctx) { return ctx->JP_C_NN(0); }
+    static inline int JP_C1_NN(Z80* ctx) { return ctx->JP_C_NN(1); }
+    static inline int JP_C2_NN(Z80* ctx) { return ctx->JP_C_NN(2); }
+    static inline int JP_C3_NN(Z80* ctx) { return ctx->JP_C_NN(3); }
+    static inline int JP_C4_NN(Z80* ctx) { return ctx->JP_C_NN(4); }
+    static inline int JP_C5_NN(Z80* ctx) { return ctx->JP_C_NN(5); }
+    static inline int JP_C6_NN(Z80* ctx) { return ctx->JP_C_NN(6); }
+    static inline int JP_C7_NN(Z80* ctx) { return ctx->JP_C_NN(7); }
     inline int JP_C_NN(unsigned char c)
     {
         unsigned char nL = readByte(reg.PC + 1, 3);
@@ -4583,14 +4591,14 @@ class Z80
         if (isDebug()) log("[%04X] JP %s, $%04X", reg.PC, conditionDump(c), addr);
         bool jump;
         switch (c) {
-            case 0b000: jump = isFlagZ() ? false : true; break;
-            case 0b001: jump = isFlagZ() ? true : false; break;
-            case 0b010: jump = isFlagC() ? false : true; break;
-            case 0b011: jump = isFlagC() ? true : false; break;
-            case 0b100: jump = isFlagPV() ? false : true; break;
-            case 0b101: jump = isFlagPV() ? true : false; break;
-            case 0b110: jump = isFlagS() ? false : true; break;
-            case 0b111: jump = isFlagS() ? true : false; break;
+            case 0: jump = isFlagZ() ? false : true; break;
+            case 1: jump = isFlagZ() ? true : false; break;
+            case 2: jump = isFlagC() ? false : true; break;
+            case 3: jump = isFlagC() ? true : false; break;
+            case 4: jump = isFlagPV() ? false : true; break;
+            case 5: jump = isFlagPV() ? true : false; break;
+            case 6: jump = isFlagS() ? false : true; break;
+            case 7: jump = isFlagS() ? true : false; break;
             default: jump = false;
         }
         if (jump) {
@@ -5390,6 +5398,15 @@ class Z80
         opSet1[0b11010001] = POP_DE;
         opSet1[0b11100001] = POP_HL;
 
+        opSet1[0b11000010] = JP_C0_NN;
+        opSet1[0b11001010] = JP_C1_NN;
+        opSet1[0b11010010] = JP_C2_NN;
+        opSet1[0b11011010] = JP_C3_NN;
+        opSet1[0b11100010] = JP_C4_NN;
+        opSet1[0b11101010] = JP_C5_NN;
+        opSet1[0b11110010] = JP_C6_NN;
+        opSet1[0b11111010] = JP_C7_NN;
+
         opSet1[0b11000011] = JP_NN;
         opSet1[0b11001001] = RET;
         opSet1[0b11001011] = OP_R;
@@ -5399,21 +5416,21 @@ class Z80
         opSet1[0b11011001] = isLR35902 ? LR35902_RETI : EXX;
         opSet1[0b11011101] = isLR35902 ? NULL : OP_IX;
         opSet1[0b11100000] = isLR35902 ? LDH_N_A : NULL;
-        opSet1[0b11100010] = isLR35902 ? LDH_C_A : NULL;
+        opSet1[0b11100010] = isLR35902 ? LDH_C_A : JP_C4_NN;
         opSet1[0b11100011] = isLR35902 ? NULL : EX_SP_HL;
         opSet1[0b11101000] = isLR35902 ? ADD_SP_N : NULL;
         opSet1[0b11101001] = JP_HL;
-        opSet1[0b11101010] = isLR35902 ? LD_NN_A : NULL;
+        opSet1[0b11101010] = isLR35902 ? LD_NN_A : JP_C5_NN;
         opSet1[0b11101011] = isLR35902 ? NULL : EX_DE_HL;
         opSet1[0b11101101] = isLR35902 ? NULL : EXTRA;
         opSet1[0b11110000] = isLR35902 ? LDH_A_N : NULL;
         opSet1[0b11110001] = POP_AF;
-        opSet1[0b11110010] = isLR35902 ? LDH_A_C : NULL;
+        opSet1[0b11110010] = isLR35902 ? LDH_A_C : JP_C6_NN;
         opSet1[0b11110011] = DI;
         opSet1[0b11110101] = PUSH_AF;
         opSet1[0b11111000] = isLR35902 ? LDHL_SP_N : NULL;
         opSet1[0b11111001] = LD_SP_HL;
-        opSet1[0b11111010] = isLR35902 ? LD_A_NN : NULL;
+        opSet1[0b11111010] = isLR35902 ? LD_A_NN : JP_C7_NN;
         opSet1[0b11111011] = EI;
         opSet1[0b11111101] = isLR35902 ? NULL : OP_IY;
 
@@ -5864,9 +5881,7 @@ class Z80
                 int ret = -1;
                 if (NULL == op) {
                     // execute an operand that register type has specified in the first byte.
-                    if ((operandNumber & 0b11000111) == 0b11000010) {
-                        ret = JP_C_NN((operandNumber & 0b00111000) >> 3);
-                    } else if ((operandNumber & 0b11000111) == 0b11000100) {
+                    if ((operandNumber & 0b11000111) == 0b11000100) {
                         if (!isLR35902 || operandNumber < 0xE4) {
                             ret = CALL_C_NN((operandNumber & 0b00111000) >> 3);
                         }
