@@ -848,68 +848,7 @@ class Z80
     }
 
     // operand of using other register (first byte is 0b11001011)
-    static inline int OP_CB(Z80* ctx)
-    {
-        unsigned char op2 = ctx->readByte(ctx->reg.PC + 1);
-        switch (op2) {
-            case 0b00000110: return ctx->RLC_HL();
-            case 0b00010110: return ctx->RL_HL();
-            case 0b00001110: return ctx->RRC_HL();
-            case 0b00011110: return ctx->RR_HL();
-            case 0b00100110: return ctx->SLA_HL();
-            case 0b00101110: return ctx->SRA_HL();
-            case 0b00111110: return ctx->SRL_HL();
-        }
-        switch (op2 & 0b11111000) {
-            case 0b00000000: return ctx->RLC_R(op2 & 0b00000111);
-            case 0b00010000: return ctx->RL_R(op2 & 0b00000111);
-            case 0b00001000: return ctx->RRC_R(op2 & 0b00000111);
-            case 0b00011000: return ctx->RR_R(op2 & 0b00000111);
-            case 0b00100000: return ctx->SLA_R(op2 & 0b00000111);
-            case 0b00101000: return ctx->SRA_R(op2 & 0b00000111);
-            case 0b00111000: return ctx->SRL_R(op2 & 0b00000111);
-        }
-        switch (op2 & 0b11000111) {
-            case 0b01000110: return ctx->BIT_HL((op2 & 0b00111000) >> 3);
-            case 0b11000110: return ctx->SET_HL((op2 & 0b00111000) >> 3);
-            case 0b10000110: return ctx->RES_HL((op2 & 0b00111000) >> 3);
-        }
-        switch (op2 & 0b11000000) {
-            case 0b01000000: return ctx->BIT_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
-            case 0b11000000: return ctx->SET_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
-            case 0b10000000: return ctx->RES_R(op2 & 0b00000111, (op2 & 0b00111000) >> 3);
-        }
-        if (ctx->isLR35902) {
-            switch (op2) {
-                case 0b00110000: return ctx->SWAP_R(0b000);
-                case 0b00110001: return ctx->SWAP_R(0b001);
-                case 0b00110010: return ctx->SWAP_R(0b010);
-                case 0b00110011: return ctx->SWAP_R(0b011);
-                case 0b00110100: return ctx->SWAP_R(0b100);
-                case 0b00110101: return ctx->SWAP_R(0b101);
-                case 0b00110110: return ctx->SWAP_HL();
-                case 0b00110111: return ctx->SWAP_R(0b111);
-            }
-        } else {
-            switch (op2) {
-                case 0b00110000: return ctx->SLL_R(0b000);
-                case 0b00110001: return ctx->SLL_R(0b001);
-                case 0b00110010: return ctx->SLL_R(0b010);
-                case 0b00110011: return ctx->SLL_R(0b011);
-                case 0b00110100: return ctx->SLL_R(0b100);
-                case 0b00110101: return ctx->SLL_R(0b101);
-                case 0b00110110: return ctx->SLL_HL();
-                case 0b00110111: return ctx->SLL_R(0b111);
-            }
-        }
-        if (ctx->skipIllegalInstructions) {
-            if (ctx->isDebug()) ctx->log("Skipped an illegal CB instruction: $CB%02X", op2);
-            ctx->reg.PC += 2;
-            return 0;
-        }
-        if (ctx->isDebug()) ctx->log("detected an unknown operand: 11001011 - $%02X", op2);
-        return -1;
-    }
+    static inline int OP_CB(Z80* ctx) { return ctx->opSetCB[ctx->readByte(ctx->reg.PC + 1)](ctx); }
 
     // Load location (HL) with value n
     static inline int LD_HL_N(Z80* ctx)
@@ -2222,6 +2161,13 @@ class Z80
     }
 
     // Rotate register Left Circular
+    static inline int RLC_B(Z80* ctx) { return ctx->RLC_R(0b000); }
+    static inline int RLC_C(Z80* ctx) { return ctx->RLC_R(0b001); }
+    static inline int RLC_D(Z80* ctx) { return ctx->RLC_R(0b010); }
+    static inline int RLC_E(Z80* ctx) { return ctx->RLC_R(0b011); }
+    static inline int RLC_H(Z80* ctx) { return ctx->RLC_R(0b100); }
+    static inline int RLC_L(Z80* ctx) { return ctx->RLC_R(0b101); }
+    static inline int RLC_A(Z80* ctx) { return ctx->RLC_R(0b111); }
     inline int RLC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2236,6 +2182,13 @@ class Z80
     }
 
     // Rotate Left register
+    static inline int RL_B(Z80* ctx) { return ctx->RL_R(0b000); }
+    static inline int RL_C(Z80* ctx) { return ctx->RL_R(0b001); }
+    static inline int RL_D(Z80* ctx) { return ctx->RL_R(0b010); }
+    static inline int RL_E(Z80* ctx) { return ctx->RL_R(0b011); }
+    static inline int RL_H(Z80* ctx) { return ctx->RL_R(0b100); }
+    static inline int RL_L(Z80* ctx) { return ctx->RL_R(0b101); }
+    static inline int RL_A(Z80* ctx) { return ctx->RL_R(0b111); }
     inline int RL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2251,6 +2204,13 @@ class Z80
     }
 
     // Shift operand register left Arithmetic
+    static inline int SLA_B(Z80* ctx) { return ctx->SLA_R(0b000); }
+    static inline int SLA_C(Z80* ctx) { return ctx->SLA_R(0b001); }
+    static inline int SLA_D(Z80* ctx) { return ctx->SLA_R(0b010); }
+    static inline int SLA_E(Z80* ctx) { return ctx->SLA_R(0b011); }
+    static inline int SLA_H(Z80* ctx) { return ctx->SLA_R(0b100); }
+    static inline int SLA_L(Z80* ctx) { return ctx->SLA_R(0b101); }
+    static inline int SLA_A(Z80* ctx) { return ctx->SLA_R(0b111); }
     inline int SLA_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2264,6 +2224,13 @@ class Z80
     }
 
     // Rotate register Right Circular
+    static inline int RRC_B(Z80* ctx) { return ctx->RRC_R(0b000); }
+    static inline int RRC_C(Z80* ctx) { return ctx->RRC_R(0b001); }
+    static inline int RRC_D(Z80* ctx) { return ctx->RRC_R(0b010); }
+    static inline int RRC_E(Z80* ctx) { return ctx->RRC_R(0b011); }
+    static inline int RRC_H(Z80* ctx) { return ctx->RRC_R(0b100); }
+    static inline int RRC_L(Z80* ctx) { return ctx->RRC_R(0b101); }
+    static inline int RRC_A(Z80* ctx) { return ctx->RRC_R(0b111); }
     inline int RRC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2278,6 +2245,13 @@ class Z80
     }
 
     // Rotate Right register
+    static inline int RR_B(Z80* ctx) { return ctx->RR_R(0b000); }
+    static inline int RR_C(Z80* ctx) { return ctx->RR_R(0b001); }
+    static inline int RR_D(Z80* ctx) { return ctx->RR_R(0b010); }
+    static inline int RR_E(Z80* ctx) { return ctx->RR_R(0b011); }
+    static inline int RR_H(Z80* ctx) { return ctx->RR_R(0b100); }
+    static inline int RR_L(Z80* ctx) { return ctx->RR_R(0b101); }
+    static inline int RR_A(Z80* ctx) { return ctx->RR_R(0b111); }
     inline int RR_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2293,6 +2267,13 @@ class Z80
     }
 
     // Shift operand register Right Arithmetic
+    static inline int SRA_B(Z80* ctx) { return ctx->SRA_R(0b000); }
+    static inline int SRA_C(Z80* ctx) { return ctx->SRA_R(0b001); }
+    static inline int SRA_D(Z80* ctx) { return ctx->SRA_R(0b010); }
+    static inline int SRA_E(Z80* ctx) { return ctx->SRA_R(0b011); }
+    static inline int SRA_H(Z80* ctx) { return ctx->SRA_R(0b100); }
+    static inline int SRA_L(Z80* ctx) { return ctx->SRA_R(0b101); }
+    static inline int SRA_A(Z80* ctx) { return ctx->SRA_R(0b111); }
     inline int SRA_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2308,6 +2289,13 @@ class Z80
     }
 
     // Shift operand register Right Logical
+    static inline int SRL_B(Z80* ctx) { return ctx->SRL_R(0b000); }
+    static inline int SRL_C(Z80* ctx) { return ctx->SRL_R(0b001); }
+    static inline int SRL_D(Z80* ctx) { return ctx->SRL_R(0b010); }
+    static inline int SRL_E(Z80* ctx) { return ctx->SRL_R(0b011); }
+    static inline int SRL_H(Z80* ctx) { return ctx->SRL_R(0b100); }
+    static inline int SRL_L(Z80* ctx) { return ctx->SRL_R(0b101); }
+    static inline int SRL_A(Z80* ctx) { return ctx->SRL_R(0b111); }
     inline int SRL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2321,6 +2309,13 @@ class Z80
     }
 
     // Shift operand register Left Logical
+    static inline int SLL_B(Z80* ctx) { return ctx->SLL_R(0b000); }
+    static inline int SLL_C(Z80* ctx) { return ctx->SLL_R(0b001); }
+    static inline int SLL_D(Z80* ctx) { return ctx->SLL_R(0b010); }
+    static inline int SLL_E(Z80* ctx) { return ctx->SLL_R(0b011); }
+    static inline int SLL_H(Z80* ctx) { return ctx->SLL_R(0b100); }
+    static inline int SLL_L(Z80* ctx) { return ctx->SLL_R(0b101); }
+    static inline int SLL_A(Z80* ctx) { return ctx->SLL_R(0b111); }
     inline int SLL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -2334,6 +2329,7 @@ class Z80
     }
 
     // Rotate memory (HL) Left Circular
+    static inline int RLC_HL_(Z80* ctx) { return ctx->RLC_HL(); }
     inline int RLC_HL()
     {
         unsigned short addr = getHL();
@@ -2350,6 +2346,7 @@ class Z80
     }
 
     // Rotate Left memory
+    static inline int RL_HL_(Z80* ctx) { return ctx->RL_HL(); }
     inline int RL_HL()
     {
         unsigned short addr = getHL();
@@ -2367,6 +2364,7 @@ class Z80
     }
 
     // Shift operand location (HL) left Arithmetic
+    static inline int SLA_HL_(Z80* ctx) { return ctx->SLA_HL(); }
     inline int SLA_HL()
     {
         unsigned short addr = getHL();
@@ -2382,6 +2380,7 @@ class Z80
     }
 
     // Rotate memory (HL) Right Circular
+    static inline int RRC_HL_(Z80* ctx) { return ctx->RRC_HL(); }
     inline int RRC_HL()
     {
         unsigned short addr = getHL();
@@ -2398,6 +2397,7 @@ class Z80
     }
 
     // Rotate Right memory
+    static inline int RR_HL_(Z80* ctx) { return ctx->RR_HL(); }
     inline int RR_HL()
     {
         unsigned short addr = getHL();
@@ -2415,6 +2415,7 @@ class Z80
     }
 
     // Shift operand location (HL) Right Arithmetic
+    static inline int SRA_HL_(Z80* ctx) { return ctx->SRA_HL(); }
     inline int SRA_HL()
     {
         unsigned short addr = getHL();
@@ -2432,6 +2433,7 @@ class Z80
     }
 
     // Shift operand location (HL) Right Logical
+    static inline int SRL_HL_(Z80* ctx) { return ctx->SRL_HL(); }
     inline int SRL_HL()
     {
         unsigned short addr = getHL();
@@ -2447,6 +2449,7 @@ class Z80
     }
 
     // Shift operand location (HL) Left Logical
+    static inline int SLL_HL_(Z80* ctx) { return ctx->SLL_HL(); }
     inline int SLL_HL()
     {
         unsigned short addr = getHL();
@@ -4182,6 +4185,62 @@ class Z80
     }
 
     // Test BIT b of register r
+    static inline int BIT_B_0(Z80* ctx) { return ctx->BIT_R(0b000, 0); }
+    static inline int BIT_B_1(Z80* ctx) { return ctx->BIT_R(0b000, 1); }
+    static inline int BIT_B_2(Z80* ctx) { return ctx->BIT_R(0b000, 2); }
+    static inline int BIT_B_3(Z80* ctx) { return ctx->BIT_R(0b000, 3); }
+    static inline int BIT_B_4(Z80* ctx) { return ctx->BIT_R(0b000, 4); }
+    static inline int BIT_B_5(Z80* ctx) { return ctx->BIT_R(0b000, 5); }
+    static inline int BIT_B_6(Z80* ctx) { return ctx->BIT_R(0b000, 6); }
+    static inline int BIT_B_7(Z80* ctx) { return ctx->BIT_R(0b000, 7); }
+    static inline int BIT_C_0(Z80* ctx) { return ctx->BIT_R(0b001, 0); }
+    static inline int BIT_C_1(Z80* ctx) { return ctx->BIT_R(0b001, 1); }
+    static inline int BIT_C_2(Z80* ctx) { return ctx->BIT_R(0b001, 2); }
+    static inline int BIT_C_3(Z80* ctx) { return ctx->BIT_R(0b001, 3); }
+    static inline int BIT_C_4(Z80* ctx) { return ctx->BIT_R(0b001, 4); }
+    static inline int BIT_C_5(Z80* ctx) { return ctx->BIT_R(0b001, 5); }
+    static inline int BIT_C_6(Z80* ctx) { return ctx->BIT_R(0b001, 6); }
+    static inline int BIT_C_7(Z80* ctx) { return ctx->BIT_R(0b001, 7); }
+    static inline int BIT_D_0(Z80* ctx) { return ctx->BIT_R(0b010, 0); }
+    static inline int BIT_D_1(Z80* ctx) { return ctx->BIT_R(0b010, 1); }
+    static inline int BIT_D_2(Z80* ctx) { return ctx->BIT_R(0b010, 2); }
+    static inline int BIT_D_3(Z80* ctx) { return ctx->BIT_R(0b010, 3); }
+    static inline int BIT_D_4(Z80* ctx) { return ctx->BIT_R(0b010, 4); }
+    static inline int BIT_D_5(Z80* ctx) { return ctx->BIT_R(0b010, 5); }
+    static inline int BIT_D_6(Z80* ctx) { return ctx->BIT_R(0b010, 6); }
+    static inline int BIT_D_7(Z80* ctx) { return ctx->BIT_R(0b010, 7); }
+    static inline int BIT_E_0(Z80* ctx) { return ctx->BIT_R(0b011, 0); }
+    static inline int BIT_E_1(Z80* ctx) { return ctx->BIT_R(0b011, 1); }
+    static inline int BIT_E_2(Z80* ctx) { return ctx->BIT_R(0b011, 2); }
+    static inline int BIT_E_3(Z80* ctx) { return ctx->BIT_R(0b011, 3); }
+    static inline int BIT_E_4(Z80* ctx) { return ctx->BIT_R(0b011, 4); }
+    static inline int BIT_E_5(Z80* ctx) { return ctx->BIT_R(0b011, 5); }
+    static inline int BIT_E_6(Z80* ctx) { return ctx->BIT_R(0b011, 6); }
+    static inline int BIT_E_7(Z80* ctx) { return ctx->BIT_R(0b011, 7); }
+    static inline int BIT_H_0(Z80* ctx) { return ctx->BIT_R(0b100, 0); }
+    static inline int BIT_H_1(Z80* ctx) { return ctx->BIT_R(0b100, 1); }
+    static inline int BIT_H_2(Z80* ctx) { return ctx->BIT_R(0b100, 2); }
+    static inline int BIT_H_3(Z80* ctx) { return ctx->BIT_R(0b100, 3); }
+    static inline int BIT_H_4(Z80* ctx) { return ctx->BIT_R(0b100, 4); }
+    static inline int BIT_H_5(Z80* ctx) { return ctx->BIT_R(0b100, 5); }
+    static inline int BIT_H_6(Z80* ctx) { return ctx->BIT_R(0b100, 6); }
+    static inline int BIT_H_7(Z80* ctx) { return ctx->BIT_R(0b100, 7); }
+    static inline int BIT_L_0(Z80* ctx) { return ctx->BIT_R(0b101, 0); }
+    static inline int BIT_L_1(Z80* ctx) { return ctx->BIT_R(0b101, 1); }
+    static inline int BIT_L_2(Z80* ctx) { return ctx->BIT_R(0b101, 2); }
+    static inline int BIT_L_3(Z80* ctx) { return ctx->BIT_R(0b101, 3); }
+    static inline int BIT_L_4(Z80* ctx) { return ctx->BIT_R(0b101, 4); }
+    static inline int BIT_L_5(Z80* ctx) { return ctx->BIT_R(0b101, 5); }
+    static inline int BIT_L_6(Z80* ctx) { return ctx->BIT_R(0b101, 6); }
+    static inline int BIT_L_7(Z80* ctx) { return ctx->BIT_R(0b101, 7); }
+    static inline int BIT_A_0(Z80* ctx) { return ctx->BIT_R(0b111, 0); }
+    static inline int BIT_A_1(Z80* ctx) { return ctx->BIT_R(0b111, 1); }
+    static inline int BIT_A_2(Z80* ctx) { return ctx->BIT_R(0b111, 2); }
+    static inline int BIT_A_3(Z80* ctx) { return ctx->BIT_R(0b111, 3); }
+    static inline int BIT_A_4(Z80* ctx) { return ctx->BIT_R(0b111, 4); }
+    static inline int BIT_A_5(Z80* ctx) { return ctx->BIT_R(0b111, 5); }
+    static inline int BIT_A_6(Z80* ctx) { return ctx->BIT_R(0b111, 6); }
+    static inline int BIT_A_7(Z80* ctx) { return ctx->BIT_R(0b111, 7); }
     inline int BIT_R(unsigned char r, unsigned char bit)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -4208,6 +4267,14 @@ class Z80
     }
 
     // Test BIT b of lacation (HL)
+    static inline int BIT_HL_0(Z80* ctx) { return ctx->BIT_HL(0); }
+    static inline int BIT_HL_1(Z80* ctx) { return ctx->BIT_HL(1); }
+    static inline int BIT_HL_2(Z80* ctx) { return ctx->BIT_HL(2); }
+    static inline int BIT_HL_3(Z80* ctx) { return ctx->BIT_HL(3); }
+    static inline int BIT_HL_4(Z80* ctx) { return ctx->BIT_HL(4); }
+    static inline int BIT_HL_5(Z80* ctx) { return ctx->BIT_HL(5); }
+    static inline int BIT_HL_6(Z80* ctx) { return ctx->BIT_HL(6); }
+    static inline int BIT_HL_7(Z80* ctx) { return ctx->BIT_HL(7); }
     inline int BIT_HL(unsigned char bit)
     {
         unsigned short addr = getHL();
@@ -4286,6 +4353,62 @@ class Z80
     }
 
     // SET bit b of register r
+    static inline int SET_B_0(Z80* ctx) { return ctx->SET_R(0b000, 0); }
+    static inline int SET_B_1(Z80* ctx) { return ctx->SET_R(0b000, 1); }
+    static inline int SET_B_2(Z80* ctx) { return ctx->SET_R(0b000, 2); }
+    static inline int SET_B_3(Z80* ctx) { return ctx->SET_R(0b000, 3); }
+    static inline int SET_B_4(Z80* ctx) { return ctx->SET_R(0b000, 4); }
+    static inline int SET_B_5(Z80* ctx) { return ctx->SET_R(0b000, 5); }
+    static inline int SET_B_6(Z80* ctx) { return ctx->SET_R(0b000, 6); }
+    static inline int SET_B_7(Z80* ctx) { return ctx->SET_R(0b000, 7); }
+    static inline int SET_C_0(Z80* ctx) { return ctx->SET_R(0b001, 0); }
+    static inline int SET_C_1(Z80* ctx) { return ctx->SET_R(0b001, 1); }
+    static inline int SET_C_2(Z80* ctx) { return ctx->SET_R(0b001, 2); }
+    static inline int SET_C_3(Z80* ctx) { return ctx->SET_R(0b001, 3); }
+    static inline int SET_C_4(Z80* ctx) { return ctx->SET_R(0b001, 4); }
+    static inline int SET_C_5(Z80* ctx) { return ctx->SET_R(0b001, 5); }
+    static inline int SET_C_6(Z80* ctx) { return ctx->SET_R(0b001, 6); }
+    static inline int SET_C_7(Z80* ctx) { return ctx->SET_R(0b001, 7); }
+    static inline int SET_D_0(Z80* ctx) { return ctx->SET_R(0b010, 0); }
+    static inline int SET_D_1(Z80* ctx) { return ctx->SET_R(0b010, 1); }
+    static inline int SET_D_2(Z80* ctx) { return ctx->SET_R(0b010, 2); }
+    static inline int SET_D_3(Z80* ctx) { return ctx->SET_R(0b010, 3); }
+    static inline int SET_D_4(Z80* ctx) { return ctx->SET_R(0b010, 4); }
+    static inline int SET_D_5(Z80* ctx) { return ctx->SET_R(0b010, 5); }
+    static inline int SET_D_6(Z80* ctx) { return ctx->SET_R(0b010, 6); }
+    static inline int SET_D_7(Z80* ctx) { return ctx->SET_R(0b010, 7); }
+    static inline int SET_E_0(Z80* ctx) { return ctx->SET_R(0b011, 0); }
+    static inline int SET_E_1(Z80* ctx) { return ctx->SET_R(0b011, 1); }
+    static inline int SET_E_2(Z80* ctx) { return ctx->SET_R(0b011, 2); }
+    static inline int SET_E_3(Z80* ctx) { return ctx->SET_R(0b011, 3); }
+    static inline int SET_E_4(Z80* ctx) { return ctx->SET_R(0b011, 4); }
+    static inline int SET_E_5(Z80* ctx) { return ctx->SET_R(0b011, 5); }
+    static inline int SET_E_6(Z80* ctx) { return ctx->SET_R(0b011, 6); }
+    static inline int SET_E_7(Z80* ctx) { return ctx->SET_R(0b011, 7); }
+    static inline int SET_H_0(Z80* ctx) { return ctx->SET_R(0b100, 0); }
+    static inline int SET_H_1(Z80* ctx) { return ctx->SET_R(0b100, 1); }
+    static inline int SET_H_2(Z80* ctx) { return ctx->SET_R(0b100, 2); }
+    static inline int SET_H_3(Z80* ctx) { return ctx->SET_R(0b100, 3); }
+    static inline int SET_H_4(Z80* ctx) { return ctx->SET_R(0b100, 4); }
+    static inline int SET_H_5(Z80* ctx) { return ctx->SET_R(0b100, 5); }
+    static inline int SET_H_6(Z80* ctx) { return ctx->SET_R(0b100, 6); }
+    static inline int SET_H_7(Z80* ctx) { return ctx->SET_R(0b100, 7); }
+    static inline int SET_L_0(Z80* ctx) { return ctx->SET_R(0b101, 0); }
+    static inline int SET_L_1(Z80* ctx) { return ctx->SET_R(0b101, 1); }
+    static inline int SET_L_2(Z80* ctx) { return ctx->SET_R(0b101, 2); }
+    static inline int SET_L_3(Z80* ctx) { return ctx->SET_R(0b101, 3); }
+    static inline int SET_L_4(Z80* ctx) { return ctx->SET_R(0b101, 4); }
+    static inline int SET_L_5(Z80* ctx) { return ctx->SET_R(0b101, 5); }
+    static inline int SET_L_6(Z80* ctx) { return ctx->SET_R(0b101, 6); }
+    static inline int SET_L_7(Z80* ctx) { return ctx->SET_R(0b101, 7); }
+    static inline int SET_A_0(Z80* ctx) { return ctx->SET_R(0b111, 0); }
+    static inline int SET_A_1(Z80* ctx) { return ctx->SET_R(0b111, 1); }
+    static inline int SET_A_2(Z80* ctx) { return ctx->SET_R(0b111, 2); }
+    static inline int SET_A_3(Z80* ctx) { return ctx->SET_R(0b111, 3); }
+    static inline int SET_A_4(Z80* ctx) { return ctx->SET_R(0b111, 4); }
+    static inline int SET_A_5(Z80* ctx) { return ctx->SET_R(0b111, 5); }
+    static inline int SET_A_6(Z80* ctx) { return ctx->SET_R(0b111, 6); }
+    static inline int SET_A_7(Z80* ctx) { return ctx->SET_R(0b111, 7); }
     inline int SET_R(unsigned char r, unsigned char bit)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -4305,6 +4428,14 @@ class Z80
     }
 
     // SET bit b of lacation (HL)
+    static inline int SET_HL_0(Z80* ctx) { return ctx->SET_HL(0); }
+    static inline int SET_HL_1(Z80* ctx) { return ctx->SET_HL(1); }
+    static inline int SET_HL_2(Z80* ctx) { return ctx->SET_HL(2); }
+    static inline int SET_HL_3(Z80* ctx) { return ctx->SET_HL(3); }
+    static inline int SET_HL_4(Z80* ctx) { return ctx->SET_HL(4); }
+    static inline int SET_HL_5(Z80* ctx) { return ctx->SET_HL(5); }
+    static inline int SET_HL_6(Z80* ctx) { return ctx->SET_HL(6); }
+    static inline int SET_HL_7(Z80* ctx) { return ctx->SET_HL(7); }
     inline int SET_HL(unsigned char bit)
     {
         unsigned short addr = getHL();
@@ -4396,6 +4527,62 @@ class Z80
     }
 
     // RESET bit b of register r
+    static inline int RES_B_0(Z80* ctx) { return ctx->RES_R(0b000, 0); }
+    static inline int RES_B_1(Z80* ctx) { return ctx->RES_R(0b000, 1); }
+    static inline int RES_B_2(Z80* ctx) { return ctx->RES_R(0b000, 2); }
+    static inline int RES_B_3(Z80* ctx) { return ctx->RES_R(0b000, 3); }
+    static inline int RES_B_4(Z80* ctx) { return ctx->RES_R(0b000, 4); }
+    static inline int RES_B_5(Z80* ctx) { return ctx->RES_R(0b000, 5); }
+    static inline int RES_B_6(Z80* ctx) { return ctx->RES_R(0b000, 6); }
+    static inline int RES_B_7(Z80* ctx) { return ctx->RES_R(0b000, 7); }
+    static inline int RES_C_0(Z80* ctx) { return ctx->RES_R(0b001, 0); }
+    static inline int RES_C_1(Z80* ctx) { return ctx->RES_R(0b001, 1); }
+    static inline int RES_C_2(Z80* ctx) { return ctx->RES_R(0b001, 2); }
+    static inline int RES_C_3(Z80* ctx) { return ctx->RES_R(0b001, 3); }
+    static inline int RES_C_4(Z80* ctx) { return ctx->RES_R(0b001, 4); }
+    static inline int RES_C_5(Z80* ctx) { return ctx->RES_R(0b001, 5); }
+    static inline int RES_C_6(Z80* ctx) { return ctx->RES_R(0b001, 6); }
+    static inline int RES_C_7(Z80* ctx) { return ctx->RES_R(0b001, 7); }
+    static inline int RES_D_0(Z80* ctx) { return ctx->RES_R(0b010, 0); }
+    static inline int RES_D_1(Z80* ctx) { return ctx->RES_R(0b010, 1); }
+    static inline int RES_D_2(Z80* ctx) { return ctx->RES_R(0b010, 2); }
+    static inline int RES_D_3(Z80* ctx) { return ctx->RES_R(0b010, 3); }
+    static inline int RES_D_4(Z80* ctx) { return ctx->RES_R(0b010, 4); }
+    static inline int RES_D_5(Z80* ctx) { return ctx->RES_R(0b010, 5); }
+    static inline int RES_D_6(Z80* ctx) { return ctx->RES_R(0b010, 6); }
+    static inline int RES_D_7(Z80* ctx) { return ctx->RES_R(0b010, 7); }
+    static inline int RES_E_0(Z80* ctx) { return ctx->RES_R(0b011, 0); }
+    static inline int RES_E_1(Z80* ctx) { return ctx->RES_R(0b011, 1); }
+    static inline int RES_E_2(Z80* ctx) { return ctx->RES_R(0b011, 2); }
+    static inline int RES_E_3(Z80* ctx) { return ctx->RES_R(0b011, 3); }
+    static inline int RES_E_4(Z80* ctx) { return ctx->RES_R(0b011, 4); }
+    static inline int RES_E_5(Z80* ctx) { return ctx->RES_R(0b011, 5); }
+    static inline int RES_E_6(Z80* ctx) { return ctx->RES_R(0b011, 6); }
+    static inline int RES_E_7(Z80* ctx) { return ctx->RES_R(0b011, 7); }
+    static inline int RES_H_0(Z80* ctx) { return ctx->RES_R(0b100, 0); }
+    static inline int RES_H_1(Z80* ctx) { return ctx->RES_R(0b100, 1); }
+    static inline int RES_H_2(Z80* ctx) { return ctx->RES_R(0b100, 2); }
+    static inline int RES_H_3(Z80* ctx) { return ctx->RES_R(0b100, 3); }
+    static inline int RES_H_4(Z80* ctx) { return ctx->RES_R(0b100, 4); }
+    static inline int RES_H_5(Z80* ctx) { return ctx->RES_R(0b100, 5); }
+    static inline int RES_H_6(Z80* ctx) { return ctx->RES_R(0b100, 6); }
+    static inline int RES_H_7(Z80* ctx) { return ctx->RES_R(0b100, 7); }
+    static inline int RES_L_0(Z80* ctx) { return ctx->RES_R(0b101, 0); }
+    static inline int RES_L_1(Z80* ctx) { return ctx->RES_R(0b101, 1); }
+    static inline int RES_L_2(Z80* ctx) { return ctx->RES_R(0b101, 2); }
+    static inline int RES_L_3(Z80* ctx) { return ctx->RES_R(0b101, 3); }
+    static inline int RES_L_4(Z80* ctx) { return ctx->RES_R(0b101, 4); }
+    static inline int RES_L_5(Z80* ctx) { return ctx->RES_R(0b101, 5); }
+    static inline int RES_L_6(Z80* ctx) { return ctx->RES_R(0b101, 6); }
+    static inline int RES_L_7(Z80* ctx) { return ctx->RES_R(0b101, 7); }
+    static inline int RES_A_0(Z80* ctx) { return ctx->RES_R(0b111, 0); }
+    static inline int RES_A_1(Z80* ctx) { return ctx->RES_R(0b111, 1); }
+    static inline int RES_A_2(Z80* ctx) { return ctx->RES_R(0b111, 2); }
+    static inline int RES_A_3(Z80* ctx) { return ctx->RES_R(0b111, 3); }
+    static inline int RES_A_4(Z80* ctx) { return ctx->RES_R(0b111, 4); }
+    static inline int RES_A_5(Z80* ctx) { return ctx->RES_R(0b111, 5); }
+    static inline int RES_A_6(Z80* ctx) { return ctx->RES_R(0b111, 6); }
+    static inline int RES_A_7(Z80* ctx) { return ctx->RES_R(0b111, 7); }
     inline int RES_R(unsigned char r, unsigned char bit)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -4415,6 +4602,14 @@ class Z80
     }
 
     // RESET bit b of lacation (HL)
+    static inline int RES_HL_0(Z80* ctx) { return ctx->RES_HL(0); }
+    static inline int RES_HL_1(Z80* ctx) { return ctx->RES_HL(1); }
+    static inline int RES_HL_2(Z80* ctx) { return ctx->RES_HL(2); }
+    static inline int RES_HL_3(Z80* ctx) { return ctx->RES_HL(3); }
+    static inline int RES_HL_4(Z80* ctx) { return ctx->RES_HL(4); }
+    static inline int RES_HL_5(Z80* ctx) { return ctx->RES_HL(5); }
+    static inline int RES_HL_6(Z80* ctx) { return ctx->RES_HL(6); }
+    static inline int RES_HL_7(Z80* ctx) { return ctx->RES_HL(7); }
     inline int RES_HL(unsigned char bit)
     {
         unsigned short addr = getHL();
@@ -5201,6 +5396,13 @@ class Z80
     }
 
     // function for LR35902
+    static inline int SWAP_B(Z80* ctx) { return ctx->SWAP_R(0b000); }
+    static inline int SWAP_C(Z80* ctx) { return ctx->SWAP_R(0b001); }
+    static inline int SWAP_D(Z80* ctx) { return ctx->SWAP_R(0b010); }
+    static inline int SWAP_E(Z80* ctx) { return ctx->SWAP_R(0b011); }
+    static inline int SWAP_H(Z80* ctx) { return ctx->SWAP_R(0b100); }
+    static inline int SWAP_L(Z80* ctx) { return ctx->SWAP_R(0b101); }
+    static inline int SWAP_A(Z80* ctx) { return ctx->SWAP_R(0b111); }
     inline int SWAP_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -5211,6 +5413,7 @@ class Z80
     }
 
     // function for LR35902
+    static inline int SWAP_HL_(Z80* ctx) { return ctx->SWAP_HL(); }
     inline int SWAP_HL()
     {
         unsigned short addr = getHL();
@@ -5340,6 +5543,39 @@ class Z80
         RET_C2, POP_DE, JP_C2_NN, OUT_N_A, CALL_C2_NN, PUSH_DE, SUB_A_N, RST10, RET_C3, EXX, JP_C3_NN, IN_A_N, CALL_C3_NN, OP_IX, SBC_A_N, RST18,
         RET_C4, POP_HL, JP_C4_NN, EX_SP_HL, CALL_C4_NN, PUSH_HL, AND_N, RST20, RET_C5, JP_HL, JP_C5_NN, EX_DE_HL, CALL_C5_NN, EXTRA, XOR_N, RST28,
         RET_C6, POP_AF, JP_C6_NN, DI, CALL_C6_NN, PUSH_AF, OR_N, RST30, RET_C7, LD_SP_HL, JP_C7_NN, EI, CALL_C7_NN, OP_IY, CP_N, RST38};
+    int (*opSetCB[256])(Z80* ctx) = {
+        RLC_B, RLC_C, RLC_D, RLC_E, RLC_H, RLC_L, RLC_HL_, RLC_A,
+        RRC_B, RRC_C, RRC_D, RRC_E, RRC_H, RRC_L, RRC_HL_, RRC_A,
+        RL_B, RL_C, RL_D, RL_E, RL_H, RL_L, RL_HL_, RL_A,
+        RR_B, RR_C, RR_D, RR_E, RR_H, RR_L, RR_HL_, RR_A,
+        SLA_B, SLA_C, SLA_D, SLA_E, SLA_H, SLA_L, SLA_HL_, SLA_A,
+        SRA_B, SRA_C, SRA_D, SRA_E, SRA_H, SRA_L, SRA_HL_, SRA_A,
+        SLL_B, SLL_C, SLL_D, SLL_E, SLL_H, SLL_L, SLL_HL_, SLL_A,
+        SRL_B, SRL_C, SRL_D, SRL_E, SRL_H, SRL_L, SRL_HL_, SRL_A,
+        BIT_B_0, BIT_C_0, BIT_D_0, BIT_E_0, BIT_H_0, BIT_L_0, BIT_HL_0, BIT_A_0,
+        BIT_B_1, BIT_C_1, BIT_D_1, BIT_E_1, BIT_H_1, BIT_L_1, BIT_HL_1, BIT_A_1,
+        BIT_B_2, BIT_C_2, BIT_D_2, BIT_E_2, BIT_H_2, BIT_L_2, BIT_HL_2, BIT_A_2,
+        BIT_B_3, BIT_C_3, BIT_D_3, BIT_E_3, BIT_H_3, BIT_L_3, BIT_HL_3, BIT_A_3,
+        BIT_B_4, BIT_C_4, BIT_D_4, BIT_E_4, BIT_H_4, BIT_L_4, BIT_HL_4, BIT_A_4,
+        BIT_B_5, BIT_C_5, BIT_D_5, BIT_E_5, BIT_H_5, BIT_L_5, BIT_HL_5, BIT_A_5,
+        BIT_B_6, BIT_C_6, BIT_D_6, BIT_E_6, BIT_H_6, BIT_L_6, BIT_HL_6, BIT_A_6,
+        BIT_B_7, BIT_C_7, BIT_D_7, BIT_E_7, BIT_H_7, BIT_L_7, BIT_HL_7, BIT_A_7,
+        RES_B_0, RES_C_0, RES_D_0, RES_E_0, RES_H_0, RES_L_0, RES_HL_0, RES_A_0,
+        RES_B_1, RES_C_1, RES_D_1, RES_E_1, RES_H_1, RES_L_1, RES_HL_1, RES_A_1,
+        RES_B_2, RES_C_2, RES_D_2, RES_E_2, RES_H_2, RES_L_2, RES_HL_2, RES_A_2,
+        RES_B_3, RES_C_3, RES_D_3, RES_E_3, RES_H_3, RES_L_3, RES_HL_3, RES_A_3,
+        RES_B_4, RES_C_4, RES_D_4, RES_E_4, RES_H_4, RES_L_4, RES_HL_4, RES_A_4,
+        RES_B_5, RES_C_5, RES_D_5, RES_E_5, RES_H_5, RES_L_5, RES_HL_5, RES_A_5,
+        RES_B_6, RES_C_6, RES_D_6, RES_E_6, RES_H_6, RES_L_6, RES_HL_6, RES_A_6,
+        RES_B_7, RES_C_7, RES_D_7, RES_E_7, RES_H_7, RES_L_7, RES_HL_7, RES_A_7,
+        SET_B_0, SET_C_0, SET_D_0, SET_E_0, SET_H_0, SET_L_0, SET_HL_0, SET_A_0,
+        SET_B_1, SET_C_1, SET_D_1, SET_E_1, SET_H_1, SET_L_1, SET_HL_1, SET_A_1,
+        SET_B_2, SET_C_2, SET_D_2, SET_E_2, SET_H_2, SET_L_2, SET_HL_2, SET_A_2,
+        SET_B_3, SET_C_3, SET_D_3, SET_E_3, SET_H_3, SET_L_3, SET_HL_3, SET_A_3,
+        SET_B_4, SET_C_4, SET_D_4, SET_E_4, SET_H_4, SET_L_4, SET_HL_4, SET_A_4,
+        SET_B_5, SET_C_5, SET_D_5, SET_E_5, SET_H_5, SET_L_5, SET_HL_5, SET_A_5,
+        SET_B_6, SET_C_6, SET_D_6, SET_E_6, SET_H_6, SET_L_6, SET_HL_6, SET_A_6,
+        SET_B_7, SET_C_7, SET_D_7, SET_E_7, SET_H_7, SET_L_7, SET_HL_7, SET_A_7};
     int (*opSetIX[256])(Z80* ctx);
     int (*opSetIY[256])(Z80* ctx);
 
@@ -5369,6 +5605,14 @@ class Z80
             opSet1[0b11111000] = LDHL_SP_N;
             opSet1[0b11111010] = LD_A_NN;
             opSet1[0b11111101] = OP_illegal;
+            opSetCB[48 + 0] = SWAP_B;
+            opSetCB[48 + 1] = SWAP_C;
+            opSetCB[48 + 2] = SWAP_D;
+            opSetCB[48 + 3] = SWAP_E;
+            opSetCB[48 + 4] = SWAP_H;
+            opSetCB[48 + 5] = SWAP_L;
+            opSetCB[48 + 6] = SWAP_HL_;
+            opSetCB[48 + 7] = SWAP_A;
         }
         for (int i = 0; i < 256; i++) {
             opSetIX[i] = OP_IX_illegal;
