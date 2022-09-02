@@ -848,7 +848,7 @@ class Z80
     }
 
     // operand of using other register (first byte is 0b11001011)
-    static inline int OP_R(Z80* ctx)
+    static inline int OP_CB(Z80* ctx)
     {
         unsigned char op2 = ctx->readByte(ctx->reg.PC + 1);
         switch (op2) {
@@ -5323,315 +5323,57 @@ class Z80
     // function for LR35902
     static inline int LR35902_RETI(Z80* ctx) { return ctx->RETI(); }
 
-    int (*opSet1[256])(Z80* ctx);
+    int (*opSet1[256])(Z80* ctx) = {
+        NOP, LD_BC_NN, LD_BC_A, INC_RP_BC, INC_B, DEC_B, LD_B_N, RLCA, EX_AF_AF2, ADD_HL_BC, LD_A_BC, DEC_RP_BC, INC_C, DEC_C, LD_C_N, RRCA,
+        DJNZ_E, LD_DE_NN, LD_DE_A, INC_RP_DE, INC_D, DEC_D, LD_D_N, RLA, JR_E, ADD_HL_DE, LD_A_DE, DEC_RP_DE, INC_E, DEC_E, LD_E_N, RRA,
+        JR_NZ_E, LD_HL_NN, LD_ADDR_HL, INC_RP_HL, INC_H, DEC_H, LD_H_N, DAA, JR_Z_E, ADD_HL_HL, LD_HL_ADDR, DEC_RP_HL, INC_L, DEC_L, LD_L_N, CPL,
+        JR_NC_E, LD_SP_NN, LD_NN_A, INC_RP_SP, INC_HL, DEC_HL, LD_HL_N, SCF, JR_C_E, ADD_HL_SP, LD_A_NN, DEC_RP_SP, INC_A, DEC_A, LD_A_N, CCF,
+        LD_B_B, LD_B_C, LD_B_D, LD_B_E, LD_B_H, LD_B_L, LD_B_HL, LD_B_A, LD_C_B, LD_C_C, LD_C_D, LD_C_E, LD_C_H, LD_C_L, LD_C_HL, LD_C_A,
+        LD_D_B, LD_D_C, LD_D_D, LD_D_E, LD_D_H, LD_D_L, LD_D_HL, LD_D_A, LD_E_B, LD_E_C, LD_E_D, LD_E_E, LD_E_H, LD_E_L, LD_E_HL, LD_E_A,
+        LD_H_B, LD_H_C, LD_H_D, LD_H_E, LD_H_H, LD_H_L, LD_H_HL, LD_H_A, LD_L_B, LD_L_C, LD_L_D, LD_L_E, LD_L_H, LD_L_L, LD_L_HL, LD_L_A,
+        LD_HL_B, LD_HL_C, LD_HL_D, LD_HL_E, LD_HL_H, LD_HL_L, HALT, LD_HL_A, LD_A_B, LD_A_C, LD_A_D, LD_A_E, LD_A_H, LD_A_L, LD_A_HL, LD_A_A,
+        ADD_A_B, ADD_A_C, ADD_A_D, ADD_A_E, ADD_A_H, ADD_A_L, ADD_A_HL, ADD_A_A, ADC_A_B, ADC_A_C, ADC_A_D, ADC_A_E, ADC_A_H, ADC_A_L, ADC_A_HL, ADC_A_A,
+        SUB_A_B, SUB_A_C, SUB_A_D, SUB_A_E, SUB_A_H, SUB_A_L, SUB_A_HL, SUB_A_A, SBC_A_B, SBC_A_C, SBC_A_D, SBC_A_E, SBC_A_H, SBC_A_L, SBC_A_HL, SBC_A_A,
+        AND_B, AND_C, AND_D, AND_E, AND_H, AND_L, AND_HL, AND_A, XOR_B, XOR_C, XOR_D, XOR_E, XOR_H, XOR_L, XOR_HL, XOR_A,
+        OR_B, OR_C, OR_D, OR_E, OR_H, OR_L, OR_HL, OR_A, CP_B, CP_C, CP_D, CP_E, CP_H, CP_L, CP_HL, CP_A,
+        RET_C0, POP_BC, JP_C0_NN, JP_NN, CALL_C0_NN, PUSH_BC, ADD_A_N, RST00, RET_C1, RET, JP_C1_NN, OP_CB, CALL_C1_NN, CALL_NN, ADC_A_N, RST08,
+        RET_C2, POP_DE, JP_C2_NN, OUT_N_A, CALL_C2_NN, PUSH_DE, SUB_A_N, RST10, RET_C3, EXX, JP_C3_NN, IN_A_N, CALL_C3_NN, OP_IX, SBC_A_N, RST18,
+        RET_C4, POP_HL, JP_C4_NN, EX_SP_HL, CALL_C4_NN, PUSH_HL, AND_N, RST20, RET_C5, JP_HL, JP_C5_NN, EX_DE_HL, CALL_C5_NN, EXTRA, XOR_N, RST28,
+        RET_C6, POP_AF, JP_C6_NN, DI, CALL_C6_NN, PUSH_AF, OR_N, RST30, RET_C7, LD_SP_HL, JP_C7_NN, EI, CALL_C7_NN, OP_IY, CP_N, RST38};
     int (*opSetIX[256])(Z80* ctx);
     int (*opSetIY[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
     void setupOperandTable()
     {
+        if (isLR35902) {
+            opSet1[0b00001000] = LD_NN_SP;
+            opSet1[0b00010000] = STOP;
+            opSet1[0b00100010] = LDI_HL_A;
+            opSet1[0b00101010] = LDI_A_HL;
+            opSet1[0b00110010] = LDD_HL_A;
+            opSet1[0b00111010] = LDD_A_HL;
+            opSet1[0b11010011] = OP_illegal;
+            opSet1[0b11011011] = OP_illegal;
+            opSet1[0b11011001] = LR35902_RETI;
+            opSet1[0b11011101] = OP_illegal;
+            opSet1[0b11100000] = LDH_N_A;
+            opSet1[0b11100010] = LDH_C_A;
+            opSet1[0b11100011] = OP_illegal;
+            opSet1[0b11101000] = ADD_SP_N;
+            opSet1[0b11101010] = LD_NN_A;
+            opSet1[0b11101011] = OP_illegal;
+            opSet1[0b11101101] = OP_illegal;
+            opSet1[0b11110000] = LDH_A_N;
+            opSet1[0b11110010] = LDH_A_C;
+            opSet1[0b11111000] = LDHL_SP_N;
+            opSet1[0b11111010] = LD_A_NN;
+            opSet1[0b11111101] = OP_illegal;
+        }
         for (int i = 0; i < 256; i++) {
-            opSet1[i] = OP_illegal;
             opSetIX[i] = OP_IX_illegal;
             opSetIY[i] = OP_IY_illegal;
         }
-
-        opSet1[0b00000000] = NOP;
-        opSet1[0b00000010] = LD_BC_A;
-        opSet1[0b00000111] = RLCA;
-        opSet1[0b00001000] = isLR35902 ? LD_NN_SP : EX_AF_AF2;
-        opSet1[0b00001010] = LD_A_BC;
-        opSet1[0b00001111] = RRCA;
-        opSet1[0b00010000] = isLR35902 ? STOP : DJNZ_E;
-        opSet1[0b00010010] = LD_DE_A;
-        opSet1[0b00010111] = RLA;
-        opSet1[0b00011000] = JR_E;
-        opSet1[0b00011010] = LD_A_DE;
-        opSet1[0b00011111] = RRA;
-        opSet1[0b00100000] = JR_NZ_E;
-        opSet1[0b00100010] = isLR35902 ? LDI_HL_A : LD_ADDR_HL;
-        opSet1[0b00100111] = DAA;
-        opSet1[0b00101000] = JR_Z_E;
-        opSet1[0b00101010] = isLR35902 ? LDI_A_HL : LD_HL_ADDR;
-        opSet1[0b00101111] = CPL;
-        opSet1[0b00110000] = JR_NC_E;
-        opSet1[0b00110010] = isLR35902 ? LDD_HL_A : LD_NN_A;
-        opSet1[0b00110100] = INC_HL;
-        opSet1[0b00110101] = DEC_HL;
-        opSet1[0b00110110] = LD_HL_N;
-        opSet1[0b00110111] = SCF;
-        opSet1[0b00111000] = JR_C_E;
-        opSet1[0b00111010] = isLR35902 ? LDD_A_HL : LD_A_NN;
-        opSet1[0b00111111] = CCF;
-        opSet1[0b01110110] = HALT;
-
-        opSet1[0b11000110] = ADD_A_N;
-        opSet1[0b10000000 + 0b000] = ADD_A_B;
-        opSet1[0b10000000 + 0b001] = ADD_A_C;
-        opSet1[0b10000000 + 0b010] = ADD_A_D;
-        opSet1[0b10000000 + 0b011] = ADD_A_E;
-        opSet1[0b10000000 + 0b100] = ADD_A_H;
-        opSet1[0b10000000 + 0b101] = ADD_A_L;
-        opSet1[0b10000000 + 0b110] = ADD_A_HL;
-        opSet1[0b10000000 + 0b111] = ADD_A_A;
-
-        opSet1[0b11001110] = ADC_A_N;
-        opSet1[0b10001000 + 0b000] = ADC_A_B;
-        opSet1[0b10001000 + 0b001] = ADC_A_C;
-        opSet1[0b10001000 + 0b010] = ADC_A_D;
-        opSet1[0b10001000 + 0b011] = ADC_A_E;
-        opSet1[0b10001000 + 0b100] = ADC_A_H;
-        opSet1[0b10001000 + 0b101] = ADC_A_L;
-        opSet1[0b10001000 + 0b110] = ADC_A_HL;
-        opSet1[0b10001000 + 0b111] = ADC_A_A;
-
-        opSet1[0b11010110] = SUB_A_N;
-        opSet1[0b10010000 + 0b000] = SUB_A_B;
-        opSet1[0b10010000 + 0b001] = SUB_A_C;
-        opSet1[0b10010000 + 0b010] = SUB_A_D;
-        opSet1[0b10010000 + 0b011] = SUB_A_E;
-        opSet1[0b10010000 + 0b100] = SUB_A_H;
-        opSet1[0b10010000 + 0b101] = SUB_A_L;
-        opSet1[0b10010000 + 0b110] = SUB_A_HL;
-        opSet1[0b10010000 + 0b111] = SUB_A_A;
-
-        opSet1[0b11011110] = SBC_A_N;
-        opSet1[0b10011000 + 0b000] = SBC_A_B;
-        opSet1[0b10011000 + 0b001] = SBC_A_C;
-        opSet1[0b10011000 + 0b010] = SBC_A_D;
-        opSet1[0b10011000 + 0b011] = SBC_A_E;
-        opSet1[0b10011000 + 0b100] = SBC_A_H;
-        opSet1[0b10011000 + 0b101] = SBC_A_L;
-        opSet1[0b10011000 + 0b110] = SBC_A_HL;
-        opSet1[0b10011000 + 0b111] = SBC_A_A;
-
-        opSet1[0b11100110] = AND_N;
-        opSet1[0b10100000 + 0b000] = AND_B;
-        opSet1[0b10100000 + 0b001] = AND_C;
-        opSet1[0b10100000 + 0b010] = AND_D;
-        opSet1[0b10100000 + 0b011] = AND_E;
-        opSet1[0b10100000 + 0b100] = AND_H;
-        opSet1[0b10100000 + 0b101] = AND_L;
-        opSet1[0b10100000 + 0b110] = AND_HL;
-        opSet1[0b10100000 + 0b111] = AND_A;
-
-        opSet1[0b11101110] = XOR_N;
-        opSet1[0b10101000 + 0b000] = XOR_B;
-        opSet1[0b10101000 + 0b001] = XOR_C;
-        opSet1[0b10101000 + 0b010] = XOR_D;
-        opSet1[0b10101000 + 0b011] = XOR_E;
-        opSet1[0b10101000 + 0b100] = XOR_H;
-        opSet1[0b10101000 + 0b101] = XOR_L;
-        opSet1[0b10101000 + 0b110] = XOR_HL;
-        opSet1[0b10101000 + 0b111] = XOR_A;
-
-        opSet1[0b11110110] = OR_N;
-        opSet1[0b10110000 + 0b000] = OR_B;
-        opSet1[0b10110000 + 0b001] = OR_C;
-        opSet1[0b10110000 + 0b010] = OR_D;
-        opSet1[0b10110000 + 0b011] = OR_E;
-        opSet1[0b10110000 + 0b100] = OR_H;
-        opSet1[0b10110000 + 0b101] = OR_L;
-        opSet1[0b10110000 + 0b110] = OR_HL;
-        opSet1[0b10110000 + 0b111] = OR_A;
-
-        opSet1[0b11111110] = CP_N;
-        opSet1[0b10111000 + 0b000] = CP_B;
-        opSet1[0b10111000 + 0b001] = CP_C;
-        opSet1[0b10111000 + 0b010] = CP_D;
-        opSet1[0b10111000 + 0b011] = CP_E;
-        opSet1[0b10111000 + 0b100] = CP_H;
-        opSet1[0b10111000 + 0b101] = CP_L;
-        opSet1[0b10111000 + 0b110] = CP_HL;
-        opSet1[0b10111000 + 0b111] = CP_A;
-
-        opSet1[0b01000000] = LD_B_B;
-        opSet1[0b01000001] = LD_B_C;
-        opSet1[0b01000010] = LD_B_D;
-        opSet1[0b01000011] = LD_B_E;
-        opSet1[0b01000100] = LD_B_H;
-        opSet1[0b01000101] = LD_B_L;
-        opSet1[0b01000111] = LD_B_A;
-
-        opSet1[0b01001000] = LD_C_B;
-        opSet1[0b01001001] = LD_C_C;
-        opSet1[0b01001010] = LD_C_D;
-        opSet1[0b01001011] = LD_C_E;
-        opSet1[0b01001100] = LD_C_H;
-        opSet1[0b01001101] = LD_C_L;
-        opSet1[0b01001111] = LD_C_A;
-
-        opSet1[0b01010000] = LD_D_B;
-        opSet1[0b01010001] = LD_D_C;
-        opSet1[0b01010010] = LD_D_D;
-        opSet1[0b01010011] = LD_D_E;
-        opSet1[0b01010100] = LD_D_H;
-        opSet1[0b01010101] = LD_D_L;
-        opSet1[0b01010111] = LD_D_A;
-
-        opSet1[0b01011000] = LD_E_B;
-        opSet1[0b01011001] = LD_E_C;
-        opSet1[0b01011010] = LD_E_D;
-        opSet1[0b01011011] = LD_E_E;
-        opSet1[0b01011100] = LD_E_H;
-        opSet1[0b01011101] = LD_E_L;
-        opSet1[0b01011111] = LD_E_A;
-
-        opSet1[0b01100000] = LD_H_B;
-        opSet1[0b01100001] = LD_H_C;
-        opSet1[0b01100010] = LD_H_D;
-        opSet1[0b01100011] = LD_H_E;
-        opSet1[0b01100100] = LD_H_H;
-        opSet1[0b01100101] = LD_H_L;
-        opSet1[0b01100111] = LD_H_A;
-
-        opSet1[0b01101000] = LD_L_B;
-        opSet1[0b01101001] = LD_L_C;
-        opSet1[0b01101010] = LD_L_D;
-        opSet1[0b01101011] = LD_L_E;
-        opSet1[0b01101100] = LD_L_H;
-        opSet1[0b01101101] = LD_L_L;
-        opSet1[0b01101111] = LD_L_A;
-
-        opSet1[0b01111000] = LD_A_B;
-        opSet1[0b01111001] = LD_A_C;
-        opSet1[0b01111010] = LD_A_D;
-        opSet1[0b01111011] = LD_A_E;
-        opSet1[0b01111100] = LD_A_H;
-        opSet1[0b01111101] = LD_A_L;
-        opSet1[0b01111111] = LD_A_A;
-
-        opSet1[0b01110000] = LD_HL_B;
-        opSet1[0b01110001] = LD_HL_C;
-        opSet1[0b01110010] = LD_HL_D;
-        opSet1[0b01110011] = LD_HL_E;
-        opSet1[0b01110100] = LD_HL_H;
-        opSet1[0b01110101] = LD_HL_L;
-        opSet1[0b01110111] = LD_HL_A;
-
-        opSet1[0b01000110] = LD_B_HL;
-        opSet1[0b01001110] = LD_C_HL;
-        opSet1[0b01010110] = LD_D_HL;
-        opSet1[0b01011110] = LD_E_HL;
-        opSet1[0b01100110] = LD_H_HL;
-        opSet1[0b01101110] = LD_L_HL;
-        opSet1[0b01111110] = LD_A_HL;
-
-        opSet1[0b00000110] = LD_B_N;
-        opSet1[0b00001110] = LD_C_N;
-        opSet1[0b00010110] = LD_D_N;
-        opSet1[0b00011110] = LD_E_N;
-        opSet1[0b00100110] = LD_H_N;
-        opSet1[0b00101110] = LD_L_N;
-        opSet1[0b00111110] = LD_A_N;
-
-        opSet1[0b00001001] = ADD_HL_BC;
-        opSet1[0b00011001] = ADD_HL_DE;
-        opSet1[0b00101001] = ADD_HL_HL;
-        opSet1[0b00111001] = ADD_HL_SP;
-
-        opSet1[0b00000001] = LD_BC_NN;
-        opSet1[0b00010001] = LD_DE_NN;
-        opSet1[0b00100001] = LD_HL_NN;
-        opSet1[0b00110001] = LD_SP_NN;
-
-        opSet1[0b00000100] = INC_B;
-        opSet1[0b00001100] = INC_C;
-        opSet1[0b00010100] = INC_D;
-        opSet1[0b00011100] = INC_E;
-        opSet1[0b00100100] = INC_H;
-        opSet1[0b00101100] = INC_L;
-        opSet1[0b00111100] = INC_A;
-
-        opSet1[0b00000011] = INC_RP_BC;
-        opSet1[0b00010011] = INC_RP_DE;
-        opSet1[0b00100011] = INC_RP_HL;
-        opSet1[0b00110011] = INC_RP_SP;
-
-        opSet1[0b00000101] = DEC_B;
-        opSet1[0b00001101] = DEC_C;
-        opSet1[0b00010101] = DEC_D;
-        opSet1[0b00011101] = DEC_E;
-        opSet1[0b00100101] = DEC_H;
-        opSet1[0b00101101] = DEC_L;
-        opSet1[0b00111101] = DEC_A;
-
-        opSet1[0b00001011] = DEC_RP_BC;
-        opSet1[0b00011011] = DEC_RP_DE;
-        opSet1[0b00101011] = DEC_RP_HL;
-        opSet1[0b00111011] = DEC_RP_SP;
-
-        opSet1[0b11000101] = PUSH_BC;
-        opSet1[0b11010101] = PUSH_DE;
-        opSet1[0b11100101] = PUSH_HL;
-
-        opSet1[0b11000001] = POP_BC;
-        opSet1[0b11010001] = POP_DE;
-        opSet1[0b11100001] = POP_HL;
-
-        opSet1[0b11000010] = JP_C0_NN;
-        opSet1[0b11001010] = JP_C1_NN;
-        opSet1[0b11010010] = JP_C2_NN;
-        opSet1[0b11011010] = JP_C3_NN;
-        opSet1[0b11100010] = JP_C4_NN;
-        opSet1[0b11101010] = JP_C5_NN;
-        opSet1[0b11110010] = JP_C6_NN;
-        opSet1[0b11111010] = JP_C7_NN;
-
-        opSet1[0b11000000] = RET_C0;
-        opSet1[0b11001000] = RET_C1;
-        opSet1[0b11010000] = RET_C2;
-        opSet1[0b11011000] = RET_C3;
-        opSet1[0b11100000] = RET_C4;
-        opSet1[0b11101000] = RET_C5;
-        opSet1[0b11110000] = RET_C6;
-        opSet1[0b11111000] = RET_C7;
-
-        opSet1[0b11000100] = CALL_C0_NN;
-        opSet1[0b11001100] = CALL_C1_NN;
-        opSet1[0b11010100] = CALL_C2_NN;
-        opSet1[0b11011100] = CALL_C3_NN;
-        opSet1[0b11100100] = CALL_C4_NN;
-        opSet1[0b11101100] = CALL_C5_NN;
-        opSet1[0b11110100] = CALL_C6_NN;
-        opSet1[0b11111100] = CALL_C7_NN;
-
-        opSet1[0b11000111] = RST00;
-        opSet1[0b11001111] = RST08;
-        opSet1[0b11010111] = RST10;
-        opSet1[0b11011111] = RST18;
-        opSet1[0b11100111] = RST20;
-        opSet1[0b11101111] = RST28;
-        opSet1[0b11110111] = RST30;
-        opSet1[0b11111111] = RST38;
-
-        opSet1[0b11000011] = JP_NN;
-        opSet1[0b11001001] = RET;
-        opSet1[0b11001011] = OP_R;
-        opSet1[0b11001101] = CALL_NN;
-        opSet1[0b11010011] = isLR35902 ? OP_illegal : OUT_N_A;
-        opSet1[0b11011011] = isLR35902 ? OP_illegal : IN_A_N;
-        opSet1[0b11011001] = isLR35902 ? LR35902_RETI : EXX;
-        opSet1[0b11011101] = isLR35902 ? OP_illegal : OP_IX;
-        opSet1[0b11100000] = isLR35902 ? LDH_N_A : RET_C4;
-        opSet1[0b11100010] = isLR35902 ? LDH_C_A : JP_C4_NN;
-        opSet1[0b11100011] = isLR35902 ? OP_illegal : EX_SP_HL;
-        opSet1[0b11101000] = isLR35902 ? ADD_SP_N : RET_C5;
-        opSet1[0b11101001] = JP_HL;
-        opSet1[0b11101010] = isLR35902 ? LD_NN_A : JP_C5_NN;
-        opSet1[0b11101011] = isLR35902 ? OP_illegal : EX_DE_HL;
-        opSet1[0b11101101] = isLR35902 ? OP_illegal : EXTRA;
-        opSet1[0b11110000] = isLR35902 ? LDH_A_N : RET_C6;
-        opSet1[0b11110001] = POP_AF;
-        opSet1[0b11110010] = isLR35902 ? LDH_A_C : JP_C6_NN;
-        opSet1[0b11110011] = DI;
-        opSet1[0b11110101] = PUSH_AF;
-        opSet1[0b11111000] = isLR35902 ? LDHL_SP_N : RET_C7;
-        opSet1[0b11111001] = LD_SP_HL;
-        opSet1[0b11111010] = isLR35902 ? LD_A_NN : JP_C7_NN;
-        opSet1[0b11111011] = EI;
-        opSet1[0b11111101] = isLR35902 ? OP_illegal : OP_IY;
-
         opSetIX[0b00100010] = LD_ADDR_IX_;
         opSetIX[0b00100011] = INC_IX_reg_;
         opSetIX[0b00101010] = LD_IX_ADDR_;
