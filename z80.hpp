@@ -522,6 +522,17 @@ class Z80
         return consumeClock(1);
     }
 
+    static inline int OP_illegal(Z80* ctx)
+    {
+        if (ctx->skipIllegalInstructions) {
+            if (ctx->isDebug()) ctx->log("Skipped an illegal instruction");
+            ctx->reg.PC += 1;
+            return 0;
+        }
+        if (ctx->isDebug()) ctx->log("detected an illegal instruction");
+        return -1;
+    }
+
     static inline int EXTRA(Z80* ctx)
     {
         unsigned char mode = ctx->readByte(ctx->reg.PC + 1);
@@ -4827,8 +4838,17 @@ class Z80
     }
 
     // Call with condition
+    static inline int CALL_C0_NN(Z80* ctx) { return ctx->CALL_C_NN(0); }
+    static inline int CALL_C1_NN(Z80* ctx) { return ctx->CALL_C_NN(1); }
+    static inline int CALL_C2_NN(Z80* ctx) { return ctx->CALL_C_NN(2); }
+    static inline int CALL_C3_NN(Z80* ctx) { return ctx->CALL_C_NN(3); }
+    static inline int CALL_C4_NN(Z80* ctx) { return ctx->CALL_C_NN(4); }
+    static inline int CALL_C5_NN(Z80* ctx) { return ctx->CALL_C_NN(5); }
+    static inline int CALL_C6_NN(Z80* ctx) { return ctx->CALL_C_NN(6); }
+    static inline int CALL_C7_NN(Z80* ctx) { return ctx->CALL_C_NN(7); }
     inline int CALL_C_NN(unsigned char c)
     {
+        if (isLR35902 && 4 <= c) return -1;
         bool execute;
         switch (c) {
             case 0b000: execute = isFlagZ() ? false : true; break;
@@ -5310,7 +5330,12 @@ class Z80
     // setup the operands or operand groups that detectable in fixed single byte
     void setupOperandTable()
     {
-        ::memset(&opSet1, 0, sizeof(opSet1));
+        for (int i = 0; i < 256; i++) {
+            opSet1[i] = OP_illegal;
+            opSetIX[i] = OP_IX_illegal;
+            opSetIY[i] = OP_IY_illegal;
+        }
+
         opSet1[0b00000000] = NOP;
         opSet1[0b00000010] = LD_BC_A;
         opSet1[0b00000111] = RLCA;
@@ -5562,6 +5587,15 @@ class Z80
         opSet1[0b11110000] = RET_C6;
         opSet1[0b11111000] = RET_C7;
 
+        opSet1[0b11000100] = CALL_C0_NN;
+        opSet1[0b11001100] = CALL_C1_NN;
+        opSet1[0b11010100] = CALL_C2_NN;
+        opSet1[0b11011100] = CALL_C3_NN;
+        opSet1[0b11100100] = CALL_C4_NN;
+        opSet1[0b11101100] = CALL_C5_NN;
+        opSet1[0b11110100] = CALL_C6_NN;
+        opSet1[0b11111100] = CALL_C7_NN;
+
         opSet1[0b11000111] = RST00;
         opSet1[0b11001111] = RST08;
         opSet1[0b11010111] = RST10;
@@ -5575,18 +5609,18 @@ class Z80
         opSet1[0b11001001] = RET;
         opSet1[0b11001011] = OP_R;
         opSet1[0b11001101] = CALL_NN;
-        opSet1[0b11010011] = isLR35902 ? NULL : OUT_N_A;
-        opSet1[0b11011011] = isLR35902 ? NULL : IN_A_N;
+        opSet1[0b11010011] = isLR35902 ? OP_illegal : OUT_N_A;
+        opSet1[0b11011011] = isLR35902 ? OP_illegal : IN_A_N;
         opSet1[0b11011001] = isLR35902 ? LR35902_RETI : EXX;
-        opSet1[0b11011101] = isLR35902 ? NULL : OP_IX;
+        opSet1[0b11011101] = isLR35902 ? OP_illegal : OP_IX;
         opSet1[0b11100000] = isLR35902 ? LDH_N_A : RET_C4;
         opSet1[0b11100010] = isLR35902 ? LDH_C_A : JP_C4_NN;
-        opSet1[0b11100011] = isLR35902 ? NULL : EX_SP_HL;
+        opSet1[0b11100011] = isLR35902 ? OP_illegal : EX_SP_HL;
         opSet1[0b11101000] = isLR35902 ? ADD_SP_N : RET_C5;
         opSet1[0b11101001] = JP_HL;
         opSet1[0b11101010] = isLR35902 ? LD_NN_A : JP_C5_NN;
-        opSet1[0b11101011] = isLR35902 ? NULL : EX_DE_HL;
-        opSet1[0b11101101] = isLR35902 ? NULL : EXTRA;
+        opSet1[0b11101011] = isLR35902 ? OP_illegal : EX_DE_HL;
+        opSet1[0b11101101] = isLR35902 ? OP_illegal : EXTRA;
         opSet1[0b11110000] = isLR35902 ? LDH_A_N : RET_C6;
         opSet1[0b11110001] = POP_AF;
         opSet1[0b11110010] = isLR35902 ? LDH_A_C : JP_C6_NN;
@@ -5596,12 +5630,8 @@ class Z80
         opSet1[0b11111001] = LD_SP_HL;
         opSet1[0b11111010] = isLR35902 ? LD_A_NN : JP_C7_NN;
         opSet1[0b11111011] = EI;
-        opSet1[0b11111101] = isLR35902 ? NULL : OP_IY;
+        opSet1[0b11111101] = isLR35902 ? OP_illegal : OP_IY;
 
-        for (int i = 0; i < 256; i++) {
-            opSetIX[i] = OP_IX_illegal;
-            opSetIY[i] = OP_IY_illegal;
-        }
         opSetIX[0b00100010] = LD_ADDR_IX_;
         opSetIX[0b00100011] = INC_IX_reg_;
         opSetIX[0b00101010] = LD_IX_ADDR_;
@@ -6093,24 +6123,7 @@ class Z80
                 reg.execEI = 0;
                 int operandNumber = readByte(reg.PC);
                 checkBreakOperand(operandNumber);
-                int (*op)(Z80*) = opSet1[operandNumber];
-                int ret = -1;
-                if (NULL == op) {
-                    // execute an operand that register type has specified in the first byte.
-                    if ((operandNumber & 0b11000111) == 0b11000100) {
-                        if (!isLR35902 || operandNumber < 0xE4) {
-                            ret = CALL_C_NN((operandNumber & 0b00111000) >> 3);
-                        }
-                    } else if (skipIllegalInstructions) {
-                        if (isDebug()) log("Skipped an illegal instruction: $%02X", op);
-                        reg.PC += 1;
-                        ret = 0;
-                    }
-                } else {
-                    // execute an operand that the first byte is fixed.
-                    ret = op(this);
-                }
-                if (ret < 0) {
+                if (opSet1[operandNumber](this) < 0) {
                     if (isDebug()) log("[%04X] detected an invalid operand: $%02X", reg.PC, operandNumber);
                     if (isLR35902) {
                         reg.consumeClockCounter = consumeClock(4);
