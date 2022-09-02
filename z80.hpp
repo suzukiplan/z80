@@ -1313,6 +1313,13 @@ class Z80
     }
 
     // Load Reg. r with value n
+    static inline int LD_A_N(Z80* ctx) { return ctx->LD_R_N(0b111); }
+    static inline int LD_B_N(Z80* ctx) { return ctx->LD_R_N(0b000); }
+    static inline int LD_C_N(Z80* ctx) { return ctx->LD_R_N(0b001); }
+    static inline int LD_D_N(Z80* ctx) { return ctx->LD_R_N(0b010); }
+    static inline int LD_E_N(Z80* ctx) { return ctx->LD_R_N(0b011); }
+    static inline int LD_H_N(Z80* ctx) { return ctx->LD_R_N(0b100); }
+    static inline int LD_L_N(Z80* ctx) { return ctx->LD_R_N(0b101); }
     inline int LD_R_N(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -5284,6 +5291,14 @@ class Z80
         opSet1[0b01110101] = LD_HL_L;
         opSet1[0b01110111] = LD_HL_A;
 
+        opSet1[0b00000110] = LD_B_N;
+        opSet1[0b00001110] = LD_C_N;
+        opSet1[0b00010110] = LD_D_N;
+        opSet1[0b00011110] = LD_E_N;
+        opSet1[0b00100110] = LD_H_N;
+        opSet1[0b00101110] = LD_L_N;
+        opSet1[0b00111110] = LD_A_N;
+
         opSet1[0b00001001] = ADD_HL_BC;
         opSet1[0b00011001] = ADD_HL_DE;
         opSet1[0b00101001] = ADD_HL_HL;
@@ -5762,9 +5777,7 @@ class Z80
                 int ret = -1;
                 if (NULL == op) {
                     // execute an operand that register type has specified in the first byte.
-                    if ((operandNumber & 0b11000111) == 0b00000110) {
-                        ret = LD_R_N((operandNumber & 0b00111000) >> 3);
-                    } else if ((operandNumber & 0b11001111) == 0b00000001) {
+                    if ((operandNumber & 0b11001111) == 0b00000001) {
                         ret = LD_RP_NN((operandNumber & 0b00110000) >> 4);
                     } else if ((operandNumber & 0b11001111) == 0b11000101) {
                         ret = PUSH_RP((operandNumber & 0b00110000) >> 4);
