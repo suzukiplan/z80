@@ -1344,13 +1344,20 @@ class Z80
     static inline int LD_E_N(Z80* ctx) { return ctx->LD_R_N(0b011); }
     static inline int LD_H_N(Z80* ctx) { return ctx->LD_R_N(0b100); }
     static inline int LD_L_N(Z80* ctx) { return ctx->LD_R_N(0b101); }
-    inline int LD_R_N(unsigned char r)
+    static inline int LD_A_N_3(Z80* ctx) { return ctx->LD_R_N(0b111, 3); }
+    static inline int LD_B_N_3(Z80* ctx) { return ctx->LD_R_N(0b000, 3); }
+    static inline int LD_C_N_3(Z80* ctx) { return ctx->LD_R_N(0b001, 3); }
+    static inline int LD_D_N_3(Z80* ctx) { return ctx->LD_R_N(0b010, 3); }
+    static inline int LD_E_N_3(Z80* ctx) { return ctx->LD_R_N(0b011, 3); }
+    static inline int LD_H_N_3(Z80* ctx) { return ctx->LD_R_N(0b100, 3); }
+    static inline int LD_L_N_3(Z80* ctx) { return ctx->LD_R_N(0b101, 3); }
+    inline int LD_R_N(unsigned char r, int pc = 2)
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char n = readByte(reg.PC + 1, 3);
         if (isDebug()) log("[%04X] LD %s, $%02X", reg.PC, registerDump(r), n);
         if (rp) *rp = n;
-        reg.PC += 2;
+        reg.PC += pc;
         return 0;
     }
 
@@ -2998,12 +3005,17 @@ class Z80
     static inline int ADD_A_H(Z80* ctx) { return ctx->ADD_A_R(0b100); }
     static inline int ADD_A_L(Z80* ctx) { return ctx->ADD_A_R(0b101); }
     static inline int ADD_A_A(Z80* ctx) { return ctx->ADD_A_R(0b111); }
-    inline int ADD_A_R(unsigned char r)
+    static inline int ADD_A_B_2(Z80* ctx) { return ctx->ADD_A_R(0b000, 2); }
+    static inline int ADD_A_C_2(Z80* ctx) { return ctx->ADD_A_R(0b001, 2); }
+    static inline int ADD_A_D_2(Z80* ctx) { return ctx->ADD_A_R(0b010, 2); }
+    static inline int ADD_A_E_2(Z80* ctx) { return ctx->ADD_A_R(0b011, 2); }
+    static inline int ADD_A_A_2(Z80* ctx) { return ctx->ADD_A_R(0b111, 2); }
+    inline int ADD_A_R(unsigned char r, int pc = 1)
     {
         if (isDebug()) log("[%04X] ADD %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
         addition8(*rp);
-        reg.PC += 1;
+        reg.PC += pc;
         return 0;
     }
 
@@ -3102,13 +3114,18 @@ class Z80
     static inline int ADC_A_H(Z80* ctx) { return ctx->ADC_A_R(0b100); }
     static inline int ADC_A_L(Z80* ctx) { return ctx->ADC_A_R(0b101); }
     static inline int ADC_A_A(Z80* ctx) { return ctx->ADC_A_R(0b111); }
-    inline int ADC_A_R(unsigned char r)
+    static inline int ADC_A_B_2(Z80* ctx) { return ctx->ADC_A_R(0b000, 2); }
+    static inline int ADC_A_C_2(Z80* ctx) { return ctx->ADC_A_R(0b001, 2); }
+    static inline int ADC_A_D_2(Z80* ctx) { return ctx->ADC_A_R(0b010, 2); }
+    static inline int ADC_A_E_2(Z80* ctx) { return ctx->ADC_A_R(0b011, 2); }
+    static inline int ADC_A_A_2(Z80* ctx) { return ctx->ADC_A_R(0b111, 2); }
+    inline int ADC_A_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
         addition8(c + *rp);
-        reg.PC += 1;
+        reg.PC += pc;
         return 0;
     }
 
@@ -3215,13 +3232,20 @@ class Z80
     static inline int INC_H(Z80* ctx) { return ctx->INC_R(0b100); }
     static inline int INC_L(Z80* ctx) { return ctx->INC_R(0b101); }
     static inline int INC_A(Z80* ctx) { return ctx->INC_R(0b111); }
-    inline int INC_R(unsigned char r)
+    static inline int INC_B_2(Z80* ctx) { return ctx->INC_R(0b000, 2); }
+    static inline int INC_C_2(Z80* ctx) { return ctx->INC_R(0b001, 2); }
+    static inline int INC_D_2(Z80* ctx) { return ctx->INC_R(0b010, 2); }
+    static inline int INC_E_2(Z80* ctx) { return ctx->INC_R(0b011, 2); }
+    static inline int INC_H_2(Z80* ctx) { return ctx->INC_R(0b100, 2); }
+    static inline int INC_L_2(Z80* ctx) { return ctx->INC_R(0b101, 2); }
+    static inline int INC_A_2(Z80* ctx) { return ctx->INC_R(0b111, 2); }
+    inline int INC_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] INC %s", reg.PC, registerDump(r));
         setFlagByIncrement(*rp);
         (*rp)++;
-        reg.PC += 1;
+        reg.PC += pc;
         return 0;
     }
 
@@ -3321,12 +3345,17 @@ class Z80
     static inline int SUB_A_H(Z80* ctx) { return ctx->SUB_A_R(0b100); }
     static inline int SUB_A_L(Z80* ctx) { return ctx->SUB_A_R(0b101); }
     static inline int SUB_A_A(Z80* ctx) { return ctx->SUB_A_R(0b111); }
-    inline int SUB_A_R(unsigned char r)
+    static inline int SUB_A_B_2(Z80* ctx) { return ctx->SUB_A_R(0b000, 2); }
+    static inline int SUB_A_C_2(Z80* ctx) { return ctx->SUB_A_R(0b001, 2); }
+    static inline int SUB_A_D_2(Z80* ctx) { return ctx->SUB_A_R(0b010, 2); }
+    static inline int SUB_A_E_2(Z80* ctx) { return ctx->SUB_A_R(0b011, 2); }
+    static inline int SUB_A_A_2(Z80* ctx) { return ctx->SUB_A_R(0b111, 2); }
+    inline int SUB_A_R(unsigned char r, int pc = 1)
     {
         if (isDebug()) log("[%04X] SUB %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
         subtract8(*rp);
-        reg.PC += 1;
+        reg.PC += pc;
         return 0;
     }
 
@@ -3425,13 +3454,18 @@ class Z80
     static inline int SBC_A_H(Z80* ctx) { return ctx->SBC_A_R(0b100); }
     static inline int SBC_A_L(Z80* ctx) { return ctx->SBC_A_R(0b101); }
     static inline int SBC_A_A(Z80* ctx) { return ctx->SBC_A_R(0b111); }
-    inline int SBC_A_R(unsigned char r)
+    static inline int SBC_A_B_2(Z80* ctx) { return ctx->SBC_A_R(0b000, 2); }
+    static inline int SBC_A_C_2(Z80* ctx) { return ctx->SBC_A_R(0b001, 2); }
+    static inline int SBC_A_D_2(Z80* ctx) { return ctx->SBC_A_R(0b010, 2); }
+    static inline int SBC_A_E_2(Z80* ctx) { return ctx->SBC_A_R(0b011, 2); }
+    static inline int SBC_A_A_2(Z80* ctx) { return ctx->SBC_A_R(0b111, 2); }
+    inline int SBC_A_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
         subtract8(c + *rp);
-        reg.PC += 1;
+        reg.PC += pc;
         return 0;
     }
 
@@ -3539,13 +3573,20 @@ class Z80
     static inline int DEC_H(Z80* ctx) { return ctx->DEC_R(0b100); }
     static inline int DEC_L(Z80* ctx) { return ctx->DEC_R(0b101); }
     static inline int DEC_A(Z80* ctx) { return ctx->DEC_R(0b111); }
-    inline int DEC_R(unsigned char r)
+    static inline int DEC_B_2(Z80* ctx) { return ctx->DEC_R(0b000, 2); }
+    static inline int DEC_C_2(Z80* ctx) { return ctx->DEC_R(0b001, 2); }
+    static inline int DEC_D_2(Z80* ctx) { return ctx->DEC_R(0b010, 2); }
+    static inline int DEC_E_2(Z80* ctx) { return ctx->DEC_R(0b011, 2); }
+    static inline int DEC_H_2(Z80* ctx) { return ctx->DEC_R(0b100, 2); }
+    static inline int DEC_L_2(Z80* ctx) { return ctx->DEC_R(0b101, 2); }
+    static inline int DEC_A_2(Z80* ctx) { return ctx->DEC_R(0b111, 2); }
+    inline int DEC_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] DEC %s", reg.PC, registerDump(r));
         setFlagByDecrement(*rp);
         (*rp)--;
-        reg.PC += 1;
+        reg.PC += pc;
         return 0;
     }
 
@@ -3860,11 +3901,16 @@ class Z80
     static inline int AND_H(Z80* ctx) { return ctx->AND_R(0b100); }
     static inline int AND_L(Z80* ctx) { return ctx->AND_R(0b101); }
     static inline int AND_A(Z80* ctx) { return ctx->AND_R(0b111); }
-    inline int AND_R(unsigned char r)
+    static inline int AND_B_2(Z80* ctx) { return ctx->AND_R(0b000, 2); }
+    static inline int AND_C_2(Z80* ctx) { return ctx->AND_R(0b001, 2); }
+    static inline int AND_D_2(Z80* ctx) { return ctx->AND_R(0b010, 2); }
+    static inline int AND_E_2(Z80* ctx) { return ctx->AND_R(0b011, 2); }
+    static inline int AND_A_2(Z80* ctx) { return ctx->AND_R(0b111, 2); }
+    inline int AND_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] AND %s, %s", reg.PC, registerDump(0b111), registerDump(r));
-        and8(*rp, 1);
+        and8(*rp, pc);
         return 0;
     }
 
@@ -3955,11 +4001,16 @@ class Z80
     static inline int OR_H(Z80* ctx) { return ctx->OR_R(0b100); }
     static inline int OR_L(Z80* ctx) { return ctx->OR_R(0b101); }
     static inline int OR_A(Z80* ctx) { return ctx->OR_R(0b111); }
-    inline int OR_R(unsigned char r)
+    static inline int OR_B_2(Z80* ctx) { return ctx->OR_R(0b000, 2); }
+    static inline int OR_C_2(Z80* ctx) { return ctx->OR_R(0b001, 2); }
+    static inline int OR_D_2(Z80* ctx) { return ctx->OR_R(0b010, 2); }
+    static inline int OR_E_2(Z80* ctx) { return ctx->OR_R(0b011, 2); }
+    static inline int OR_A_2(Z80* ctx) { return ctx->OR_R(0b111, 2); }
+    inline int OR_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] OR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
-        or8(*rp, 1);
+        or8(*rp, pc);
         return 0;
     }
 
@@ -4050,11 +4101,16 @@ class Z80
     static inline int XOR_H(Z80* ctx) { return ctx->XOR_R(0b100); }
     static inline int XOR_L(Z80* ctx) { return ctx->XOR_R(0b101); }
     static inline int XOR_A(Z80* ctx) { return ctx->XOR_R(0b111); }
-    inline int XOR_R(unsigned char r)
+    static inline int XOR_B_2(Z80* ctx) { return ctx->XOR_R(0b000, 2); }
+    static inline int XOR_C_2(Z80* ctx) { return ctx->XOR_R(0b001, 2); }
+    static inline int XOR_D_2(Z80* ctx) { return ctx->XOR_R(0b010, 2); }
+    static inline int XOR_E_2(Z80* ctx) { return ctx->XOR_R(0b011, 2); }
+    static inline int XOR_A_2(Z80* ctx) { return ctx->XOR_R(0b111, 2); }
+    inline int XOR_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] XOR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
-        xor8(*rp, 1);
+        xor8(*rp, pc);
         return 0;
     }
 
@@ -4745,12 +4801,17 @@ class Z80
     static inline int CP_H(Z80* ctx) { return ctx->CP_R(0b100); }
     static inline int CP_L(Z80* ctx) { return ctx->CP_R(0b101); }
     static inline int CP_A(Z80* ctx) { return ctx->CP_R(0b111); }
-    inline int CP_R(unsigned char r)
+    static inline int CP_B_2(Z80* ctx) { return ctx->CP_R(0b000, 2); }
+    static inline int CP_C_2(Z80* ctx) { return ctx->CP_R(0b001, 2); }
+    static inline int CP_D_2(Z80* ctx) { return ctx->CP_R(0b010, 2); }
+    static inline int CP_E_2(Z80* ctx) { return ctx->CP_R(0b011, 2); }
+    static inline int CP_A_2(Z80* ctx) { return ctx->CP_R(0b111, 2); }
+    inline int CP_R(unsigned char r, int pc = 1)
     {
         if (isDebug()) log("[%04X] CP %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
         subtract8(*rp, true, false);
-        reg.PC += 1;
+        reg.PC += pc;
         return 0;
     }
 
@@ -5576,7 +5637,39 @@ class Z80
         SET_B_5, SET_C_5, SET_D_5, SET_E_5, SET_H_5, SET_L_5, SET_HL_5, SET_A_5,
         SET_B_6, SET_C_6, SET_D_6, SET_E_6, SET_H_6, SET_L_6, SET_HL_6, SET_A_6,
         SET_B_7, SET_C_7, SET_D_7, SET_E_7, SET_H_7, SET_L_7, SET_HL_7, SET_A_7};
-    int (*opSetIX[256])(Z80* ctx);
+    int (*opSetIX[256])(Z80* ctx) = {
+        NULL, NULL, NULL, NULL, INC_B_2, DEC_B_2, LD_B_N_3, NULL,
+        NULL, ADD_IX_BC, NULL, NULL, INC_C_2, DEC_C_2, LD_C_N_3, NULL,
+        NULL, NULL, NULL, NULL, INC_D_2, DEC_D_2, LD_D_N_3, NULL,
+        NULL, ADD_IX_DE, NULL, NULL, INC_E_2, DEC_E_2, LD_E_N_3, NULL,
+        NULL, LD_IX_NN_, LD_ADDR_IX_, INC_IX_reg_, INC_IXH_, DEC_IXH_, LD_IXH_N_, NULL,
+        NULL, ADD_IX_IX, LD_IX_ADDR_, DEC_IX_reg_, INC_IXL_, DEC_IXL_, LD_IXL_N_, NULL,
+        NULL, NULL, NULL, NULL, INC_IX_, DEC_IX_, LD_IX_N_, NULL,
+        NULL, ADD_IX_SP, NULL, NULL, INC_A_2, DEC_A_2, LD_A_N_3, NULL,
+        LD_B_B_2, LD_B_C_2, LD_B_D_2, LD_B_E_2, LD_B_IXH, LD_B_IXL, LD_B_IX, LD_B_A_2,
+        LD_C_B_2, LD_C_C_2, LD_C_D_2, LD_C_E_2, LD_C_IXH, LD_C_IXL, LD_C_IX, LD_C_A_2,
+        LD_D_B_2, LD_D_C_2, LD_D_D_2, LD_D_E_2, LD_D_IXH, LD_D_IXL, LD_D_IX, LD_D_A_2,
+        LD_E_B_2, LD_E_C_2, LD_E_D_2, LD_E_E_2, LD_E_IXH, LD_E_IXL, LD_E_IX, LD_E_A_2,
+        LD_IXH_B, LD_IXH_C, LD_IXH_D, LD_IXH_E, LD_IXH_IXH_, LD_IXH_IXL_, LD_H_IX, LD_IXH_A,
+        LD_IXL_B, LD_IXL_C, LD_IXL_D, LD_IXL_E, LD_IXL_IXH_, LD_IXL_IXL_, LD_L_IX, LD_IXL_A,
+        LD_IX_B, LD_IX_C, LD_IX_D, LD_IX_E, LD_IX_H, LD_IX_L, NULL, LD_IX_A,
+        LD_A_B_2, LD_A_C_2, LD_A_D_2, LD_A_E_2, LD_A_IXH, LD_A_IXL, LD_A_IX, LD_A_A_2,
+        ADD_A_B_2, ADD_A_C_2, ADD_A_D_2, ADD_A_E_2, ADD_A_IXH_, ADD_A_IXL_, ADD_A_IX_, ADD_A_A_2,
+        ADC_A_B_2, ADC_A_C_2, ADC_A_D_2, ADC_A_E_2, ADC_A_IXH_, ADC_A_IXL_, ADC_A_IX_, ADC_A_A_2,
+        SUB_A_B_2, SUB_A_C_2, SUB_A_D_2, SUB_A_E_2, SUB_A_IXH_, SUB_A_IXL_, SUB_A_IX_, SUB_A_A_2,
+        SBC_A_B_2, SBC_A_C_2, SBC_A_D_2, SBC_A_E_2, SBC_A_IXH_, SBC_A_IXL_, SBC_A_IX_, SBC_A_A_2,
+        AND_B_2, AND_C_2, AND_D_2, AND_E_2, AND_IXH_, AND_IXL_, AND_IX_, AND_A_2,
+        XOR_B_2, XOR_C_2, XOR_D_2, XOR_E_2, XOR_IXH_, XOR_IXL_, XOR_IX_, XOR_A_2,
+        OR_B_2, OR_C_2, OR_D_2, OR_E_2, OR_IXH_, OR_IXL_, OR_IX_, OR_A_2,
+        CP_B_2, CP_C_2, CP_D_2, CP_E_2, CP_IXH_, CP_IXL_, CP_IX_, CP_A_2,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, OP_IX4, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, POP_IX_, NULL, EX_SP_IX_, NULL, PUSH_IX_, NULL, NULL,
+        NULL, JP_IX_, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, LD_SP_IX_, NULL, NULL, NULL, NULL, NULL, NULL};
     int (*opSetIY[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
@@ -5615,58 +5708,8 @@ class Z80
             opSetCB[48 + 7] = SWAP_A;
         }
         for (int i = 0; i < 256; i++) {
-            opSetIX[i] = OP_IX_illegal;
             opSetIY[i] = OP_IY_illegal;
         }
-        opSetIX[0b00100010] = LD_ADDR_IX_;
-        opSetIX[0b00100011] = INC_IX_reg_;
-        opSetIX[0b00101010] = LD_IX_ADDR_;
-        opSetIX[0b00101011] = DEC_IX_reg_;
-        opSetIX[0b00110110] = LD_IX_N_;
-        opSetIX[0b00100001] = LD_IX_NN_;
-        opSetIX[0b00110100] = INC_IX_;
-        opSetIX[0b00110101] = DEC_IX_;
-        opSetIX[0b10000110] = ADD_A_IX_;
-        opSetIX[0b10001110] = ADC_A_IX_;
-        opSetIX[0b10010110] = SUB_A_IX_;
-        opSetIX[0b10011110] = SBC_A_IX_;
-        opSetIX[0b10100110] = AND_IX_;
-        opSetIX[0b10101110] = XOR_IX_;
-        opSetIX[0b10110110] = OR_IX_;
-        opSetIX[0b10111110] = CP_IX_;
-        opSetIX[0b11100001] = POP_IX_;
-        opSetIX[0b11100011] = EX_SP_IX_;
-        opSetIX[0b11100101] = PUSH_IX_;
-        opSetIX[0b11101001] = JP_IX_;
-        opSetIX[0b11111001] = LD_SP_IX_;
-        opSetIX[0b11001011] = OP_IX4;
-        opSetIX[0b00100100] = INC_IXH_;
-        opSetIX[0b00101100] = INC_IXL_;
-        opSetIX[0b00100101] = DEC_IXH_;
-        opSetIX[0b00101101] = DEC_IXL_;
-        opSetIX[0b00100110] = LD_IXH_N_;
-        opSetIX[0b00101110] = LD_IXL_N_;
-        opSetIX[0b10000100] = ADD_A_IXH_;
-        opSetIX[0b10000101] = ADD_A_IXL_;
-        opSetIX[0b10001100] = ADC_A_IXH_;
-        opSetIX[0b10001101] = ADC_A_IXL_;
-        opSetIX[0b10010100] = SUB_A_IXH_;
-        opSetIX[0b10010101] = SUB_A_IXL_;
-        opSetIX[0b10011100] = SBC_A_IXH_;
-        opSetIX[0b10011101] = SBC_A_IXL_;
-        opSetIX[0b10100100] = AND_IXH_;
-        opSetIX[0b10100101] = AND_IXL_;
-        opSetIX[0b10110100] = OR_IXH_;
-        opSetIX[0b10110101] = OR_IXL_;
-        opSetIX[0b10101100] = XOR_IXH_;
-        opSetIX[0b10101101] = XOR_IXL_;
-        opSetIX[0b10111100] = CP_IXH_;
-        opSetIX[0b10111101] = CP_IXL_;
-        opSetIX[0b00001001] = ADD_IX_BC;
-        opSetIX[0b00011001] = ADD_IX_DE;
-        opSetIX[0b00101001] = ADD_IX_IX;
-        opSetIX[0b00111001] = ADD_IX_SP;
-
         opSetIY[0b00100010] = LD_ADDR_IY_;
         opSetIY[0b00100011] = INC_IY_reg_;
         opSetIY[0b00101010] = LD_IY_ADDR_;
@@ -5715,78 +5758,6 @@ class Z80
         opSetIY[0b00011001] = ADD_IY_DE;
         opSetIY[0b00101001] = ADD_IY_IY;
         opSetIY[0b00111001] = ADD_IY_SP;
-
-        opSetIX[0b01000000] = LD_B_B_2;
-        opSetIX[0b01000001] = LD_B_C_2;
-        opSetIX[0b01000010] = LD_B_D_2;
-        opSetIX[0b01000011] = LD_B_E_2;
-        opSetIX[0b01000100] = LD_B_IXH;
-        opSetIX[0b01000101] = LD_B_IXL;
-        opSetIX[0b01000111] = LD_B_A_2;
-
-        opSetIX[0b01001000] = LD_C_B_2;
-        opSetIX[0b01001001] = LD_C_C_2;
-        opSetIX[0b01001010] = LD_C_D_2;
-        opSetIX[0b01001011] = LD_C_E_2;
-        opSetIX[0b01001100] = LD_C_IXH;
-        opSetIX[0b01001101] = LD_C_IXL;
-        opSetIX[0b01001111] = LD_C_A_2;
-
-        opSetIX[0b01010000] = LD_D_B_2;
-        opSetIX[0b01010001] = LD_D_C_2;
-        opSetIX[0b01010010] = LD_D_D_2;
-        opSetIX[0b01010011] = LD_D_E_2;
-        opSetIX[0b01010100] = LD_D_IXH;
-        opSetIX[0b01010101] = LD_D_IXL;
-        opSetIX[0b01010111] = LD_D_A_2;
-
-        opSetIX[0b01011000] = LD_E_B_2;
-        opSetIX[0b01011001] = LD_E_C_2;
-        opSetIX[0b01011010] = LD_E_D_2;
-        opSetIX[0b01011011] = LD_E_E_2;
-        opSetIX[0b01011100] = LD_E_IXH;
-        opSetIX[0b01011101] = LD_E_IXL;
-        opSetIX[0b01011111] = LD_E_A_2;
-
-        opSetIX[0b01100000] = LD_IXH_B;
-        opSetIX[0b01100001] = LD_IXH_C;
-        opSetIX[0b01100010] = LD_IXH_D;
-        opSetIX[0b01100011] = LD_IXH_E;
-        opSetIX[0b01100100] = LD_IXH_IXH_;
-        opSetIX[0b01100101] = LD_IXH_IXL_;
-        opSetIX[0b01100111] = LD_IXH_A;
-
-        opSetIX[0b01101000] = LD_IXL_B;
-        opSetIX[0b01101001] = LD_IXL_C;
-        opSetIX[0b01101010] = LD_IXL_D;
-        opSetIX[0b01101011] = LD_IXL_E;
-        opSetIX[0b01101100] = LD_IXL_IXH_;
-        opSetIX[0b01101101] = LD_IXL_IXL_;
-        opSetIX[0b01101111] = LD_IXL_A;
-
-        opSetIX[0b01111000] = LD_A_B_2;
-        opSetIX[0b01111001] = LD_A_C_2;
-        opSetIX[0b01111010] = LD_A_D_2;
-        opSetIX[0b01111011] = LD_A_E_2;
-        opSetIX[0b01111100] = LD_A_IXH;
-        opSetIX[0b01111101] = LD_A_IXL;
-        opSetIX[0b01111111] = LD_A_A_2;
-
-        opSetIX[0b01111110] = LD_A_IX;
-        opSetIX[0b01000110] = LD_B_IX;
-        opSetIX[0b01001110] = LD_C_IX;
-        opSetIX[0b01010110] = LD_D_IX;
-        opSetIX[0b01011110] = LD_E_IX;
-        opSetIX[0b01100110] = LD_H_IX;
-        opSetIX[0b01101110] = LD_L_IX;
-
-        opSetIX[0b01110111] = LD_IX_A;
-        opSetIX[0b01110000] = LD_IX_B;
-        opSetIX[0b01110001] = LD_IX_C;
-        opSetIX[0b01110010] = LD_IX_D;
-        opSetIX[0b01110011] = LD_IX_E;
-        opSetIX[0b01110100] = LD_IX_H;
-        opSetIX[0b01110101] = LD_IX_L;
 
         opSetIY[0b01000000] = LD_B_B_2;
         opSetIY[0b01000001] = LD_B_C_2;
