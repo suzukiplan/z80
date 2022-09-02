@@ -1708,6 +1708,10 @@ class Z80
     }
 
     // Load Reg. pair rp with value nn.
+    static inline int LD_BC_NN(Z80* ctx) { return ctx->LD_RP_NN(0b00); }
+    static inline int LD_DE_NN(Z80* ctx) { return ctx->LD_RP_NN(0b01); }
+    static inline int LD_HL_NN(Z80* ctx) { return ctx->LD_RP_NN(0b10); }
+    static inline int LD_SP_NN(Z80* ctx) { return ctx->LD_RP_NN(0b11); }
     inline int LD_RP_NN(unsigned char rp)
     {
         unsigned char nL = readByte(reg.PC + 1, 3);
@@ -5304,6 +5308,11 @@ class Z80
         opSet1[0b00101001] = ADD_HL_HL;
         opSet1[0b00111001] = ADD_HL_SP;
 
+        opSet1[0b00000001] = LD_BC_NN;
+        opSet1[0b00010001] = LD_DE_NN;
+        opSet1[0b00100001] = LD_HL_NN;
+        opSet1[0b00110001] = LD_SP_NN;
+
         opSet1[0b11000011] = JP_NN;
         opSet1[0b11001001] = RET;
         opSet1[0b11001011] = OP_R;
@@ -5777,9 +5786,7 @@ class Z80
                 int ret = -1;
                 if (NULL == op) {
                     // execute an operand that register type has specified in the first byte.
-                    if ((operandNumber & 0b11001111) == 0b00000001) {
-                        ret = LD_RP_NN((operandNumber & 0b00110000) >> 4);
-                    } else if ((operandNumber & 0b11001111) == 0b11000101) {
+                    if ((operandNumber & 0b11001111) == 0b11000101) {
                         ret = PUSH_RP((operandNumber & 0b00110000) >> 4);
                     } else if ((operandNumber & 0b11001111) == 0b11000001) {
                         ret = POP_RP((operandNumber & 0b00110000) >> 4);
