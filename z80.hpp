@@ -1302,13 +1302,87 @@ class Z80
     }
 
     // Load Reg. r1 with Reg. r2
-    inline int LD_R1_R2(unsigned char r1, unsigned char r2)
+    static inline int LD_B_B(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b000); }
+    static inline int LD_B_C(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b001); }
+    static inline int LD_B_D(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b010); }
+    static inline int LD_B_E(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b011); }
+    static inline int LD_B_B_2(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b000, 2); }
+    static inline int LD_B_C_2(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b001, 2); }
+    static inline int LD_B_D_2(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b010, 2); }
+    static inline int LD_B_E_2(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b011, 2); }
+    static inline int LD_B_H(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b100); }
+    static inline int LD_B_L(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b101); }
+    static inline int LD_B_A(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b111); }
+    static inline int LD_C_B(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b000); }
+    static inline int LD_C_C(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b001); }
+    static inline int LD_C_D(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b010); }
+    static inline int LD_C_E(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b011); }
+    static inline int LD_B_A_2(Z80* ctx) { return ctx->LD_R1_R2(0b000, 0b111, 2); }
+    static inline int LD_C_B_2(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b000, 2); }
+    static inline int LD_C_C_2(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b001, 2); }
+    static inline int LD_C_D_2(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b010, 2); }
+    static inline int LD_C_E_2(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b011, 2); }
+    static inline int LD_C_H(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b100); }
+    static inline int LD_C_L(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b101); }
+    static inline int LD_C_A(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b111); }
+    static inline int LD_D_B(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b000); }
+    static inline int LD_D_C(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b001); }
+    static inline int LD_D_D(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b010); }
+    static inline int LD_D_E(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b011); }
+    static inline int LD_C_A_2(Z80* ctx) { return ctx->LD_R1_R2(0b001, 0b111, 2); }
+    static inline int LD_D_B_2(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b000, 2); }
+    static inline int LD_D_C_2(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b001, 2); }
+    static inline int LD_D_D_2(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b010, 2); }
+    static inline int LD_D_E_2(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b011, 2); }
+    static inline int LD_D_H(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b100); }
+    static inline int LD_D_L(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b101); }
+    static inline int LD_D_A(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b111); }
+    static inline int LD_E_B(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b000); }
+    static inline int LD_E_C(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b001); }
+    static inline int LD_E_D(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b010); }
+    static inline int LD_E_E(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b011); }
+    static inline int LD_D_A_2(Z80* ctx) { return ctx->LD_R1_R2(0b010, 0b111, 2); }
+    static inline int LD_E_B_2(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b000, 2); }
+    static inline int LD_E_C_2(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b001, 2); }
+    static inline int LD_E_D_2(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b010, 2); }
+    static inline int LD_E_E_2(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b011, 2); }
+    static inline int LD_E_H(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b100); }
+    static inline int LD_E_L(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b101); }
+    static inline int LD_E_A(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b111); }
+    static inline int LD_E_A_2(Z80* ctx) { return ctx->LD_R1_R2(0b011, 0b111, 2); }
+    static inline int LD_H_B(Z80* ctx) { return ctx->LD_R1_R2(0b100, 0b000); }
+    static inline int LD_H_C(Z80* ctx) { return ctx->LD_R1_R2(0b100, 0b001); }
+    static inline int LD_H_D(Z80* ctx) { return ctx->LD_R1_R2(0b100, 0b010); }
+    static inline int LD_H_E(Z80* ctx) { return ctx->LD_R1_R2(0b100, 0b011); }
+    static inline int LD_H_H(Z80* ctx) { return ctx->LD_R1_R2(0b100, 0b100); }
+    static inline int LD_H_L(Z80* ctx) { return ctx->LD_R1_R2(0b100, 0b101); }
+    static inline int LD_H_A(Z80* ctx) { return ctx->LD_R1_R2(0b100, 0b111); }
+    static inline int LD_L_B(Z80* ctx) { return ctx->LD_R1_R2(0b101, 0b000); }
+    static inline int LD_L_C(Z80* ctx) { return ctx->LD_R1_R2(0b101, 0b001); }
+    static inline int LD_L_D(Z80* ctx) { return ctx->LD_R1_R2(0b101, 0b010); }
+    static inline int LD_L_E(Z80* ctx) { return ctx->LD_R1_R2(0b101, 0b011); }
+    static inline int LD_L_H(Z80* ctx) { return ctx->LD_R1_R2(0b101, 0b100); }
+    static inline int LD_L_L(Z80* ctx) { return ctx->LD_R1_R2(0b101, 0b101); }
+    static inline int LD_L_A(Z80* ctx) { return ctx->LD_R1_R2(0b101, 0b111); }
+    static inline int LD_A_B(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b000); }
+    static inline int LD_A_C(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b001); }
+    static inline int LD_A_D(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b010); }
+    static inline int LD_A_E(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b011); }
+    static inline int LD_A_B_2(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b000, 2); }
+    static inline int LD_A_C_2(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b001, 2); }
+    static inline int LD_A_D_2(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b010, 2); }
+    static inline int LD_A_E_2(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b011, 2); }
+    static inline int LD_A_H(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b100); }
+    static inline int LD_A_L(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b101); }
+    static inline int LD_A_A(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b111); }
+    static inline int LD_A_A_2(Z80* ctx) { return ctx->LD_R1_R2(0b111, 0b111, 2); }
+    inline int LD_R1_R2(unsigned char r1, unsigned char r2, int counter = 1)
     {
         unsigned char* r1p = getRegisterPointer(r1);
         unsigned char* r2p = getRegisterPointer(r2);
         if (isDebug()) log("[%04X] LD %s, %s", reg.PC, registerDump(r1), registerDump(r2));
         if (r1p && r2p) *r1p = *r2p;
-        reg.PC += 1;
+        reg.PC += counter;
         return 0;
     }
 
@@ -5346,6 +5420,62 @@ class Z80
         opSet1[0b10111000 + 0b110] = CP_HL;
         opSet1[0b10111000 + 0b111] = CP_A;
 
+        opSet1[0b01000000] = LD_B_B;
+        opSet1[0b01000001] = LD_B_C;
+        opSet1[0b01000010] = LD_B_D;
+        opSet1[0b01000011] = LD_B_E;
+        opSet1[0b01000100] = LD_B_H;
+        opSet1[0b01000101] = LD_B_L;
+        opSet1[0b01000111] = LD_B_A;
+
+        opSet1[0b01001000] = LD_C_B;
+        opSet1[0b01001001] = LD_C_C;
+        opSet1[0b01001010] = LD_C_D;
+        opSet1[0b01001011] = LD_C_E;
+        opSet1[0b01001100] = LD_C_H;
+        opSet1[0b01001101] = LD_C_L;
+        opSet1[0b01001111] = LD_C_A;
+
+        opSet1[0b01010000] = LD_D_B;
+        opSet1[0b01010001] = LD_D_C;
+        opSet1[0b01010010] = LD_D_D;
+        opSet1[0b01010011] = LD_D_E;
+        opSet1[0b01010100] = LD_D_H;
+        opSet1[0b01010101] = LD_D_L;
+        opSet1[0b01010111] = LD_D_A;
+
+        opSet1[0b01011000] = LD_E_B;
+        opSet1[0b01011001] = LD_E_C;
+        opSet1[0b01011010] = LD_E_D;
+        opSet1[0b01011011] = LD_E_E;
+        opSet1[0b01011100] = LD_E_H;
+        opSet1[0b01011101] = LD_E_L;
+        opSet1[0b01011111] = LD_E_A;
+
+        opSet1[0b01100000] = LD_H_B;
+        opSet1[0b01100001] = LD_H_C;
+        opSet1[0b01100010] = LD_H_D;
+        opSet1[0b01100011] = LD_H_E;
+        opSet1[0b01100100] = LD_H_H;
+        opSet1[0b01100101] = LD_H_L;
+        opSet1[0b01100111] = LD_H_A;
+
+        opSet1[0b01101000] = LD_L_B;
+        opSet1[0b01101001] = LD_L_C;
+        opSet1[0b01101010] = LD_L_D;
+        opSet1[0b01101011] = LD_L_E;
+        opSet1[0b01101100] = LD_L_H;
+        opSet1[0b01101101] = LD_L_L;
+        opSet1[0b01101111] = LD_L_A;
+
+        opSet1[0b01111000] = LD_A_B;
+        opSet1[0b01111001] = LD_A_C;
+        opSet1[0b01111010] = LD_A_D;
+        opSet1[0b01111011] = LD_A_E;
+        opSet1[0b01111100] = LD_A_H;
+        opSet1[0b01111101] = LD_A_L;
+        opSet1[0b01111111] = LD_A_A;
+
         opSet1[0b01110000] = LD_HL_B;
         opSet1[0b01110001] = LD_HL_C;
         opSet1[0b01110010] = LD_HL_D;
@@ -5500,38 +5630,6 @@ class Z80
         opSetIX[0b00101101] = DEC_IXL_;
         opSetIX[0b00100110] = LD_IXH_N_;
         opSetIX[0b00101110] = LD_IXL_N_;
-        opSetIX[0b01100100] = LD_IXH_IXH_;
-        opSetIX[0b01100101] = LD_IXH_IXL_;
-        opSetIX[0b01101100] = LD_IXL_IXH_;
-        opSetIX[0b01101101] = LD_IXL_IXL_;
-        opSetIX[0b01111100] = LD_A_IXH;
-        opSetIX[0b01000100] = LD_B_IXH;
-        opSetIX[0b01001100] = LD_C_IXH;
-        opSetIX[0b01010100] = LD_D_IXH;
-        opSetIX[0b01011100] = LD_E_IXH;
-        opSetIX[0b01100100] = LD_IXH_IXH_;
-        opSetIX[0b01101100] = LD_IXL_IXH_;
-        opSetIX[0b01111101] = LD_A_IXL;
-        opSetIX[0b01000101] = LD_B_IXL;
-        opSetIX[0b01001101] = LD_C_IXL;
-        opSetIX[0b01010101] = LD_D_IXL;
-        opSetIX[0b01011101] = LD_E_IXL;
-        opSetIX[0b01100101] = LD_IXL_IXH_;
-        opSetIX[0b01101101] = LD_IXL_IXL_;
-        opSetIX[0b01100111] = LD_IXH_A;
-        opSetIX[0b01100000] = LD_IXH_B;
-        opSetIX[0b01100001] = LD_IXH_C;
-        opSetIX[0b01100010] = LD_IXH_D;
-        opSetIX[0b01100011] = LD_IXH_E;
-        opSetIX[0b01100100] = LD_IXH_IXH_;
-        opSetIX[0b01100101] = LD_IXH_IXL_;
-        opSetIX[0b01101111] = LD_IXL_A;
-        opSetIX[0b01101000] = LD_IXL_B;
-        opSetIX[0b01101001] = LD_IXL_C;
-        opSetIX[0b01101010] = LD_IXL_D;
-        opSetIX[0b01101011] = LD_IXL_E;
-        opSetIX[0b01101100] = LD_IXL_IXH_;
-        opSetIX[0b01101101] = LD_IXL_IXL_;
         opSetIX[0b10000100] = ADD_A_IXH_;
         opSetIX[0b10000101] = ADD_A_IXL_;
         opSetIX[0b10001100] = ADC_A_IXH_;
@@ -5548,24 +5646,10 @@ class Z80
         opSetIX[0b10101101] = XOR_IXL_;
         opSetIX[0b10111100] = CP_IXH_;
         opSetIX[0b10111101] = CP_IXL_;
-        opSetIX[0b01111110] = LD_A_IX;
-        opSetIX[0b01000110] = LD_B_IX;
-        opSetIX[0b01001110] = LD_C_IX;
-        opSetIX[0b01010110] = LD_D_IX;
-        opSetIX[0b01011110] = LD_E_IX;
-        opSetIX[0b01100110] = LD_H_IX;
-        opSetIX[0b01101110] = LD_L_IX;
         opSetIX[0b00001001] = ADD_IX_BC;
         opSetIX[0b00011001] = ADD_IX_DE;
         opSetIX[0b00101001] = ADD_IX_IX;
         opSetIX[0b00111001] = ADD_IX_SP;
-        opSetIX[0b01110111] = LD_IX_A;
-        opSetIX[0b01110000] = LD_IX_B;
-        opSetIX[0b01110001] = LD_IX_C;
-        opSetIX[0b01110010] = LD_IX_D;
-        opSetIX[0b01110011] = LD_IX_E;
-        opSetIX[0b01110100] = LD_IX_H;
-        opSetIX[0b01110101] = LD_IX_L;
 
         opSetIY[0b00100010] = LD_ADDR_IY_;
         opSetIY[0b00100011] = INC_IY_reg_;
@@ -5595,38 +5679,6 @@ class Z80
         opSetIY[0b00101101] = DEC_IYL_;
         opSetIY[0b00100110] = LD_IYH_N_;
         opSetIY[0b00101110] = LD_IYL_N_;
-        opSetIY[0b01100100] = LD_IYH_IYH_;
-        opSetIY[0b01100101] = LD_IYH_IYL_;
-        opSetIY[0b01101100] = LD_IYL_IYH_;
-        opSetIY[0b01101101] = LD_IYL_IYL_;
-        opSetIY[0b01111100] = LD_A_IYH;
-        opSetIY[0b01000100] = LD_B_IYH;
-        opSetIY[0b01001100] = LD_C_IYH;
-        opSetIY[0b01010100] = LD_D_IYH;
-        opSetIY[0b01011100] = LD_E_IYH;
-        opSetIY[0b01100100] = LD_IYH_IYH_;
-        opSetIY[0b01101100] = LD_IYL_IYH_;
-        opSetIY[0b01111101] = LD_A_IYL;
-        opSetIY[0b01000101] = LD_B_IYL;
-        opSetIY[0b01001101] = LD_C_IYL;
-        opSetIY[0b01010101] = LD_D_IYL;
-        opSetIY[0b01011101] = LD_E_IYL;
-        opSetIY[0b01100101] = LD_IYL_IYH_;
-        opSetIY[0b01101101] = LD_IYL_IYL_;
-        opSetIY[0b01100111] = LD_IYH_A;
-        opSetIY[0b01100000] = LD_IYH_B;
-        opSetIY[0b01100001] = LD_IYH_C;
-        opSetIY[0b01100010] = LD_IYH_D;
-        opSetIY[0b01100011] = LD_IYH_E;
-        opSetIY[0b01100100] = LD_IYH_IYH_;
-        opSetIY[0b01100101] = LD_IYH_IYL_;
-        opSetIY[0b01101111] = LD_IYL_A;
-        opSetIY[0b01101000] = LD_IYL_B;
-        opSetIY[0b01101001] = LD_IYL_C;
-        opSetIY[0b01101010] = LD_IYL_D;
-        opSetIY[0b01101011] = LD_IYL_E;
-        opSetIY[0b01101100] = LD_IYL_IYH_;
-        opSetIY[0b01101101] = LD_IYL_IYL_;
         opSetIY[0b10000100] = ADD_A_IYH_;
         opSetIY[0b10000101] = ADD_A_IYL_;
         opSetIY[0b10001100] = ADC_A_IYH_;
@@ -5643,6 +5695,139 @@ class Z80
         opSetIY[0b10101101] = XOR_IYL_;
         opSetIY[0b10111100] = CP_IYH_;
         opSetIY[0b10111101] = CP_IYL_;
+        opSetIY[0b00001001] = ADD_IY_BC;
+        opSetIY[0b00011001] = ADD_IY_DE;
+        opSetIY[0b00101001] = ADD_IY_IY;
+        opSetIY[0b00111001] = ADD_IY_SP;
+
+        opSetIX[0b01000000] = LD_B_B_2;
+        opSetIX[0b01000001] = LD_B_C_2;
+        opSetIX[0b01000010] = LD_B_D_2;
+        opSetIX[0b01000011] = LD_B_E_2;
+        opSetIX[0b01000100] = LD_B_IXH;
+        opSetIX[0b01000101] = LD_B_IXL;
+        opSetIX[0b01000111] = LD_B_A_2;
+
+        opSetIX[0b01001000] = LD_C_B_2;
+        opSetIX[0b01001001] = LD_C_C_2;
+        opSetIX[0b01001010] = LD_C_D_2;
+        opSetIX[0b01001011] = LD_C_E_2;
+        opSetIX[0b01001100] = LD_C_IXH;
+        opSetIX[0b01001101] = LD_C_IXL;
+        opSetIX[0b01001111] = LD_C_A_2;
+
+        opSetIX[0b01010000] = LD_D_B_2;
+        opSetIX[0b01010001] = LD_D_C_2;
+        opSetIX[0b01010010] = LD_D_D_2;
+        opSetIX[0b01010011] = LD_D_E_2;
+        opSetIX[0b01010100] = LD_D_IXH;
+        opSetIX[0b01010101] = LD_D_IXL;
+        opSetIX[0b01010111] = LD_D_A_2;
+
+        opSetIX[0b01011000] = LD_E_B_2;
+        opSetIX[0b01011001] = LD_E_C_2;
+        opSetIX[0b01011010] = LD_E_D_2;
+        opSetIX[0b01011011] = LD_E_E_2;
+        opSetIX[0b01011100] = LD_E_IXH;
+        opSetIX[0b01011101] = LD_E_IXL;
+        opSetIX[0b01011111] = LD_E_A_2;
+
+        opSetIX[0b01100000] = LD_IXH_B;
+        opSetIX[0b01100001] = LD_IXH_C;
+        opSetIX[0b01100010] = LD_IXH_D;
+        opSetIX[0b01100011] = LD_IXH_E;
+        opSetIX[0b01100100] = LD_IXH_IXH_;
+        opSetIX[0b01100101] = LD_IXH_IXL_;
+        opSetIX[0b01100111] = LD_IXH_A;
+
+        opSetIX[0b01101000] = LD_IXL_B;
+        opSetIX[0b01101001] = LD_IXL_C;
+        opSetIX[0b01101010] = LD_IXL_D;
+        opSetIX[0b01101011] = LD_IXL_E;
+        opSetIX[0b01101100] = LD_IXL_IXH_;
+        opSetIX[0b01101101] = LD_IXL_IXL_;
+        opSetIX[0b01101111] = LD_IXL_A;
+
+        opSetIX[0b01111000] = LD_A_B_2;
+        opSetIX[0b01111001] = LD_A_C_2;
+        opSetIX[0b01111010] = LD_A_D_2;
+        opSetIX[0b01111011] = LD_A_E_2;
+        opSetIX[0b01111100] = LD_A_IXH;
+        opSetIX[0b01111101] = LD_A_IXL;
+        opSetIX[0b01111111] = LD_A_A_2;
+
+        opSetIX[0b01111110] = LD_A_IX;
+        opSetIX[0b01000110] = LD_B_IX;
+        opSetIX[0b01001110] = LD_C_IX;
+        opSetIX[0b01010110] = LD_D_IX;
+        opSetIX[0b01011110] = LD_E_IX;
+        opSetIX[0b01100110] = LD_H_IX;
+        opSetIX[0b01101110] = LD_L_IX;
+
+        opSetIX[0b01110111] = LD_IX_A;
+        opSetIX[0b01110000] = LD_IX_B;
+        opSetIX[0b01110001] = LD_IX_C;
+        opSetIX[0b01110010] = LD_IX_D;
+        opSetIX[0b01110011] = LD_IX_E;
+        opSetIX[0b01110100] = LD_IX_H;
+        opSetIX[0b01110101] = LD_IX_L;
+
+        opSetIY[0b01000000] = LD_B_B_2;
+        opSetIY[0b01000001] = LD_B_C_2;
+        opSetIY[0b01000010] = LD_B_D_2;
+        opSetIY[0b01000011] = LD_B_E_2;
+        opSetIY[0b01000100] = LD_B_IYH;
+        opSetIY[0b01000101] = LD_B_IYL;
+        opSetIY[0b01000111] = LD_B_A_2;
+
+        opSetIY[0b01001000] = LD_C_B_2;
+        opSetIY[0b01001001] = LD_C_C_2;
+        opSetIY[0b01001010] = LD_C_D_2;
+        opSetIY[0b01001011] = LD_C_E_2;
+        opSetIY[0b01001100] = LD_C_IYH;
+        opSetIY[0b01001101] = LD_C_IYL;
+        opSetIY[0b01001111] = LD_C_A_2;
+
+        opSetIY[0b01010000] = LD_D_B_2;
+        opSetIY[0b01010001] = LD_D_C_2;
+        opSetIY[0b01010010] = LD_D_D_2;
+        opSetIY[0b01010011] = LD_D_E_2;
+        opSetIY[0b01010100] = LD_D_IYH;
+        opSetIY[0b01010101] = LD_D_IYL;
+        opSetIY[0b01010111] = LD_D_A_2;
+
+        opSetIY[0b01011000] = LD_E_B_2;
+        opSetIY[0b01011001] = LD_E_C_2;
+        opSetIY[0b01011010] = LD_E_D_2;
+        opSetIY[0b01011011] = LD_E_E_2;
+        opSetIY[0b01011100] = LD_E_IYH;
+        opSetIY[0b01011101] = LD_E_IYL;
+        opSetIY[0b01011111] = LD_E_A_2;
+
+        opSetIY[0b01100000] = LD_IYH_B;
+        opSetIY[0b01100001] = LD_IYH_C;
+        opSetIY[0b01100010] = LD_IYH_D;
+        opSetIY[0b01100011] = LD_IYH_E;
+        opSetIY[0b01100100] = LD_IYH_IYH_;
+        opSetIY[0b01100101] = LD_IYH_IYL_;
+        opSetIY[0b01100111] = LD_IYH_A;
+
+        opSetIY[0b01101000] = LD_IYL_B;
+        opSetIY[0b01101001] = LD_IYL_C;
+        opSetIY[0b01101010] = LD_IYL_D;
+        opSetIY[0b01101011] = LD_IYL_E;
+        opSetIY[0b01101100] = LD_IYL_IYH_;
+        opSetIY[0b01101101] = LD_IYL_IYL_;
+        opSetIY[0b01101111] = LD_IYL_A;
+
+        opSetIY[0b01111000] = LD_A_B_2;
+        opSetIY[0b01111001] = LD_A_C_2;
+        opSetIY[0b01111010] = LD_A_D_2;
+        opSetIY[0b01111011] = LD_A_E_2;
+        opSetIY[0b01111100] = LD_A_IYH;
+        opSetIY[0b01111101] = LD_A_IYL;
+        opSetIY[0b01111111] = LD_A_A_2;
+
         opSetIY[0b01111110] = LD_A_IY;
         opSetIY[0b01000110] = LD_B_IY;
         opSetIY[0b01001110] = LD_C_IY;
@@ -5650,10 +5835,7 @@ class Z80
         opSetIY[0b01011110] = LD_E_IY;
         opSetIY[0b01100110] = LD_H_IY;
         opSetIY[0b01101110] = LD_L_IY;
-        opSetIY[0b00001001] = ADD_IY_BC;
-        opSetIY[0b00011001] = ADD_IY_DE;
-        opSetIY[0b00101001] = ADD_IY_IY;
-        opSetIY[0b00111001] = ADD_IY_SP;
+
         opSetIY[0b01110111] = LD_IY_A;
         opSetIY[0b01110000] = LD_IY_B;
         opSetIY[0b01110001] = LD_IY_C;
@@ -5919,8 +6101,6 @@ class Z80
                         if (!isLR35902 || operandNumber < 0xE4) {
                             ret = CALL_C_NN((operandNumber & 0b00111000) >> 3);
                         }
-                    } else if ((operandNumber & 0b11000000) == 0b01000000) {
-                        ret = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
                     } else if (skipIllegalInstructions) {
                         if (isDebug()) log("Skipped an illegal instruction: $%02X", op);
                         reg.PC += 1;
