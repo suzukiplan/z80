@@ -613,13 +613,6 @@ class Z80
             case 0b00101000: return ctx->SRA_IX_with_LD(op3, 0b000);
             case 0b00110000: return ctx->SLL_IX_with_LD(op3, 0b000);
             case 0b00111000: return ctx->SRL_IX_with_LD(op3, 0b000);
-        }
-        switch (op4 & 0b11000111) {
-            case 0b01000110: return ctx->BIT_IX(op3, (op4 & 0b00111000) >> 3);
-            case 0b11000110: return ctx->SET_IX(op3, (op4 & 0b00111000) >> 3);
-            case 0b10000110: return ctx->RES_IX(op3, (op4 & 0b00111000) >> 3);
-        }
-        switch (op4) {
             case 0b10000000: return ctx->RES_IX_with_LD(op3, 0, 0b000);
             case 0b10001000: return ctx->RES_IX_with_LD(op3, 1, 0b000);
             case 0b10010000: return ctx->RES_IX_with_LD(op3, 2, 0b000);
@@ -636,6 +629,30 @@ class Z80
             case 0b11101000: return ctx->SET_IX_with_LD(op3, 5, 0b000);
             case 0b11110000: return ctx->SET_IX_with_LD(op3, 6, 0b000);
             case 0b11111000: return ctx->SET_IX_with_LD(op3, 7, 0b000);
+            case 0b01000110: return ctx->BIT_IX(op3, 0b000);
+            case 0b01001110: return ctx->BIT_IX(op3, 0b001);
+            case 0b01010110: return ctx->BIT_IX(op3, 0b010);
+            case 0b01011110: return ctx->BIT_IX(op3, 0b011);
+            case 0b01100110: return ctx->BIT_IX(op3, 0b100);
+            case 0b01101110: return ctx->BIT_IX(op3, 0b101);
+            case 0b01110110: return ctx->BIT_IX(op3, 0b110);
+            case 0b01111110: return ctx->BIT_IX(op3, 0b111);
+            case 0b11000110: return ctx->SET_IX(op3, 0b000);
+            case 0b11001110: return ctx->SET_IX(op3, 0b001);
+            case 0b11010110: return ctx->SET_IX(op3, 0b010);
+            case 0b11011110: return ctx->SET_IX(op3, 0b011);
+            case 0b11100110: return ctx->SET_IX(op3, 0b100);
+            case 0b11101110: return ctx->SET_IX(op3, 0b101);
+            case 0b11110110: return ctx->SET_IX(op3, 0b110);
+            case 0b11111110: return ctx->SET_IX(op3, 0b111);
+            case 0b10000110: return ctx->RES_IX(op3, 0b000);
+            case 0b10001110: return ctx->RES_IX(op3, 0b001);
+            case 0b10010110: return ctx->RES_IX(op3, 0b010);
+            case 0b10011110: return ctx->RES_IX(op3, 0b011);
+            case 0b10100110: return ctx->RES_IX(op3, 0b100);
+            case 0b10101110: return ctx->RES_IX(op3, 0b101);
+            case 0b10110110: return ctx->RES_IX(op3, 0b110);
+            case 0b10111110: return ctx->RES_IX(op3, 0b111);
         }
         if (ctx->skipIllegalInstructions) {
             if (ctx->isDebug()) ctx->log("Skipped an illegal IX instruction: $DD%02X%02X%02X", 0b11001011, op3, op4);
@@ -671,7 +688,6 @@ class Z80
             case 0b00100110: return ctx->SLA_IY(op3);
             case 0b00101110: return ctx->SRA_IY(op3);
             case 0b00111110: return ctx->SRL_IY(op3);
-#if 0
             case 0b00000000: return ctx->RLC_IY_with_LD(op3, 0b000);
             case 0b00000001: return ctx->RLC_IY_with_LD(op3, 0b001);
             case 0b00000010: return ctx->RLC_IY_with_LD(op3, 0b010);
@@ -686,15 +702,6 @@ class Z80
             case 0b00101000: return ctx->SRA_IY_with_LD(op3, 0b000);
             case 0b00110000: return ctx->SLL_IY_with_LD(op3, 0b000);
             case 0b00111000: return ctx->SRL_IY_with_LD(op3, 0b000);
-#endif
-        }
-        switch (op4 & 0b11000111) {
-            case 0b01000110: return ctx->BIT_IY(op3, (op4 & 0b00111000) >> 3);
-            case 0b11000110: return ctx->SET_IY(op3, (op4 & 0b00111000) >> 3);
-            case 0b10000110: return ctx->RES_IY(op3, (op4 & 0b00111000) >> 3);
-        }
-#if 0
-        switch (op4) {
             case 0b10000000: return ctx->RES_IY_with_LD(op3, 0, 0b000);
             case 0b10001000: return ctx->RES_IY_with_LD(op3, 1, 0b000);
             case 0b10010000: return ctx->RES_IY_with_LD(op3, 2, 0b000);
@@ -711,8 +718,31 @@ class Z80
             case 0b11101000: return ctx->SET_IY_with_LD(op3, 5, 0b000);
             case 0b11110000: return ctx->SET_IY_with_LD(op3, 6, 0b000);
             case 0b11111000: return ctx->SET_IY_with_LD(op3, 7, 0b000);
+            case 0b01000110: return ctx->BIT_IY(op3, 0b000);
+            case 0b01001110: return ctx->BIT_IY(op3, 0b001);
+            case 0b01010110: return ctx->BIT_IY(op3, 0b010);
+            case 0b01011110: return ctx->BIT_IY(op3, 0b011);
+            case 0b01100110: return ctx->BIT_IY(op3, 0b100);
+            case 0b01101110: return ctx->BIT_IY(op3, 0b101);
+            case 0b01110110: return ctx->BIT_IY(op3, 0b110);
+            case 0b01111110: return ctx->BIT_IY(op3, 0b111);
+            case 0b11000110: return ctx->SET_IY(op3, 0b000);
+            case 0b11001110: return ctx->SET_IY(op3, 0b001);
+            case 0b11010110: return ctx->SET_IY(op3, 0b010);
+            case 0b11011110: return ctx->SET_IY(op3, 0b011);
+            case 0b11100110: return ctx->SET_IY(op3, 0b100);
+            case 0b11101110: return ctx->SET_IY(op3, 0b101);
+            case 0b11110110: return ctx->SET_IY(op3, 0b110);
+            case 0b11111110: return ctx->SET_IY(op3, 0b111);
+            case 0b10000110: return ctx->RES_IY(op3, 0b000);
+            case 0b10001110: return ctx->RES_IY(op3, 0b001);
+            case 0b10010110: return ctx->RES_IY(op3, 0b010);
+            case 0b10011110: return ctx->RES_IY(op3, 0b011);
+            case 0b10100110: return ctx->RES_IY(op3, 0b100);
+            case 0b10101110: return ctx->RES_IY(op3, 0b101);
+            case 0b10110110: return ctx->RES_IY(op3, 0b110);
+            case 0b10111110: return ctx->RES_IY(op3, 0b111);
         }
-#endif
         if (ctx->skipIllegalInstructions) {
             if (ctx->isDebug()) ctx->log("Skipped an illegal IY instruction: $DD%02X%02X%02X", 0b11001011, op3, op4);
             ctx->reg.PC += 2;
@@ -2261,6 +2291,19 @@ class Z80
         return RLC_IX(d, rp, buf);
     }
 
+    // Rotate memory (IY+d) Left Circular with load to Reg A/B/C/D/E/H/L/F
+    inline int RLC_IY_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return RLC_IY(d, rp, buf);
+    }
+
     // Rotate memory (IX+d) Right Circular
     inline int RRC_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
@@ -2289,6 +2332,19 @@ class Z80
             buf[0] = '\0';
         }
         return RRC_IX(d, rp, buf);
+    }
+
+    // Rotate memory (IY+d) Right Circular with load to Reg A/B/C/D/E/H/L/F
+    inline int RRC_IY_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return RRC_IY(d, rp, buf);
     }
 
     // Rotate Left memory
@@ -2322,6 +2378,19 @@ class Z80
         return RL_IX(d, rp, buf);
     }
 
+    // Rotate Left memory with load Reg.
+    inline int RL_IY_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return RL_IY(d, rp, buf);
+    }
+
     // Rotate Right memory
     inline int RR_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
@@ -2353,6 +2422,19 @@ class Z80
         return RR_IX(d, rp, buf);
     }
 
+    // Rotate Right memory with load Reg.
+    inline int RR_IY_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return RR_IY(d, rp, buf);
+    }
+
     // Shift operand location (IX+d) left Arithmetic
     inline int SLA_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
@@ -2380,6 +2462,19 @@ class Z80
             buf[0] = '\0';
         }
         return SLA_IX(d, rp, buf);
+    }
+
+    // Shift operand location (IY+d) left Arithmetic with load Reg.
+    inline int SLA_IY_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return SLA_IY(d, rp, buf);
     }
 
     // Shift operand location (IX+d) Right Arithmetic
@@ -2413,6 +2508,19 @@ class Z80
         return SRA_IX(d, rp, buf);
     }
 
+    // Shift operand location (IY+d) right Arithmetic with load Reg.
+    inline int SRA_IY_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return SRA_IY(d, rp, buf);
+    }
+
     // Shift operand location (IX+d) Right Logical
     inline int SRL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
@@ -2440,6 +2548,19 @@ class Z80
             buf[0] = '\0';
         }
         return SRL_IX(d, rp, buf);
+    }
+
+    // Shift operand location (IY+d) Right Logical with load Reg.
+    inline int SRL_IY_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return SRL_IY(d, rp, buf);
     }
 
     // Shift operand location (IX+d) Left Logical
@@ -2472,16 +2593,47 @@ class Z80
         return SLL_IX(d, rp, buf);
     }
 
+    // Shift operand location (IY+d) Left Logical
+    // NOTE: this function is only for SLL_IY_with_LD
+    inline int SLL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    {
+        unsigned short addr = reg.IY + d;
+        unsigned char n = readByte(addr);
+        unsigned char n7 = n & 0x80;
+        if (isDebug()) log("[%04X] SLL (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        n &= 0b011111111;
+        n <<= 1;
+        if (rp) *rp = n;
+        writeByte(addr, n, 3);
+        setFlagByRotate(n, n7);
+        reg.PC += 4;
+        return 0;
+    }
+
+    // Shift operand location (IY+d) Left Logical with load Reg.
+    inline int SLL_IY_with_LD(signed char d, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return SLL_IY(d, rp, buf);
+    }
+
     // Rotate memory (IY+d) Left Circular
-    inline int RLC_IY(signed char d)
+    inline int RLC_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] RLC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] RLC (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         n &= 0b01111111;
         n <<= 1;
-        n |= n7; // differ with RL (IX+d)
+        n |= n7; // differ with RL (IY+d)
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         setFlagByRotate(n, n7);
         reg.PC += 4;
@@ -2489,15 +2641,16 @@ class Z80
     }
 
     // Rotate memory (IY+d) Right Circular
-    inline int RRC_IY(signed char d)
+    inline int RRC_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         unsigned char n0 = n & 0x01;
-        if (isDebug()) log("[%04X] RRC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] RRC (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         n &= 0b11111110;
         n >>= 1;
-        n |= n0 ? 0x80 : 0; // differ with RR (IX+d)
+        n |= n0 ? 0x80 : 0; // differ with RR (IY+d)
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         setFlagByRotate(n, n0);
         reg.PC += 4;
@@ -2505,16 +2658,17 @@ class Z80
     }
 
     // Rotate Left memory
-    inline int RL_IY(signed char d)
+    inline int RL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, c ? "ON" : "OFF", extraLog ? extraLog : "");
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RLC (IY+d)
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         setFlagByRotate(n, n7);
         reg.PC += 4;
@@ -2522,14 +2676,15 @@ class Z80
     }
 
     // Shift operand location (IY+d) left Arithmetic
-    inline int SLA_IY(signed char d)
+    inline int SLA_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] SLA (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] SLA (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         n &= 0b01111111;
         n <<= 1;
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         setFlagByRotate(n, n7);
         reg.PC += 4;
@@ -2537,16 +2692,17 @@ class Z80
     }
 
     // Rotate Right memory
-    inline int RR_IY(signed char d)
+    inline int RR_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         unsigned char n0 = n & 0x01;
-        if (isDebug()) log("[%04X] RR (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RR (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, c ? "ON" : "OFF", extraLog ? extraLog : "");
         n &= 0b11111110;
         n >>= 1;
         n |= c ? 0x80 : 0; // differ with RRC (IY+d)
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         setFlagByRotate(n, n0);
         reg.PC += 4;
@@ -2554,16 +2710,17 @@ class Z80
     }
 
     // Shift operand location (IY+d) Right Arithmetic
-    inline int SRA_IY(signed char d)
+    inline int SRA_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         unsigned char n0 = n & 0x01;
         unsigned char n7 = n & 0x80;
-        if (isDebug()) log("[%04X] SRA (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] SRA (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         n &= 0b11111110;
         n >>= 1;
         n7 ? n |= 0x80 : n &= 0x7F;
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         setFlagByRotate(n, n0);
         reg.PC += 4;
@@ -2571,14 +2728,15 @@ class Z80
     }
 
     // Shift operand location (IY+d) Right Logical
-    inline int SRL_IY(signed char d)
+    inline int SRL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
         unsigned char n0 = n & 0x01;
-        if (isDebug()) log("[%04X] SRL (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] SRL (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         n &= 0b11111110;
         n >>= 1;
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         setFlagByRotate(n, n0);
         reg.PC += 4;
@@ -3977,11 +4135,11 @@ class Z80
     }
 
     // SET bit b of lacation (IY+d)
-    inline int SET_IY(signed char d, unsigned char bit)
+    inline int SET_IY(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        if (isDebug()) log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
             case 0: n |= 0b00000001; break;
             case 1: n |= 0b00000010; break;
@@ -3992,9 +4150,23 @@ class Z80
             case 6: n |= 0b01000000; break;
             case 7: n |= 0b10000000; break;
         }
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         reg.PC += 4;
         return 0;
+    }
+
+    // SET bit b of lacation (IY+d) with load Reg.
+    inline int SET_IY_with_LD(signed char d, unsigned char bit, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return SET_IY(d, bit, rp, buf);
     }
 
     // RESET bit b of register r
@@ -4072,12 +4244,25 @@ class Z80
         return RES_IX(d, bit, rp, buf);
     }
 
+    // RESET bit b of lacation (IY+d) with load Reg.
+    inline int RES_IY_with_LD(signed char d, unsigned char bit, unsigned char r)
+    {
+        char buf[80];
+        unsigned char* rp = getRegisterPointer(r);
+        if (isDebug()) {
+            sprintf(buf, " --> %s", registerDump(r));
+        } else {
+            buf[0] = '\0';
+        }
+        return RES_IY(d, bit, rp, buf);
+    }
+
     // RESET bit b of lacation (IY+d)
-    inline int RES_IY(signed char d, unsigned char bit)
+    inline int RES_IY(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RES (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        if (isDebug()) log("[%04X] RES (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
             case 0: n &= 0b11111110; break;
             case 1: n &= 0b11111101; break;
@@ -4088,6 +4273,7 @@ class Z80
             case 6: n &= 0b10111111; break;
             case 7: n &= 0b01111111; break;
         }
+        if (rp) *rp = n;
         writeByte(addr, n, 3);
         reg.PC += 4;
         return 0;
