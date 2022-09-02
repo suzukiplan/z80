@@ -647,108 +647,78 @@ class Z80
     }
 
     // operand of using IY (first byte is 0b11111101)
-    static inline int OP_IY(Z80* ctx)
+    static inline int OP_IY(Z80* ctx) { return ctx->opSetIY[ctx->readByte(ctx->reg.PC + 1)](ctx); }
+    static inline int OP_IY_illegal(Z80* ctx)
     {
-        unsigned char op2 = ctx->readByte(ctx->reg.PC + 1);
-        switch (op2) {
-            case 0b00100010: return ctx->LD_ADDR_IY();
-            case 0b00100011: return ctx->INC_IY_reg();
-            case 0b00101010: return ctx->LD_IY_ADDR();
-            case 0b00101011: return ctx->DEC_IY_reg();
-            case 0b00110110: return ctx->LD_IY_N();
-            case 0b00100001: return ctx->LD_IY_NN();
-            case 0b00110100: return ctx->INC_IY();
-            case 0b00110101: return ctx->DEC_IY();
-            case 0b10000110: return ctx->ADD_A_IY();
-            case 0b10001110: return ctx->ADC_A_IY();
-            case 0b10010110: return ctx->SUB_A_IY();
-            case 0b10011110: return ctx->SBC_A_IY();
-            case 0b10100110: return ctx->AND_IY();
-            case 0b10101110: return ctx->XOR_IY();
-            case 0b10110110: return ctx->OR_IY();
-            case 0b10111110: return ctx->CP_IY();
-            case 0b11100001: return ctx->POP_IY();
-            case 0b11100011: return ctx->EX_SP_IY();
-            case 0b11100101: return ctx->PUSH_IY();
-            case 0b11101001: return ctx->JP_IY();
-            case 0b11111001: return ctx->LD_SP_IY();
-            case 0b11001011: {
-                unsigned char op3 = ctx->readByte(ctx->reg.PC + 2);
-                unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
-                switch (op4) {
-                    case 0b00000110: return ctx->RLC_IY(op3);
-                    case 0b00001110: return ctx->RRC_IY(op3);
-                    case 0b00010110: return ctx->RL_IY(op3);
-                    case 0b00011110: return ctx->RR_IY(op3);
-                    case 0b00100110: return ctx->SLA_IY(op3);
-                    case 0b00101110: return ctx->SRA_IY(op3);
-                    case 0b00111110: return ctx->SRL_IY(op3);
-                }
-                switch (op4 & 0b11000111) {
-                    case 0b01000110: return ctx->BIT_IY(op3, (op4 & 0b00111000) >> 3);
-                    case 0b11000110: return ctx->SET_IY(op3, (op4 & 0b00111000) >> 3);
-                    case 0b10000110: return ctx->RES_IY(op3, (op4 & 0b00111000) >> 3);
-                }
-            }
-            case 0b00100100: return ctx->INC_IYH();
-            case 0b00101100: return ctx->INC_IYL();
-            case 0b00100101: return ctx->DEC_IYH();
-            case 0b00101101: return ctx->DEC_IYL();
-            case 0b00100110: return ctx->LD_IYH_N();
-            case 0b00101110: return ctx->LD_IYL_N();
-            case 0b01100100: return ctx->LD_IYH_IYH();
-            case 0b01100101: return ctx->LD_IYH_IYL();
-            case 0b01101100: return ctx->LD_IYL_IYH();
-            case 0b01101101: return ctx->LD_IYL_IYL();
-            case 0b01111100: return ctx->LD_R_IYH(0b111);
-            case 0b01000100: return ctx->LD_R_IYH(0b000);
-            case 0b01001100: return ctx->LD_R_IYH(0b001);
-            case 0b01010100: return ctx->LD_R_IYH(0b010);
-            case 0b01011100: return ctx->LD_R_IYH(0b011);
-            case 0b01111101: return ctx->LD_R_IYL(0b111);
-            case 0b01000101: return ctx->LD_R_IYL(0b000);
-            case 0b01001101: return ctx->LD_R_IYL(0b001);
-            case 0b01010101: return ctx->LD_R_IYL(0b010);
-            case 0b01011101: return ctx->LD_R_IYL(0b011);
-            case 0b01100111: return ctx->LD_IYH_R(0b111);
-            case 0b01100000: return ctx->LD_IYH_R(0b000);
-            case 0b01100001: return ctx->LD_IYH_R(0b001);
-            case 0b01100010: return ctx->LD_IYH_R(0b010);
-            case 0b01100011: return ctx->LD_IYH_R(0b011);
-            case 0b01101111: return ctx->LD_IYL_R(0b111);
-            case 0b01101000: return ctx->LD_IYL_R(0b000);
-            case 0b01101001: return ctx->LD_IYL_R(0b001);
-            case 0b01101010: return ctx->LD_IYL_R(0b010);
-            case 0b01101011: return ctx->LD_IYL_R(0b011);
-            case 0b10000100: return ctx->ADD_A_IYH();
-            case 0b10000101: return ctx->ADD_A_IYL();
-            case 0b10001100: return ctx->ADC_A_IYH();
-            case 0b10001101: return ctx->ADC_A_IYL();
-            case 0b10010100: return ctx->SUB_A_IYH();
-            case 0b10010101: return ctx->SUB_A_IYL();
-            case 0b10011100: return ctx->SBC_A_IYH();
-            case 0b10011101: return ctx->SBC_A_IYL();
-            case 0b10100100: return ctx->AND_IYH();
-            case 0b10100101: return ctx->AND_IYL();
-            case 0b10110100: return ctx->OR_IYH();
-            case 0b10110101: return ctx->OR_IYL();
-            case 0b10101100: return ctx->XOR_IYH();
-            case 0b10101101: return ctx->XOR_IYL();
-            case 0b10111100: return ctx->CP_IYH();
-            case 0b10111101: return ctx->CP_IYL();
-        }
-        if ((op2 & 0b11000111) == 0b01000110) {
-            return ctx->LD_R_IY((op2 & 0b00111000) >> 3);
-        } else if ((op2 & 0b11001111) == 0b00001001) {
-            return ctx->ADD_IY_RP((op2 & 0b00110000) >> 4);
-        } else if ((op2 & 0b11111000) == 0b01110000) {
-            return ctx->LD_IY_R(op2 & 0b00000111);
-        } else if (ctx->skipIllegalInstructions) {
-            if (ctx->isDebug()) ctx->log("Skipped an illegal IY instruction: $DD%02X", op2);
+        if (ctx->skipIllegalInstructions) {
+            if (ctx->isDebug()) ctx->log("Skipped an illegal IY(2) instruction");
             ctx->reg.PC += 2;
             return 0;
         }
-        if (ctx->isDebug()) ctx->log("detected an unknown operand: 11111101 - $%02X", op2);
+        if (ctx->isDebug()) ctx->log("detected an illegal IY(2) instruction");
+        return -1;
+    }
+
+    static inline int OP_IY4(Z80* ctx)
+    {
+        unsigned char op3 = ctx->readByte(ctx->reg.PC + 2);
+        unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
+        switch (op4) {
+            case 0b00000110: return ctx->RLC_IY(op3);
+            case 0b00001110: return ctx->RRC_IY(op3);
+            case 0b00010110: return ctx->RL_IY(op3);
+            case 0b00011110: return ctx->RR_IY(op3);
+            case 0b00100110: return ctx->SLA_IY(op3);
+            case 0b00101110: return ctx->SRA_IY(op3);
+            case 0b00111110: return ctx->SRL_IY(op3);
+#if 0
+            case 0b00000000: return ctx->RLC_IY_with_LD(op3, 0b000);
+            case 0b00000001: return ctx->RLC_IY_with_LD(op3, 0b001);
+            case 0b00000010: return ctx->RLC_IY_with_LD(op3, 0b010);
+            case 0b00000011: return ctx->RLC_IY_with_LD(op3, 0b011);
+            case 0b00000100: return ctx->RLC_IY_with_LD(op3, 0b100);
+            case 0b00000101: return ctx->RLC_IY_with_LD(op3, 0b101);
+            case 0b00000111: return ctx->RLC_IY_with_LD(op3, 0b111);
+            case 0b00001000: return ctx->RRC_IY_with_LD(op3, 0b000);
+            case 0b00010000: return ctx->RL_IY_with_LD(op3, 0b000);
+            case 0b00011000: return ctx->RR_IY_with_LD(op3, 0b000);
+            case 0b00100000: return ctx->SLA_IY_with_LD(op3, 0b000);
+            case 0b00101000: return ctx->SRA_IY_with_LD(op3, 0b000);
+            case 0b00110000: return ctx->SLL_IY_with_LD(op3, 0b000);
+            case 0b00111000: return ctx->SRL_IY_with_LD(op3, 0b000);
+#endif
+        }
+        switch (op4 & 0b11000111) {
+            case 0b01000110: return ctx->BIT_IY(op3, (op4 & 0b00111000) >> 3);
+            case 0b11000110: return ctx->SET_IY(op3, (op4 & 0b00111000) >> 3);
+            case 0b10000110: return ctx->RES_IY(op3, (op4 & 0b00111000) >> 3);
+        }
+#if 0
+        switch (op4) {
+            case 0b10000000: return ctx->RES_IY_with_LD(op3, 0, 0b000);
+            case 0b10001000: return ctx->RES_IY_with_LD(op3, 1, 0b000);
+            case 0b10010000: return ctx->RES_IY_with_LD(op3, 2, 0b000);
+            case 0b10011000: return ctx->RES_IY_with_LD(op3, 3, 0b000);
+            case 0b10100000: return ctx->RES_IY_with_LD(op3, 4, 0b000);
+            case 0b10101000: return ctx->RES_IY_with_LD(op3, 5, 0b000);
+            case 0b10110000: return ctx->RES_IY_with_LD(op3, 6, 0b000);
+            case 0b10111000: return ctx->RES_IY_with_LD(op3, 7, 0b000);
+            case 0b11000000: return ctx->SET_IY_with_LD(op3, 0, 0b000);
+            case 0b11001000: return ctx->SET_IY_with_LD(op3, 1, 0b000);
+            case 0b11010000: return ctx->SET_IY_with_LD(op3, 2, 0b000);
+            case 0b11011000: return ctx->SET_IY_with_LD(op3, 3, 0b000);
+            case 0b11100000: return ctx->SET_IY_with_LD(op3, 4, 0b000);
+            case 0b11101000: return ctx->SET_IY_with_LD(op3, 5, 0b000);
+            case 0b11110000: return ctx->SET_IY_with_LD(op3, 6, 0b000);
+            case 0b11111000: return ctx->SET_IY_with_LD(op3, 7, 0b000);
+        }
+#endif
+        if (ctx->skipIllegalInstructions) {
+            if (ctx->isDebug()) ctx->log("Skipped an illegal IY instruction: $DD%02X%02X%02X", 0b11001011, op3, op4);
+            ctx->reg.PC += 2;
+            return 0;
+        }
+        if (ctx->isDebug()) ctx->log("detected an unknown operand: IY - $%02X%02X%02X", 0b11001011, op3, op4);
         return -1;
     }
 
@@ -1332,6 +1302,7 @@ class Z80
     }
 
     // Load Reg. IY(high) with value n
+    static inline int LD_IYH_N_(Z80* ctx) { return ctx->LD_IYH_N(); }
     inline int LD_IYH_N()
     {
         unsigned char n = readByte(reg.PC + 2, 3);
@@ -1342,6 +1313,11 @@ class Z80
     }
 
     // Load Reg. IY(high) with value Reg.
+    static inline int LD_IYH_A(Z80* ctx) { return ctx->LD_IYH_R(0b111); }
+    static inline int LD_IYH_B(Z80* ctx) { return ctx->LD_IYH_R(0b000); }
+    static inline int LD_IYH_C(Z80* ctx) { return ctx->LD_IYH_R(0b001); }
+    static inline int LD_IYH_D(Z80* ctx) { return ctx->LD_IYH_R(0b010); }
+    static inline int LD_IYH_E(Z80* ctx) { return ctx->LD_IYH_R(0b011); }
     inline int LD_IYH_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1352,6 +1328,7 @@ class Z80
     }
 
     // Load Reg. IY(high) with value IY(high)
+    static inline int LD_IYH_IYH_(Z80* ctx) { return ctx->LD_IYH_IYH(); }
     inline int LD_IYH_IYH()
     {
         if (isDebug()) log("[%04X] LD IYH, IYH<$%02X>", reg.PC, getIYH());
@@ -1361,6 +1338,7 @@ class Z80
     }
 
     // Load Reg. IY(high) with value IY(low)
+    static inline int LD_IYH_IYL_(Z80* ctx) { return ctx->LD_IYH_IYL(); }
     inline int LD_IYH_IYL()
     {
         if (isDebug()) log("[%04X] LD IYH, IYL<$%02X>", reg.PC, getIYL());
@@ -1370,6 +1348,7 @@ class Z80
     }
 
     // Load Reg. IY(low) with value n
+    static inline int LD_IYL_N_(Z80* ctx) { return ctx->LD_IYL_N(); }
     inline int LD_IYL_N()
     {
         unsigned char n = readByte(reg.PC + 2, 3);
@@ -1380,6 +1359,11 @@ class Z80
     }
 
     // Load Reg. IY(low) with value Reg.
+    static inline int LD_IYL_A(Z80* ctx) { return ctx->LD_IYL_R(0b111); }
+    static inline int LD_IYL_B(Z80* ctx) { return ctx->LD_IYL_R(0b000); }
+    static inline int LD_IYL_C(Z80* ctx) { return ctx->LD_IYL_R(0b001); }
+    static inline int LD_IYL_D(Z80* ctx) { return ctx->LD_IYL_R(0b010); }
+    static inline int LD_IYL_E(Z80* ctx) { return ctx->LD_IYL_R(0b011); }
     inline int LD_IYL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1390,6 +1374,7 @@ class Z80
     }
 
     // Load Reg. IY(low) with value IY(high)
+    static inline int LD_IYL_IYH_(Z80* ctx) { return ctx->LD_IYL_IYH(); }
     inline int LD_IYL_IYH()
     {
         if (isDebug()) log("[%04X] LD IYL, IYH<$%02X>", reg.PC, getIYH());
@@ -1399,6 +1384,7 @@ class Z80
     }
 
     // Load Reg. IY(low) with value IY(low)
+    static inline int LD_IYL_IYL_(Z80* ctx) { return ctx->LD_IYL_IYL(); }
     inline int LD_IYL_IYL()
     {
         if (isDebug()) log("[%04X] LD IYL, IYL<$%02X>", reg.PC, getIYL());
@@ -1468,6 +1454,13 @@ class Z80
     }
 
     // Load Reg. r with location (IY+d)
+    static inline int LD_A_IY(Z80* ctx) { return ctx->LD_R_IY(0b111); }
+    static inline int LD_B_IY(Z80* ctx) { return ctx->LD_R_IY(0b000); }
+    static inline int LD_C_IY(Z80* ctx) { return ctx->LD_R_IY(0b001); }
+    static inline int LD_D_IY(Z80* ctx) { return ctx->LD_R_IY(0b010); }
+    static inline int LD_E_IY(Z80* ctx) { return ctx->LD_R_IY(0b011); }
+    static inline int LD_H_IY(Z80* ctx) { return ctx->LD_R_IY(0b100); }
+    static inline int LD_L_IY(Z80* ctx) { return ctx->LD_R_IY(0b101); }
     inline int LD_R_IY(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1480,6 +1473,11 @@ class Z80
     }
 
     // Load Reg. r with IYH
+    static inline int LD_A_IYH(Z80* ctx) { return ctx->LD_R_IYH(0b111); }
+    static inline int LD_B_IYH(Z80* ctx) { return ctx->LD_R_IYH(0b000); }
+    static inline int LD_C_IYH(Z80* ctx) { return ctx->LD_R_IYH(0b001); }
+    static inline int LD_D_IYH(Z80* ctx) { return ctx->LD_R_IYH(0b010); }
+    static inline int LD_E_IYH(Z80* ctx) { return ctx->LD_R_IYH(0b011); }
     inline int LD_R_IYH(unsigned char r)
     {
         unsigned char iyh = (reg.IY & 0xFF00) >> 8;
@@ -1491,6 +1489,11 @@ class Z80
     }
 
     // Load Reg. r with IYL
+    static inline int LD_A_IYL(Z80* ctx) { return ctx->LD_R_IYL(0b111); }
+    static inline int LD_B_IYL(Z80* ctx) { return ctx->LD_R_IYL(0b000); }
+    static inline int LD_C_IYL(Z80* ctx) { return ctx->LD_R_IYL(0b001); }
+    static inline int LD_D_IYL(Z80* ctx) { return ctx->LD_R_IYL(0b010); }
+    static inline int LD_E_IYL(Z80* ctx) { return ctx->LD_R_IYL(0b011); }
     inline int LD_R_IYL(unsigned char r)
     {
         unsigned char iyl = reg.IY & 0x00FF;
@@ -1532,6 +1535,13 @@ class Z80
     }
 
     // 	Load location (IY+d) with Reg. r
+    static inline int LD_IY_A(Z80* ctx) { return ctx->LD_IY_R(0b111); }
+    static inline int LD_IY_B(Z80* ctx) { return ctx->LD_IY_R(0b000); }
+    static inline int LD_IY_C(Z80* ctx) { return ctx->LD_IY_R(0b001); }
+    static inline int LD_IY_D(Z80* ctx) { return ctx->LD_IY_R(0b010); }
+    static inline int LD_IY_E(Z80* ctx) { return ctx->LD_IY_R(0b011); }
+    static inline int LD_IY_H(Z80* ctx) { return ctx->LD_IY_R(0b100); }
+    static inline int LD_IY_L(Z80* ctx) { return ctx->LD_IY_R(0b101); }
     inline int LD_IY_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -1557,6 +1567,7 @@ class Z80
     }
 
     // Load location (IY+d) with value n
+    static inline int LD_IY_N_(Z80* ctx) { return ctx->LD_IY_N(); }
     inline int LD_IY_N()
     {
         signed char d = readByte(reg.PC + 2);
@@ -1616,6 +1627,7 @@ class Z80
         return 0;
     }
 
+    static inline int LD_IY_NN_(Z80* ctx) { return ctx->LD_IY_NN(); }
     inline int LD_IY_NN()
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
@@ -1713,6 +1725,7 @@ class Z80
     }
 
     // Load IY with location (nn)
+    static inline int LD_IY_ADDR_(Z80* ctx) { return ctx->LD_IY_ADDR(); }
     inline int LD_IY_ADDR()
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
@@ -1741,6 +1754,7 @@ class Z80
         return 0;
     }
 
+    static inline int LD_ADDR_IY_(Z80* ctx) { return ctx->LD_ADDR_IY(); }
     inline int LD_ADDR_IY()
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
@@ -1767,6 +1781,7 @@ class Z80
     }
 
     // Load SP with IY.
+    static inline int LD_SP_IY_(Z80* ctx) { return ctx->LD_SP_IY(); }
     inline int LD_SP_IY()
     {
         unsigned short value = reg.IY;
@@ -1837,6 +1852,7 @@ class Z80
     }
 
     // Exchange stack top with IY
+    static inline int EX_SP_IY_(Z80* ctx) { return ctx->EX_SP_IY(); }
     inline int EX_SP_IY()
     {
         unsigned char l = readByte(reg.SP);
@@ -1939,6 +1955,7 @@ class Z80
     }
 
     // Push Reg. IY on Stack.
+    static inline int PUSH_IY_(Z80* ctx) { return ctx->PUSH_IY(); }
     inline int PUSH_IY()
     {
         if (isDebug()) log("[%04X] PUSH IY<$%04X> <SP:$%04X>", reg.PC, reg.IY, reg.SP);
@@ -1951,6 +1968,7 @@ class Z80
     }
 
     // Pop Reg. IY from Stack.
+    static inline int POP_IY_(Z80* ctx) { return ctx->POP_IY(); }
     inline int POP_IY()
     {
         unsigned short sp = reg.SP;
@@ -2649,6 +2667,7 @@ class Z80
     }
 
     // Add IYH to Acc.
+    static inline int ADD_A_IYH_(Z80* ctx) { return ctx->ADD_A_IYH(); }
     inline int ADD_A_IYH()
     {
         if (isDebug()) log("[%04X] ADD %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
@@ -2658,6 +2677,7 @@ class Z80
     }
 
     // Add IYL to Acc.
+    static inline int ADD_A_IYL_(Z80* ctx) { return ctx->ADD_A_IYL(); }
     inline int ADD_A_IYL()
     {
         if (isDebug()) log("[%04X] ADD %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
@@ -2701,6 +2721,7 @@ class Z80
     }
 
     // Add location (IY+d) to Acc.
+    static inline int ADD_A_IY_(Z80* ctx) { return ctx->ADD_A_IY(); }
     inline int ADD_A_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -2753,6 +2774,7 @@ class Z80
     }
 
     // Add IYH to Acc.
+    static inline int ADC_A_IYH_(Z80* ctx) { return ctx->ADC_A_IYH(); }
     inline int ADC_A_IYH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
@@ -2763,6 +2785,7 @@ class Z80
     }
 
     // Add IYL to Acc.
+    static inline int ADC_A_IYL_(Z80* ctx) { return ctx->ADC_A_IYL(); }
     inline int ADC_A_IYL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
@@ -2810,6 +2833,7 @@ class Z80
     }
 
     // Add memory with carry
+    static inline int ADC_A_IY_(Z80* ctx) { return ctx->ADC_A_IY(); }
     inline int ADC_A_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -2884,6 +2908,7 @@ class Z80
     }
 
     // Increment location (IY+d)
+    static inline int INC_IY_(Z80* ctx) { return ctx->INC_IY(); }
     inline int INC_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -2897,6 +2922,7 @@ class Z80
     }
 
     // Increment register high 8 bits of IY
+    static inline int INC_IYH_(Z80* ctx) { return ctx->INC_IYH(); }
     inline int INC_IYH()
     {
         unsigned char iyh = getIYH();
@@ -2908,6 +2934,7 @@ class Z80
     }
 
     // Increment register low 8 bits of IY
+    static inline int INC_IYL_(Z80* ctx) { return ctx->INC_IYL(); }
     inline int INC_IYL()
     {
         unsigned char iyl = getIYL();
@@ -2956,6 +2983,7 @@ class Z80
     }
 
     // Subtract IYH to Acc.
+    static inline int SUB_A_IYH_(Z80* ctx) { return ctx->SUB_A_IYH(); }
     inline int SUB_A_IYH()
     {
         if (isDebug()) log("[%04X] SUB %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
@@ -2965,6 +2993,7 @@ class Z80
     }
 
     // Subtract IYL to Acc.
+    static inline int SUB_A_IYL_(Z80* ctx) { return ctx->SUB_A_IYL(); }
     inline int SUB_A_IYL()
     {
         if (isDebug()) log("[%04X] SUB %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
@@ -3008,6 +3037,7 @@ class Z80
     }
 
     // Subtract memory
+    static inline int SUB_A_IY_(Z80* ctx) { return ctx->SUB_A_IY(); }
     inline int SUB_A_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3060,6 +3090,7 @@ class Z80
     }
 
     // Subtract IYH to Acc. with carry
+    static inline int SBC_A_IYH_(Z80* ctx) { return ctx->SBC_A_IYH(); }
     inline int SBC_A_IYH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
@@ -3070,6 +3101,7 @@ class Z80
     }
 
     // Subtract IYL to Acc. with carry
+    static inline int SBC_A_IYL_(Z80* ctx) { return ctx->SBC_A_IYL(); }
     inline int SBC_A_IYL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
@@ -3117,6 +3149,7 @@ class Z80
     }
 
     // Subtract memory with carry
+    static inline int SBC_A_IY_(Z80* ctx) { return ctx->SBC_A_IY(); }
     inline int SBC_A_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3192,6 +3225,7 @@ class Z80
     }
 
     // Decrement location (IY+d)
+    static inline int DEC_IY_(Z80* ctx) { return ctx->DEC_IY(); }
     inline int DEC_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3205,6 +3239,7 @@ class Z80
     }
 
     // Decrement high 8 bits of IY
+    static inline int DEC_IYH_(Z80* ctx) { return ctx->DEC_IYH(); }
     inline int DEC_IYH()
     {
         unsigned char iyh = getIYH();
@@ -3216,6 +3251,7 @@ class Z80
     }
 
     // Decrement low 8 bits of IY
+    static inline int DEC_IYL_(Z80* ctx) { return ctx->DEC_IYL(); }
     inline int DEC_IYL()
     {
         unsigned char iyl = getIYL();
@@ -3295,6 +3331,10 @@ class Z80
     }
 
     // Add register pair to IY
+    static inline int ADD_IY_BC(Z80* ctx) { return ctx->ADD_IY_RP(0b00); }
+    static inline int ADD_IY_DE(Z80* ctx) { return ctx->ADD_IY_RP(0b01); }
+    static inline int ADD_IY_IY(Z80* ctx) { return ctx->ADD_IY_RP(0b10); }
+    static inline int ADD_IY_SP(Z80* ctx) { return ctx->ADD_IY_RP(0b11); }
     inline int ADD_IY_RP(unsigned char rp)
     {
         if (isDebug()) log("[%04X] ADD IY<$%04X>, %s", reg.PC, reg.IY, registerPairDumpIY(rp));
@@ -3326,6 +3366,7 @@ class Z80
     }
 
     // Increment IY
+    static inline int INC_IY_reg_(Z80* ctx) { return ctx->INC_IY_reg(); }
     inline int INC_IY_reg()
     {
         if (isDebug()) log("[%04X] INC IY<$%04X>", reg.PC, reg.IY);
@@ -3355,6 +3396,7 @@ class Z80
     }
 
     // Decrement IY
+    static inline int DEC_IY_reg_(Z80* ctx) { return ctx->DEC_IY_reg(); }
     inline int DEC_IY_reg()
     {
         if (isDebug()) log("[%04X] DEC IY<$%04X>", reg.PC, reg.IY);
@@ -3458,6 +3500,7 @@ class Z80
     }
 
     // AND with register IYH
+    static inline int AND_IYH_(Z80* ctx) { return ctx->AND_IYH(); }
     inline int AND_IYH()
     {
         if (isDebug()) log("[%04X] AND %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
@@ -3466,6 +3509,7 @@ class Z80
     }
 
     // AND with register IYL
+    static inline int AND_IYL_(Z80* ctx) { return ctx->AND_IYL(); }
     inline int AND_IYL()
     {
         if (isDebug()) log("[%04X] AND %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
@@ -3505,6 +3549,7 @@ class Z80
     }
 
     // AND Memory
+    static inline int AND_IY_(Z80* ctx) { return ctx->AND_IY(); }
     inline int AND_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3550,6 +3595,7 @@ class Z80
     }
 
     // OR with register IYH
+    static inline int OR_IYH_(Z80* ctx) { return ctx->OR_IYH(); }
     inline int OR_IYH()
     {
         if (isDebug()) log("[%04X] OR %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
@@ -3558,6 +3604,7 @@ class Z80
     }
 
     // OR with register IYL
+    static inline int OR_IYL_(Z80* ctx) { return ctx->OR_IYL(); }
     inline int OR_IYL()
     {
         if (isDebug()) log("[%04X] OR %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
@@ -3597,6 +3644,7 @@ class Z80
     }
 
     // OR Memory
+    static inline int OR_IY_(Z80* ctx) { return ctx->OR_IY(); }
     inline int OR_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -3642,6 +3690,7 @@ class Z80
     }
 
     // XOR with register IYH
+    static inline int XOR_IYH_(Z80* ctx) { return ctx->XOR_IYH(); }
     inline int XOR_IYH()
     {
         if (isDebug()) log("[%04X] XOR %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
@@ -3650,6 +3699,7 @@ class Z80
     }
 
     // XOR with register IYL
+    static inline int XOR_IYL_(Z80* ctx) { return ctx->XOR_IYL(); }
     inline int XOR_IYL()
     {
         if (isDebug()) log("[%04X] XOR %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
@@ -3689,6 +3739,7 @@ class Z80
     }
 
     // XOR Memory
+    static inline int XOR_IY_(Z80* ctx) { return ctx->XOR_IY(); }
     inline int XOR_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -4117,6 +4168,7 @@ class Z80
     }
 
     // Compare Register IYH
+    static inline int CP_IYH_(Z80* ctx) { return ctx->CP_IYH(); }
     inline int CP_IYH()
     {
         if (isDebug()) log("[%04X] CP %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
@@ -4126,6 +4178,7 @@ class Z80
     }
 
     // Compare Register IYL
+    static inline int CP_IYL_(Z80* ctx) { return ctx->CP_IYL(); }
     inline int CP_IYL()
     {
         if (isDebug()) log("[%04X] CP %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
@@ -4169,6 +4222,7 @@ class Z80
     }
 
     // Compare memory
+    static inline int CP_IY_(Z80* ctx) { return ctx->CP_IY(); }
     inline int CP_IY()
     {
         signed char d = readByte(reg.PC + 2);
@@ -4306,6 +4360,7 @@ class Z80
     }
 
     // Jump to IY
+    static inline int JP_IY_(Z80* ctx) { return ctx->JP_IY(); }
     inline int JP_IY()
     {
         if (isDebug()) log("[%04X] JP IY<$%04X>", reg.PC, reg.IY);
@@ -4825,6 +4880,7 @@ class Z80
 
     int (*opSet1[256])(Z80* ctx);
     int (*opSetIX[256])(Z80* ctx);
+    int (*opSetIY[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
     void setupOpSet1()
@@ -4956,7 +5012,10 @@ class Z80
         opSet1[0b11111011] = EI;
         opSet1[0b11111101] = isLR35902 ? NULL : OP_IY;
         opSet1[0b11111110] = CP_N;
-        for (int i = 0; i < 256; i++) { opSetIX[i] = OP_IX_illegal; }
+        for (int i = 0; i < 256; i++) {
+            opSetIX[i] = OP_IX_illegal;
+            opSetIY[i] = OP_IY_illegal;
+        }
         opSetIX[0b00100010] = LD_ADDR_IX_;
         opSetIX[0b00100011] = INC_IX_reg_;
         opSetIX[0b00101010] = LD_IX_ADDR_;
@@ -5051,6 +5110,100 @@ class Z80
         opSetIX[0b01110011] = LD_IX_E;
         opSetIX[0b01110100] = LD_IX_H;
         opSetIX[0b01110101] = LD_IX_L;
+        opSetIY[0b00100010] = LD_ADDR_IY_;
+        opSetIY[0b00100011] = INC_IY_reg_;
+        opSetIY[0b00101010] = LD_IY_ADDR_;
+        opSetIY[0b00101011] = DEC_IY_reg_;
+        opSetIY[0b00110110] = LD_IY_N_;
+        opSetIY[0b00100001] = LD_IY_NN_;
+        opSetIY[0b00110100] = INC_IY_;
+        opSetIY[0b00110101] = DEC_IY_;
+        opSetIY[0b10000110] = ADD_A_IY_;
+        opSetIY[0b10001110] = ADC_A_IY_;
+        opSetIY[0b10010110] = SUB_A_IY_;
+        opSetIY[0b10011110] = SBC_A_IY_;
+        opSetIY[0b10100110] = AND_IY_;
+        opSetIY[0b10101110] = XOR_IY_;
+        opSetIY[0b10110110] = OR_IY_;
+        opSetIY[0b10111110] = CP_IY_;
+        opSetIY[0b11100001] = POP_IY_;
+        opSetIY[0b11100011] = EX_SP_IY_;
+        opSetIY[0b11100101] = PUSH_IY_;
+        opSetIY[0b11101001] = JP_IY_;
+        opSetIY[0b11111001] = LD_SP_IY_;
+        opSetIY[0b11001011] = OP_IY4;
+        opSetIY[0b00100100] = INC_IYH_;
+        opSetIY[0b00101100] = INC_IYL_;
+        opSetIY[0b00100101] = DEC_IYH_;
+        opSetIY[0b00101101] = DEC_IYL_;
+        opSetIY[0b00100110] = LD_IYH_N_;
+        opSetIY[0b00101110] = LD_IYL_N_;
+        opSetIY[0b01100100] = LD_IYH_IYH_;
+        opSetIY[0b01100101] = LD_IYH_IYL_;
+        opSetIY[0b01101100] = LD_IYL_IYH_;
+        opSetIY[0b01101101] = LD_IYL_IYL_;
+        opSetIY[0b01111100] = LD_A_IYH;
+        opSetIY[0b01000100] = LD_B_IYH;
+        opSetIY[0b01001100] = LD_C_IYH;
+        opSetIY[0b01010100] = LD_D_IYH;
+        opSetIY[0b01011100] = LD_E_IYH;
+        opSetIY[0b01100100] = LD_IYH_IYH_;
+        opSetIY[0b01101100] = LD_IYL_IYH_;
+        opSetIY[0b01111101] = LD_A_IYL;
+        opSetIY[0b01000101] = LD_B_IYL;
+        opSetIY[0b01001101] = LD_C_IYL;
+        opSetIY[0b01010101] = LD_D_IYL;
+        opSetIY[0b01011101] = LD_E_IYL;
+        opSetIY[0b01100101] = LD_IYL_IYH_;
+        opSetIY[0b01101101] = LD_IYL_IYL_;
+        opSetIY[0b01100111] = LD_IYH_A;
+        opSetIY[0b01100000] = LD_IYH_B;
+        opSetIY[0b01100001] = LD_IYH_C;
+        opSetIY[0b01100010] = LD_IYH_D;
+        opSetIY[0b01100011] = LD_IYH_E;
+        opSetIY[0b01100100] = LD_IYH_IYH_;
+        opSetIY[0b01100101] = LD_IYH_IYL_;
+        opSetIY[0b01101111] = LD_IYL_A;
+        opSetIY[0b01101000] = LD_IYL_B;
+        opSetIY[0b01101001] = LD_IYL_C;
+        opSetIY[0b01101010] = LD_IYL_D;
+        opSetIY[0b01101011] = LD_IYL_E;
+        opSetIY[0b01101100] = LD_IYL_IYH_;
+        opSetIY[0b01101101] = LD_IYL_IYL_;
+        opSetIY[0b10000100] = ADD_A_IYH_;
+        opSetIY[0b10000101] = ADD_A_IYL_;
+        opSetIY[0b10001100] = ADC_A_IYH_;
+        opSetIY[0b10001101] = ADC_A_IYL_;
+        opSetIY[0b10010100] = SUB_A_IYH_;
+        opSetIY[0b10010101] = SUB_A_IYL_;
+        opSetIY[0b10011100] = SBC_A_IYH_;
+        opSetIY[0b10011101] = SBC_A_IYL_;
+        opSetIY[0b10100100] = AND_IYH_;
+        opSetIY[0b10100101] = AND_IYL_;
+        opSetIY[0b10110100] = OR_IYH_;
+        opSetIY[0b10110101] = OR_IYL_;
+        opSetIY[0b10101100] = XOR_IYH_;
+        opSetIY[0b10101101] = XOR_IYL_;
+        opSetIY[0b10111100] = CP_IYH_;
+        opSetIY[0b10111101] = CP_IYL_;
+        opSetIY[0b01111110] = LD_A_IY;
+        opSetIY[0b01000110] = LD_B_IY;
+        opSetIY[0b01001110] = LD_C_IY;
+        opSetIY[0b01010110] = LD_D_IY;
+        opSetIY[0b01011110] = LD_E_IY;
+        opSetIY[0b01100110] = LD_H_IY;
+        opSetIY[0b01101110] = LD_L_IY;
+        opSetIY[0b00001001] = ADD_IY_BC;
+        opSetIY[0b00011001] = ADD_IY_DE;
+        opSetIY[0b00101001] = ADD_IY_IY;
+        opSetIY[0b00111001] = ADD_IY_SP;
+        opSetIY[0b01110111] = LD_IY_A;
+        opSetIY[0b01110000] = LD_IY_B;
+        opSetIY[0b01110001] = LD_IY_C;
+        opSetIY[0b01110010] = LD_IY_D;
+        opSetIY[0b01110011] = LD_IY_E;
+        opSetIY[0b01110100] = LD_IY_H;
+        opSetIY[0b01110101] = LD_IY_L;
     }
 
     inline void checkInterrupt()
