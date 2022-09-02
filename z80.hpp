@@ -3444,6 +3444,13 @@ class Z80
     }
 
     // Decrement Register
+    static inline int DEC_B(Z80* ctx) { return ctx->DEC_R(0b000); }
+    static inline int DEC_C(Z80* ctx) { return ctx->DEC_R(0b001); }
+    static inline int DEC_D(Z80* ctx) { return ctx->DEC_R(0b010); }
+    static inline int DEC_E(Z80* ctx) { return ctx->DEC_R(0b011); }
+    static inline int DEC_H(Z80* ctx) { return ctx->DEC_R(0b100); }
+    static inline int DEC_L(Z80* ctx) { return ctx->DEC_R(0b101); }
+    static inline int DEC_A(Z80* ctx) { return ctx->DEC_R(0b111); }
     inline int DEC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -5362,6 +5369,14 @@ class Z80
         opSet1[0b00100011] = INC_RP_HL;
         opSet1[0b00110011] = INC_RP_SP;
 
+        opSet1[0b00000101] = DEC_B;
+        opSet1[0b00001101] = DEC_C;
+        opSet1[0b00010101] = DEC_D;
+        opSet1[0b00011101] = DEC_E;
+        opSet1[0b00100101] = DEC_H;
+        opSet1[0b00101101] = DEC_L;
+        opSet1[0b00111101] = DEC_A;
+
         opSet1[0b00001011] = DEC_RP_BC;
         opSet1[0b00011011] = DEC_RP_DE;
         opSet1[0b00101011] = DEC_RP_HL;
@@ -5849,9 +5864,7 @@ class Z80
                 int ret = -1;
                 if (NULL == op) {
                     // execute an operand that register type has specified in the first byte.
-                    if ((operandNumber & 0b11000111) == 0b00000101) {
-                        ret = DEC_R((operandNumber & 0b00111000) >> 3);
-                    } else if ((operandNumber & 0b11000111) == 0b11000010) {
+                    if ((operandNumber & 0b11000111) == 0b11000010) {
                         ret = JP_C_NN((operandNumber & 0b00111000) >> 3);
                     } else if ((operandNumber & 0b11000111) == 0b11000100) {
                         if (!isLR35902 || operandNumber < 0xE4) {
