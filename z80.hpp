@@ -4868,6 +4868,14 @@ class Z80
     }
 
     // Interrupt
+    static inline int RST00(Z80* ctx) { return ctx->RST(0, true); }
+    static inline int RST08(Z80* ctx) { return ctx->RST(1, true); }
+    static inline int RST10(Z80* ctx) { return ctx->RST(2, true); }
+    static inline int RST18(Z80* ctx) { return ctx->RST(3, true); }
+    static inline int RST20(Z80* ctx) { return ctx->RST(4, true); }
+    static inline int RST28(Z80* ctx) { return ctx->RST(5, true); }
+    static inline int RST30(Z80* ctx) { return ctx->RST(6, true); }
+    static inline int RST38(Z80* ctx) { return ctx->RST(7, true); }
     inline int RST(unsigned char t, bool incrementPC)
     {
         unsigned short addr = t * 8;
@@ -5424,6 +5432,15 @@ class Z80
         opSet1[0b11110000] = RET_C6;
         opSet1[0b11111000] = RET_C7;
 
+        opSet1[0b11000111] = RST00;
+        opSet1[0b11001111] = RST08;
+        opSet1[0b11010111] = RST10;
+        opSet1[0b11011111] = RST18;
+        opSet1[0b11100111] = RST20;
+        opSet1[0b11101111] = RST28;
+        opSet1[0b11110111] = RST30;
+        opSet1[0b11111111] = RST38;
+
         opSet1[0b11000011] = JP_NN;
         opSet1[0b11001001] = RET;
         opSet1[0b11001011] = OP_R;
@@ -5902,8 +5919,6 @@ class Z80
                         if (!isLR35902 || operandNumber < 0xE4) {
                             ret = CALL_C_NN((operandNumber & 0b00111000) >> 3);
                         }
-                    } else if ((operandNumber & 0b11000111) == 0b11000111) {
-                        ret = RST((operandNumber & 0b00111000) >> 3, true);
                     } else if ((operandNumber & 0b11000000) == 0b01000000) {
                         ret = LD_R1_R2((operandNumber & 0b00111000) >> 3, operandNumber & 0b00000111);
                     } else if (skipIllegalInstructions) {
