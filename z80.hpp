@@ -5189,7 +5189,7 @@ class Z80
     int (*opSetIY[256])(Z80* ctx);
 
     // setup the operands or operand groups that detectable in fixed single byte
-    void setupOpSet1()
+    void setupOperandTable()
     {
         ::memset(&opSet1, 0, sizeof(opSet1));
         opSet1[0b00000000] = NOP;
@@ -5470,6 +5470,7 @@ class Z80
         opSetIX[0b01110011] = LD_IX_E;
         opSetIX[0b01110100] = LD_IX_H;
         opSetIX[0b01110101] = LD_IX_L;
+
         opSetIY[0b00100010] = LD_ADDR_IY_;
         opSetIY[0b00100011] = INC_IY_reg_;
         opSetIY[0b00101010] = LD_IY_ADDR_;
@@ -5655,7 +5656,7 @@ class Z80
         reg.SP = 0xffff;
         this->isLR35902 = (NULL == in && NULL == out);
         this->skipIllegalInstructions = false;
-        setupOpSet1();
+        setupOperandTable();
     }
 
     ~Z80()
