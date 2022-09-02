@@ -1923,6 +1923,15 @@ class Z80
         setFlagPV(isEvenNumberBits(n));
     }
 
+    inline unsigned char SLL(unsigned char n)
+    {
+        unsigned char c = n & 0x80;
+        n &= 0b01111111;
+        n <<= 1;
+        setFlagByRotate(n, c);
+        return n;
+    }
+
     // Rotate register Left Circular
     static inline int RLC_B(Z80* ctx) { return ctx->RLC_R(0b000); }
     static inline int RLC_C(Z80* ctx) { return ctx->RLC_R(0b001); }
@@ -2082,11 +2091,8 @@ class Z80
     inline int SLL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char r7 = *rp & 0x80;
         if (isDebug()) log("[%04X] SLL %s", reg.PC, registerDump(r));
-        *rp &= 0b01111111;
-        *rp <<= 1;
-        setFlagByRotate(*rp, r7);
+        *rp = SLL(*rp);
         reg.PC += 2;
         return 0;
     }
@@ -2217,12 +2223,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        unsigned char n7 = n & 0x80;
         if (isDebug()) log("[%04X] SLL (HL<$%04X>) = $%02X", reg.PC, addr, n);
-        n &= 0b01111111;
-        n <<= 1;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n7);
+        writeByte(addr, SLL(n), 3);
         reg.PC += 2;
         return 0;
     }
@@ -2641,13 +2643,10 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        unsigned char n7 = n & 0x80;
         if (isDebug()) log("[%04X] SLL (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
-        n &= 0b011111111;
-        n <<= 1;
-        if (rp) *rp = n;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n7);
+        unsigned char result = SLL(n);
+        writeByte(addr, result, 3);
+        if (rp) *rp = result;
         reg.PC += 4;
         return 0;
     }
@@ -2679,13 +2678,10 @@ class Z80
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        unsigned char n7 = n & 0x80;
         if (isDebug()) log("[%04X] SLL (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
-        n &= 0b011111111;
-        n <<= 1;
-        if (rp) *rp = n;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n7);
+        unsigned char result = SLL(n);
+        writeByte(addr, result, 3);
+        if (rp) *rp = result;
         reg.PC += 4;
         return 0;
     }
