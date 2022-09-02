@@ -5670,7 +5670,39 @@ class Z80
         NULL, JP_IX_, NULL, NULL, NULL, NULL, NULL, NULL,
         NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
         NULL, LD_SP_IX_, NULL, NULL, NULL, NULL, NULL, NULL};
-    int (*opSetIY[256])(Z80* ctx);
+    int (*opSetIY[256])(Z80* ctx) = {
+        NULL, NULL, NULL, NULL, INC_B_2, DEC_B_2, LD_B_N_3, NULL,
+        NULL, ADD_IY_BC, NULL, NULL, INC_C_2, DEC_C_2, LD_C_N_3, NULL,
+        NULL, NULL, NULL, NULL, INC_D_2, DEC_D_2, LD_D_N_3, NULL,
+        NULL, ADD_IY_DE, NULL, NULL, INC_E_2, DEC_E_2, LD_E_N_3, NULL,
+        NULL, LD_IY_NN_, LD_ADDR_IY_, INC_IY_reg_, INC_IYH_, DEC_IYH_, LD_IYH_N_, NULL,
+        NULL, ADD_IY_IY, LD_IY_ADDR_, DEC_IY_reg_, INC_IYL_, DEC_IYL_, LD_IYL_N_, NULL,
+        NULL, NULL, NULL, NULL, INC_IY_, DEC_IY_, LD_IY_N_, NULL,
+        NULL, ADD_IY_SP, NULL, NULL, INC_A_2, DEC_A_2, LD_A_N_3, NULL,
+        LD_B_B_2, LD_B_C_2, LD_B_D_2, LD_B_E_2, LD_B_IYH, LD_B_IYL, LD_B_IY, LD_B_A_2,
+        LD_C_B_2, LD_C_C_2, LD_C_D_2, LD_C_E_2, LD_C_IYH, LD_C_IYL, LD_C_IY, LD_C_A_2,
+        LD_D_B_2, LD_D_C_2, LD_D_D_2, LD_D_E_2, LD_D_IYH, LD_D_IYL, LD_D_IY, LD_D_A_2,
+        LD_E_B_2, LD_E_C_2, LD_E_D_2, LD_E_E_2, LD_E_IYH, LD_E_IYL, LD_E_IY, LD_E_A_2,
+        LD_IYH_B, LD_IYH_C, LD_IYH_D, LD_IYH_E, LD_IYH_IYH_, LD_IYH_IYL_, LD_H_IY, LD_IYH_A,
+        LD_IYL_B, LD_IYL_C, LD_IYL_D, LD_IYL_E, LD_IYL_IYH_, LD_IYL_IYL_, LD_L_IY, LD_IYL_A,
+        LD_IY_B, LD_IY_C, LD_IY_D, LD_IY_E, LD_IY_H, LD_IY_L, NULL, LD_IY_A,
+        LD_A_B_2, LD_A_C_2, LD_A_D_2, LD_A_E_2, LD_A_IYH, LD_A_IYL, LD_A_IY, LD_A_A_2,
+        ADD_A_B_2, ADD_A_C_2, ADD_A_D_2, ADD_A_E_2, ADD_A_IYH_, ADD_A_IYL_, ADD_A_IY_, ADD_A_A_2,
+        ADC_A_B_2, ADC_A_C_2, ADC_A_D_2, ADC_A_E_2, ADC_A_IYH_, ADC_A_IYL_, ADC_A_IY_, ADC_A_A_2,
+        SUB_A_B_2, SUB_A_C_2, SUB_A_D_2, SUB_A_E_2, SUB_A_IYH_, SUB_A_IYL_, SUB_A_IY_, SUB_A_A_2,
+        SBC_A_B_2, SBC_A_C_2, SBC_A_D_2, SBC_A_E_2, SBC_A_IYH_, SBC_A_IYL_, SBC_A_IY_, SBC_A_A_2,
+        AND_B_2, AND_C_2, AND_D_2, AND_E_2, AND_IYH_, AND_IYL_, AND_IY_, AND_A_2,
+        XOR_B_2, XOR_C_2, XOR_D_2, XOR_E_2, XOR_IYH_, XOR_IYL_, XOR_IY_, XOR_A_2,
+        OR_B_2, OR_C_2, OR_D_2, OR_E_2, OR_IYH_, OR_IYL_, OR_IY_, OR_A_2,
+        CP_B_2, CP_C_2, CP_D_2, CP_E_2, CP_IYH_, CP_IYL_, CP_IY_, CP_A_2,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, OP_IY4, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, POP_IY_, NULL, EX_SP_IY_, NULL, PUSH_IY_, NULL, NULL,
+        NULL, JP_IY_, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, LD_SP_IY_, NULL, NULL, NULL, NULL, NULL, NULL};
 
     // setup the operands or operand groups that detectable in fixed single byte
     void setupOperandTable()
@@ -5707,129 +5739,6 @@ class Z80
             opSetCB[48 + 6] = SWAP_HL_;
             opSetCB[48 + 7] = SWAP_A;
         }
-        for (int i = 0; i < 256; i++) {
-            opSetIY[i] = OP_IY_illegal;
-        }
-        opSetIY[0b00100010] = LD_ADDR_IY_;
-        opSetIY[0b00100011] = INC_IY_reg_;
-        opSetIY[0b00101010] = LD_IY_ADDR_;
-        opSetIY[0b00101011] = DEC_IY_reg_;
-        opSetIY[0b00110110] = LD_IY_N_;
-        opSetIY[0b00100001] = LD_IY_NN_;
-        opSetIY[0b00110100] = INC_IY_;
-        opSetIY[0b00110101] = DEC_IY_;
-        opSetIY[0b10000110] = ADD_A_IY_;
-        opSetIY[0b10001110] = ADC_A_IY_;
-        opSetIY[0b10010110] = SUB_A_IY_;
-        opSetIY[0b10011110] = SBC_A_IY_;
-        opSetIY[0b10100110] = AND_IY_;
-        opSetIY[0b10101110] = XOR_IY_;
-        opSetIY[0b10110110] = OR_IY_;
-        opSetIY[0b10111110] = CP_IY_;
-        opSetIY[0b11100001] = POP_IY_;
-        opSetIY[0b11100011] = EX_SP_IY_;
-        opSetIY[0b11100101] = PUSH_IY_;
-        opSetIY[0b11101001] = JP_IY_;
-        opSetIY[0b11111001] = LD_SP_IY_;
-        opSetIY[0b11001011] = OP_IY4;
-        opSetIY[0b00100100] = INC_IYH_;
-        opSetIY[0b00101100] = INC_IYL_;
-        opSetIY[0b00100101] = DEC_IYH_;
-        opSetIY[0b00101101] = DEC_IYL_;
-        opSetIY[0b00100110] = LD_IYH_N_;
-        opSetIY[0b00101110] = LD_IYL_N_;
-        opSetIY[0b10000100] = ADD_A_IYH_;
-        opSetIY[0b10000101] = ADD_A_IYL_;
-        opSetIY[0b10001100] = ADC_A_IYH_;
-        opSetIY[0b10001101] = ADC_A_IYL_;
-        opSetIY[0b10010100] = SUB_A_IYH_;
-        opSetIY[0b10010101] = SUB_A_IYL_;
-        opSetIY[0b10011100] = SBC_A_IYH_;
-        opSetIY[0b10011101] = SBC_A_IYL_;
-        opSetIY[0b10100100] = AND_IYH_;
-        opSetIY[0b10100101] = AND_IYL_;
-        opSetIY[0b10110100] = OR_IYH_;
-        opSetIY[0b10110101] = OR_IYL_;
-        opSetIY[0b10101100] = XOR_IYH_;
-        opSetIY[0b10101101] = XOR_IYL_;
-        opSetIY[0b10111100] = CP_IYH_;
-        opSetIY[0b10111101] = CP_IYL_;
-        opSetIY[0b00001001] = ADD_IY_BC;
-        opSetIY[0b00011001] = ADD_IY_DE;
-        opSetIY[0b00101001] = ADD_IY_IY;
-        opSetIY[0b00111001] = ADD_IY_SP;
-
-        opSetIY[0b01000000] = LD_B_B_2;
-        opSetIY[0b01000001] = LD_B_C_2;
-        opSetIY[0b01000010] = LD_B_D_2;
-        opSetIY[0b01000011] = LD_B_E_2;
-        opSetIY[0b01000100] = LD_B_IYH;
-        opSetIY[0b01000101] = LD_B_IYL;
-        opSetIY[0b01000111] = LD_B_A_2;
-
-        opSetIY[0b01001000] = LD_C_B_2;
-        opSetIY[0b01001001] = LD_C_C_2;
-        opSetIY[0b01001010] = LD_C_D_2;
-        opSetIY[0b01001011] = LD_C_E_2;
-        opSetIY[0b01001100] = LD_C_IYH;
-        opSetIY[0b01001101] = LD_C_IYL;
-        opSetIY[0b01001111] = LD_C_A_2;
-
-        opSetIY[0b01010000] = LD_D_B_2;
-        opSetIY[0b01010001] = LD_D_C_2;
-        opSetIY[0b01010010] = LD_D_D_2;
-        opSetIY[0b01010011] = LD_D_E_2;
-        opSetIY[0b01010100] = LD_D_IYH;
-        opSetIY[0b01010101] = LD_D_IYL;
-        opSetIY[0b01010111] = LD_D_A_2;
-
-        opSetIY[0b01011000] = LD_E_B_2;
-        opSetIY[0b01011001] = LD_E_C_2;
-        opSetIY[0b01011010] = LD_E_D_2;
-        opSetIY[0b01011011] = LD_E_E_2;
-        opSetIY[0b01011100] = LD_E_IYH;
-        opSetIY[0b01011101] = LD_E_IYL;
-        opSetIY[0b01011111] = LD_E_A_2;
-
-        opSetIY[0b01100000] = LD_IYH_B;
-        opSetIY[0b01100001] = LD_IYH_C;
-        opSetIY[0b01100010] = LD_IYH_D;
-        opSetIY[0b01100011] = LD_IYH_E;
-        opSetIY[0b01100100] = LD_IYH_IYH_;
-        opSetIY[0b01100101] = LD_IYH_IYL_;
-        opSetIY[0b01100111] = LD_IYH_A;
-
-        opSetIY[0b01101000] = LD_IYL_B;
-        opSetIY[0b01101001] = LD_IYL_C;
-        opSetIY[0b01101010] = LD_IYL_D;
-        opSetIY[0b01101011] = LD_IYL_E;
-        opSetIY[0b01101100] = LD_IYL_IYH_;
-        opSetIY[0b01101101] = LD_IYL_IYL_;
-        opSetIY[0b01101111] = LD_IYL_A;
-
-        opSetIY[0b01111000] = LD_A_B_2;
-        opSetIY[0b01111001] = LD_A_C_2;
-        opSetIY[0b01111010] = LD_A_D_2;
-        opSetIY[0b01111011] = LD_A_E_2;
-        opSetIY[0b01111100] = LD_A_IYH;
-        opSetIY[0b01111101] = LD_A_IYL;
-        opSetIY[0b01111111] = LD_A_A_2;
-
-        opSetIY[0b01111110] = LD_A_IY;
-        opSetIY[0b01000110] = LD_B_IY;
-        opSetIY[0b01001110] = LD_C_IY;
-        opSetIY[0b01010110] = LD_D_IY;
-        opSetIY[0b01011110] = LD_E_IY;
-        opSetIY[0b01100110] = LD_H_IY;
-        opSetIY[0b01101110] = LD_L_IY;
-
-        opSetIY[0b01110111] = LD_IY_A;
-        opSetIY[0b01110000] = LD_IY_B;
-        opSetIY[0b01110001] = LD_IY_C;
-        opSetIY[0b01110010] = LD_IY_D;
-        opSetIY[0b01110011] = LD_IY_E;
-        opSetIY[0b01110100] = LD_IY_H;
-        opSetIY[0b01110101] = LD_IY_L;
     }
 
     inline void checkInterrupt()
