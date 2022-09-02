@@ -1619,12 +1619,19 @@ class Z80
     }
 
     // Load location (HL) with Reg. r
+    static inline int LD_HL_B(Z80* ctx) { return ctx->LD_HL_R(0b000); }
+    static inline int LD_HL_C(Z80* ctx) { return ctx->LD_HL_R(0b001); }
+    static inline int LD_HL_D(Z80* ctx) { return ctx->LD_HL_R(0b010); }
+    static inline int LD_HL_E(Z80* ctx) { return ctx->LD_HL_R(0b011); }
+    static inline int LD_HL_H(Z80* ctx) { return ctx->LD_HL_R(0b100); }
+    static inline int LD_HL_L(Z80* ctx) { return ctx->LD_HL_R(0b101); }
+    static inline int LD_HL_A(Z80* ctx) { return ctx->LD_HL_R(0b111); }
     inline int LD_HL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned short addr = getHL();
         if (isDebug()) log("[%04X] LD (%s), %s", reg.PC, registerPairDump(0b10), registerDump(r));
-        if (rp) writeByte(addr, *rp, 3);
+        writeByte(addr, *rp, 3);
         reg.PC += 1;
         return 0;
     }
@@ -5184,6 +5191,8 @@ class Z80
         opSet1[0b00111010] = isLR35902 ? LDD_A_HL : LD_A_NN;
         opSet1[0b00111111] = CCF;
         opSet1[0b01110110] = HALT;
+
+        opSet1[0b11000110] = ADD_A_N;
         opSet1[0b10000000 + 0b000] = ADD_A_B;
         opSet1[0b10000000 + 0b001] = ADD_A_C;
         opSet1[0b10000000 + 0b010] = ADD_A_D;
@@ -5192,6 +5201,8 @@ class Z80
         opSet1[0b10000000 + 0b101] = ADD_A_L;
         opSet1[0b10000000 + 0b110] = ADD_A_HL;
         opSet1[0b10000000 + 0b111] = ADD_A_A;
+
+        opSet1[0b11001110] = ADC_A_N;
         opSet1[0b10001000 + 0b000] = ADC_A_B;
         opSet1[0b10001000 + 0b001] = ADC_A_C;
         opSet1[0b10001000 + 0b010] = ADC_A_D;
@@ -5200,6 +5211,8 @@ class Z80
         opSet1[0b10001000 + 0b101] = ADC_A_L;
         opSet1[0b10001000 + 0b110] = ADC_A_HL;
         opSet1[0b10001000 + 0b111] = ADC_A_A;
+
+        opSet1[0b11010110] = SUB_A_N;
         opSet1[0b10010000 + 0b000] = SUB_A_B;
         opSet1[0b10010000 + 0b001] = SUB_A_C;
         opSet1[0b10010000 + 0b010] = SUB_A_D;
@@ -5208,6 +5221,8 @@ class Z80
         opSet1[0b10010000 + 0b101] = SUB_A_L;
         opSet1[0b10010000 + 0b110] = SUB_A_HL;
         opSet1[0b10010000 + 0b111] = SUB_A_A;
+
+        opSet1[0b11011110] = SBC_A_N;
         opSet1[0b10011000 + 0b000] = SBC_A_B;
         opSet1[0b10011000 + 0b001] = SBC_A_C;
         opSet1[0b10011000 + 0b010] = SBC_A_D;
@@ -5216,6 +5231,8 @@ class Z80
         opSet1[0b10011000 + 0b101] = SBC_A_L;
         opSet1[0b10011000 + 0b110] = SBC_A_HL;
         opSet1[0b10011000 + 0b111] = SBC_A_A;
+
+        opSet1[0b11100110] = AND_N;
         opSet1[0b10100000 + 0b000] = AND_B;
         opSet1[0b10100000 + 0b001] = AND_C;
         opSet1[0b10100000 + 0b010] = AND_D;
@@ -5224,6 +5241,8 @@ class Z80
         opSet1[0b10100000 + 0b101] = AND_L;
         opSet1[0b10100000 + 0b110] = AND_HL;
         opSet1[0b10100000 + 0b111] = AND_A;
+
+        opSet1[0b11101110] = XOR_N;
         opSet1[0b10101000 + 0b000] = XOR_B;
         opSet1[0b10101000 + 0b001] = XOR_C;
         opSet1[0b10101000 + 0b010] = XOR_D;
@@ -5232,6 +5251,8 @@ class Z80
         opSet1[0b10101000 + 0b101] = XOR_L;
         opSet1[0b10101000 + 0b110] = XOR_HL;
         opSet1[0b10101000 + 0b111] = XOR_A;
+
+        opSet1[0b11110110] = OR_N;
         opSet1[0b10110000 + 0b000] = OR_B;
         opSet1[0b10110000 + 0b001] = OR_C;
         opSet1[0b10110000 + 0b010] = OR_D;
@@ -5240,6 +5261,8 @@ class Z80
         opSet1[0b10110000 + 0b101] = OR_L;
         opSet1[0b10110000 + 0b110] = OR_HL;
         opSet1[0b10110000 + 0b111] = OR_A;
+
+        opSet1[0b11111110] = CP_N;
         opSet1[0b10111000 + 0b000] = CP_B;
         opSet1[0b10111000 + 0b001] = CP_C;
         opSet1[0b10111000 + 0b010] = CP_D;
@@ -5248,40 +5271,42 @@ class Z80
         opSet1[0b10111000 + 0b101] = CP_L;
         opSet1[0b10111000 + 0b110] = CP_HL;
         opSet1[0b10111000 + 0b111] = CP_A;
+
+        opSet1[0b01110000] = LD_HL_B;
+        opSet1[0b01110001] = LD_HL_C;
+        opSet1[0b01110010] = LD_HL_D;
+        opSet1[0b01110011] = LD_HL_E;
+        opSet1[0b01110100] = LD_HL_H;
+        opSet1[0b01110101] = LD_HL_L;
+        opSet1[0b01110111] = LD_HL_A;
+
         opSet1[0b11000011] = JP_NN;
-        opSet1[0b11000110] = ADD_A_N;
         opSet1[0b11001001] = RET;
         opSet1[0b11001011] = OP_R;
         opSet1[0b11001101] = CALL_NN;
-        opSet1[0b11001110] = ADC_A_N;
         opSet1[0b11010011] = isLR35902 ? NULL : OUT_N_A;
-        opSet1[0b11010110] = SUB_A_N;
         opSet1[0b11011011] = isLR35902 ? NULL : IN_A_N;
-        opSet1[0b11011110] = SBC_A_N;
         opSet1[0b11011001] = isLR35902 ? LR35902_RETI : EXX;
         opSet1[0b11011101] = isLR35902 ? NULL : OP_IX;
         opSet1[0b11100000] = isLR35902 ? LDH_N_A : NULL;
         opSet1[0b11100010] = isLR35902 ? LDH_C_A : NULL;
         opSet1[0b11100011] = isLR35902 ? NULL : EX_SP_HL;
-        opSet1[0b11100110] = AND_N;
         opSet1[0b11101000] = isLR35902 ? ADD_SP_N : NULL;
         opSet1[0b11101001] = JP_HL;
         opSet1[0b11101010] = isLR35902 ? LD_NN_A : NULL;
         opSet1[0b11101011] = isLR35902 ? NULL : EX_DE_HL;
         opSet1[0b11101101] = isLR35902 ? NULL : EXTRA;
-        opSet1[0b11101110] = XOR_N;
         opSet1[0b11110000] = isLR35902 ? LDH_A_N : NULL;
         opSet1[0b11110001] = POP_AF;
         opSet1[0b11110010] = isLR35902 ? LDH_A_C : NULL;
         opSet1[0b11110011] = DI;
         opSet1[0b11110101] = PUSH_AF;
-        opSet1[0b11110110] = OR_N;
         opSet1[0b11111000] = isLR35902 ? LDHL_SP_N : NULL;
         opSet1[0b11111001] = LD_SP_HL;
         opSet1[0b11111010] = isLR35902 ? LD_A_NN : NULL;
         opSet1[0b11111011] = EI;
         opSet1[0b11111101] = isLR35902 ? NULL : OP_IY;
-        opSet1[0b11111110] = CP_N;
+
         for (int i = 0; i < 256; i++) {
             opSetIX[i] = OP_IX_illegal;
             opSetIY[i] = OP_IY_illegal;
@@ -5728,9 +5753,7 @@ class Z80
                 int ret = -1;
                 if (NULL == op) {
                     // execute an operand that register type has specified in the first byte.
-                    if ((operandNumber & 0b11111000) == 0b01110000) {
-                        ret = LD_HL_R(operandNumber & 0b00000111);
-                    } else if ((operandNumber & 0b11001111) == 0b00001001) {
+                    if ((operandNumber & 0b11001111) == 0b00001001) {
                         ret = ADD_HL_RP((operandNumber & 0b00110000) >> 4);
                     } else if ((operandNumber & 0b11000111) == 0b00000110) {
                         ret = LD_R_N((operandNumber & 0b00111000) >> 3);
