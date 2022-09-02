@@ -2032,6 +2032,9 @@ class Z80
     }
 
     // Push Reg. on Stack.
+    static inline int POP_BC(Z80* ctx) { return ctx->POP_RP(0b00); }
+    static inline int POP_DE(Z80* ctx) { return ctx->POP_RP(0b01); }
+    static inline int POP_HL(Z80* ctx) { return ctx->POP_RP(0b10); }
     inline int POP_RP(unsigned char rp)
     {
         unsigned short sp = reg.SP;
@@ -5320,6 +5323,10 @@ class Z80
         opSet1[0b11010101] = PUSH_DE;
         opSet1[0b11100101] = PUSH_HL;
 
+        opSet1[0b11000001] = POP_BC;
+        opSet1[0b11010001] = POP_DE;
+        opSet1[0b11100001] = POP_HL;
+
         opSet1[0b11000011] = JP_NN;
         opSet1[0b11001001] = RET;
         opSet1[0b11001011] = OP_R;
@@ -5793,9 +5800,7 @@ class Z80
                 int ret = -1;
                 if (NULL == op) {
                     // execute an operand that register type has specified in the first byte.
-                    if ((operandNumber & 0b11001111) == 0b11000001) {
-                        ret = POP_RP((operandNumber & 0b00110000) >> 4);
-                    } else if ((operandNumber & 0b11001111) == 0b00000011) {
+                    if ((operandNumber & 0b11001111) == 0b00000011) {
                         ret = INC_RP((operandNumber & 0b00110000) >> 4);
                     } else if ((operandNumber & 0b11001111) == 0b00001011) {
                         ret = DEC_RP((operandNumber & 0b00110000) >> 4);
