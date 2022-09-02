@@ -4787,18 +4787,26 @@ class Z80
     }
 
     // Return with condition
+    static inline int RET_C0(Z80* ctx) { return ctx->RET_C(0); }
+    static inline int RET_C1(Z80* ctx) { return ctx->RET_C(1); }
+    static inline int RET_C2(Z80* ctx) { return ctx->RET_C(2); }
+    static inline int RET_C3(Z80* ctx) { return ctx->RET_C(3); }
+    static inline int RET_C4(Z80* ctx) { return ctx->RET_C(4); }
+    static inline int RET_C5(Z80* ctx) { return ctx->RET_C(5); }
+    static inline int RET_C6(Z80* ctx) { return ctx->RET_C(6); }
+    static inline int RET_C7(Z80* ctx) { return ctx->RET_C(7); }
     inline int RET_C(unsigned char c)
     {
         bool execute;
         switch (c) {
-            case 0b000: execute = isFlagZ() ? false : true; break;
-            case 0b001: execute = isFlagZ() ? true : false; break;
-            case 0b010: execute = isFlagC() ? false : true; break;
-            case 0b011: execute = isFlagC() ? true : false; break;
-            case 0b100: execute = isFlagPV() ? false : true; break;
-            case 0b101: execute = isFlagPV() ? true : false; break;
-            case 0b110: execute = isFlagS() ? false : true; break;
-            case 0b111: execute = isFlagS() ? true : false; break;
+            case 0: execute = isFlagZ() ? false : true; break;
+            case 1: execute = isFlagZ() ? true : false; break;
+            case 2: execute = isFlagC() ? false : true; break;
+            case 3: execute = isFlagC() ? true : false; break;
+            case 4: execute = isFlagPV() ? false : true; break;
+            case 5: execute = isFlagPV() ? true : false; break;
+            case 6: execute = isFlagS() ? false : true; break;
+            case 7: execute = isFlagS() ? true : false; break;
             default: execute = false;
         }
         if (!execute) {
@@ -5407,6 +5415,15 @@ class Z80
         opSet1[0b11110010] = JP_C6_NN;
         opSet1[0b11111010] = JP_C7_NN;
 
+        opSet1[0b11000000] = RET_C0;
+        opSet1[0b11001000] = RET_C1;
+        opSet1[0b11010000] = RET_C2;
+        opSet1[0b11011000] = RET_C3;
+        opSet1[0b11100000] = RET_C4;
+        opSet1[0b11101000] = RET_C5;
+        opSet1[0b11110000] = RET_C6;
+        opSet1[0b11111000] = RET_C7;
+
         opSet1[0b11000011] = JP_NN;
         opSet1[0b11001001] = RET;
         opSet1[0b11001011] = OP_R;
@@ -5415,20 +5432,20 @@ class Z80
         opSet1[0b11011011] = isLR35902 ? NULL : IN_A_N;
         opSet1[0b11011001] = isLR35902 ? LR35902_RETI : EXX;
         opSet1[0b11011101] = isLR35902 ? NULL : OP_IX;
-        opSet1[0b11100000] = isLR35902 ? LDH_N_A : NULL;
+        opSet1[0b11100000] = isLR35902 ? LDH_N_A : RET_C4;
         opSet1[0b11100010] = isLR35902 ? LDH_C_A : JP_C4_NN;
         opSet1[0b11100011] = isLR35902 ? NULL : EX_SP_HL;
-        opSet1[0b11101000] = isLR35902 ? ADD_SP_N : NULL;
+        opSet1[0b11101000] = isLR35902 ? ADD_SP_N : RET_C5;
         opSet1[0b11101001] = JP_HL;
         opSet1[0b11101010] = isLR35902 ? LD_NN_A : JP_C5_NN;
         opSet1[0b11101011] = isLR35902 ? NULL : EX_DE_HL;
         opSet1[0b11101101] = isLR35902 ? NULL : EXTRA;
-        opSet1[0b11110000] = isLR35902 ? LDH_A_N : NULL;
+        opSet1[0b11110000] = isLR35902 ? LDH_A_N : RET_C6;
         opSet1[0b11110001] = POP_AF;
         opSet1[0b11110010] = isLR35902 ? LDH_A_C : JP_C6_NN;
         opSet1[0b11110011] = DI;
         opSet1[0b11110101] = PUSH_AF;
-        opSet1[0b11111000] = isLR35902 ? LDHL_SP_N : NULL;
+        opSet1[0b11111000] = isLR35902 ? LDHL_SP_N : RET_C7;
         opSet1[0b11111001] = LD_SP_HL;
         opSet1[0b11111010] = isLR35902 ? LD_A_NN : JP_C7_NN;
         opSet1[0b11111011] = EI;
@@ -5885,8 +5902,6 @@ class Z80
                         if (!isLR35902 || operandNumber < 0xE4) {
                             ret = CALL_C_NN((operandNumber & 0b00111000) >> 3);
                         }
-                    } else if ((operandNumber & 0b11000111) == 0b11000000) {
-                        ret = RET_C((operandNumber & 0b00111000) >> 3);
                     } else if ((operandNumber & 0b11000111) == 0b11000111) {
                         ret = RST((operandNumber & 0b00111000) >> 3, true);
                     } else if ((operandNumber & 0b11000000) == 0b01000000) {
