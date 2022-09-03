@@ -2795,19 +2795,19 @@ class Z80
     }
 
     // Add Reg. r to Acc.
-    static inline int ADD_A_B(Z80* ctx) { return ctx->ADD_A_R(0b000); }
-    static inline int ADD_A_C(Z80* ctx) { return ctx->ADD_A_R(0b001); }
-    static inline int ADD_A_D(Z80* ctx) { return ctx->ADD_A_R(0b010); }
-    static inline int ADD_A_E(Z80* ctx) { return ctx->ADD_A_R(0b011); }
-    static inline int ADD_A_H(Z80* ctx) { return ctx->ADD_A_R(0b100); }
-    static inline int ADD_A_L(Z80* ctx) { return ctx->ADD_A_R(0b101); }
-    static inline int ADD_A_A(Z80* ctx) { return ctx->ADD_A_R(0b111); }
-    static inline int ADD_A_B_2(Z80* ctx) { return ctx->ADD_A_R(0b000, 2); }
-    static inline int ADD_A_C_2(Z80* ctx) { return ctx->ADD_A_R(0b001, 2); }
-    static inline int ADD_A_D_2(Z80* ctx) { return ctx->ADD_A_R(0b010, 2); }
-    static inline int ADD_A_E_2(Z80* ctx) { return ctx->ADD_A_R(0b011, 2); }
-    static inline int ADD_A_A_2(Z80* ctx) { return ctx->ADD_A_R(0b111, 2); }
-    inline int ADD_A_R(unsigned char r, int pc = 1)
+    static inline int ADD_B(Z80* ctx) { return ctx->ADD_R(0b000); }
+    static inline int ADD_C(Z80* ctx) { return ctx->ADD_R(0b001); }
+    static inline int ADD_D(Z80* ctx) { return ctx->ADD_R(0b010); }
+    static inline int ADD_E(Z80* ctx) { return ctx->ADD_R(0b011); }
+    static inline int ADD_H(Z80* ctx) { return ctx->ADD_R(0b100); }
+    static inline int ADD_L(Z80* ctx) { return ctx->ADD_R(0b101); }
+    static inline int ADD_A(Z80* ctx) { return ctx->ADD_R(0b111); }
+    static inline int ADD_B_2(Z80* ctx) { return ctx->ADD_R(0b000, 2); }
+    static inline int ADD_C_2(Z80* ctx) { return ctx->ADD_R(0b001, 2); }
+    static inline int ADD_D_2(Z80* ctx) { return ctx->ADD_R(0b010, 2); }
+    static inline int ADD_E_2(Z80* ctx) { return ctx->ADD_R(0b011, 2); }
+    static inline int ADD_A_2(Z80* ctx) { return ctx->ADD_R(0b111, 2); }
+    inline int ADD_R(unsigned char r, int pc = 1)
     {
         if (isDebug()) log("[%04X] ADD %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
@@ -2817,8 +2817,8 @@ class Z80
     }
 
     // Add IXH to Acc.
-    static inline int ADD_A_IXH_(Z80* ctx) { return ctx->ADD_A_IXH(); }
-    inline int ADD_A_IXH()
+    static inline int ADD_IXH_(Z80* ctx) { return ctx->ADD_IXH(); }
+    inline int ADD_IXH()
     {
         if (isDebug()) log("[%04X] ADD %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
         addition8(getIXH());
@@ -2827,8 +2827,8 @@ class Z80
     }
 
     // Add IXL to Acc.
-    static inline int ADD_A_IXL_(Z80* ctx) { return ctx->ADD_A_IXL(); }
-    inline int ADD_A_IXL()
+    static inline int ADD_IXL_(Z80* ctx) { return ctx->ADD_IXL(); }
+    inline int ADD_IXL()
     {
         if (isDebug()) log("[%04X] ADD %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
         addition8(getIXL());
@@ -2837,8 +2837,8 @@ class Z80
     }
 
     // Add IYH to Acc.
-    static inline int ADD_A_IYH_(Z80* ctx) { return ctx->ADD_A_IYH(); }
-    inline int ADD_A_IYH()
+    static inline int ADD_IYH_(Z80* ctx) { return ctx->ADD_IYH(); }
+    inline int ADD_IYH()
     {
         if (isDebug()) log("[%04X] ADD %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
         addition8(getIYH());
@@ -2847,8 +2847,8 @@ class Z80
     }
 
     // Add IYL to Acc.
-    static inline int ADD_A_IYL_(Z80* ctx) { return ctx->ADD_A_IYL(); }
-    inline int ADD_A_IYL()
+    static inline int ADD_IYL_(Z80* ctx) { return ctx->ADD_IYL(); }
+    inline int ADD_IYL()
     {
         if (isDebug()) log("[%04X] ADD %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
         addition8(getIYL());
@@ -2857,7 +2857,7 @@ class Z80
     }
 
     // Add value n to Acc.
-    static inline int ADD_A_N(Z80* ctx)
+    static inline int ADD_N(Z80* ctx)
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] ADD %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
@@ -2867,7 +2867,7 @@ class Z80
     }
 
     // Add location (HL) to Acc.
-    static inline int ADD_A_HL(Z80* ctx)
+    static inline int ADD_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
@@ -2878,8 +2878,8 @@ class Z80
     }
 
     // Add location (IX+d) to Acc.
-    static inline int ADD_A_IX_(Z80* ctx) { return ctx->ADD_A_IX(); }
-    inline int ADD_A_IX()
+    static inline int ADD_IX_(Z80* ctx) { return ctx->ADD_IX(); }
+    inline int ADD_IX()
     {
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
@@ -2891,8 +2891,8 @@ class Z80
     }
 
     // Add location (IY+d) to Acc.
-    static inline int ADD_A_IY_(Z80* ctx) { return ctx->ADD_A_IY(); }
-    inline int ADD_A_IY()
+    static inline int ADD_IY_(Z80* ctx) { return ctx->ADD_IY(); }
+    inline int ADD_IY()
     {
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
@@ -2904,19 +2904,19 @@ class Z80
     }
 
     // Add Resister with carry
-    static inline int ADC_A_B(Z80* ctx) { return ctx->ADC_A_R(0b000); }
-    static inline int ADC_A_C(Z80* ctx) { return ctx->ADC_A_R(0b001); }
-    static inline int ADC_A_D(Z80* ctx) { return ctx->ADC_A_R(0b010); }
-    static inline int ADC_A_E(Z80* ctx) { return ctx->ADC_A_R(0b011); }
-    static inline int ADC_A_H(Z80* ctx) { return ctx->ADC_A_R(0b100); }
-    static inline int ADC_A_L(Z80* ctx) { return ctx->ADC_A_R(0b101); }
-    static inline int ADC_A_A(Z80* ctx) { return ctx->ADC_A_R(0b111); }
-    static inline int ADC_A_B_2(Z80* ctx) { return ctx->ADC_A_R(0b000, 2); }
-    static inline int ADC_A_C_2(Z80* ctx) { return ctx->ADC_A_R(0b001, 2); }
-    static inline int ADC_A_D_2(Z80* ctx) { return ctx->ADC_A_R(0b010, 2); }
-    static inline int ADC_A_E_2(Z80* ctx) { return ctx->ADC_A_R(0b011, 2); }
-    static inline int ADC_A_A_2(Z80* ctx) { return ctx->ADC_A_R(0b111, 2); }
-    inline int ADC_A_R(unsigned char r, int pc = 1)
+    static inline int ADC_B(Z80* ctx) { return ctx->ADC_R(0b000); }
+    static inline int ADC_C(Z80* ctx) { return ctx->ADC_R(0b001); }
+    static inline int ADC_D(Z80* ctx) { return ctx->ADC_R(0b010); }
+    static inline int ADC_E(Z80* ctx) { return ctx->ADC_R(0b011); }
+    static inline int ADC_H(Z80* ctx) { return ctx->ADC_R(0b100); }
+    static inline int ADC_L(Z80* ctx) { return ctx->ADC_R(0b101); }
+    static inline int ADC_A(Z80* ctx) { return ctx->ADC_R(0b111); }
+    static inline int ADC_B_2(Z80* ctx) { return ctx->ADC_R(0b000, 2); }
+    static inline int ADC_C_2(Z80* ctx) { return ctx->ADC_R(0b001, 2); }
+    static inline int ADC_D_2(Z80* ctx) { return ctx->ADC_R(0b010, 2); }
+    static inline int ADC_E_2(Z80* ctx) { return ctx->ADC_R(0b011, 2); }
+    static inline int ADC_A_2(Z80* ctx) { return ctx->ADC_R(0b111, 2); }
+    inline int ADC_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char c = isFlagC() ? 1 : 0;
@@ -2927,8 +2927,8 @@ class Z80
     }
 
     // Add IXH to Acc.
-    static inline int ADC_A_IXH_(Z80* ctx) { return ctx->ADC_A_IXH(); }
-    inline int ADC_A_IXH()
+    static inline int ADC_IXH_(Z80* ctx) { return ctx->ADC_IXH(); }
+    inline int ADC_IXH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXH(), c ? "ON" : "OFF");
@@ -2938,8 +2938,8 @@ class Z80
     }
 
     // Add IXL to Acc.
-    static inline int ADC_A_IXL_(Z80* ctx) { return ctx->ADC_A_IXL(); }
-    inline int ADC_A_IXL()
+    static inline int ADC_IXL_(Z80* ctx) { return ctx->ADC_IXL(); }
+    inline int ADC_IXL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXL(), c ? "ON" : "OFF");
@@ -2949,8 +2949,8 @@ class Z80
     }
 
     // Add IYH to Acc.
-    static inline int ADC_A_IYH_(Z80* ctx) { return ctx->ADC_A_IYH(); }
-    inline int ADC_A_IYH()
+    static inline int ADC_IYH_(Z80* ctx) { return ctx->ADC_IYH(); }
+    inline int ADC_IYH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYH(), c ? "ON" : "OFF");
@@ -2960,8 +2960,8 @@ class Z80
     }
 
     // Add IYL to Acc.
-    static inline int ADC_A_IYL_(Z80* ctx) { return ctx->ADC_A_IYL(); }
-    inline int ADC_A_IYL()
+    static inline int ADC_IYL_(Z80* ctx) { return ctx->ADC_IYL(); }
+    inline int ADC_IYL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYL(), c ? "ON" : "OFF");
@@ -2971,7 +2971,7 @@ class Z80
     }
 
     // Add immediate with carry
-    static inline int ADC_A_N(Z80* ctx)
+    static inline int ADC_N(Z80* ctx)
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
@@ -2982,7 +2982,7 @@ class Z80
     }
 
     // Add memory with carry
-    static inline int ADC_A_HL(Z80* ctx)
+    static inline int ADC_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
@@ -2994,8 +2994,8 @@ class Z80
     }
 
     // Add memory with carry
-    static inline int ADC_A_IX_(Z80* ctx) { return ctx->ADC_A_IX(); }
-    inline int ADC_A_IX()
+    static inline int ADC_IX_(Z80* ctx) { return ctx->ADC_IX(); }
+    inline int ADC_IX()
     {
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
@@ -3008,8 +3008,8 @@ class Z80
     }
 
     // Add memory with carry
-    static inline int ADC_A_IY_(Z80* ctx) { return ctx->ADC_A_IY(); }
-    inline int ADC_A_IY()
+    static inline int ADC_IY_(Z80* ctx) { return ctx->ADC_IY(); }
+    inline int ADC_IY()
     {
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
@@ -3135,19 +3135,19 @@ class Z80
     }
 
     // Subtract Register
-    static inline int SUB_A_B(Z80* ctx) { return ctx->SUB_A_R(0b000); }
-    static inline int SUB_A_C(Z80* ctx) { return ctx->SUB_A_R(0b001); }
-    static inline int SUB_A_D(Z80* ctx) { return ctx->SUB_A_R(0b010); }
-    static inline int SUB_A_E(Z80* ctx) { return ctx->SUB_A_R(0b011); }
-    static inline int SUB_A_H(Z80* ctx) { return ctx->SUB_A_R(0b100); }
-    static inline int SUB_A_L(Z80* ctx) { return ctx->SUB_A_R(0b101); }
-    static inline int SUB_A_A(Z80* ctx) { return ctx->SUB_A_R(0b111); }
-    static inline int SUB_A_B_2(Z80* ctx) { return ctx->SUB_A_R(0b000, 2); }
-    static inline int SUB_A_C_2(Z80* ctx) { return ctx->SUB_A_R(0b001, 2); }
-    static inline int SUB_A_D_2(Z80* ctx) { return ctx->SUB_A_R(0b010, 2); }
-    static inline int SUB_A_E_2(Z80* ctx) { return ctx->SUB_A_R(0b011, 2); }
-    static inline int SUB_A_A_2(Z80* ctx) { return ctx->SUB_A_R(0b111, 2); }
-    inline int SUB_A_R(unsigned char r, int pc = 1)
+    static inline int SUB_B(Z80* ctx) { return ctx->SUB_R(0b000); }
+    static inline int SUB_C(Z80* ctx) { return ctx->SUB_R(0b001); }
+    static inline int SUB_D(Z80* ctx) { return ctx->SUB_R(0b010); }
+    static inline int SUB_E(Z80* ctx) { return ctx->SUB_R(0b011); }
+    static inline int SUB_H(Z80* ctx) { return ctx->SUB_R(0b100); }
+    static inline int SUB_L(Z80* ctx) { return ctx->SUB_R(0b101); }
+    static inline int SUB_A(Z80* ctx) { return ctx->SUB_R(0b111); }
+    static inline int SUB_B_2(Z80* ctx) { return ctx->SUB_R(0b000, 2); }
+    static inline int SUB_C_2(Z80* ctx) { return ctx->SUB_R(0b001, 2); }
+    static inline int SUB_D_2(Z80* ctx) { return ctx->SUB_R(0b010, 2); }
+    static inline int SUB_E_2(Z80* ctx) { return ctx->SUB_R(0b011, 2); }
+    static inline int SUB_A_2(Z80* ctx) { return ctx->SUB_R(0b111, 2); }
+    inline int SUB_R(unsigned char r, int pc = 1)
     {
         if (isDebug()) log("[%04X] SUB %s, %s", reg.PC, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
@@ -3157,8 +3157,8 @@ class Z80
     }
 
     // Subtract IXH to Acc.
-    static inline int SUB_A_IXH_(Z80* ctx) { return ctx->SUB_A_IXH(); }
-    inline int SUB_A_IXH()
+    static inline int SUB_IXH_(Z80* ctx) { return ctx->SUB_IXH(); }
+    inline int SUB_IXH()
     {
         if (isDebug()) log("[%04X] SUB %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
         subtract8(getIXH());
@@ -3167,8 +3167,8 @@ class Z80
     }
 
     // Subtract IXL to Acc.
-    static inline int SUB_A_IXL_(Z80* ctx) { return ctx->SUB_A_IXL(); }
-    inline int SUB_A_IXL()
+    static inline int SUB_IXL_(Z80* ctx) { return ctx->SUB_IXL(); }
+    inline int SUB_IXL()
     {
         if (isDebug()) log("[%04X] SUB %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
         subtract8(getIXL());
@@ -3177,8 +3177,8 @@ class Z80
     }
 
     // Subtract IYH to Acc.
-    static inline int SUB_A_IYH_(Z80* ctx) { return ctx->SUB_A_IYH(); }
-    inline int SUB_A_IYH()
+    static inline int SUB_IYH_(Z80* ctx) { return ctx->SUB_IYH(); }
+    inline int SUB_IYH()
     {
         if (isDebug()) log("[%04X] SUB %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
         subtract8(getIYH());
@@ -3187,8 +3187,8 @@ class Z80
     }
 
     // Subtract IYL to Acc.
-    static inline int SUB_A_IYL_(Z80* ctx) { return ctx->SUB_A_IYL(); }
-    inline int SUB_A_IYL()
+    static inline int SUB_IYL_(Z80* ctx) { return ctx->SUB_IYL(); }
+    inline int SUB_IYL()
     {
         if (isDebug()) log("[%04X] SUB %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
         subtract8(getIYL());
@@ -3197,7 +3197,7 @@ class Z80
     }
 
     // Subtract immediate
-    static inline int SUB_A_N(Z80* ctx)
+    static inline int SUB_N(Z80* ctx)
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] SUB %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
@@ -3207,7 +3207,7 @@ class Z80
     }
 
     // Subtract memory
-    static inline int SUB_A_HL(Z80* ctx)
+    static inline int SUB_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
@@ -3218,8 +3218,8 @@ class Z80
     }
 
     // Subtract memory
-    static inline int SUB_A_IX_(Z80* ctx) { return ctx->SUB_A_IX(); }
-    inline int SUB_A_IX()
+    static inline int SUB_IX_(Z80* ctx) { return ctx->SUB_IX(); }
+    inline int SUB_IX()
     {
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
@@ -3231,8 +3231,8 @@ class Z80
     }
 
     // Subtract memory
-    static inline int SUB_A_IY_(Z80* ctx) { return ctx->SUB_A_IY(); }
-    inline int SUB_A_IY()
+    static inline int SUB_IY_(Z80* ctx) { return ctx->SUB_IY(); }
+    inline int SUB_IY()
     {
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
@@ -3244,19 +3244,19 @@ class Z80
     }
 
     // Subtract Resister with carry
-    static inline int SBC_A_B(Z80* ctx) { return ctx->SBC_A_R(0b000); }
-    static inline int SBC_A_C(Z80* ctx) { return ctx->SBC_A_R(0b001); }
-    static inline int SBC_A_D(Z80* ctx) { return ctx->SBC_A_R(0b010); }
-    static inline int SBC_A_E(Z80* ctx) { return ctx->SBC_A_R(0b011); }
-    static inline int SBC_A_H(Z80* ctx) { return ctx->SBC_A_R(0b100); }
-    static inline int SBC_A_L(Z80* ctx) { return ctx->SBC_A_R(0b101); }
-    static inline int SBC_A_A(Z80* ctx) { return ctx->SBC_A_R(0b111); }
-    static inline int SBC_A_B_2(Z80* ctx) { return ctx->SBC_A_R(0b000, 2); }
-    static inline int SBC_A_C_2(Z80* ctx) { return ctx->SBC_A_R(0b001, 2); }
-    static inline int SBC_A_D_2(Z80* ctx) { return ctx->SBC_A_R(0b010, 2); }
-    static inline int SBC_A_E_2(Z80* ctx) { return ctx->SBC_A_R(0b011, 2); }
-    static inline int SBC_A_A_2(Z80* ctx) { return ctx->SBC_A_R(0b111, 2); }
-    inline int SBC_A_R(unsigned char r, int pc = 1)
+    static inline int SBC_B(Z80* ctx) { return ctx->SBC_R(0b000); }
+    static inline int SBC_C(Z80* ctx) { return ctx->SBC_R(0b001); }
+    static inline int SBC_D(Z80* ctx) { return ctx->SBC_R(0b010); }
+    static inline int SBC_E(Z80* ctx) { return ctx->SBC_R(0b011); }
+    static inline int SBC_H(Z80* ctx) { return ctx->SBC_R(0b100); }
+    static inline int SBC_L(Z80* ctx) { return ctx->SBC_R(0b101); }
+    static inline int SBC_A(Z80* ctx) { return ctx->SBC_R(0b111); }
+    static inline int SBC_B_2(Z80* ctx) { return ctx->SBC_R(0b000, 2); }
+    static inline int SBC_C_2(Z80* ctx) { return ctx->SBC_R(0b001, 2); }
+    static inline int SBC_D_2(Z80* ctx) { return ctx->SBC_R(0b010, 2); }
+    static inline int SBC_E_2(Z80* ctx) { return ctx->SBC_R(0b011, 2); }
+    static inline int SBC_A_2(Z80* ctx) { return ctx->SBC_R(0b111, 2); }
+    inline int SBC_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char c = isFlagC() ? 1 : 0;
@@ -3267,8 +3267,8 @@ class Z80
     }
 
     // Subtract IXH to Acc. with carry
-    static inline int SBC_A_IXH_(Z80* ctx) { return ctx->SBC_A_IXH(); }
-    inline int SBC_A_IXH()
+    static inline int SBC_IXH_(Z80* ctx) { return ctx->SBC_IXH(); }
+    inline int SBC_IXH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXH(), c ? "ON" : "OFF");
@@ -3278,8 +3278,8 @@ class Z80
     }
 
     // Subtract IXL to Acc. with carry
-    static inline int SBC_A_IXL_(Z80* ctx) { return ctx->SBC_A_IXL(); }
-    inline int SBC_A_IXL()
+    static inline int SBC_IXL_(Z80* ctx) { return ctx->SBC_IXL(); }
+    inline int SBC_IXL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXL(), c ? "ON" : "OFF");
@@ -3289,8 +3289,8 @@ class Z80
     }
 
     // Subtract IYH to Acc. with carry
-    static inline int SBC_A_IYH_(Z80* ctx) { return ctx->SBC_A_IYH(); }
-    inline int SBC_A_IYH()
+    static inline int SBC_IYH_(Z80* ctx) { return ctx->SBC_IYH(); }
+    inline int SBC_IYH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYH(), c ? "ON" : "OFF");
@@ -3300,8 +3300,8 @@ class Z80
     }
 
     // Subtract IYL to Acc. with carry
-    static inline int SBC_A_IYL_(Z80* ctx) { return ctx->SBC_A_IYL(); }
-    inline int SBC_A_IYL()
+    static inline int SBC_IYL_(Z80* ctx) { return ctx->SBC_IYL(); }
+    inline int SBC_IYL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYL(), c ? "ON" : "OFF");
@@ -3311,7 +3311,7 @@ class Z80
     }
 
     // Subtract immediate with carry
-    static inline int SBC_A_N(Z80* ctx)
+    static inline int SBC_N(Z80* ctx)
     {
         unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
@@ -3322,7 +3322,7 @@ class Z80
     }
 
     // Subtract memory with carry
-    static inline int SBC_A_HL(Z80* ctx)
+    static inline int SBC_HL(Z80* ctx)
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
@@ -3334,8 +3334,8 @@ class Z80
     }
 
     // Subtract memory with carry
-    static inline int SBC_A_IX_(Z80* ctx) { return ctx->SBC_A_IX(); }
-    inline int SBC_A_IX()
+    static inline int SBC_IX_(Z80* ctx) { return ctx->SBC_IX(); }
+    inline int SBC_IX()
     {
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IX + d;
@@ -3348,8 +3348,8 @@ class Z80
     }
 
     // Subtract memory with carry
-    static inline int SBC_A_IY_(Z80* ctx) { return ctx->SBC_A_IY(); }
-    inline int SBC_A_IY()
+    static inline int SBC_IY_(Z80* ctx) { return ctx->SBC_IY(); }
+    inline int SBC_IY()
     {
         signed char d = readByte(reg.PC + 2);
         unsigned short addr = reg.IY + d;
@@ -5665,12 +5665,12 @@ class Z80
         LD_D_B, LD_D_C, LD_D_D, LD_D_E, LD_D_H, LD_D_L, LD_D_HL, LD_D_A, LD_E_B, LD_E_C, LD_E_D, LD_E_E, LD_E_H, LD_E_L, LD_E_HL, LD_E_A,
         LD_H_B, LD_H_C, LD_H_D, LD_H_E, LD_H_H, LD_H_L, LD_H_HL, LD_H_A, LD_L_B, LD_L_C, LD_L_D, LD_L_E, LD_L_H, LD_L_L, LD_L_HL, LD_L_A,
         LD_HL_B, LD_HL_C, LD_HL_D, LD_HL_E, LD_HL_H, LD_HL_L, HALT, LD_HL_A, LD_A_B, LD_A_C, LD_A_D, LD_A_E, LD_A_H, LD_A_L, LD_A_HL, LD_A_A,
-        ADD_A_B, ADD_A_C, ADD_A_D, ADD_A_E, ADD_A_H, ADD_A_L, ADD_A_HL, ADD_A_A, ADC_A_B, ADC_A_C, ADC_A_D, ADC_A_E, ADC_A_H, ADC_A_L, ADC_A_HL, ADC_A_A,
-        SUB_A_B, SUB_A_C, SUB_A_D, SUB_A_E, SUB_A_H, SUB_A_L, SUB_A_HL, SUB_A_A, SBC_A_B, SBC_A_C, SBC_A_D, SBC_A_E, SBC_A_H, SBC_A_L, SBC_A_HL, SBC_A_A,
+        ADD_B, ADD_C, ADD_D, ADD_E, ADD_H, ADD_L, ADD_HL, ADD_A, ADC_B, ADC_C, ADC_D, ADC_E, ADC_H, ADC_L, ADC_HL, ADC_A,
+        SUB_B, SUB_C, SUB_D, SUB_E, SUB_H, SUB_L, SUB_HL, SUB_A, SBC_B, SBC_C, SBC_D, SBC_E, SBC_H, SBC_L, SBC_HL, SBC_A,
         AND_B, AND_C, AND_D, AND_E, AND_H, AND_L, AND_HL, AND_A, XOR_B, XOR_C, XOR_D, XOR_E, XOR_H, XOR_L, XOR_HL, XOR_A,
         OR_B, OR_C, OR_D, OR_E, OR_H, OR_L, OR_HL, OR_A, CP_B, CP_C, CP_D, CP_E, CP_H, CP_L, CP_HL, CP_A,
-        RET_C0, POP_BC, JP_C0_NN, JP_NN, CALL_C0_NN, PUSH_BC, ADD_A_N, RST00, RET_C1, RET, JP_C1_NN, OP_CB, CALL_C1_NN, CALL_NN, ADC_A_N, RST08,
-        RET_C2, POP_DE, JP_C2_NN, OUT_N_A, CALL_C2_NN, PUSH_DE, SUB_A_N, RST10, RET_C3, EXX, JP_C3_NN, IN_A_N, CALL_C3_NN, OP_IX, SBC_A_N, RST18,
+        RET_C0, POP_BC, JP_C0_NN, JP_NN, CALL_C0_NN, PUSH_BC, ADD_N, RST00, RET_C1, RET, JP_C1_NN, OP_CB, CALL_C1_NN, CALL_NN, ADC_N, RST08,
+        RET_C2, POP_DE, JP_C2_NN, OUT_N_A, CALL_C2_NN, PUSH_DE, SUB_N, RST10, RET_C3, EXX, JP_C3_NN, IN_A_N, CALL_C3_NN, OP_IX, SBC_N, RST18,
         RET_C4, POP_HL, JP_C4_NN, EX_SP_HL, CALL_C4_NN, PUSH_HL, AND_N, RST20, RET_C5, JP_HL, JP_C5_NN, EX_DE_HL, CALL_C5_NN, EXTRA, XOR_N, RST28,
         RET_C6, POP_AF, JP_C6_NN, DI, CALL_C6_NN, PUSH_AF, OR_N, RST30, RET_C7, LD_SP_HL, JP_C7_NN, EI, CALL_C7_NN, OP_IY, CP_N, RST38};
     int (*opSetCB[256])(Z80* ctx) = {
@@ -5723,10 +5723,10 @@ class Z80
         LD_IXL_B, LD_IXL_C, LD_IXL_D, LD_IXL_E, LD_IXL_IXH_, LD_IXL_IXL_, LD_L_IX, LD_IXL_A,
         LD_IX_B, LD_IX_C, LD_IX_D, LD_IX_E, LD_IX_H, LD_IX_L, NULL, LD_IX_A,
         LD_A_B_2, LD_A_C_2, LD_A_D_2, LD_A_E_2, LD_A_IXH, LD_A_IXL, LD_A_IX, LD_A_A_2,
-        ADD_A_B_2, ADD_A_C_2, ADD_A_D_2, ADD_A_E_2, ADD_A_IXH_, ADD_A_IXL_, ADD_A_IX_, ADD_A_A_2,
-        ADC_A_B_2, ADC_A_C_2, ADC_A_D_2, ADC_A_E_2, ADC_A_IXH_, ADC_A_IXL_, ADC_A_IX_, ADC_A_A_2,
-        SUB_A_B_2, SUB_A_C_2, SUB_A_D_2, SUB_A_E_2, SUB_A_IXH_, SUB_A_IXL_, SUB_A_IX_, SUB_A_A_2,
-        SBC_A_B_2, SBC_A_C_2, SBC_A_D_2, SBC_A_E_2, SBC_A_IXH_, SBC_A_IXL_, SBC_A_IX_, SBC_A_A_2,
+        ADD_B_2, ADD_C_2, ADD_D_2, ADD_E_2, ADD_IXH_, ADD_IXL_, ADD_IX_, ADD_A_2,
+        ADC_B_2, ADC_C_2, ADC_D_2, ADC_E_2, ADC_IXH_, ADC_IXL_, ADC_IX_, ADC_A_2,
+        SUB_B_2, SUB_C_2, SUB_D_2, SUB_E_2, SUB_IXH_, SUB_IXL_, SUB_IX_, SUB_A_2,
+        SBC_B_2, SBC_C_2, SBC_D_2, SBC_E_2, SBC_IXH_, SBC_IXL_, SBC_IX_, SBC_A_2,
         AND_B_2, AND_C_2, AND_D_2, AND_E_2, AND_IXH_, AND_IXL_, AND_IX_, AND_A_2,
         XOR_B_2, XOR_C_2, XOR_D_2, XOR_E_2, XOR_IXH_, XOR_IXL_, XOR_IX_, XOR_A_2,
         OR_B_2, OR_C_2, OR_D_2, OR_E_2, OR_IXH_, OR_IXL_, OR_IX_, OR_A_2,
@@ -5756,10 +5756,10 @@ class Z80
         LD_IYL_B, LD_IYL_C, LD_IYL_D, LD_IYL_E, LD_IYL_IYH_, LD_IYL_IYL_, LD_L_IY, LD_IYL_A,
         LD_IY_B, LD_IY_C, LD_IY_D, LD_IY_E, LD_IY_H, LD_IY_L, NULL, LD_IY_A,
         LD_A_B_2, LD_A_C_2, LD_A_D_2, LD_A_E_2, LD_A_IYH, LD_A_IYL, LD_A_IY, LD_A_A_2,
-        ADD_A_B_2, ADD_A_C_2, ADD_A_D_2, ADD_A_E_2, ADD_A_IYH_, ADD_A_IYL_, ADD_A_IY_, ADD_A_A_2,
-        ADC_A_B_2, ADC_A_C_2, ADC_A_D_2, ADC_A_E_2, ADC_A_IYH_, ADC_A_IYL_, ADC_A_IY_, ADC_A_A_2,
-        SUB_A_B_2, SUB_A_C_2, SUB_A_D_2, SUB_A_E_2, SUB_A_IYH_, SUB_A_IYL_, SUB_A_IY_, SUB_A_A_2,
-        SBC_A_B_2, SBC_A_C_2, SBC_A_D_2, SBC_A_E_2, SBC_A_IYH_, SBC_A_IYL_, SBC_A_IY_, SBC_A_A_2,
+        ADD_B_2, ADD_C_2, ADD_D_2, ADD_E_2, ADD_IYH_, ADD_IYL_, ADD_IY_, ADD_A_2,
+        ADC_B_2, ADC_C_2, ADC_D_2, ADC_E_2, ADC_IYH_, ADC_IYL_, ADC_IY_, ADC_A_2,
+        SUB_B_2, SUB_C_2, SUB_D_2, SUB_E_2, SUB_IYH_, SUB_IYL_, SUB_IY_, SUB_A_2,
+        SBC_B_2, SBC_C_2, SBC_D_2, SBC_E_2, SBC_IYH_, SBC_IYL_, SBC_IY_, SBC_A_2,
         AND_B_2, AND_C_2, AND_D_2, AND_E_2, AND_IYH_, AND_IYL_, AND_IY_, AND_A_2,
         XOR_B_2, XOR_C_2, XOR_D_2, XOR_E_2, XOR_IYH_, XOR_IYL_, XOR_IY_, XOR_A_2,
         OR_B_2, OR_C_2, OR_D_2, OR_E_2, OR_IYH_, OR_IYL_, OR_IY_, OR_A_2,
