@@ -403,10 +403,10 @@ TEST#360:  8Hz [0000] SLL D<$00>
 TEST#361:  8Hz [0000] SLL E<$00>
 TEST#362:  8Hz [0000] SLL H<$00>
 TEST#363:  8Hz [0000] SLL L<$00>
-TEST#364: 15Hz [0000] SLL (HL<$0000>) = $CB
+TEST#364: 15Hz [0000] SLL (HL<$0101>) = $00
 TEST#365:  8Hz [0000] SLL A<$00>
-TEST#366: 23Hz [0000] SLL (IX+d<$7BF6>) = $00 --> B<$00>
-TEST#367: 23Hz [0000] SRL (IX+d<$7BF6>) = $00 --> B<$00>
+TEST#366: 23Hz [0000] SLL (IX+d<$7BF6>) = $00 --> B<$01>
+TEST#367: 23Hz [0000] SRL (IX+d<$7BF6>) = $01 --> B<$01>
 TEST#368: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-0 --> B<$00>
 TEST#369: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-1 --> B<$00>
 TEST#370: 23Hz [0000] RES (IX+d<$7BF6>) = $00 of bit-2 --> B<$00>
@@ -423,5 +423,5 @@ TEST#380: 23Hz [0000] SET (IX+d<$7BF6>) = $0F of bit-4 --> B<$0F>
 TEST#381: 23Hz [0000] SET (IX+d<$7BF6>) = $1F of bit-5 --> B<$1F>
 TEST#382: 23Hz [0000] SET (IX+d<$7BF6>) = $3F of bit-6 --> B<$3F>
 TEST#383: 23Hz [0000] SET (IX+d<$7BF6>) = $7F of bit-7 --> B<$7F>
-TEST#384: 12Hz [0000] IN F<$44>, (C<$00>) = $BB
-TEST#385: 12Hz [0000] OUT (C<$00>), F<$AD>
+TEST#384: 12Hz [0000] IN F<$45>, (C<$01>) = $00
+TEST#385: 12Hz [0000] OUT (C<$01>), F<$44>

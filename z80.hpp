@@ -1928,6 +1928,7 @@ class Z80
         unsigned char c = n & 0x80;
         n &= 0b01111111;
         n <<= 1;
+        n |= 1; // differ with SLA
         setFlagByRotate(n, c);
         return n;
     }

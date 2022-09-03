@@ -1465,12 +1465,12 @@ int main(int argc, char* argv[])
     z80.reg.IX = 0x8034;                                                     // setup register for test
     mmu.RAM[0x80AA] = 0b10101010;                                            // setup RAM for test
     mmu.RAM[0x8033] = 0b11110001;                                            // setup RAM for test
-    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x30, 0b00000000, 0b00000001); // SLL (IX+d) with LD B
-    check("B", 0b01010100, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x30, 0b00000000, 0b00000101); // SLL (IX+d) with LD B
+    check("B", 0b01010101, z80.reg.pair.B);                                  // check result
     executeTest(&z80, &mmu, 0xDD, 0xCB, 0x76, 0x30, 0b00000001, 0b10101000); // SLL (IX+d) with LD B
-    check("B", 0b10101000, z80.reg.pair.B);                                  // check result
-    executeTest(&z80, &mmu, 0xDD, 0xCB, 0xFF, 0x30, 0b00000000, 0b10100101); // SLL (IX+d) with LD B
-    check("B", 0b11100010, z80.reg.pair.B);                                  // check result
+    check("B", 0b10101011, z80.reg.pair.B);                                  // check result
+    executeTest(&z80, &mmu, 0xDD, 0xCB, 0xFF, 0x30, 0b00000000, 0b10100001); // SLL (IX+d) with LD B
+    check("B", 0b11100011, z80.reg.pair.B);                                  // check result
 
     puts("tests SRL (IX+d) with LD B");
     z80.reg.pair.B = 0;                                                      // setup register for test
