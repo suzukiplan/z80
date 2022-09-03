@@ -91,11 +91,15 @@ int main(int argc, char* argv[])
 {
     char* cimPath = NULL;
     bool checkError = false;
+    bool verboseMode = false;
     for (int i = 1; i < argc; i++) {
         if ('-' == argv[i][0]) {
             switch (argv[i][1]) {
                 case 'e':
                     checkError = true;
+                    break;
+                case 'v':
+                    verboseMode = true;
                     break;
                 default:
                     printf("unsupported option: %s\n", argv[i]);
@@ -123,6 +127,11 @@ int main(int argc, char* argv[])
     z80.addBreakPoint(0xFF04, [](void* arg) {
         ((CPM*)arg)->halted = true;
     });
+    if (verboseMode) {
+        z80.setDebugMessage([](void* arg, const char* msg) {
+            puts(msg);
+        });
+    }
     z80.skipIllegalInstructions = true;
     cpm.lineCallback = [](CPM* cpm, char* line) {
         if (cpm->checkError && strstr(line, "ERROR")) {
