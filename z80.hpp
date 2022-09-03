@@ -1932,6 +1932,15 @@ class Z80
         return n;
     }
 
+    inline unsigned char SLA(unsigned char n)
+    {
+        unsigned char c = n & 0x80 ? 1 : 0;
+        n &= 0b01111111;
+        n <<= 1;
+        setFlagByRotate(n, c);
+        return n;
+    }
+
     inline unsigned char RLC(unsigned char n)
     {
         unsigned char c = n & 0x80 ? 1 : 0;
@@ -1997,11 +2006,8 @@ class Z80
     inline int SLA_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char r7 = *rp & 0x80 ? 1 : 0;
         if (isDebug()) log("[%04X] SLA %s", reg.PC, registerDump(r));
-        *rp &= 0b01111111;
-        *rp <<= 1;
-        setFlagByRotate(*rp, r7);
+        *rp = SLA(*rp);
         reg.PC += 2;
         return 0;
     }
@@ -2138,12 +2144,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        unsigned char n7 = n & 0x80 ? 1 : 0;
         if (isDebug()) log("[%04X] SLA (HL<$%04X>) = $%02X", reg.PC, addr, n);
-        n &= 0b01111111;
-        n <<= 1;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n7);
+        writeByte(addr, SLA(n), 3);
         reg.PC += 2;
         return 0;
     }
@@ -2460,13 +2462,10 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        unsigned char n7 = n & 0x80 ? 1 : 0;
         if (isDebug()) log("[%04X] SLA (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
-        n &= 0b01111111;
-        n <<= 1;
-        if (rp) *rp = n;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n7);
+        unsigned char result = SLA(n);
+        if (rp) *rp = result;
+        writeByte(addr, result, 3);
         reg.PC += 4;
         return 0;
     }
@@ -2749,13 +2748,10 @@ class Z80
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        unsigned char n7 = n & 0x80 ? 1 : 0;
         if (isDebug()) log("[%04X] SLA (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
-        n &= 0b01111111;
-        n <<= 1;
-        if (rp) *rp = n;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n7);
+        unsigned char result = SLA(n);
+        if (rp) *rp = result;
+        writeByte(addr, result, 3);
         reg.PC += 4;
         return 0;
     }
