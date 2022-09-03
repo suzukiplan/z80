@@ -1942,6 +1942,16 @@ class Z80
         return n;
     }
 
+    inline unsigned char RL(unsigned char n)
+    {
+        unsigned char c = n & 0x80 ? 1 : 0;
+        n &= 0b01111111;
+        n <<= 1;
+        n |= isFlagC() ? 1 : 0; // differ with RLC
+        setFlagByRotate(n, c);
+        return n;
+    }
+
     // Rotate register Left Circular
     static inline int RLC_B(Z80* ctx) { return ctx->RLC_R(0b000); }
     static inline int RLC_C(Z80* ctx) { return ctx->RLC_R(0b001); }
@@ -1970,13 +1980,8 @@ class Z80
     inline int RL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char c = isFlagC() ? 1 : 0;
-        unsigned char r7 = *rp & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] RL %s <C:%s>", reg.PC, registerDump(r), c ? "ON" : "OFF");
-        *rp &= 0b01111111;
-        *rp <<= 1;
-        *rp |= c; // differ with RLC
-        setFlagByRotate(*rp, r7);
+        if (isDebug()) log("[%04X] RL %s <C:%s>", reg.PC, registerDump(r), isFlagC() ? "ON" : "OFF");
+        *rp = RL(*rp);
         reg.PC += 2;
         return 0;
     }
@@ -2121,14 +2126,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
-        unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] RL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, c ? "ON" : "OFF");
-        n &= 0b01111111;
-        n <<= 1;
-        n |= c; // differ with RLC (HL)
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n7);
+        if (isDebug()) log("[%04X] RL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, isFlagC() ? "ON" : "OFF");
+        writeByte(addr, RL(n), 3);
         reg.PC += 2;
         return 0;
     }
@@ -2348,15 +2347,10 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
-        unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] RL (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, c ? "ON" : "OFF", extraLog ? extraLog : "");
-        n &= 0b01111111;
-        n <<= 1;
-        n |= c; // differ with RLC (IX+d)
-        if (rp) *rp = n;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n7);
+        if (isDebug()) log("[%04X] RL (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
+        unsigned char result = RL(n);
+        if (rp) *rp = result;
+        writeByte(addr, result, 3);
         reg.PC += 4;
         return 0;
     }
@@ -2741,15 +2735,10 @@ class Z80
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
-        unsigned char n7 = n & 0x80 ? 1 : 0;
-        if (isDebug()) log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, c ? "ON" : "OFF", extraLog ? extraLog : "");
-        n &= 0b01111111;
-        n <<= 1;
-        n |= c; // differ with RLC (IY+d)
-        if (rp) *rp = n;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n7);
+        if (isDebug()) log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
+        unsigned char result = RL(n);
+        if (rp) *rp = result;
+        writeByte(addr, result, 3);
         reg.PC += 4;
         return 0;
     }
