@@ -1942,6 +1942,15 @@ class Z80
         return n;
     }
 
+    inline unsigned char SRL(unsigned char n)
+    {
+        unsigned char n0 = n & 0x01;
+        n &= 0b11111110;
+        n >>= 1;
+        setFlagByRotate(n, n0);
+        return n;
+    }
+
     inline unsigned char SRA(unsigned char n)
     {
         unsigned char n0 = n & 0x01;
@@ -2106,11 +2115,8 @@ class Z80
     inline int SRL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char r0 = *rp & 0x01;
         if (isDebug()) log("[%04X] SRL %s", reg.PC, registerDump(r));
-        *rp &= 0b11111110;
-        *rp >>= 1;
-        setFlagByRotate(*rp, r0);
+        *rp = SRL(*rp);
         reg.PC += 2;
         return 0;
     }
@@ -2210,12 +2216,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        unsigned char n0 = n & 0x01;
         if (isDebug()) log("[%04X] SRL (HL<$%04X>) = $%02X", reg.PC, addr, n);
-        n &= 0b11111110;
-        n >>= 1;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n0);
+        writeByte(addr, SRL(n), 3);
         reg.PC += 2;
         return 0;
     }
@@ -2562,13 +2564,10 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        unsigned char n0 = n & 0x01;
         if (isDebug()) log("[%04X] SRL (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
-        n &= 0b11111110;
-        n >>= 1;
-        if (rp) *rp = n;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n0);
+        unsigned char result = SRL(n);
+        if (rp) *rp = result;
+        writeByte(addr, result, 3);
         reg.PC += 4;
         return 0;
     }
@@ -2773,13 +2772,10 @@ class Z80
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        unsigned char n0 = n & 0x01;
         if (isDebug()) log("[%04X] SRL (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
-        n &= 0b11111110;
-        n >>= 1;
-        if (rp) *rp = n;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n0);
+        unsigned char result = SRL(n);
+        if (rp) *rp = result;
+        writeByte(addr, result, 3);
         reg.PC += 4;
         return 0;
     }
