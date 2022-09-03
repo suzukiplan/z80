@@ -1,4 +1,4 @@
-all: cpm
+all: cpm zexdoc zexall
 
 clean:
 	-rm cpm
