@@ -21,6 +21,8 @@ It is not just a relic of the past, but continues to be used in embedded systems
 > - [gbz80 — CPU opcode reference](https://rednex.github.io/rgbds/gbz80.7.html) of [RGBDS](https://github.com/rednex/rgbds)
 > - [Gameboy CPU (LR35902) instruction set](https://pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
 
+[z80.hpp](z80.hpp) passes all `zexdoc` and `zexall` tests. ([See the detail](test-ex))
+
 ## How to test
 
 ### Prerequests

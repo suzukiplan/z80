@@ -1,5 +1,12 @@
 # Change log
 
+## Version 1.3.0 (Spt 3, 2022 JST)
+
+- Pull Request: #30
+  - implemented the all of undocumented instructions
+  - add test case: [Z80 Instruction Exerciser](https://mdfs.net/Software/Z80/Exerciser/)
+  - passed `zexdoc` and `zexall`
+
 ## Version 1.2.8 (Feb 20, 2022 JST)
 
 - implemented undocumented features: https://github.com/suzukiplan/z80/pull/27

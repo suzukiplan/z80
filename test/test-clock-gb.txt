@@ -477,52 +477,59 @@ TEST#475: 20Hz [0000] RET NC to $0001 (SP<$111E>) <execute:YES>
 TEST#476: 12Hz [0000] POP DE<$FFFF> <SP:$1120> = $0003
 TEST#477: 12Hz [0000] JP NC, $0000
 TEST#478: 16Hz [0000] JP NC, $0000
-TEST#479:  4Hz [0000] detected an invalid operand: $D3
-TEST#480: 12Hz [0000] CALL NC, $0000 (SP<$1122>) <execute:NO>
-TEST#481: 24Hz [0000] CALL NC, $0000 (SP<$1122>) <execute:YES>
-TEST#482: 12Hz [0000] PUSH DE<$0003> <SP:$1120>
-TEST#483:  8Hz [0000] SUB A<$FE>, $FF
-TEST#484: 16Hz [0000] RST $0010 (SP<$111E>)
-TEST#485:  8Hz [0000] RET C <execute:NO>
-TEST#486: 20Hz [0000] RET C to $0001 (SP<$111C>) <execute:YES>
-TEST#487: 16Hz [0000] RETI to $0003 (SP<$111E>)
-TEST#488: 12Hz [0000] JP C, $0000
-TEST#489: 16Hz [0000] JP C, $0000
-TEST#490:  4Hz [0000] detected an invalid operand: $DB
-TEST#491: 12Hz [0000] CALL C, $0000 (SP<$1120>) <execute:NO>
-TEST#492: 24Hz [0000] CALL C, $0000 (SP<$1120>) <execute:YES>
-TEST#493:  4Hz [0000] detected an invalid operand: $DD
-TEST#494:  8Hz [0000] SBC A<$FF>, $88 <C:OFF>
-TEST#495: 16Hz [0000] RST $0018 (SP<$111E>)
-TEST#496: 12Hz [0000] LDH ($FF00+$33), A<$77>
-TEST#497: 12Hz [0000] POP HL<$FFFF> <SP:$111C> = $0001
-TEST#498:  8Hz [0000] LDH ($FF00+C<$FF>), A<$77>
-TEST#499:  4Hz [0000] detected an invalid operand: $E3
-TEST#500:  4Hz [0000] detected an invalid operand: $E4
-TEST#501: 12Hz [0000] PUSH HL<$0001> <SP:$111E>
-TEST#502:  8Hz [0000] AND A<$77>, $AA
-TEST#503: 16Hz [0000] RST $0020 (SP<$111C>)
-TEST#504: 16Hz [0000] ADD SP<$111A>, $FFFFFFFB
-TEST#505:  4Hz [0000] JP HL<$0001>
-TEST#506: 16Hz [0000] LD ($1234), A<$22>
-TEST#507:  4Hz [0000] detected an invalid operand: $EB
-TEST#508:  4Hz [0000] detected an invalid operand: $EC
-TEST#509:  4Hz [0000] detected an invalid operand: $ED
-TEST#510:  8Hz [0000] XOR A<$22>, $AA
-TEST#511: 16Hz [0000] RST $0028 (SP<$1115>)
-TEST#512: 12Hz [0000] LDH A<$88>, ($FF00+$33)
-TEST#513: 12Hz [0000] POP AF <SP:$1113> = $0001
-TEST#514:  8Hz [0000] LDH A<$00>, ($FF00+C<$FF>)
-TEST#515:  4Hz [0000] DI
-TEST#516:  4Hz [0000] detected an invalid operand: $F4
-TEST#517: 12Hz [0000] PUSH AF<$7700> <SP:$1115>
-TEST#518:  8Hz [0000] OR A<$77>, $AA
-TEST#519: 16Hz [0000] RST $0030 (SP<$1113>)
-TEST#520: 12Hz [0000] LDHL SP<$1111>, $11
-TEST#521:  8Hz [0000] LD SP<$1122>, HL<$1122>
-TEST#522: 16Hz [0000] LD A, ($1234) = $22
-TEST#523:  4Hz [0000] EI
-TEST#524:  4Hz [0000] detected an invalid operand: $FC
-TEST#525:  4Hz [0000] detected an invalid operand: $FD
-TEST#526:  8Hz [0000] CP A<$22>, $AA
-TEST#527: 16Hz [0000] RST $0038 (SP<$1122>)
+TEST#479:  4Hz detected an illegal instruction
+TEST#480:  4Hz [0000] detected an invalid operand: $D3
+TEST#481: 12Hz [0000] CALL NC, $0000 (SP<$1122>) <execute:NO>
+TEST#482: 24Hz [0000] CALL NC, $0000 (SP<$1122>) <execute:YES>
+TEST#483: 12Hz [0000] PUSH DE<$0003> <SP:$1120>
+TEST#484:  8Hz [0000] SUB A<$FE>, $FF
+TEST#485: 16Hz [0000] RST $0010 (SP<$111E>)
+TEST#486:  8Hz [0000] RET C <execute:NO>
+TEST#487: 20Hz [0000] RET C to $0001 (SP<$111C>) <execute:YES>
+TEST#488: 16Hz [0000] RETI to $0003 (SP<$111E>)
+TEST#489: 12Hz [0000] JP C, $0000
+TEST#490: 16Hz [0000] JP C, $0000
+TEST#491:  4Hz detected an illegal instruction
+TEST#492:  4Hz [0000] detected an invalid operand: $DB
+TEST#493: 12Hz [0000] CALL C, $0000 (SP<$1120>) <execute:NO>
+TEST#494: 24Hz [0000] CALL C, $0000 (SP<$1120>) <execute:YES>
+TEST#495:  4Hz detected an illegal instruction
+TEST#496:  4Hz [0000] detected an invalid operand: $DD
+TEST#497:  8Hz [0000] SBC A<$FF>, $88 <C:OFF>
+TEST#498: 16Hz [0000] RST $0018 (SP<$111E>)
+TEST#499: 12Hz [0000] LDH ($FF00+$33), A<$77>
+TEST#500: 12Hz [0000] POP HL<$FFFF> <SP:$111C> = $0001
+TEST#501:  8Hz [0000] LDH ($FF00+C<$FF>), A<$77>
+TEST#502:  4Hz detected an illegal instruction
+TEST#503:  4Hz [0000] detected an invalid operand: $E3
+TEST#504:  4Hz [0000] detected an invalid operand: $E4
+TEST#505: 12Hz [0000] PUSH HL<$0001> <SP:$111E>
+TEST#506:  8Hz [0000] AND A<$77>, $AA
+TEST#507: 16Hz [0000] RST $0020 (SP<$111C>)
+TEST#508: 16Hz [0000] ADD SP<$111A>, $FFFFFFFB
+TEST#509:  4Hz [0000] JP HL<$0001>
+TEST#510: 16Hz [0000] LD ($1234), A<$22>
+TEST#511:  4Hz detected an illegal instruction
+TEST#512:  4Hz [0000] detected an invalid operand: $EB
+TEST#513:  4Hz [0000] detected an invalid operand: $EC
+TEST#514:  4Hz detected an illegal instruction
+TEST#515:  4Hz [0000] detected an invalid operand: $ED
+TEST#516:  8Hz [0000] XOR A<$22>, $AA
+TEST#517: 16Hz [0000] RST $0028 (SP<$1115>)
+TEST#518: 12Hz [0000] LDH A<$88>, ($FF00+$33)
+TEST#519: 12Hz [0000] POP AF <SP:$1113> = $0001
+TEST#520:  8Hz [0000] LDH A<$00>, ($FF00+C<$FF>)
+TEST#521:  4Hz [0000] DI
+TEST#522:  4Hz [0000] detected an invalid operand: $F4
+TEST#523: 12Hz [0000] PUSH AF<$7700> <SP:$1115>
+TEST#524:  8Hz [0000] OR A<$77>, $AA
+TEST#525: 16Hz [0000] RST $0030 (SP<$1113>)
+TEST#526: 12Hz [0000] LDHL SP<$1111>, $11
+TEST#527:  8Hz [0000] LD SP<$1122>, HL<$1122>
+TEST#528: 16Hz [0000] LD A, ($1234) = $22
+TEST#529:  4Hz [0000] EI
+TEST#530:  4Hz [0000] detected an invalid operand: $FC
+TEST#531:  4Hz detected an illegal instruction
+TEST#532:  4Hz [0000] detected an invalid operand: $FD
+TEST#533:  8Hz [0000] CP A<$22>, $AA
+TEST#534: 16Hz [0000] RST $0038 (SP<$1122>)
