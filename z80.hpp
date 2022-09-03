@@ -1942,6 +1942,17 @@ class Z80
         return n;
     }
 
+    inline unsigned char SRA(unsigned char n)
+    {
+        unsigned char n0 = n & 0x01;
+        unsigned char n7 = n & 0x80;
+        n &= 0b11111110;
+        n >>= 1;
+        n = n7 ? n | 0x80 : n & 0x7F;
+        setFlagByRotate(n, n0);
+        return n;
+    }
+
     inline unsigned char RLC(unsigned char n)
     {
         unsigned char c = n & 0x80 ? 1 : 0;
@@ -2078,13 +2089,8 @@ class Z80
     inline int SRA_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char r0 = *rp & 0x01;
-        unsigned char r7 = *rp & 0x80;
         if (isDebug()) log("[%04X] SRA %s", reg.PC, registerDump(r));
-        *rp &= 0b11111110;
-        *rp >>= 1;
-        r7 ? * rp |= 0x80 : * rp &= 0x7F;
-        setFlagByRotate(*rp, r0);
+        *rp = SRA(*rp);
         reg.PC += 2;
         return 0;
     }
@@ -2192,14 +2198,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        unsigned char n0 = n & 0x01;
-        unsigned char n7 = n & 0x80;
         if (isDebug()) log("[%04X] SRA (HL<$%04X>) = $%02X", reg.PC, addr, n);
-        n &= 0b11111110;
-        n >>= 1;
-        n7 ? n |= 0x80 : n &= 0x7F;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n0);
+        writeByte(addr, SRA(n), 3);
         reg.PC += 2;
         return 0;
     }
@@ -2508,15 +2508,10 @@ class Z80
     {
         unsigned short addr = reg.IX + d;
         unsigned char n = readByte(addr);
-        unsigned char n0 = n & 0x01;
-        unsigned char n7 = n & 0x80;
         if (isDebug()) log("[%04X] SRA (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
-        n &= 0b11111110;
-        n >>= 1;
-        n7 ? n |= 0x80 : n &= 0x7F;
-        if (rp) *rp = n;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n0);
+        unsigned char result = SRA(n);
+        if (rp) *rp = result;
+        writeByte(addr, result, 3);
         reg.PC += 4;
         return 0;
     }
@@ -2764,15 +2759,10 @@ class Z80
     {
         unsigned short addr = reg.IY + d;
         unsigned char n = readByte(addr);
-        unsigned char n0 = n & 0x01;
-        unsigned char n7 = n & 0x80;
         if (isDebug()) log("[%04X] SRA (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
-        n &= 0b11111110;
-        n >>= 1;
-        n7 ? n |= 0x80 : n &= 0x7F;
-        if (rp) *rp = n;
-        writeByte(addr, n, 3);
-        setFlagByRotate(n, n0);
+        unsigned char result = SRA(n);
+        if (rp) *rp = result;
+        writeByte(addr, result, 3);
         reg.PC += 4;
         return 0;
     }
