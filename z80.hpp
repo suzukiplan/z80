@@ -801,70 +801,6 @@ class Z80
         return 0;
     }
 
-    static inline int RLCA(Z80* ctx)
-    {
-        unsigned char c = ctx->isFlagC() ? 1 : 0;
-        unsigned char a7 = ctx->reg.pair.A & 0x80 ? 1 : 0;
-        if (ctx->isDebug()) ctx->log("[%04X] RLCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
-        ctx->reg.pair.A &= 0b01111111;
-        ctx->reg.pair.A <<= 1;
-        ctx->reg.pair.A |= a7; // differ with RLA
-        ctx->setFlagC(a7);
-        ctx->setFlagH(false);
-        ctx->setFlagN(false);
-        ctx->setFlagXY(ctx->reg.pair.A);
-        ctx->reg.PC++;
-        return 0;
-    }
-
-    static inline int RRCA(Z80* ctx)
-    {
-        unsigned char c = ctx->isFlagC() ? 1 : 0;
-        unsigned char a0 = ctx->reg.pair.A & 0x01;
-        if (ctx->isDebug()) ctx->log("[%04X] RRCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
-        ctx->reg.pair.A &= 0b11111110;
-        ctx->reg.pair.A >>= 1;
-        ctx->reg.pair.A |= a0 ? 0x80 : 0; // differ with RRA
-        ctx->setFlagC(a0);
-        ctx->setFlagH(false);
-        ctx->setFlagN(false);
-        ctx->setFlagXY(ctx->reg.pair.A);
-        ctx->reg.PC++;
-        return 0;
-    }
-
-    static inline int RLA(Z80* ctx)
-    {
-        unsigned char c = ctx->isFlagC() ? 1 : 0;
-        unsigned char a7 = ctx->reg.pair.A & 0x80 ? 1 : 0;
-        if (ctx->isDebug()) ctx->log("[%04X] RLA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
-        ctx->reg.pair.A &= 0b01111111;
-        ctx->reg.pair.A <<= 1;
-        ctx->reg.pair.A |= c; // differ with RLCA
-        ctx->setFlagC(a7);
-        ctx->setFlagH(false);
-        ctx->setFlagN(false);
-        ctx->setFlagXY(ctx->reg.pair.A);
-        ctx->reg.PC++;
-        return 0;
-    }
-
-    static inline int RRA(Z80* ctx)
-    {
-        unsigned char c = ctx->isFlagC() ? 1 : 0;
-        unsigned char a0 = ctx->reg.pair.A & 0x01;
-        if (ctx->isDebug()) ctx->log("[%04X] RRA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, c ? "ON" : "OFF");
-        ctx->reg.pair.A &= 0b11111110;
-        ctx->reg.pair.A >>= 1;
-        ctx->reg.pair.A |= c ? 0x80 : 0x00; // differ with RLCA
-        ctx->setFlagC(a0);
-        ctx->setFlagH(false);
-        ctx->setFlagN(false);
-        ctx->setFlagXY(ctx->reg.pair.A);
-        ctx->reg.PC++;
-        return 0;
-    }
-
     inline unsigned char* getRegisterPointer(unsigned char r)
     {
         switch (r) {
@@ -1912,15 +1848,17 @@ class Z80
         return 0;
     }
 
-    inline void setFlagByRotate(unsigned char n, bool carry)
+    inline void setFlagByRotate(unsigned char n, bool carry, bool isA = false)
     {
         setFlagC(carry);
         setFlagH(false);
         setFlagN(false);
-        setFlagS(n & 0x80);
-        setFlagZ(0 == n);
         setFlagXY(n);
-        setFlagPV(isEvenNumberBits(n));
+        if (!isA) {
+            setFlagS(n & 0x80);
+            setFlagZ(0 == n);
+            setFlagPV(isEvenNumberBits(n));
+        }
     }
 
     inline unsigned char SLL(unsigned char n)
@@ -1962,44 +1900,76 @@ class Z80
         return n;
     }
 
-    inline unsigned char RLC(unsigned char n)
+    inline unsigned char RLC(unsigned char n, bool isA = false)
     {
         unsigned char c = n & 0x80 ? 1 : 0;
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RL
-        setFlagByRotate(n, c);
+        setFlagByRotate(n, c, isA);
         return n;
     }
 
-    inline unsigned char RL(unsigned char n)
+    inline unsigned char RL(unsigned char n, bool isA = false)
     {
         unsigned char c = n & 0x80 ? 1 : 0;
         n &= 0b01111111;
         n <<= 1;
         n |= isFlagC() ? 1 : 0; // differ with RLC
-        setFlagByRotate(n, c);
+        setFlagByRotate(n, c, isA);
         return n;
     }
 
-    inline unsigned char RRC(unsigned char n)
+    inline unsigned char RRC(unsigned char n, bool isA = false)
     {
         unsigned char c = n & 1 ? 0x80 : 0;
         n &= 0b11111110;
         n >>= 1;
         n |= c; // differ with RR
-        setFlagByRotate(n, c);
+        setFlagByRotate(n, c, isA);
         return n;
     }
 
-    inline unsigned char RR(unsigned char n)
+    inline unsigned char RR(unsigned char n, bool isA = false)
     {
         unsigned char c = n & 1 ? 0x80 : 0;
         n &= 0b11111110;
         n >>= 1;
         n |= isFlagC() ? 0x80 : 0; // differ with RR
-        setFlagByRotate(n, c);
+        setFlagByRotate(n, c, isA);
         return n;
+    }
+
+    static inline int RLCA(Z80* ctx)
+    {
+        if (ctx->isDebug()) ctx->log("[%04X] RLCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
+        ctx->reg.pair.A = ctx->RLC(ctx->reg.pair.A, true);
+        ctx->reg.PC++;
+        return 0;
+    }
+
+    static inline int RRCA(Z80* ctx)
+    {
+        if (ctx->isDebug()) ctx->log("[%04X] RRCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
+        ctx->reg.pair.A = ctx->RRC(ctx->reg.pair.A, true);
+        ctx->reg.PC++;
+        return 0;
+    }
+
+    static inline int RLA(Z80* ctx)
+    {
+        if (ctx->isDebug()) ctx->log("[%04X] RLA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
+        ctx->reg.pair.A = ctx->RL(ctx->reg.pair.A, true);
+        ctx->reg.PC++;
+        return 0;
+    }
+
+    static inline int RRA(Z80* ctx)
+    {
+        if (ctx->isDebug()) ctx->log("[%04X] RRA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
+        ctx->reg.pair.A = ctx->RR(ctx->reg.pair.A, true);
+        ctx->reg.PC++;
+        return 0;
     }
 
     // Rotate register Left Circular
