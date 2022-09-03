@@ -3357,7 +3357,6 @@ class Z80
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         subtract8(n, c);
-        reg.pair.A -= c + n;
         reg.PC += 3;
         return consumeClock(3);
     }
