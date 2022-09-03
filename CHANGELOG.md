@@ -1,7 +1,11 @@
 # Change log
 
-## Version 1.3.0 (WIP)
+## Version 1.3.0 (Spt 3, 2022 JST)
 
+- implemented the all of undocumented instructions
+- add test case: [Z80 Instruction Exerciser](https://mdfs.net/Software/Z80/Exerciser/) #31
+- passed `zexdoc` all
+- passed `zexall` all
 - bugfix: `LD A,I` Incorrect P/V flag after execution #29
 - bugfix: incorrect `ADD IX,IX` and `ADD IY,IY` #32
 - bugfix: incorrect X/Y flags after `CP` operands #34
@@ -9,7 +13,6 @@
 - bugfix: incorrect X/Y flags after `LDD/LDI` operands
 - bugfix: incorrect X/Y flags after `RRD/RLD/RLA/RRA/RLCA/RRCA` operands
 - bugfix: incorrect carry flag after `DAA` operand
-- add test case: [Z80 Instruction Exerciser](https://mdfs.net/Software/Z80/Exerciser/) #31
 - refactored several code
 
 ## Version 1.2.8 (Feb 20, 2022 JST)
