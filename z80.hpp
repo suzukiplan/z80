@@ -90,9 +90,6 @@ class Z80
         consumeClock(clock);
     }
 
-    // Normally false (zexdoc/zexall executes some undefined instructions, so set to true if you want to skip them)
-    bool skipIllegalInstructions;
-
   private: // Internal functions & variables
     // flag setter
     inline void setFlagS(bool on) { on ? reg.pair.F |= flagS() : reg.pair.F &= ~flagS(); }
@@ -509,17 +506,6 @@ class Z80
         return consumeClock(1);
     }
 
-    static inline int OP_illegal(Z80* ctx)
-    {
-        if (ctx->skipIllegalInstructions) {
-            if (ctx->isDebug()) ctx->log("Skipped an illegal instruction");
-            ctx->reg.PC += 1;
-            return 0;
-        }
-        if (ctx->isDebug()) ctx->log("detected an illegal instruction");
-        return -1;
-    }
-
     static inline int EXTRA(Z80* ctx)
     {
         unsigned char mode = ctx->readByte(ctx->reg.PC + 1);
@@ -562,11 +548,6 @@ class Z80
         switch (mode & 0b11000111) {
             case 0b01000000: return ctx->IN_R_C((mode & 0b00111000) >> 3);
             case 0b01000001: return ctx->OUT_C_R((mode & 0b00111000) >> 3);
-        }
-        if (ctx->skipIllegalInstructions) {
-            if (ctx->isDebug()) ctx->log("Skipped an illegal ED instruction: $ED%02X", mode);
-            ctx->reg.PC += 2;
-            return 0;
         }
         if (ctx->isDebug()) ctx->log("unknown EXTRA: $%02X", mode);
         return -1;
@@ -5765,7 +5746,6 @@ class Z80
         reg.pair.A = 0xff;
         reg.pair.F = 0xff;
         reg.SP = 0xffff;
-        this->skipIllegalInstructions = false;
     }
 
     ~Z80()

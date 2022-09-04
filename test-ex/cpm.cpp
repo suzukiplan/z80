@@ -132,7 +132,6 @@ int main(int argc, char* argv[])
             puts(msg);
         });
     }
-    z80.skipIllegalInstructions = true;
     cpm.lineCallback = [](CPM* cpm, char* line) {
         if (cpm->checkError && strstr(line, "ERROR")) {
             cpm->halted = true;
