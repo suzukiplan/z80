@@ -6,6 +6,7 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
+      - run: apt-get install -y clang-format
       - run:
           name: "Build and Test Z80 Emulator"
           command: "make"
