@@ -11,7 +11,7 @@ jobs:
           command: "sudo apt-get install -y clang clang-format"
       - run:
           name: "Build and Test Z80 Emulator"
-          command: "make"
+          command: "make ci"
 
 workflows:
   test-workflow:

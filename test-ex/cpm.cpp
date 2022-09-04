@@ -92,6 +92,7 @@ int main(int argc, char* argv[])
     char* cimPath = NULL;
     bool checkError = false;
     bool verboseMode = false;
+    bool noAnimation = false;
     for (int i = 1; i < argc; i++) {
         if ('-' == argv[i][0]) {
             switch (argv[i][1]) {
@@ -100,6 +101,9 @@ int main(int argc, char* argv[])
                     break;
                 case 'v':
                     verboseMode = true;
+                    break;
+                case 'n':
+                    noAnimation = true;
                     break;
                 default:
                     printf("unsupported option: %s\n", argv[i]);
@@ -146,7 +150,7 @@ int main(int argc, char* argv[])
             printf("\rCPM detected an error at $%04X\n", z80.reg.PC);
         } else if (cpm.halted) {
             printf("CPM halted at $%04X\n", z80.reg.PC);
-        } else {
+        } else if (!noAnimation) {
             putc(animePattern[anime++], stdout);
             anime &= 3;
             fflush(stdout);
