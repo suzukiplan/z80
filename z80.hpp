@@ -68,12 +68,12 @@ class Z80
         unsigned char reserved8[2];
     } reg;
 
-    inline unsigned char flagS() { return isLR35902 ? 0 : 0b10000000; }
+    inline unsigned char flagS() { return 0b10000000; }
     inline unsigned char flagZ() { return 0b01000000; }
-    inline unsigned char flagY() { return isLR35902 ? 0 : 0b00100000; }
+    inline unsigned char flagY() { return 0b00100000; }
     inline unsigned char flagH() { return 0b00010000; }
-    inline unsigned char flagX() { return isLR35902 ? 0 : 0b00001000; }
-    inline unsigned char flagPV() { return isLR35902 ? 0 : 0b00000100; }
+    inline unsigned char flagX() { return 0b00001000; }
+    inline unsigned char flagPV() { return 0b00000100; }
     inline unsigned char flagN() { return 0b00000010; }
     inline unsigned char flagC() { return 0b00000001; }
 
@@ -87,7 +87,7 @@ class Z80
     inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
     {
         CB.write(CB.arg, addr, value);
-        consumeClock(isLR35902 ? 4 : clock);
+        consumeClock(clock);
     }
 
     // Normally false (zexdoc/zexall executes some undefined instructions, so set to true if you want to skip them)
@@ -191,7 +191,6 @@ class Z80
     } CB;
 
     bool requestBreakFlag;
-    bool isLR35902; // GameBoy compatible mode
 
     inline void checkBreakPoint()
     {
@@ -417,7 +416,6 @@ class Z80
 
     inline int consumeClock(int hz)
     {
-        hz = isLR35902 ? 4 : hz; // LR35902 is always 4Hz for a machine cycle
         reg.consumeClockCounter += hz;
         if (CB.consumeClock) CB.consumeClock(CB.arg, hz);
         return hz;
@@ -446,17 +444,6 @@ class Z80
     static inline int HALT(Z80* ctx)
     {
         if (ctx->isDebug()) ctx->log("[%04X] HALT", ctx->reg.PC);
-        ctx->reg.IFF |= ctx->IFF_HALT();
-        ctx->reg.PC++;
-        return 0;
-    }
-
-    // function for LR35902
-    // NOTE: same as HALT in this implementation.
-    // Please use addBreakOperand if you needed difference feature of HALT.
-    static inline int STOP(Z80* ctx)
-    {
-        if (ctx->isDebug()) ctx->log("[%04X] STOP", ctx->reg.PC);
         ctx->reg.IFF |= ctx->IFF_HALT();
         ctx->reg.PC++;
         return 0;
@@ -4979,7 +4966,6 @@ class Z80
         if (ctx->isDebug()) ctx->log("[%04X] JP $%04X", ctx->reg.PC, addr);
         ctx->reg.PC = addr;
         ctx->reg.WZ = addr;
-        if (ctx->isLR35902) ctx->consumeClock(4);
         return 0;
     }
 
@@ -5016,7 +5002,6 @@ class Z80
             reg.PC += 3;
         }
         reg.WZ = addr;
-        if (isLR35902 && jump) consumeClock(4);
         return 0;
     }
 
@@ -5141,7 +5126,6 @@ class Z80
         ctx->reg.SP -= 2;
         ctx->reg.WZ = addr;
         ctx->reg.PC = addr;
-        if (ctx->isLR35902) ctx->consumeClock(4);
         ctx->invokeCallHandlers();
         return 0;
     }
@@ -5157,7 +5141,6 @@ class Z80
         ctx->reg.SP += 2;
         ctx->reg.PC = addr;
         ctx->reg.WZ = addr;
-        if (ctx->isLR35902) ctx->consumeClock(4);
         return 0;
     }
 
@@ -5172,7 +5155,6 @@ class Z80
     static inline int CALL_C7_NN(Z80* ctx) { return ctx->CALL_C_NN(7); }
     inline int CALL_C_NN(unsigned char c)
     {
-        if (isLR35902 && 4 <= c) return -1;
         bool execute;
         switch (c) {
             case 0b000: execute = isFlagZ() ? false : true; break;
@@ -5200,7 +5182,6 @@ class Z80
             invokeCallHandlers();
         }
         reg.WZ = addr;
-        if (isLR35902 && execute) consumeClock(4);
         return 0;
     }
 
@@ -5233,7 +5214,6 @@ class Z80
             return consumeClock(1);
         }
         invokeReturnHandlers();
-        if (isLR35902) consumeClock(4);
         unsigned char nL = readByte(reg.SP);
         unsigned char nH = readByte(reg.SP + 1, 3);
         unsigned short addr = (nH << 8) + nL;
@@ -5241,7 +5221,6 @@ class Z80
         reg.SP += 2;
         reg.PC = addr;
         reg.WZ = addr;
-        if (isLR35902) consumeClock(4);
         return 0;
     }
 
@@ -5257,7 +5236,6 @@ class Z80
         reg.PC = addr;
         reg.WZ = addr;
         reg.IFF &= ~IFF_IRQ();
-        if (isLR35902) consumeClock(4);
         return 0;
     }
 
@@ -5306,7 +5284,6 @@ class Z80
         reg.SP -= 2;
         reg.WZ = addr;
         reg.PC = addr;
-        if (isLR35902) consumeClock(4);
         invokeCallHandlers();
         return 0;
     }
@@ -5512,149 +5489,6 @@ class Z80
         return consumeClock(2);
     }
 
-    // function for LR35902
-    inline unsigned char swap(unsigned char n)
-    {
-        unsigned char w = (n & 0xFF00) >> 8;
-        n = ((n & 0x00FF) << 8) | w;
-        setFlagZ((n) == 0);
-        setFlagN(false);
-        setFlagH(false);
-        setFlagC(false);
-        return n;
-    }
-
-    // function for LR35902
-    static inline int SWAP_B(Z80* ctx) { return ctx->SWAP_R(0b000); }
-    static inline int SWAP_C(Z80* ctx) { return ctx->SWAP_R(0b001); }
-    static inline int SWAP_D(Z80* ctx) { return ctx->SWAP_R(0b010); }
-    static inline int SWAP_E(Z80* ctx) { return ctx->SWAP_R(0b011); }
-    static inline int SWAP_H(Z80* ctx) { return ctx->SWAP_R(0b100); }
-    static inline int SWAP_L(Z80* ctx) { return ctx->SWAP_R(0b101); }
-    static inline int SWAP_A(Z80* ctx) { return ctx->SWAP_R(0b111); }
-    inline int SWAP_R(unsigned char r)
-    {
-        unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] SWAP %s", reg.PC, registerDump(r));
-        *rp = swap(*rp);
-        reg.PC += 1;
-        return 0;
-    }
-
-    // function for LR35902
-    static inline int SWAP_HL_(Z80* ctx) { return ctx->SWAP_HL(); }
-    inline int SWAP_HL()
-    {
-        unsigned short addr = getHL();
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SWAP HL<$%04X> = $%02X", reg.PC, addr, n);
-        writeByte(addr, swap(n));
-        reg.PC += 1;
-        return 0;
-    }
-
-    // function for LR35902
-    static inline int LD_NN_SP(Z80* ctx)
-    {
-        unsigned char nL = ctx->readByte(ctx->reg.PC + 1);
-        unsigned char nH = ctx->readByte(ctx->reg.PC + 2);
-        unsigned char spL = ctx->reg.SP & 0x00FF;
-        unsigned char spH = (ctx->reg.SP & 0xFF00) >> 8;
-        unsigned short addr = (nH << 8) + nL;
-        if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), SP<$%04X>", ctx->reg.PC, addr, ctx->reg.SP);
-        ctx->writeByte(addr, spL);
-        ctx->writeByte(addr + 1, spH);
-        ctx->reg.PC += 3;
-        return 0;
-    }
-
-    // function for LR35902
-    inline int repeatLD2(bool isStore, bool isIncHL)
-    {
-        unsigned short hl = getHL();
-        if (isDebug()) {
-            if (isStore) {
-                log("[%04X] %s (HL<$%04X>), %s", reg.PC, isIncHL ? "LDI" : "LDD", hl, registerDump(0b111));
-            } else {
-                log("[%04X] %s %s, (HL<$%04X>)", reg.PC, isIncHL ? "LDI" : "LDD", registerDump(0b111), hl);
-            }
-        }
-        if (isStore) {
-            writeByte(hl, reg.pair.A);
-        } else {
-            reg.pair.A = readByte(hl);
-        }
-        setHL(isIncHL ? hl + 1 : hl - 1);
-        reg.PC += 1;
-        return 0;
-    }
-    static inline int LDI_HL_A(Z80* ctx) { return ctx->repeatLD2(true, true); }
-    static inline int LDI_A_HL(Z80* ctx) { return ctx->repeatLD2(false, true); }
-    static inline int LDD_HL_A(Z80* ctx) { return ctx->repeatLD2(true, false); }
-    static inline int LDD_A_HL(Z80* ctx) { return ctx->repeatLD2(false, false); }
-
-    // function for LR35902
-    static inline int LDH_N_A(Z80* ctx)
-    {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
-        if (ctx->isDebug()) ctx->log("[%04X] LDH ($FF00+$%02X), %s", ctx->reg.PC, n, ctx->registerDump(0b111));
-        ctx->writeByte(0xFF00 | n, ctx->reg.pair.A);
-        ctx->reg.PC += 2;
-        return 0;
-    }
-
-    // function for LR35902
-    static inline int LDH_A_N(Z80* ctx)
-    {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1);
-        if (ctx->isDebug()) ctx->log("[%04X] LDH %s, ($FF00+$%02X)", ctx->reg.PC, ctx->registerDump(0b111), n);
-        ctx->reg.pair.A = ctx->readByte(0xFF00 | n);
-        ctx->reg.PC += 2;
-        return 0;
-    }
-
-    // function for LR35902
-    static inline int LDH_C_A(Z80* ctx)
-    {
-        if (ctx->isDebug()) ctx->log("[%04X] LDH ($FF00+%s), %s", ctx->reg.PC, ctx->registerDump(0b001), ctx->registerDump(0b111));
-        ctx->writeByte(0xFF00 | ctx->reg.pair.C, ctx->reg.pair.A);
-        ctx->reg.PC += 1;
-        return 0;
-    }
-
-    // function for LR35902
-    static inline int LDH_A_C(Z80* ctx)
-    {
-        if (ctx->isDebug()) ctx->log("[%04X] LDH %s, ($FF00+%s)", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerDump(0b001));
-        ctx->reg.pair.A = ctx->readByte(0xFF00 | ctx->reg.pair.C);
-        ctx->reg.PC += 1;
-        return 0;
-    }
-
-    // function for LR35902
-    inline int add_sp_n(bool isLoadHL)
-    {
-        signed char d = readByte(reg.PC + 1);
-        if (isDebug()) log("[%04X] %s SP<$%04X>, $%02X", reg.PC, isLoadHL ? "LDHL" : "ADD", reg.SP, d);
-        setFlagByAdd16(reg.SP, (unsigned short)d);
-        setFlagZ(false);
-        setFlagN(false);
-        if (isLR35902) consumeClock(4);
-        reg.SP += d;
-        reg.PC += 2;
-        if (isLoadHL) {
-            setHL(reg.SP);
-        } else {
-            consumeClock(4);
-        }
-        return 0;
-    }
-    static inline int ADD_SP_N(Z80* ctx) { return ctx->add_sp_n(false); }
-    static inline int LDHL_SP_N(Z80* ctx) { return ctx->add_sp_n(true); }
-
-    // function for LR35902
-    static inline int LR35902_RETI(Z80* ctx) { return ctx->RETI(); }
-
     int (*opSet1[256])(Z80* ctx) = {
         NOP, LD_BC_NN, LD_BC_A, INC_RP_BC, INC_B, DEC_B, LD_B_N, RLCA, EX_AF_AF2, ADD_HL_BC, LD_A_BC, DEC_RP_BC, INC_C, DEC_C, LD_C_N, RRCA,
         DJNZ_E, LD_DE_NN, LD_DE_A, INC_RP_DE, INC_D, DEC_D, LD_D_N, RLA, JR_E, ADD_HL_DE, LD_A_DE, DEC_RP_DE, INC_E, DEC_E, LD_E_N, RRA,
@@ -5838,43 +5672,6 @@ class Z80
         SET_IY_6_with_LD_B, SET_IY_6_with_LD_C, SET_IY_6_with_LD_D, SET_IY_6_with_LD_E, SET_IY_6_with_LD_H, SET_IY_6_with_LD_L, SET_IY_6, SET_IY_6_with_LD_A,
         SET_IY_7_with_LD_B, SET_IY_7_with_LD_C, SET_IY_7_with_LD_D, SET_IY_7_with_LD_E, SET_IY_7_with_LD_H, SET_IY_7_with_LD_L, SET_IY_7, SET_IY_7_with_LD_A};
 
-    // setup the operands or operand groups that detectable in fixed single byte
-    void setupOperandTable()
-    {
-        if (isLR35902) {
-            opSet1[0b00001000] = LD_NN_SP;
-            opSet1[0b00010000] = STOP;
-            opSet1[0b00100010] = LDI_HL_A;
-            opSet1[0b00101010] = LDI_A_HL;
-            opSet1[0b00110010] = LDD_HL_A;
-            opSet1[0b00111010] = LDD_A_HL;
-            opSet1[0b11010011] = OP_illegal;
-            opSet1[0b11011011] = OP_illegal;
-            opSet1[0b11011001] = LR35902_RETI;
-            opSet1[0b11011101] = OP_illegal;
-            opSet1[0b11100000] = LDH_N_A;
-            opSet1[0b11100010] = LDH_C_A;
-            opSet1[0b11100011] = OP_illegal;
-            opSet1[0b11101000] = ADD_SP_N;
-            opSet1[0b11101010] = LD_NN_A;
-            opSet1[0b11101011] = OP_illegal;
-            opSet1[0b11101101] = OP_illegal;
-            opSet1[0b11110000] = LDH_A_N;
-            opSet1[0b11110010] = LDH_A_C;
-            opSet1[0b11111000] = LDHL_SP_N;
-            opSet1[0b11111010] = LD_A_NN;
-            opSet1[0b11111101] = OP_illegal;
-            opSetCB[48 + 0] = SWAP_B;
-            opSetCB[48 + 1] = SWAP_C;
-            opSetCB[48 + 2] = SWAP_D;
-            opSetCB[48 + 3] = SWAP_E;
-            opSetCB[48 + 4] = SWAP_H;
-            opSetCB[48 + 5] = SWAP_L;
-            opSetCB[48 + 6] = SWAP_HL_;
-            opSetCB[48 + 7] = SWAP_A;
-        }
-    }
-
     inline void checkInterrupt()
     {
         // Interrupt processing is not executed by the instruction immediately after executing EI.
@@ -5945,6 +5742,11 @@ class Z80
         }
     }
 
+    inline void updateRefreshRegister()
+    {
+        reg.R = ((reg.R + 1) & 0x7F) | (reg.R & 0x80);
+    }
+
   public: // API functions
     Z80(unsigned char (*read)(void* arg, unsigned short addr),
         void (*write)(void* arg, unsigned short addr, unsigned char value),
@@ -5962,9 +5764,7 @@ class Z80
         reg.pair.A = 0xff;
         reg.pair.F = 0xff;
         reg.SP = 0xffff;
-        this->isLR35902 = (NULL == in && NULL == out);
         this->skipIllegalInstructions = false;
-        setupOperandTable();
     }
 
     ~Z80()
@@ -6122,20 +5922,16 @@ class Z80
                 checkBreakPoint();
                 reg.execEI = 0;
                 int operandNumber = readByte(reg.PC);
+                updateRefreshRegister();
                 checkBreakOperand(operandNumber);
                 if (opSet1[operandNumber](this) < 0) {
                     if (isDebug()) log("[%04X] detected an invalid operand: $%02X", reg.PC, operandNumber);
-                    if (isLR35902) {
-                        reg.consumeClockCounter = consumeClock(4);
-                    } else {
-                        return 0;
-                    }
+                    return 0;
                 }
             }
             executed += reg.consumeClockCounter;
             clock -= reg.consumeClockCounter;
             reg.consumeClockCounter = 0;
-            reg.R = ((reg.R + 1) & 0x7F) | (reg.R & 0x80);
             checkInterrupt();
         }
         return executed;
