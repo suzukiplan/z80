@@ -1,0 +1,16 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: "Build and Test Z80 Emulator"
+          command: "make"
+
+workflows:
+  test-workflow:
+    jobs:
+      - test
