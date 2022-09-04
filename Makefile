@@ -4,3 +4,6 @@ all:
 	rm z80.hpp.bak
 	cd test && make
 
+test-only:
+	cd test && make
+
