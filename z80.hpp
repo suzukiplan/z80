@@ -37,6 +37,12 @@
 class Z80
 {
   public: // Interface data types
+    struct WaitClocks {
+        int fretch; // Wait T-cycle (Hz) before fetching instruction (default is 0 = no wait)
+        int read;   // Wait T-cycle (Hz) before to read memory (default is 0 = no wait)
+        int write;  // Wait T-cycle (Hz) before to write memory (default is 0 = no wait)
+    } wtc;
+
     struct RegisterPair {
         unsigned char A;
         unsigned char F;
@@ -79,6 +85,7 @@ class Z80
 
     inline unsigned char readByte(unsigned short addr, int clock = 4)
     {
+        if (wtc.read) consumeClock(wtc.read);
         unsigned char byte = CB.read(CB.arg, addr);
         consumeClock(clock);
         return byte;
@@ -86,6 +93,7 @@ class Z80
 
     inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
     {
+        if (wtc.write) consumeClock(wtc.write);
         CB.write(CB.arg, addr, value);
         consumeClock(clock);
     }
@@ -5746,6 +5754,7 @@ class Z80
         reg.pair.A = 0xff;
         reg.pair.F = 0xff;
         reg.SP = 0xffff;
+        memset(&wtc, 0, sizeof(wtc));
     }
 
     ~Z80()
@@ -5900,6 +5909,7 @@ class Z80
                 reg.execEI = 0;
                 readByte(reg.PC); // NOTE: read and discard (to be consumed 4Hz)
             } else {
+                if (wtc.fretch) consumeClock(wtc.fretch);
                 checkBreakPoint();
                 reg.execEI = 0;
                 int operandNumber = readByte(reg.PC, 2);
