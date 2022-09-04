@@ -7,8 +7,11 @@ jobs:
     steps:
       - checkout
       - run:
+          name: "Install Prerequests"
+          command: "apt-get install -y clang clang-format"
+      - run:
           name: "Build and Test Z80 Emulator"
-          command: "make test-only"
+          command: "make"
 
 workflows:
   test-workflow:
