@@ -5,3 +5,6 @@ all:
 	cd test && make
 	cd test-ex && make zexall
 
+test-only:
+	cd test && make
+
