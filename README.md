@@ -1,9 +1,10 @@
-# SUZUKI PLAN - Z80 Emulator [![Build Status](https://travis-ci.org/suzukiplan/z80.svg?branch=master)](https://travis-ci.org/suzukiplan/z80)
+# SUZUKI PLAN - Z80 Emulator 
+[![suzukiplan](https://circleci.com/gh/suzukiplan/z80.svg?style=svg)](https://app.circleci.com/pipelines/github/suzukiplan/z80)
 
 The Z80 is an 8-bit CPU developed by Zilog corporation, released in 1976, and widely used in computers and game consoles in the 1980s.
 It is not just a relic of the past, but continues to be used in embedded systems that require accuracy in processing execution time, such as real-time systems.
 
-**SUZUKI PLAN - Z80 Emulator** is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80, 8080 or LR35902:
+**SUZUKI PLAN - Z80 Emulator** is an emulator under development based on the following design guidelines to support the development of programs and/or emulators using Z80, 8080:
 
 **(FOUR EASY GUIDELINES FOR EASILY)**
 
@@ -18,8 +19,6 @@ It is not just a relic of the past, but continues to be used in embedded systems
 > - [8 ビット CPU Z80](http://www.yamamo10.jp/yamamoto/comp/Z80/index.php) of [山本研究所](http://www.yamamo10.jp/yamamoto/index.html)
 > - [Z80 Code Refference](http://mydocuments.g2.xrea.com/html/p6/z80ref.html) of [Bookworm's Library](http://mydocuments.g2.xrea.com/index.html)
 > - [Zilog Z80 DAA Result Table](http://ver0.sakura.ne.jp/doc/daa.html) of [Version 0](http://ver0.sakura.ne.jp/)
-> - [gbz80 — CPU opcode reference](https://rednex.github.io/rgbds/gbz80.7.html) of [RGBDS](https://github.com/rednex/rgbds)
-> - [Gameboy CPU (LR35902) instruction set](https://pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
 
 [z80.hpp](z80.hpp) passes all `zexdoc` and `zexall` tests. ([See the detail](test-ex))
 
@@ -93,7 +92,7 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 }
 ```
 
-### 3. Make Z80 or LR35902 instance
+### 3. Make Z80 instance
 
 ```c++
     MMU mmu;
@@ -106,14 +105,6 @@ void outPort(void* arg, unsigned char port, unsigned char value)
      */
     Z80 z80(readByte, writeByte, inPort, outPort, &mmu);
 ```
-
-> Specify NULL to inPort and outPort, if you'd like to use as LR35902:
->
-> ```c++
->    Z80 gbz80(readByte, writeByte, NULL, NULL, &mmu);
-> ```
->
-> _LR35902: known as CPU for Nintendo GameBoy series._
 
 ### 4. Execute
 

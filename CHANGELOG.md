@@ -1,5 +1,15 @@
 # Change log
 
+## Version 1.4.0 (Spt 4, 2022 JST)
+
+- Pull Request: #35
+  - Remove LR35902 features
+  - Add zexall to the standard test case
+  - Fixed refresh register update timing
+  - Add wait prefeatch / preread / prewrite feature (optional)
+  - Change CI Tool: TravisCI -> CircleCI
+  - Add CI test mode
+
 ## Version 1.3.0 (Spt 3, 2022 JST)
 
 - Pull Request: #30
