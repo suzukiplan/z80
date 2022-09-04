@@ -5745,6 +5745,7 @@ class Z80
     inline void updateRefreshRegister()
     {
         reg.R = ((reg.R + 1) & 0x7F) | (reg.R & 0x80);
+        consumeClock(2);
     }
 
   public: // API functions
@@ -5921,7 +5922,7 @@ class Z80
             } else {
                 checkBreakPoint();
                 reg.execEI = 0;
-                int operandNumber = readByte(reg.PC);
+                int operandNumber = readByte(reg.PC, 2);
                 updateRefreshRegister();
                 checkBreakOperand(operandNumber);
                 if (opSet1[operandNumber](this) < 0) {
