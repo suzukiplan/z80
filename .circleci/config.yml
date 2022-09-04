@@ -1,0 +1,19 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: "Install Prerequests"
+          command: "sudo apt-get install -y clang clang-format"
+      - run:
+          name: "Build and Test Z80 Emulator"
+          command: "make"
+
+workflows:
+  test-workflow:
+    jobs:
+      - test
