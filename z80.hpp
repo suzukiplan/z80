@@ -354,8 +354,8 @@ class Z80
     inline unsigned short getRPIX(unsigned char rp)
     {
         switch (rp & 0b11) {
-            case 0b00: return (reg.pair.B << 8) + reg.pair.C;
-            case 0b01: return (reg.pair.D << 8) + reg.pair.E;
+            case 0b00: return getBC();
+            case 0b01: return getDE();
             case 0b10: return reg.IX;
             default: return reg.SP;
         }
@@ -364,8 +364,8 @@ class Z80
     inline unsigned short getRPIY(unsigned char rp)
     {
         switch (rp & 0b11) {
-            case 0b00: return (reg.pair.B << 8) + reg.pair.C;
-            case 0b01: return (reg.pair.D << 8) + reg.pair.E;
+            case 0b00: return getBC();
+            case 0b01: return getDE();
             case 0b10: return reg.IY;
             default: return reg.SP;
         }
