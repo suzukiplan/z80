@@ -471,6 +471,9 @@ class Z80
         return 0;
     }
 
+    static inline int IM0(Z80* ctx) { return ctx->IM(0); }
+    static inline int IM1(Z80* ctx) { return ctx->IM(1); }
+    static inline int IM2(Z80* ctx) { return ctx->IM(2); }
     inline int IM(unsigned char interrptMode)
     {
         if (isDebug()) log("[%04X] IM %d", reg.PC, interrptMode);
@@ -480,6 +483,7 @@ class Z80
         return 0;
     }
 
+    static inline int LD_A_I_(Z80* ctx) { return ctx->LD_A_I(); }
     inline int LD_A_I()
     {
         if (isDebug()) log("[%04X] LD A<$%02X>, I<$%02X>", reg.PC, reg.pair.A, reg.I);
@@ -489,6 +493,7 @@ class Z80
         return consumeClock(1);
     }
 
+    static inline int LD_I_A_(Z80* ctx) { return ctx->LD_I_A(); }
     inline int LD_I_A()
     {
         if (isDebug()) log("[%04X] LD I<$%02X>, A<$%02X>", reg.PC, reg.I, reg.pair.A);
@@ -497,6 +502,7 @@ class Z80
         return consumeClock(1);
     }
 
+    static inline int LD_A_R_(Z80* ctx) { return ctx->LD_A_R(); }
     inline int LD_A_R()
     {
         if (isDebug()) log("[%04X] LD A<$%02X>, R<$%02X>", reg.PC, reg.pair.A, reg.R);
@@ -506,6 +512,7 @@ class Z80
         return consumeClock(1);
     }
 
+    static inline int LD_R_A_(Z80* ctx) { return ctx->LD_R_A(); }
     inline int LD_R_A()
     {
         if (isDebug()) log("[%04X] LD R<$%02X>, A<$%02X>", reg.PC, reg.R, reg.pair.A);
@@ -514,55 +521,11 @@ class Z80
         return consumeClock(1);
     }
 
-    static inline int EXTRA(Z80* ctx)
-    {
-        unsigned char mode = ctx->readByte(ctx->reg.PC + 1);
-        switch (mode) {
-            case 0b01000110: return ctx->IM(0);
-            case 0b01010110: return ctx->IM(1);
-            case 0b01011110: return ctx->IM(2);
-            case 0b01010111: return ctx->LD_A_I();
-            case 0b01000111: return ctx->LD_I_A();
-            case 0b01011111: return ctx->LD_A_R();
-            case 0b01001111: return ctx->LD_R_A();
-            case 0b10100000: return ctx->LDI();
-            case 0b10110000: return ctx->LDIR();
-            case 0b10101000: return ctx->LDD();
-            case 0b10111000: return ctx->LDDR();
-            case 0b01000100: return ctx->NEG();
-            case 0b10100001: return ctx->CPI();
-            case 0b10110001: return ctx->CPIR();
-            case 0b10101001: return ctx->CPD();
-            case 0b10111001: return ctx->CPDR();
-            case 0b01001101: return ctx->RETI();
-            case 0b01000101: return ctx->RETN();
-            case 0b10100010: return ctx->INI();
-            case 0b10110010: return ctx->INIR();
-            case 0b10101010: return ctx->IND();
-            case 0b10111010: return ctx->INDR();
-            case 0b10100011: return ctx->OUTI();
-            case 0b10110011: return ctx->OUTIR();
-            case 0b10101011: return ctx->OUTD();
-            case 0b10111011: return ctx->OUTDR();
-            case 0b01101111: return ctx->RLD();
-            case 0b01100111: return ctx->RRD();
-        }
-        switch (mode & 0b11001111) {
-            case 0b01001011: return ctx->LD_RP_ADDR((mode & 0b00110000) >> 4);
-            case 0b01000011: return ctx->LD_ADDR_RP((mode & 0b00110000) >> 4);
-            case 0b01001010: return ctx->ADC_HL_RP((mode & 0b00110000) >> 4);
-            case 0b01000010: return ctx->SBC_HL_RP((mode & 0b00110000) >> 4);
-        }
-        switch (mode & 0b11000111) {
-            case 0b01000000: return ctx->IN_R_C((mode & 0b00111000) >> 3);
-            case 0b01000001: return ctx->OUT_C_R((mode & 0b00111000) >> 3);
-        }
-        if (ctx->isDebug()) ctx->log("unknown EXTRA: $%02X", mode);
-        return -1;
-    }
-
-    // operand of using IX (first byte is 0b11011101)
+    static inline int OP_CB(Z80* ctx) { return ctx->opSetCB[ctx->readByte(ctx->reg.PC + 1)](ctx); }
+    static inline int OP_ED(Z80* ctx) { return ctx->opSetED[ctx->readByte(ctx->reg.PC + 1)](ctx); }
     static inline int OP_IX(Z80* ctx) { return ctx->opSetIX[ctx->readByte(ctx->reg.PC + 1)](ctx); }
+    static inline int OP_IY(Z80* ctx) { return ctx->opSetIY[ctx->readByte(ctx->reg.PC + 1)](ctx); }
+
     static inline int OP_IX4(Z80* ctx)
     {
         signed char op3 = ctx->readByte(ctx->reg.PC + 2);
@@ -570,17 +533,12 @@ class Z80
         return ctx->opSetIX4[op4](ctx, op3);
     }
 
-    // operand of using IY (first byte is 0b11111101)
-    static inline int OP_IY(Z80* ctx) { return ctx->opSetIY[ctx->readByte(ctx->reg.PC + 1)](ctx); }
     static inline int OP_IY4(Z80* ctx)
     {
         signed char op3 = ctx->readByte(ctx->reg.PC + 2);
         unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
         return ctx->opSetIY4[op4](ctx, op3);
     }
-
-    // operand of using other register (first byte is 0b11001011)
-    static inline int OP_CB(Z80* ctx) { return ctx->opSetCB[ctx->readByte(ctx->reg.PC + 1)](ctx); }
 
     // Load location (HL) with value n
     static inline int LD_HL_N(Z80* ctx)
@@ -1477,6 +1435,10 @@ class Z80
     }
 
     // Load Reg. pair rp with location (nn)
+    static inline int LD_RP_ADDR_BC(Z80* ctx) { return ctx->LD_RP_ADDR(0b00); }
+    static inline int LD_RP_ADDR_DE(Z80* ctx) { return ctx->LD_RP_ADDR(0b01); }
+    static inline int LD_RP_ADDR_HL(Z80* ctx) { return ctx->LD_RP_ADDR(0b10); }
+    static inline int LD_RP_ADDR_SP(Z80* ctx) { return ctx->LD_RP_ADDR(0b11); }
     inline int LD_RP_ADDR(unsigned char rp)
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
@@ -1511,6 +1473,10 @@ class Z80
     }
 
     // Load location (nn) with Reg. pair rp.
+    static inline int LD_ADDR_RP_BC(Z80* ctx) { return ctx->LD_ADDR_RP(0b00); }
+    static inline int LD_ADDR_RP_DE(Z80* ctx) { return ctx->LD_ADDR_RP(0b01); }
+    static inline int LD_ADDR_RP_HL(Z80* ctx) { return ctx->LD_ADDR_RP(0b10); }
+    static inline int LD_ADDR_RP_SP(Z80* ctx) { return ctx->LD_ADDR_RP(0b11); }
     inline int LD_ADDR_RP(unsigned char rp)
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
@@ -1668,10 +1634,10 @@ class Z80
         }
         return 0;
     }
-    inline int LDI() { return repeatLD(true, false); }
-    inline int LDIR() { return repeatLD(true, true); }
-    inline int LDD() { return repeatLD(false, false); }
-    inline int LDDR() { return repeatLD(false, true); }
+    static inline int LDI(Z80* ctx) { return ctx->repeatLD(true, false); }
+    static inline int LDIR(Z80* ctx) { return ctx->repeatLD(true, true); }
+    static inline int LDD(Z80* ctx) { return ctx->repeatLD(false, false); }
+    static inline int LDDR(Z80* ctx) { return ctx->repeatLD(false, true); }
 
     // Exchange stack top with IX
     static inline int EX_SP_IX_(Z80* ctx) { return ctx->EX_SP_IX(); }
@@ -3494,6 +3460,10 @@ class Z80
     }
 
     // Add with carry register pair to HL
+    static inline int ADC_HL_BC(Z80* ctx) { return ctx->ADC_HL_RP(0b00); }
+    static inline int ADC_HL_DE(Z80* ctx) { return ctx->ADC_HL_RP(0b01); }
+    static inline int ADC_HL_HL(Z80* ctx) { return ctx->ADC_HL_RP(0b10); }
+    static inline int ADC_HL_SP(Z80* ctx) { return ctx->ADC_HL_RP(0b11); }
     inline int ADC_HL_RP(unsigned char rp)
     {
         if (isDebug()) log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
@@ -3620,6 +3590,10 @@ class Z80
     }
 
     // Subtract register pair from HL with carry
+    static inline int SBC_HL_BC(Z80* ctx) { return ctx->SBC_HL_RP(0b00); }
+    static inline int SBC_HL_DE(Z80* ctx) { return ctx->SBC_HL_RP(0b01); }
+    static inline int SBC_HL_HL(Z80* ctx) { return ctx->SBC_HL_RP(0b10); }
+    static inline int SBC_HL_SP(Z80* ctx) { return ctx->SBC_HL_RP(0b11); }
     inline int SBC_HL_RP(unsigned char rp)
     {
         if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
@@ -3978,6 +3952,7 @@ class Z80
     }
 
     // Negate Acc. (2's Comp.)
+    static inline int NEG_(Z80* ctx) { return ctx->NEG(); }
     inline int NEG()
     {
         if (isDebug()) log("[%04X] NEG %s", reg.PC, registerDump(0b111));
@@ -4832,10 +4807,10 @@ class Z80
         reg.WZ += isIncHL ? 1 : -1;
         return 0;
     }
-    inline int CPI() { return repeatCP(true, false); }
-    inline int CPIR() { return repeatCP(true, true); }
-    inline int CPD() { return repeatCP(false, false); }
-    inline int CPDR() { return repeatCP(false, true); }
+    static inline int CPI(Z80* ctx) { return ctx->repeatCP(true, false); }
+    static inline int CPIR(Z80* ctx) { return ctx->repeatCP(true, true); }
+    static inline int CPD(Z80* ctx) { return ctx->repeatCP(false, false); }
+    static inline int CPDR(Z80* ctx) { return ctx->repeatCP(false, true); }
 
     // Compare Register
     static inline int CP_B(Z80* ctx) { return ctx->CP_R(0b000); }
@@ -5214,6 +5189,7 @@ class Z80
     }
 
     // Return from interrupt
+    static inline int RETI_(Z80* ctx) { return ctx->RETI(); }
     inline int RETI()
     {
         invokeReturnHandlers();
@@ -5229,6 +5205,7 @@ class Z80
     }
 
     // Return from non maskable interrupt
+    static inline int RETN_(Z80* ctx) { return ctx->RETN(); }
     inline int RETN()
     {
         invokeReturnHandlers();
@@ -5289,12 +5266,24 @@ class Z80
     }
 
     // Input a byte form device (C) to register.
-    inline int IN_R_C(unsigned char r)
+    static inline int IN_B_C(Z80* ctx) { return ctx->IN_R_C(0b000); }
+    static inline int IN_C_C(Z80* ctx) { return ctx->IN_R_C(0b001); }
+    static inline int IN_D_C(Z80* ctx) { return ctx->IN_R_C(0b010); }
+    static inline int IN_E_C(Z80* ctx) { return ctx->IN_R_C(0b011); }
+    static inline int IN_H_C(Z80* ctx) { return ctx->IN_R_C(0b100); }
+    static inline int IN_L_C(Z80* ctx) { return ctx->IN_R_C(0b101); }
+    static inline int IN_C(Z80* ctx) { return ctx->IN_R_C(0, false); }
+    static inline int IN_A_C(Z80* ctx) { return ctx->IN_R_C(0b111); }
+    inline int IN_R_C(unsigned char r, bool setRegister = true)
     {
-        unsigned char* rp = getRegisterPointer(r);
+        unsigned char* rp = setRegister ? getRegisterPointer(r) : NULL;
         unsigned char i = inPort(reg.pair.C);
-        if (isDebug()) log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
-        *rp = i;
+        if (rp) {
+            if (isDebug()) log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
+            *rp = i;
+        } else {
+            if (isDebug()) log("[%04X] IN (%s) = $%02X", reg.PC, registerDump(0b001), i);
+        }
         setFlagS(i & 0x80);
         setFlagZ(i == 0);
         setFlagH(false);
@@ -5347,10 +5336,10 @@ class Z80
         }
         return 0;
     }
-    inline int INI() { return repeatIN(true, false); }
-    inline int INIR() { return repeatIN(true, true); }
-    inline int IND() { return repeatIN(false, false); }
-    inline int INDR() { return repeatIN(false, true); }
+    static inline int INI(Z80* ctx) { return ctx->repeatIN(true, false); }
+    static inline int INIR(Z80* ctx) { return ctx->repeatIN(true, true); }
+    static inline int IND(Z80* ctx) { return ctx->repeatIN(false, false); }
+    static inline int INDR(Z80* ctx) { return ctx->repeatIN(false, true); }
 
     // Load Output port (n) with Acc.
     static inline int OUT_N_A(Z80* ctx)
@@ -5363,11 +5352,24 @@ class Z80
     }
 
     // Output a byte to device (C) form register.
-    inline int OUT_C_R(unsigned char r)
+    static inline int OUT_C_B(Z80* ctx) { return ctx->OUT_C_R(0b000); }
+    static inline int OUT_C_C(Z80* ctx) { return ctx->OUT_C_R(0b001); }
+    static inline int OUT_C_D(Z80* ctx) { return ctx->OUT_C_R(0b010); }
+    static inline int OUT_C_E(Z80* ctx) { return ctx->OUT_C_R(0b011); }
+    static inline int OUT_C_H(Z80* ctx) { return ctx->OUT_C_R(0b100); }
+    static inline int OUT_C_L(Z80* ctx) { return ctx->OUT_C_R(0b101); }
+    static inline int OUT_C_0(Z80* ctx) { return ctx->OUT_C_R(0, true); }
+    static inline int OUT_C_A(Z80* ctx) { return ctx->OUT_C_R(0b111); }
+    inline int OUT_C_R(unsigned char r, bool zero = false)
     {
-        unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] OUT (%s), %s", reg.PC, registerDump(0b001), registerDump(r));
-        outPort(reg.pair.C, *rp);
+        if (zero) {
+            if (isDebug()) log("[%04X] OUT (%s), 0", reg.PC, registerDump(0b001));
+            outPort(reg.pair.C, 0);
+        } else {
+            unsigned char* rp = getRegisterPointer(r);
+            if (isDebug()) log("[%04X] OUT (%s), %s", reg.PC, registerDump(0b001), registerDump(r));
+            outPort(reg.pair.C, *rp);
+        }
         reg.PC += 2;
         return 0;
     }
@@ -5401,10 +5403,10 @@ class Z80
         }
         return 0;
     }
-    inline int OUTI() { return repeatOUT(true, false); }
-    inline int OUTIR() { return repeatOUT(true, true); }
-    inline int OUTD() { return repeatOUT(false, false); }
-    inline int OUTDR() { return repeatOUT(false, true); }
+    static inline int OUTI(Z80* ctx) { return ctx->repeatOUT(true, false); }
+    static inline int OUTIR(Z80* ctx) { return ctx->repeatOUT(true, true); }
+    static inline int OUTD(Z80* ctx) { return ctx->repeatOUT(false, false); }
+    static inline int OUTDR(Z80* ctx) { return ctx->repeatOUT(false, true); }
 
     // Decimal Adjust Accumulator
     inline int daa()
@@ -5429,6 +5431,7 @@ class Z80
     static inline int DAA(Z80* ctx) { return ctx->daa(); }
 
     // Rotate digit Left and right between Acc. and location (HL)
+    static inline int RLD_(Z80* ctx) { return ctx->RLD(); }
     inline int RLD()
     {
         unsigned short hl = getHL();
@@ -5454,6 +5457,7 @@ class Z80
     }
 
     // Rotate digit Right and right between Acc. and location (HL)
+    static inline int RRD_(Z80* ctx) { return ctx->RRD(); }
     inline int RRD()
     {
         unsigned short hl = getHL();
@@ -5493,7 +5497,7 @@ class Z80
         OR_B, OR_C, OR_D, OR_E, OR_H, OR_L, OR_HL, OR_A, CP_B, CP_C, CP_D, CP_E, CP_H, CP_L, CP_HL, CP_A,
         RET_C0, POP_BC, JP_C0_NN, JP_NN, CALL_C0_NN, PUSH_BC, ADD_N, RST00, RET_C1, RET, JP_C1_NN, OP_CB, CALL_C1_NN, CALL_NN, ADC_N, RST08,
         RET_C2, POP_DE, JP_C2_NN, OUT_N_A, CALL_C2_NN, PUSH_DE, SUB_N, RST10, RET_C3, EXX, JP_C3_NN, IN_A_N, CALL_C3_NN, OP_IX, SBC_N, RST18,
-        RET_C4, POP_HL, JP_C4_NN, EX_SP_HL, CALL_C4_NN, PUSH_HL, AND_N, RST20, RET_C5, JP_HL, JP_C5_NN, EX_DE_HL, CALL_C5_NN, EXTRA, XOR_N, RST28,
+        RET_C4, POP_HL, JP_C4_NN, EX_SP_HL, CALL_C4_NN, PUSH_HL, AND_N, RST20, RET_C5, JP_HL, JP_C5_NN, EX_DE_HL, CALL_C5_NN, OP_ED, XOR_N, RST28,
         RET_C6, POP_AF, JP_C6_NN, DI, CALL_C6_NN, PUSH_AF, OR_N, RST30, RET_C7, LD_SP_HL, JP_C7_NN, EI, CALL_C7_NN, OP_IY, CP_N, RST38};
     int (*opSetCB[256])(Z80* ctx) = {
         RLC_B, RLC_C, RLC_D, RLC_E, RLC_H, RLC_L, RLC_HL_, RLC_A,
@@ -5528,6 +5532,25 @@ class Z80
         SET_B_5, SET_C_5, SET_D_5, SET_E_5, SET_H_5, SET_L_5, SET_HL_5, SET_A_5,
         SET_B_6, SET_C_6, SET_D_6, SET_E_6, SET_H_6, SET_L_6, SET_HL_6, SET_A_6,
         SET_B_7, SET_C_7, SET_D_7, SET_E_7, SET_H_7, SET_L_7, SET_HL_7, SET_A_7};
+    int (*opSetED[256])(Z80* ctx) = {
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        IN_B_C, OUT_C_B, SBC_HL_BC, LD_ADDR_RP_BC, NEG_, RETN_, IM0, LD_I_A_,
+        IN_C_C, OUT_C_C, ADC_HL_BC, LD_RP_ADDR_BC, NULL, RETI_, NULL, LD_R_A_,
+        IN_D_C, OUT_C_D, SBC_HL_DE, LD_ADDR_RP_DE, NULL, NULL, IM1, LD_A_I_,
+        IN_E_C, OUT_C_E, ADC_HL_DE, LD_RP_ADDR_DE, NULL, NULL, IM2, LD_A_R_,
+        IN_H_C, OUT_C_H, SBC_HL_HL, LD_ADDR_RP_HL, NULL, NULL, NULL, RRD_,
+        IN_L_C, OUT_C_L, ADC_HL_HL, LD_RP_ADDR_HL, NULL, NULL, NULL, RLD_,
+        IN_C, OUT_C_0, SBC_HL_SP, LD_ADDR_RP_SP, NULL, NULL, NULL, NULL,
+        IN_A_C, OUT_C_A, ADC_HL_SP, LD_RP_ADDR_SP, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        LDI, CPI, INI, OUTI, NULL, NULL, NULL, NULL,
+        LDD, CPD, IND, OUTD, NULL, NULL, NULL, NULL,
+        LDIR, CPIR, INIR, OUTIR, NULL, NULL, NULL, NULL,
+        LDDR, CPDR, INDR, OUTDR, NULL, NULL, NULL, NULL};
     int (*opSetIX[256])(Z80* ctx) = {
         NULL, NULL, NULL, NULL, INC_B_2, DEC_B_2, LD_B_N_3, NULL,
         NULL, ADD_IX_BC, NULL, NULL, INC_C_2, DEC_C_2, LD_C_N_3, NULL,
