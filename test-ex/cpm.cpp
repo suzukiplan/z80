@@ -144,12 +144,13 @@ int main(int argc, char* argv[])
     };
     char animePattern[] = { '/', '-', '\\', '|' };
     int anime = 0;
+    unsigned long totalClocks = 0;
     do {
-        z80.execute(35795450); // 10sec in Z80A
+        totalClocks += z80.execute(35795450); // 10sec in Z80A
         if (cpm.error) {
             printf("\rCPM detected an error at $%04X\n", z80.reg.PC);
         } else if (cpm.halted) {
-            printf("CPM halted at $%04X\n", z80.reg.PC);
+            printf("CPM halted at $%04X (total: %luHz ... about %lu seconds in Z80A)\n", z80.reg.PC, totalClocks, totalClocks / 3579545);
         } else if (!noAnimation) {
             putc(animePattern[anime++], stdout);
             anime &= 3;
