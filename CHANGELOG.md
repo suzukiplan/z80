@@ -1,5 +1,14 @@
 # Change log
 
+## Version 1.5.0 (Spt 11, 2022 JST)
+
+- Implemented several undocumented instructions of ED instruction set.
+- bugfix: Corrected opcode `ED70` behavior
+  - `IN F, (C)` -> `IN (C)`
+- bugfix: Corrected opcode `ED71` behavior
+  - `OUT (C), F` -> `OUT (C),0`
+
+
 ## Version 1.4.0 (Spt 4, 2022 JST)
 
 - Pull Request: #35
