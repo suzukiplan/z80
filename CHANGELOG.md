@@ -1,6 +1,6 @@
 # Change log
 
-## Version 1.5.0 (Spt 6, 2022 JST)
+## Version 1.5.0 (Spt 11, 2022 JST)
 
 - Implemented several undocumented instructions of ED instruction set.
 - bugfix: Corrected opcode `ED70` behavior
