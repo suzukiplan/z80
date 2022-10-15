@@ -5897,15 +5897,15 @@ class Z80
         return false;
     }
 
-    void removeBreakOperand(unsigned char operandNumber)
+    void removeBreakOperand(std::vector<BreakOperand*>* operands, unsigned char operandNumber)
     {
         int index = 0;
         bool deleted = false;
         do {
             deleted = false;
-            for (auto bo : CB.breakOperands) {
+            for (auto bo : *operands) {
                 if (bo->operandNumber == operandNumber) {
-                    CB.breakOperands.erase(CB.breakOperands.begin() + index);
+                    operands->erase(operands->begin() + index);
                     delete bo;
                     deleted = true;
                     break;
@@ -5914,6 +5914,8 @@ class Z80
             }
         } while (deleted);
     }
+
+    void removeBreakOperand(unsigned char operandNumber) { removeBreakOperand(&CB.breakOperands, operandNumber); }
 
     void removeBreakOperand(unsigned char prefixNumber, unsigned char operandNumber)
     {
@@ -5925,20 +5927,7 @@ class Z80
             case 0xFD: breakOperands = &CB.breakOperandsIY; break;
             default: return;
         }
-        int index = 0;
-        bool deleted = false;
-        do {
-            deleted = false;
-            for (auto bo : *breakOperands) {
-                if (bo->operandNumber == operandNumber) {
-                    breakOperands->erase(breakOperands->begin() + index);
-                    delete bo;
-                    deleted = true;
-                    break;
-                }
-                index++;
-            }
-        } while (deleted);
+        removeBreakOperand(breakOperands, operandNumber);
     }
 
     void removeBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber)
@@ -5951,21 +5940,9 @@ class Z80
                 breakOperands = &CB.breakOperandsIY4;
             }
         }
-        if (!breakOperands) return;
-        int index = 0;
-        bool deleted = false;
-        do {
-            deleted = false;
-            for (auto bo : *breakOperands) {
-                if (bo->operandNumber == operandNumber) {
-                    breakOperands->erase(breakOperands->begin() + index);
-                    delete bo;
-                    deleted = true;
-                    break;
-                }
-                index++;
-            }
-        } while (deleted);
+        if (breakOperands) {
+            removeBreakOperand(breakOperands, operandNumber);
+        }
     }
 
     void removeAllBreakOperands()
