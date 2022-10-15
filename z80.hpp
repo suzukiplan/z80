@@ -26,6 +26,7 @@
  */
 #ifndef INCLUDE_Z80_HPP
 #define INCLUDE_Z80_HPP
+#include <functional>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -5839,7 +5840,7 @@ class Z80
         do {
             deleted = false;
             for (auto bo : CB.breakOperands) {
-                if (bp->operandNumber == operandNumber) {
+                if (bo->operandNumber == operandNumber) {
                     CB.breakOperands.erase(CB.breakOperands.begin() + index);
                     delete bo;
                     deleted = true;
