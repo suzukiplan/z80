@@ -191,6 +191,12 @@ class Z80
         void (*consumeClock)(void* arg, int clock);
         std::vector<BreakPoint*> breakPoints;
         std::vector<BreakOperand*> breakOperands;
+        std::vector<BreakOperand*> breakOperandsCB;
+        std::vector<BreakOperand*> breakOperandsED;
+        std::vector<BreakOperand*> breakOperandsIX;
+        std::vector<BreakOperand*> breakOperandsIX4;
+        std::vector<BreakOperand*> breakOperandsIY;
+        std::vector<BreakOperand*> breakOperandsIY4;
         std::vector<ReturnHandler*> returnHandlers;
         std::vector<CallHandler*> callHandlers;
         void* arg;
@@ -209,16 +215,24 @@ class Z80
         }
     }
 
-    inline void checkBreakOperand(unsigned char operandNumber)
+    inline void checkBreakOperand(std::vector<BreakOperand*>* operands, unsigned char operandNumber)
     {
-        if (!CB.breakOperands.empty()) {
-            for (auto bo : CB.breakOperands) {
+        if (!operands->empty()) {
+            for (auto bo : *operands) {
                 if (bo->operandNumber == operandNumber) {
                     bo->callback(CB.arg);
                 }
             }
         }
     }
+
+    inline void checkBreakOperand(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperands, operandNumber); }
+    inline void checkBreakOperandCB(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsCB, operandNumber); }
+    inline void checkBreakOperandED(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsED, operandNumber); }
+    inline void checkBreakOperandIX(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIX, operandNumber); }
+    inline void checkBreakOperandIY(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIY, operandNumber); }
+    inline void checkBreakOperandIX4(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIX4, operandNumber); }
+    inline void checkBreakOperandIY4(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIY4, operandNumber); }
 
     inline void log(const char* format, ...)
     {
@@ -522,15 +536,39 @@ class Z80
         return consumeClock(1);
     }
 
-    static inline int OP_CB(Z80* ctx) { return ctx->opSetCB[ctx->readByte(ctx->reg.PC + 1)](ctx); }
-    static inline int OP_ED(Z80* ctx) { return ctx->opSetED[ctx->readByte(ctx->reg.PC + 1)](ctx); }
-    static inline int OP_IX(Z80* ctx) { return ctx->opSetIX[ctx->readByte(ctx->reg.PC + 1)](ctx); }
-    static inline int OP_IY(Z80* ctx) { return ctx->opSetIY[ctx->readByte(ctx->reg.PC + 1)](ctx); }
+    static inline int OP_CB(Z80* ctx)
+    {
+        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        ctx->checkBreakOperandCB(operandNumber);
+        return ctx->opSetCB[operandNumber](ctx);
+    }
+
+    static inline int OP_ED(Z80* ctx)
+    {
+        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        ctx->checkBreakOperandED(operandNumber);
+        return ctx->opSetED[operandNumber](ctx);
+    }
+
+    static inline int OP_IX(Z80* ctx)
+    {
+        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        ctx->checkBreakOperandIX(operandNumber);
+        return ctx->opSetIX[operandNumber](ctx);
+    }
+
+    static inline int OP_IY(Z80* ctx)
+    {
+        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        ctx->checkBreakOperandIY(operandNumber);
+        return ctx->opSetIY[operandNumber](ctx);
+    }
 
     static inline int OP_IX4(Z80* ctx)
     {
         signed char op3 = ctx->readByte(ctx->reg.PC + 2);
         unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
+        ctx->checkBreakOperandIX4(op4);
         return ctx->opSetIX4[op4](ctx, op3);
     }
 
@@ -538,6 +576,7 @@ class Z80
     {
         signed char op3 = ctx->readByte(ctx->reg.PC + 2);
         unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
+        ctx->checkBreakOperandIY4(op4);
         return ctx->opSetIY4[op4](ctx, op3);
     }
 
@@ -5833,6 +5872,31 @@ class Z80
         CB.breakOperands.push_back(new BreakOperand(operandNumber, callback));
     }
 
+    bool addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, const std::function<void(void*)>& callback)
+    {
+        switch (prefixNumber) {
+            case 0xCB: CB.breakOperandsCB.push_back(new BreakOperand(operandNumber, callback)); return true;
+            case 0xED: CB.breakOperandsED.push_back(new BreakOperand(operandNumber, callback)); return true;
+            case 0xDD: CB.breakOperandsIX.push_back(new BreakOperand(operandNumber, callback)); return true;
+            case 0xFD: CB.breakOperandsIY.push_back(new BreakOperand(operandNumber, callback)); return true;
+        }
+        return false;
+    }
+
+    bool addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, const std::function<void(void*)>& callback)
+    {
+        if (prefixNumber2 == 0xCB) {
+            if (prefixNumber1 == 0xDD) {
+                CB.breakOperandsIX4.push_back(new BreakOperand(operandNumber, callback));
+                return true;
+            } else if (prefixNumber2 == 0xFD) {
+                CB.breakOperandsIY4.push_back(new BreakOperand(operandNumber, callback));
+                return true;
+            }
+        }
+        return false;
+    }
+
     void removeBreakOperand(unsigned char operandNumber)
     {
         int index = 0;
@@ -5842,6 +5906,59 @@ class Z80
             for (auto bo : CB.breakOperands) {
                 if (bo->operandNumber == operandNumber) {
                     CB.breakOperands.erase(CB.breakOperands.begin() + index);
+                    delete bo;
+                    deleted = true;
+                    break;
+                }
+                index++;
+            }
+        } while (deleted);
+    }
+
+    void removeBreakOperand(unsigned char prefixNumber, unsigned char operandNumber)
+    {
+        std::vector<BreakOperand*>* breakOperands = NULL;
+        switch (prefixNumber) {
+            case 0xCB: breakOperands = &CB.breakOperandsCB; break;
+            case 0xED: breakOperands = &CB.breakOperandsED; break;
+            case 0xDD: breakOperands = &CB.breakOperandsIX; break;
+            case 0xFD: breakOperands = &CB.breakOperandsIY; break;
+            default: return;
+        }
+        int index = 0;
+        bool deleted = false;
+        do {
+            deleted = false;
+            for (auto bo : *breakOperands) {
+                if (bo->operandNumber == operandNumber) {
+                    breakOperands->erase(breakOperands->begin() + index);
+                    delete bo;
+                    deleted = true;
+                    break;
+                }
+                index++;
+            }
+        } while (deleted);
+    }
+
+    void removeBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber)
+    {
+        std::vector<BreakOperand*>* breakOperands = NULL;
+        if (prefixNumber2 == 0xCB) {
+            if (prefixNumber1 == 0xDD) {
+                breakOperands = &CB.breakOperandsIX4;
+            } else if (prefixNumber1 == 0xFD) {
+                breakOperands = &CB.breakOperandsIY4;
+            }
+        }
+        if (!breakOperands) return;
+        int index = 0;
+        bool deleted = false;
+        do {
+            deleted = false;
+            for (auto bo : *breakOperands) {
+                if (bo->operandNumber == operandNumber) {
+                    breakOperands->erase(breakOperands->begin() + index);
                     delete bo;
                     deleted = true;
                     break;
