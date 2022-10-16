@@ -144,6 +144,8 @@ Debug message contains dynamic disassembly results step by step.
     });
 ```
 
+- call `resetDebugMessage` if you want to remove the detector.
+
 ### Use break point
 
 If you want to execute processing just before executing an instruction of specific program counter value _(in this ex: \$008E)_, you can set a breakpoint as follows:
@@ -161,16 +163,32 @@ If you want to execute processing just before executing an instruction of specif
 
 ### Use break operand
 
-If you want to execute processing just before executing an instruction of specific operand number _(in this ex: \$00; NOP)_, you can set a breakpoint as follows:
+If you want to execute processing just before executing an instruction of specific operand number, you can set a breakpoint as follows:
 
 ```c++
-    z80.addBreakOperand(0x00, [](void* arg) -> void {
+    // break when NOP ... $00
+    z80.addBreakOperand(0x00, [](void* arg, unsigned char* opcode, int opcodeLength) -> void {
+        printf("Detect break operand! (PUSH ENTER TO CONTINUE)");
+        char buf[80];
+        fgets(buf, sizeof(buf), stdin);
+    });
+
+    // break when RLC B ... $CB $00
+    z80.addBreakOperand(0xCB, 0x00, [](void* arg, unsigned char* opcode, int opcodeLength) -> void {
+        printf("Detect break operand! (PUSH ENTER TO CONTINUE)");
+        char buf[80];
+        fgets(buf, sizeof(buf), stdin);
+    });
+
+    // break when RLC (IX+d) ... $DD $CB, $06
+    z80.addBreakOperand(0xDD, 0xCB, 0x06, [](void* arg, unsigned char* opcode, int opcodeLength) -> void {
         printf("Detect break operand! (PUSH ENTER TO CONTINUE)");
         char buf[80];
         fgets(buf, sizeof(buf), stdin);
     });
 ```
 
+- the opcode and length at break are stored in `opcode` and `opcodeLength` when the callback is made.
 - `addBreakOperand` can set multiple breakpoints.
 - call `removeBreakOperand` or `removeAllBreakOperands` if you want to remove the break operand(s).
 
@@ -184,7 +202,7 @@ If you want to implement stricter synchronization, you can capture the CPU clock
     });
 ```
 
-- call `setConsumeClockCallback(NULL)` if you want to remove the detector.
+- call `resetConsumeClockCallback` if you want to remove the detector.
 
 > With this callback, the CPU cycle (clock) can be synchronized in units of 3 to 4 Hz, and while the execution of a single Z80 instruction requires approximately 10 to 20 Hz of CPU cycle (time), the SUZUKI PLAN - Z80 Emulator can synchronize the CPU cycle (time) for fetch, execution, write back, etc. However, the SUZUKI PLAN - Z80 Emulator can synchronize fetches, executions, writes, backs, etc. in smaller units. This makes it easy to implement severe timing emulation.
 
@@ -222,7 +240,7 @@ CallHandler will be called back immediately **after** a branch by a CALL instruc
 ```
 
 - `addCallHandler` can set multiple CallHandlers.
-- call `removeCallHandler` or `removeAllCallHandlers` if you want to remove the CallHandler(s).
+- call `removeAllCallHandlers` if you want to remove the CallHandler(s).
 - CallHandler also catches branches caused by interrupts.
 - In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
 
@@ -246,7 +264,7 @@ ReturnHandler will be called back immediately **before** a branch by a RET instr
 ```
 
 - `addReturnHandler` can set multiple ReturnHandlers.
-- call `removeReturnHandler` or `removeAllReturnHandlers` if you want to remove the ReturnHandler(s).
+- call `removeAllReturnHandlers` if you want to remove the ReturnHandler(s).
 - In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
 
 ## License
