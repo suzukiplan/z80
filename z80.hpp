@@ -135,10 +135,10 @@ class Z80
       public:
         unsigned short addr;
         std::function<void(void*)> callback;
-        BreakPoint(unsigned short addr, const std::function<void(void*)>& callback)
+        BreakPoint(unsigned short addr_, const std::function<void(void*)>& callback_)
         {
-            this->addr = addr;
-            this->callback = std::bind(callback, std::placeholders::_1);
+            this->addr = addr_;
+            this->callback = std::bind(callback_, std::placeholders::_1);
         }
     };
 
@@ -148,11 +148,11 @@ class Z80
         int prefixNumber;
         unsigned char operandNumber;
         std::function<void(void*, unsigned char*, int)> callback;
-        BreakOperand(int prefixNumber, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+        BreakOperand(int prefixNumber_, unsigned char operandNumber_, const std::function<void(void*, unsigned char*, int)>& callback_)
         {
-            this->prefixNumber = prefixNumber;
-            this->operandNumber = operandNumber;
-            this->callback = std::bind(callback, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+            this->prefixNumber = prefixNumber_;
+            this->operandNumber = operandNumber_;
+            this->callback = std::bind(callback_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         }
     };
 
@@ -160,7 +160,7 @@ class Z80
     {
       public:
         void (*callback)(void* arg);
-        ReturnHandler(void (*callback)(void* arg)) { this->callback = callback; }
+        ReturnHandler(void (*callback_)(void* arg)) { this->callback = callback_; }
     };
 
     inline void invokeReturnHandlers()
@@ -174,7 +174,7 @@ class Z80
     {
       public:
         void (*callback)(void* arg);
-        CallHandler(void (*callback)(void* arg)) { this->callback = callback; }
+        CallHandler(void (*callback_)(void* arg)) { this->callback = callback_; }
     };
 
     inline void invokeCallHandlers()
