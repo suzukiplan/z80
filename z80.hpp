@@ -191,10 +191,10 @@ class Z80
     }
 
     struct Callback {
-        unsigned char (*read)(void* arg, unsigned short addr);
-        void (*write)(void* arg, unsigned short addr, unsigned char value);
-        unsigned char (*in)(void* arg, unsigned char port);
-        void (*out)(void* arg, unsigned char port, unsigned char value);
+        std::function<unsigned char(void*, unsigned short)> read;
+        std::function<void(void*, unsigned short, unsigned char)> write;
+        std::function<unsigned char(void*, unsigned char)> in;
+        std::function<void(void*, unsigned char, unsigned char)> out;
         std::function<void(void*, const char*)> debugMessage;
         bool debugMessageEnabled;
         std::function<void(void*, int)> consumeClock;
@@ -5925,16 +5925,16 @@ class Z80
     }
 
   public: // API functions
-    Z80(unsigned char (*read)(void* arg, unsigned short addr),
-        void (*write)(void* arg, unsigned short addr, unsigned char value),
-        unsigned char (*in)(void* arg, unsigned char port),
-        void (*out)(void* arg, unsigned char port, unsigned char value),
+    Z80(std::function<unsigned char(void*, unsigned short)> read,
+        std::function<void(void*, unsigned short, unsigned char)> write,
+        std::function<unsigned char(void*, unsigned char)> in,
+        std::function<void(void*, unsigned char, unsigned char)> out,
         void* arg)
     {
-        this->CB.read = read;
-        this->CB.write = write;
-        this->CB.in = in;
-        this->CB.out = out;
+        this->CB.read = std::bind(read, std::placeholders::_1, std::placeholders::_2);
+        this->CB.write = std::bind(write, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        this->CB.in = std::bind(in, std::placeholders::_1, std::placeholders::_2);
+        this->CB.out = std::bind(out, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         this->CB.arg = arg;
         resetConsumeClockCallback();
         resetDebugMessage();

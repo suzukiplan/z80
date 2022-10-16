@@ -2,7 +2,7 @@
 
 ## Version 1.6.0 (inprogress)
 
-- Use std::function at addBreakPoint, addBreakOperand, setDebugMessage, setConsumeClockCallback, addReturnHandler, addCallHandler
+- Use `std::function` ... `constructor, addBreakPoint, addBreakOperand, setDebugMessage, setConsumeClockCallback, addReturnHandler, addCallHandler`
 - Support multibyte (with prefix) instructions at addBreakOperand
 - Change specification of addBreakOperand callback
   - befofe: `z80.addBreakOperand(operandNumber,  [](void* arg) { ... }`
