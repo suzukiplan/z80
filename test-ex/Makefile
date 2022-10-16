@@ -5,7 +5,6 @@ CFLAGS=-I../ \
 	-Wshadow \
 	-Wunused-variable \
 	-Wsign-conversion \
-	-Wclass-varargs \
 	-Wtype-limits \
 	-Werror
 
@@ -24,7 +23,7 @@ zexall: cpm
 	./cpm -e zexall.cim
 
 ci:
-	g++-10 -O2 $(CFLAGS) cpm.cpp -lstdc++ -o cpm
+	g++-10 -O2 $(CFLAGS) -Wclass-memaccess cpm.cpp -lstdc++ -o cpm
 	./cpm -e -n zexall.cim
 
 full: cpm
