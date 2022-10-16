@@ -5427,10 +5427,10 @@ class Z80
         hl += isIncHL ? 1 : -1;
         setHL(hl);
         setFlagZ(reg.pair.B == 0);
-        setFlagN(i & 0x80);                                             // NOTE: undocumented
-        setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                 // NOTE: undocumented
-        setFlagH(isFlagC());                                            // NOTE: undocumented
-        setFlagPV(i + (((reg.pair.C + 1) & 0xFF) & 0x07) ^ reg.pair.B); // NOTE: undocumented
+        setFlagN(i & 0x80);                                               // NOTE: undocumented
+        setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                   // NOTE: undocumented
+        setFlagH(isFlagC());                                              // NOTE: undocumented
+        setFlagPV((i + (((reg.pair.C + 1) & 0xFF) & 0x07)) ^ reg.pair.B); // NOTE: undocumented
         if (isRepeat && 0 != reg.pair.B) {
             consumeClock(5);
         } else {
