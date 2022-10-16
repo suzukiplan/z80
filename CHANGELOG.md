@@ -2,7 +2,7 @@
 
 ## Version 1.6.0 (inprogress)
 
-- Use std::function at addBreakPoint, addBreakOperand, setDebugMessage, setConsumeClockCallback ...(TODO)
+- Use std::function at addBreakPoint, addBreakOperand, setDebugMessage, setConsumeClockCallback, addReturnHandler, addCallHandler
 - Support multibyte (with prefix) instructions at addBreakOperand
 - Change specification of addBreakOperand callback
   - befofe: `z80.addBreakOperand(operandNumber,  [](void* arg) { ... }`
@@ -19,6 +19,9 @@
 - Change specification of setConsumeClockCallback for reset:
   - before: `z80.setConsumeClockCallback(NULL)`
   - after: `z80.resetConsumeClockCallback()`
+- Change specification - removed following methods:
+  - `removeCallHandler`
+  - `removeReturnHandler`
 - remove warning: `implicit conversion changes signedness: 'unsigned char' to 'signed char' [-Werror,-Wsign-conversion]`
 
 ## Version 1.5.0 (Spt 11, 2022 JST)

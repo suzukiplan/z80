@@ -159,8 +159,11 @@ class Z80
     class ReturnHandler
     {
       public:
-        void (*callback)(void* arg);
-        ReturnHandler(void (*callback_)(void* arg)) { this->callback = callback_; }
+        std::function<void(void*)> callback;
+        ReturnHandler(const std::function<void(void*)>& callback_)
+        {
+            this->callback = std::bind(callback_, std::placeholders::_1);
+        }
     };
 
     inline void invokeReturnHandlers()
@@ -173,8 +176,11 @@ class Z80
     class CallHandler
     {
       public:
-        void (*callback)(void* arg);
-        CallHandler(void (*callback_)(void* arg)) { this->callback = callback_; }
+        std::function<void(void*)> callback;
+        CallHandler(const std::function<void(void*)>& callback_)
+        {
+            this->callback = std::bind(callback_, std::placeholders::_1);
+        }
     };
 
     inline void invokeCallHandlers()
@@ -6085,22 +6091,9 @@ class Z80
         CB.breakOperands.clear();
     }
 
-    void addReturnHandler(void (*callback)(void*))
+    void addReturnHandler(const std::function<void(void*)>& callback)
     {
         CB.returnHandlers.push_back(new ReturnHandler(callback));
-    }
-
-    void removeReturnHandler(void (*callback)(void*))
-    {
-        int index = 0;
-        for (auto handler : CB.returnHandlers) {
-            if (handler->callback == callback) {
-                CB.returnHandlers.erase(CB.returnHandlers.begin() + index);
-                delete handler;
-                return;
-            }
-            index++;
-        }
     }
 
     void removeAllReturnHandlers()
@@ -6109,22 +6102,9 @@ class Z80
         CB.returnHandlers.clear();
     }
 
-    void addCallHandler(void (*callback)(void*))
+    void addCallHandler(const std::function<void(void*)>& callback)
     {
         CB.callHandlers.push_back(new CallHandler(callback));
-    }
-
-    void removeCallHandler(void (*callback)(void*))
-    {
-        int index = 0;
-        for (auto handler : CB.callHandlers) {
-            if (handler->callback == callback) {
-                CB.callHandlers.erase(CB.callHandlers.begin() + index);
-                delete handler;
-                return;
-            }
-            index++;
-        }
     }
 
     void removeAllCallHandlers()
