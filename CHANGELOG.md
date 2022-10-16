@@ -1,25 +1,25 @@
 # Change log
 
-## Version 1.6.0 (inprogress)
+## Version 1.6.0 (Oct 16, 2022 JST)
 
 - Use `std::function` ... `constructor, addBreakPoint, addBreakOperand, setDebugMessage, setConsumeClockCallback, addReturnHandler, addCallHandler`
 - Support multibyte (with prefix) instructions at addBreakOperand
 - Change specification of addBreakOperand callback
   - befofe: `z80.addBreakOperand(operandNumber,  [](void* arg) { ... }`
   - after: `z80.addBreakOperand(operandNumber, [](void* arg, unsigned char* opcode, int opcodeLength) { ... }`
-- Change specification of removeBreakPoint:
+- **Destructive** change specification of removeBreakPoint:
   - before: specify function pointer for remove
   - after: specify address number for remove
-- Change specification of removeBreakOperand:
+- **Destructive** change specification of removeBreakOperand:
   - before: specify function pointer for remove
   - after: specify operand number for remove
-- Change specification of setDebugMessage for reset:
+- **Destructive** change specification of setDebugMessage for reset:
   - before: `z80.setDebugMessage(NULL)`
   - after: `z80.resetDebugMessage()`
-- Change specification of setConsumeClockCallback for reset:
+- **Destructive** change specification of setConsumeClockCallback for reset:
   - before: `z80.setConsumeClockCallback(NULL)`
   - after: `z80.resetConsumeClockCallback()`
-- Change specification - removed following methods:
+- **Destructive** change specification - removed following methods:
   - `removeCallHandler`
   - `removeReturnHandler`
 - remove warning: `implicit conversion changes signedness: 'unsigned char' to 'signed char' [-Werror,-Wsign-conversion]`
