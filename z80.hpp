@@ -189,7 +189,8 @@ class Z80
         void (*write)(void* arg, unsigned short addr, unsigned char value);
         unsigned char (*in)(void* arg, unsigned char port);
         void (*out)(void* arg, unsigned char port, unsigned char value);
-        void (*debugMessage)(void* arg, const char* message);
+        std::function<void(void*, const char*)> debugMessage;
+        bool debugMessageEnabled;
         void (*consumeClock)(void* arg, int clock);
         std::vector<BreakPoint*> breakPoints;
         std::vector<BreakOperand*> breakOperands;
@@ -5929,7 +5930,7 @@ class Z80
         this->CB.out = out;
         this->CB.arg = arg;
         setConsumeClockCallback(NULL);
-        setDebugMessage(NULL);
+        resetDebugMessage();
         ::memset(&reg, 0, sizeof(reg));
         reg.pair.A = 0xff;
         reg.pair.F = 0xff;
@@ -5945,14 +5946,20 @@ class Z80
         removeAllReturnHandlers();
     }
 
-    void setDebugMessage(void (*debugMessage)(void*, const char*) = nullptr)
+    void setDebugMessage(const std::function<void(void*, const char*)>& debugMessage)
     {
-        CB.debugMessage = debugMessage;
+        CB.debugMessageEnabled = true;
+        CB.debugMessage = std::bind(debugMessage, std::placeholders::_1, std::placeholders::_2);
+    }
+
+    void resetDebugMessage()
+    {
+        CB.debugMessageEnabled = false;
     }
 
     inline bool isDebug()
     {
-        return CB.debugMessage != nullptr;
+        return CB.debugMessageEnabled;
     }
 
     void addBreakPoint(unsigned short addr, const std::function<void(void*)>& callback)
@@ -6038,7 +6045,10 @@ class Z80
         } while (deleted);
     }
 
-    void removeBreakOperand(unsigned char operandNumber) { removeBreakOperand(&CB.breakOperands, operandNumber); }
+    void removeBreakOperand(unsigned char operandNumber)
+    {
+        removeBreakOperand(&CB.breakOperands, operandNumber);
+    }
 
     void removeBreakOperand(unsigned char prefixNumber, unsigned char operandNumber)
     {
@@ -6179,9 +6189,15 @@ class Z80
         return executed;
     }
 
-    int executeTick4MHz() { return execute(4194304 / 60); }
+    int executeTick4MHz()
+    {
+        return execute(4194304 / 60);
+    }
 
-    int executeTick8MHz() { return execute(8388608 / 60); }
+    int executeTick8MHz()
+    {
+        return execute(8388608 / 60);
+    }
 
     void registerDump()
     {

@@ -2,7 +2,7 @@
 
 ## Version 1.6.0 (inprogress)
 
-- Use std::function at addBreakPoint, addBreakOperand, ...(TODO)
+- Use std::function at addBreakPoint, addBreakOperand, setDebugMessage ...(TODO)
 - Support multibyte (with prefix) instructions at addBreakOperand
 - Change specification of addBreakOperand callback
   - befofe: `z80.addBreakOperand(operandNumber,  [](void* arg) { ... }`
@@ -13,6 +13,9 @@
 - Change specification of removeBreakOperand:
   - before: specify function pointer for remove
   - after: specify operand number for remove
+- Change specification of setDebugMessage for reset:
+  - before: `z80.setDebugMessage(NULL)`
+  - after: `z80.resetDebugMessage()`
 - remove warning: `implicit conversion changes signedness: 'unsigned char' to 'signed char' [-Werror,-Wsign-conversion]`
 
 ## Version 1.5.0 (Spt 11, 2022 JST)
