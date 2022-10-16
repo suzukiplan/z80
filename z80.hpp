@@ -184,7 +184,7 @@ class Z80
         }
     }
 
-    class Callback {
+    struct Callback {
         unsigned char (*read)(void* arg, unsigned short addr);
         void (*write)(void* arg, unsigned short addr, unsigned char value);
         unsigned char (*in)(void* arg, unsigned char port);
@@ -5928,6 +5928,8 @@ class Z80
         this->CB.in = in;
         this->CB.out = out;
         this->CB.arg = arg;
+        setConsumeClockCallback(NULL);
+        setDebugMessage(NULL);
         ::memset(&reg, 0, sizeof(reg));
         reg.pair.A = 0xff;
         reg.pair.F = 0xff;
