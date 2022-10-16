@@ -27,7 +27,7 @@ class CPM {
         }
         memset(memory, 0, sizeof(memory));
         fseek(fp, 0, SEEK_SET);
-        if (size != (size_t)fread(memory + 0x100, 1, (size_t)size, fp)) {
+        if (size != (long)fread(memory + 0x100, 1, (size_t)size, fp)) {
             printf("Cannot read file: %s\n", cimPath);
             fclose(fp);
             return false;
