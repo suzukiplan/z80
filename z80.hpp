@@ -184,7 +184,7 @@ class Z80
         }
     }
 
-    struct Callback {
+    class Callback {
         unsigned char (*read)(void* arg, unsigned short addr);
         void (*write)(void* arg, unsigned short addr, unsigned char value);
         unsigned char (*in)(void* arg, unsigned char port);
@@ -5923,7 +5923,6 @@ class Z80
         void (*out)(void* arg, unsigned char port, unsigned char value),
         void* arg)
     {
-        ::memset(&CB, 0, sizeof(CB));
         this->CB.read = read;
         this->CB.write = write;
         this->CB.in = in;
@@ -6121,9 +6120,9 @@ class Z80
         CB.callHandlers.clear();
     }
 
-    void setConsumeClockCallback(void (*consumeClock)(void*, int) = nullptr)
+    void setConsumeClockCallback(void (*consumeClock_)(void*, int) = nullptr)
     {
-        CB.consumeClock = consumeClock;
+        CB.consumeClock = consumeClock_;
     }
 
     void requestBreak()

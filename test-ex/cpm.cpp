@@ -27,7 +27,7 @@ class CPM {
         }
         memset(memory, 0, sizeof(memory));
         fseek(fp, 0, SEEK_SET);
-        if (size != fread(memory + 0x100, 1, (size_t)size, fp)) {
+        if (size != (size_t)fread(memory + 0x100, 1, (size_t)size, fp)) {
             printf("Cannot read file: %s\n", cimPath);
             fclose(fp);
             return false;
@@ -136,10 +136,10 @@ int main(int argc, char* argv[])
             puts(msg);
         });
     }
-    cpm.lineCallback = [](CPM* cpm, char* line) {
-        if (cpm->checkError && strstr(line, "ERROR")) {
-            cpm->halted = true;
-            cpm->error = true;
+    cpm.lineCallback = [](CPM* cpmPtr, char* line) {
+        if (cpmPtr->checkError && strstr(line, "ERROR")) {
+            cpmPtr->halted = true;
+            cpmPtr->error = true;
         }
     };
     char animePattern[] = { '/', '-', '\\', '|' };
