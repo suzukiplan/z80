@@ -104,6 +104,22 @@ void check(const char* what, int e, int a)
     }
 }
 
+char g_opBuf[256];
+
+void stockOpcode(void* arg, unsigned char* opcode, int opcodeLength)
+{
+    g_opBuf[0] = '\0';
+    for (int i = 0; i < opcodeLength; i++) {
+        char buf[80];
+        if (i) {
+            sprintf(buf, ",%02X", opcode[i]);
+        } else {
+            sprintf(buf, "%02X", opcode[i]);
+        }
+        strcat(g_opBuf, buf);
+    }
+}
+
 int main(int argc, char* argv[])
 {
     file = fopen("test-status.txt", "w");
@@ -114,9 +130,29 @@ int main(int argc, char* argv[])
     mmu.cpu = &z80;
     z80.setDebugMessage([](void* arg, const char* msg) {
         testNumber++;
-        fprintf(file, "TEST#%03d: <SZYHXPNC> %s -> %s %s\n", testNumber, statusText1(prev), statusText2(expect), msg);
-        fprintf(stdout, "TEST#%03d: <SZYHXPNC> %s -> %s %s\n", testNumber, statusText1(prev), statusText2(expect), msg);
+        fprintf(file, "TEST#%03d: <SZYHXPNC> %s -> %s [%s] %s\n", testNumber, statusText1(prev), statusText2(expect), g_opBuf, msg);
+        fprintf(stdout, "TEST#%03d: <SZYHXPNC> %s -> %s [%s] %s\n", testNumber, statusText1(prev), statusText2(expect), g_opBuf, msg);
     });
+
+    for (int i = 0; i < 256; i++) {
+        if (i == 0xCB || i == 0xED) {
+            for (int j = 0; j < 256; j++) {
+                z80.addBreakOperand((unsigned char)i, (unsigned char)j, stockOpcode);
+            }
+        } else if (i == 0xDD || i == 0xFD) {
+            for (int j = 0; j < 256; j++) {
+                if (i == 0xCB) {
+                    for (int k = 0; k < 256; k++) {
+                        z80.addBreakOperand((unsigned char)i, (unsigned char)j, (unsigned char)k, stockOpcode);
+                    }
+                } else {
+                    z80.addBreakOperand((unsigned char)i, (unsigned char)j, stockOpcode);
+                }
+            }
+        } else {
+            z80.addBreakOperand((unsigned char)i, stockOpcode);
+        }
+    }
 
     executeTest(&z80, &mmu, 0b01000111, 0, 0, 0, 0, 0);                      // LD B, A
     executeTest(&z80, &mmu, 0b01000111, 0, 0, 0, 0xff, 0xff);                // LD B, A
