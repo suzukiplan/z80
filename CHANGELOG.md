@@ -3,6 +3,10 @@
 ## Version 1.6.0 (inprogress)
 
 - Use std::function at addBreakPoint, addBreakOperand, ...(TODO)
+- Support multibyte (with prefix) instructions at addBreakOperand
+- Change specification of addBreakOperand callback
+  - befofe: `z80.addBreakOperand(operandNumber,  [](void* arg) { ... }`
+  - after: `z80.addBreakOperand(operandNumber, [](void* arg, unsigned char* opcode, int opcodeLength) { ... }`
 - Change specification of removeBreakPoint:
   - before: specify function pointer for remove
   - after: specify address number for remove
