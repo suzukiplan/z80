@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     }
     cpm.checkError = checkError;
     z80.reg.PC = 0x0100;
-    z80.addBreakOperand(0x76, [](void* arg) {
+    z80.addBreakOperand(0x76, [](void* arg, unsigned char* opcode, int opcodeLength) {
         ((CPM*)arg)->halted = true;
     });
     z80.addBreakPoint(0xFF04, [](void* arg) {

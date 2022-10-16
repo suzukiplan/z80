@@ -86,9 +86,9 @@ class Z80
 
     inline unsigned char readByte(unsigned short addr, int clock = 4)
     {
-        if (wtc.read) consumeClock(wtc.read);
+        if (clock && wtc.read) consumeClock(wtc.read);
         unsigned char byte = CB.read(CB.arg, addr);
-        consumeClock(clock);
+        if (clock) consumeClock(clock);
         return byte;
     }
 
@@ -145,12 +145,14 @@ class Z80
     class BreakOperand
     {
       public:
+        int prefixNumber;
         unsigned char operandNumber;
-        std::function<void(void*)> callback;
-        BreakOperand(unsigned char operandNumber, const std::function<void(void*)>& callback)
+        std::function<void(void*, unsigned char*, int)> callback;
+        BreakOperand(int prefixNumber, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
         {
+            this->prefixNumber = prefixNumber;
             this->operandNumber = operandNumber;
-            this->callback = std::bind(callback, std::placeholders::_1);
+            this->callback = std::bind(callback, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         }
     };
 
@@ -215,12 +217,72 @@ class Z80
         }
     }
 
+    inline void readFullOpcode(BreakOperand* operand, unsigned char* opcode, int* opcodeLength)
+    {
+        *opcodeLength = 0;
+        switch (operand->prefixNumber) {
+            case 0x00:
+                opcode[0] = operand->operandNumber;
+                *opcodeLength = opLength1[opcode[0]];
+                for (int i = 1; i < *opcodeLength; i++) {
+                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                }
+                break;
+            case 0xCB:
+                opcode[0] = 0xCB;
+                opcode[1] = operand->operandNumber;
+                *opcodeLength = 2;
+                break;
+            case 0xED:
+                opcode[0] = 0xED;
+                opcode[1] = operand->operandNumber;
+                *opcodeLength = opLengthED[opcode[1]];
+                for (int i = 2; i < *opcodeLength; i++) {
+                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                }
+                break;
+            case 0xDD:
+                opcode[0] = 0xDD;
+                opcode[1] = operand->operandNumber;
+                *opcodeLength = opLengthIXY[opcode[1]];
+                for (int i = 2; i < *opcodeLength; i++) {
+                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                }
+                break;
+            case 0xFD:
+                opcode[0] = 0xFD;
+                opcode[1] = operand->operandNumber;
+                *opcodeLength = opLengthIXY[opcode[1]];
+                for (int i = 2; i < *opcodeLength; i++) {
+                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                }
+                break;
+            case 0xDDCB:
+                opcode[0] = 0xDD;
+                opcode[1] = 0xCB;
+                opcode[2] = operand->operandNumber;
+                opcode[3] = readByte(reg.PC + 3, 0);
+                *opcodeLength = 4;
+                break;
+            case 0xFDCB:
+                opcode[0] = 0xFD;
+                opcode[1] = 0xCB;
+                opcode[2] = operand->operandNumber;
+                opcode[3] = readByte(reg.PC + 3, 0);
+                *opcodeLength = 4;
+                break;
+        }
+    }
+
     inline void checkBreakOperand(std::vector<BreakOperand*>* operands, unsigned char operandNumber)
     {
+        unsigned char opcode[16];
+        int opcodeLength = 16;
         if (!operands->empty()) {
             for (auto bo : *operands) {
                 if (bo->operandNumber == operandNumber) {
-                    bo->callback(CB.arg);
+                    readFullOpcode(bo, opcode, &opcodeLength);
+                    bo->callback(CB.arg, opcode, opcodeLength);
                 }
             }
         }
@@ -568,7 +630,7 @@ class Z80
     {
         signed char op3 = ctx->readByte(ctx->reg.PC + 2);
         unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
-        ctx->checkBreakOperandIX4(op4);
+        ctx->checkBreakOperandIX4(op3);
         return ctx->opSetIX4[op4](ctx, op3);
     }
 
@@ -576,7 +638,7 @@ class Z80
     {
         signed char op3 = ctx->readByte(ctx->reg.PC + 2);
         unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
-        ctx->checkBreakOperandIY4(op4);
+        ctx->checkBreakOperandIY4(op3);
         return ctx->opSetIY4[op4](ctx, op3);
     }
 
@@ -5522,6 +5584,60 @@ class Z80
         return consumeClock(2);
     }
 
+    int opLength1[256] = {
+        1, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 00 ~ 0F
+        2, 3, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1, // 10 ~ 1F
+        2, 3, 3, 1, 1, 1, 2, 1, 2, 1, 3, 1, 1, 1, 2, 1, // 20 ~ 2F
+        2, 3, 3, 1, 1, 1, 2, 1, 2, 1, 3, 1, 1, 1, 2, 1, // 30 ~ 3F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 40 ~ 4F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 50 ~ 5F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 60 ~ 6F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 70 ~ 7F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 80 ~ 8F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 90 ~ 9F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // A0 ~ AF
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // B0 ~ BF
+        1, 1, 3, 3, 3, 1, 2, 1, 1, 1, 3, 2, 3, 3, 2, 1, // C0 ~ CF
+        1, 1, 3, 2, 3, 1, 2, 1, 1, 1, 3, 2, 3, 0, 2, 1, // D0 ~ DF
+        1, 1, 3, 1, 3, 1, 2, 1, 1, 1, 3, 1, 3, 0, 2, 1, // E0 ~ EF
+        1, 1, 3, 1, 3, 1, 2, 1, 1, 1, 3, 1, 3, 0, 2, 1  // F0 ~ FF
+    };
+    int opLengthED[256] = {
+        3, 3, 0, 0, 2, 0, 0, 0, 3, 3, 0, 0, 2, 0, 0, 0, // 00 ~ 0F
+        3, 3, 0, 0, 2, 0, 0, 0, 3, 3, 0, 0, 2, 0, 0, 0, // 10 ~ 1F
+        3, 3, 0, 0, 2, 0, 0, 0, 3, 3, 0, 0, 2, 0, 0, 0, // 20 ~ 2F
+        0, 0, 0, 0, 2, 0, 0, 0, 3, 3, 0, 0, 2, 0, 0, 0, // 30 ~ 3F
+        2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 0, 2, // 40 ~ 4F
+        2, 2, 2, 4, 0, 0, 2, 2, 2, 2, 2, 4, 2, 0, 2, 2, // 50 ~ 5F
+        2, 2, 2, 4, 3, 0, 0, 2, 2, 2, 2, 4, 2, 0, 0, 2, // 60 ~ 6F
+        2, 2, 2, 4, 3, 0, 2, 0, 2, 2, 2, 4, 2, 0, 0, 0, // 70 ~ 7F
+        0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, // 80 ~ 8F
+        0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, // 90 ~ 9F
+        2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, // A0 ~ AF
+        2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, // B0 ~ BF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // C0 ~ CF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // D0 ~ DF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // E0 ~ EF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // F0 ~ FF
+    };
+    int opLengthIXY[256] = {
+        0, 0, 0, 0, 2, 2, 3, 0, 0, 2, 0, 0, 2, 2, 3, 0, // 00 ~ 0F
+        0, 0, 0, 0, 2, 2, 3, 0, 0, 2, 0, 0, 2, 2, 3, 0, // 10 ~ 1F
+        0, 4, 4, 2, 2, 2, 3, 0, 0, 2, 4, 2, 2, 2, 3, 0, // 20 ~ 2F
+        0, 0, 0, 0, 3, 3, 4, 0, 0, 2, 0, 0, 2, 2, 3, 0, // 30 ~ 3F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 40 ~ 4F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 50 ~ 5F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 60 ~ 6F
+        3, 3, 3, 3, 3, 3, 0, 3, 2, 2, 2, 2, 2, 2, 3, 2, // 70 ~ 7F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 80 ~ 8F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 90 ~ 9F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // A0 ~ AF
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // B0 ~ BF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, // C0 ~ CF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // D0 ~ DF
+        0, 2, 0, 2, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, // E0 ~ EF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0  // F0 ~ FF
+    };
     int (*opSet1[256])(Z80* ctx) = {
         NOP, LD_BC_NN, LD_BC_A, INC_RP_BC, INC_B, DEC_B, LD_B_N, RLCA, EX_AF_AF2, ADD_HL_BC, LD_A_BC, DEC_RP_BC, INC_C, DEC_C, LD_C_N, RRCA,
         DJNZ_E, LD_DE_NN, LD_DE_A, INC_RP_DE, INC_D, DEC_D, LD_D_N, RLA, JR_E, ADD_HL_DE, LD_A_DE, DEC_RP_DE, INC_E, DEC_E, LD_E_N, RRA,
@@ -5867,30 +5983,36 @@ class Z80
         CB.breakPoints.clear();
     }
 
-    void addBreakOperand(unsigned char operandNumber, const std::function<void(void*)>& callback)
+    void addBreakOperand(unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        CB.breakOperands.push_back(new BreakOperand(operandNumber, callback));
+        CB.breakOperands.push_back(new BreakOperand(0, operandNumber, callback));
     }
 
-    bool addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, const std::function<void(void*)>& callback)
+    bool addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
         switch (prefixNumber) {
-            case 0xCB: CB.breakOperandsCB.push_back(new BreakOperand(operandNumber, callback)); return true;
-            case 0xED: CB.breakOperandsED.push_back(new BreakOperand(operandNumber, callback)); return true;
-            case 0xDD: CB.breakOperandsIX.push_back(new BreakOperand(operandNumber, callback)); return true;
-            case 0xFD: CB.breakOperandsIY.push_back(new BreakOperand(operandNumber, callback)); return true;
+            case 0xCB: CB.breakOperandsCB.push_back(new BreakOperand(0xCB, operandNumber, callback)); return true;
+            case 0xED: CB.breakOperandsED.push_back(new BreakOperand(0xED, operandNumber, callback)); return true;
+            case 0xDD:
+                if (!opLengthIXY[operandNumber]) return false;
+                CB.breakOperandsIX.push_back(new BreakOperand(0xDD, operandNumber, callback));
+                return true;
+            case 0xFD:
+                if (!opLengthIXY[operandNumber]) return false;
+                CB.breakOperandsIY.push_back(new BreakOperand(0xFD, operandNumber, callback));
+                return true;
         }
         return false;
     }
 
-    bool addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, const std::function<void(void*)>& callback)
+    bool addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
         if (prefixNumber2 == 0xCB) {
             if (prefixNumber1 == 0xDD) {
-                CB.breakOperandsIX4.push_back(new BreakOperand(operandNumber, callback));
+                CB.breakOperandsIX4.push_back(new BreakOperand(0xDDCB, operandNumber, callback));
                 return true;
             } else if (prefixNumber2 == 0xFD) {
-                CB.breakOperandsIY4.push_back(new BreakOperand(operandNumber, callback));
+                CB.breakOperandsIY4.push_back(new BreakOperand(0xFDCB, operandNumber, callback));
                 return true;
             }
         }
