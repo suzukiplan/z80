@@ -1,5 +1,29 @@
 # Change log
 
+## Version 1.6.0 (Oct 16, 2022 JST)
+
+- Use `std::function` ... `constructor, addBreakPoint, addBreakOperand, setDebugMessage, setConsumeClockCallback, addReturnHandler, addCallHandler`
+- Support multibyte (with prefix) instructions at addBreakOperand
+- Change specification of addBreakOperand callback
+  - befofe: `z80.addBreakOperand(operandNumber,  [](void* arg) { ... }`
+  - after: `z80.addBreakOperand(operandNumber, [](void* arg, unsigned char* opcode, int opcodeLength) { ... }`
+- **Destructive** change specification of removeBreakPoint:
+  - before: specify function pointer for remove
+  - after: specify address number for remove
+- **Destructive** change specification of removeBreakOperand:
+  - before: specify function pointer for remove
+  - after: specify operand number for remove
+- **Destructive** change specification of setDebugMessage for reset:
+  - before: `z80.setDebugMessage(NULL)`
+  - after: `z80.resetDebugMessage()`
+- **Destructive** change specification of setConsumeClockCallback for reset:
+  - before: `z80.setConsumeClockCallback(NULL)`
+  - after: `z80.resetConsumeClockCallback()`
+- **Destructive** change specification - removed following methods:
+  - `removeCallHandler`
+  - `removeReturnHandler`
+- remove warning: `implicit conversion changes signedness: 'unsigned char' to 'signed char' [-Werror,-Wsign-conversion]`
+
 ## Version 1.5.0 (Spt 11, 2022 JST)
 
 - Implemented several undocumented instructions of ED instruction set.
@@ -7,7 +31,6 @@
   - `IN F, (C)` -> `IN (C)`
 - bugfix: Corrected opcode `ED71` behavior
   - `OUT (C), F` -> `OUT (C),0`
-
 
 ## Version 1.4.0 (Spt 4, 2022 JST)
 

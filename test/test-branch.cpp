@@ -30,7 +30,7 @@ int main()
     fread(rom, 1, sizeof(rom), fp);
     fclose(fp);
     Z80 z80(readMemory, writeMemory, inPort, outPort, &z80);
-    z80.addBreakOperand(0x00, [](void* arg) { exit(0); });
+    z80.addBreakOperand(0x00, [](void* arg, unsigned char* opcode, int opcodeLength) { exit(0); });
     z80.setDebugMessage([](void* arg, const char* msg) {
         printIdent();
         puts(msg);

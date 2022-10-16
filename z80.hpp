@@ -26,6 +26,7 @@
  */
 #ifndef INCLUDE_Z80_HPP
 #define INCLUDE_Z80_HPP
+#include <functional>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -85,9 +86,9 @@ class Z80
 
     inline unsigned char readByte(unsigned short addr, int clock = 4)
     {
-        if (wtc.read) consumeClock(wtc.read);
+        if (clock && wtc.read) consumeClock(wtc.read);
         unsigned char byte = CB.read(CB.arg, addr);
-        consumeClock(clock);
+        if (clock) consumeClock(clock);
         return byte;
     }
 
@@ -133,31 +134,36 @@ class Z80
     {
       public:
         unsigned short addr;
-        void (*callback)(void* arg);
-        BreakPoint(unsigned short addr, void (*callback)(void* arg))
+        std::function<void(void*)> callback;
+        BreakPoint(unsigned short addr_, const std::function<void(void*)>& callback_)
         {
-            this->addr = addr;
-            this->callback = callback;
+            this->addr = addr_;
+            this->callback = std::bind(callback_, std::placeholders::_1);
         }
     };
 
     class BreakOperand
     {
       public:
+        int prefixNumber;
         unsigned char operandNumber;
-        void (*callback)(void* arg);
-        BreakOperand(unsigned char operandNumber, void (*callback)(void* arg))
+        std::function<void(void*, unsigned char*, int)> callback;
+        BreakOperand(int prefixNumber_, unsigned char operandNumber_, const std::function<void(void*, unsigned char*, int)>& callback_)
         {
-            this->operandNumber = operandNumber;
-            this->callback = callback;
+            this->prefixNumber = prefixNumber_;
+            this->operandNumber = operandNumber_;
+            this->callback = std::bind(callback_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         }
     };
 
     class ReturnHandler
     {
       public:
-        void (*callback)(void* arg);
-        ReturnHandler(void (*callback)(void* arg)) { this->callback = callback; }
+        std::function<void(void*)> callback;
+        ReturnHandler(const std::function<void(void*)>& callback_)
+        {
+            this->callback = std::bind(callback_, std::placeholders::_1);
+        }
     };
 
     inline void invokeReturnHandlers()
@@ -170,8 +176,11 @@ class Z80
     class CallHandler
     {
       public:
-        void (*callback)(void* arg);
-        CallHandler(void (*callback)(void* arg)) { this->callback = callback; }
+        std::function<void(void*)> callback;
+        CallHandler(const std::function<void(void*)>& callback_)
+        {
+            this->callback = std::bind(callback_, std::placeholders::_1);
+        }
     };
 
     inline void invokeCallHandlers()
@@ -182,14 +191,22 @@ class Z80
     }
 
     struct Callback {
-        unsigned char (*read)(void* arg, unsigned short addr);
-        void (*write)(void* arg, unsigned short addr, unsigned char value);
-        unsigned char (*in)(void* arg, unsigned char port);
-        void (*out)(void* arg, unsigned char port, unsigned char value);
-        void (*debugMessage)(void* arg, const char* message);
-        void (*consumeClock)(void* arg, int clock);
+        std::function<unsigned char(void*, unsigned short)> read;
+        std::function<void(void*, unsigned short, unsigned char)> write;
+        std::function<unsigned char(void*, unsigned char)> in;
+        std::function<void(void*, unsigned char, unsigned char)> out;
+        std::function<void(void*, const char*)> debugMessage;
+        bool debugMessageEnabled;
+        std::function<void(void*, int)> consumeClock;
+        bool consumeClockEnabled;
         std::vector<BreakPoint*> breakPoints;
         std::vector<BreakOperand*> breakOperands;
+        std::vector<BreakOperand*> breakOperandsCB;
+        std::vector<BreakOperand*> breakOperandsED;
+        std::vector<BreakOperand*> breakOperandsIX;
+        std::vector<BreakOperand*> breakOperandsIX4;
+        std::vector<BreakOperand*> breakOperandsIY;
+        std::vector<BreakOperand*> breakOperandsIY4;
         std::vector<ReturnHandler*> returnHandlers;
         std::vector<CallHandler*> callHandlers;
         void* arg;
@@ -208,16 +225,84 @@ class Z80
         }
     }
 
-    inline void checkBreakOperand(unsigned char operandNumber)
+    inline void readFullOpcode(BreakOperand* operand, unsigned char* opcode, int* opcodeLength)
     {
-        if (!CB.breakOperands.empty()) {
-            for (auto bo : CB.breakOperands) {
+        *opcodeLength = 0;
+        switch (operand->prefixNumber) {
+            case 0x00:
+                opcode[0] = operand->operandNumber;
+                *opcodeLength = opLength1[opcode[0]];
+                for (int i = 1; i < *opcodeLength; i++) {
+                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                }
+                break;
+            case 0xCB:
+                opcode[0] = 0xCB;
+                opcode[1] = operand->operandNumber;
+                *opcodeLength = 2;
+                break;
+            case 0xED:
+                opcode[0] = 0xED;
+                opcode[1] = operand->operandNumber;
+                *opcodeLength = opLengthED[opcode[1]];
+                for (int i = 2; i < *opcodeLength; i++) {
+                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                }
+                break;
+            case 0xDD:
+                opcode[0] = 0xDD;
+                opcode[1] = operand->operandNumber;
+                *opcodeLength = opLengthIXY[opcode[1]];
+                for (int i = 2; i < *opcodeLength; i++) {
+                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                }
+                break;
+            case 0xFD:
+                opcode[0] = 0xFD;
+                opcode[1] = operand->operandNumber;
+                *opcodeLength = opLengthIXY[opcode[1]];
+                for (int i = 2; i < *opcodeLength; i++) {
+                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                }
+                break;
+            case 0xDDCB:
+                opcode[0] = 0xDD;
+                opcode[1] = 0xCB;
+                opcode[2] = operand->operandNumber;
+                opcode[3] = readByte(reg.PC + 3, 0);
+                *opcodeLength = 4;
+                break;
+            case 0xFDCB:
+                opcode[0] = 0xFD;
+                opcode[1] = 0xCB;
+                opcode[2] = operand->operandNumber;
+                opcode[3] = readByte(reg.PC + 3, 0);
+                *opcodeLength = 4;
+                break;
+        }
+    }
+
+    inline void checkBreakOperand(std::vector<BreakOperand*>* operands, unsigned char operandNumber)
+    {
+        unsigned char opcode[16];
+        int opcodeLength = 16;
+        if (!operands->empty()) {
+            for (auto bo : *operands) {
                 if (bo->operandNumber == operandNumber) {
-                    bo->callback(CB.arg);
+                    readFullOpcode(bo, opcode, &opcodeLength);
+                    bo->callback(CB.arg, opcode, opcodeLength);
                 }
             }
         }
     }
+
+    inline void checkBreakOperand(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperands, operandNumber); }
+    inline void checkBreakOperandCB(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsCB, operandNumber); }
+    inline void checkBreakOperandED(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsED, operandNumber); }
+    inline void checkBreakOperandIX(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIX, operandNumber); }
+    inline void checkBreakOperandIY(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIY, operandNumber); }
+    inline void checkBreakOperandIX4(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIX4, operandNumber); }
+    inline void checkBreakOperandIY4(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIY4, operandNumber); }
 
     inline void log(const char* format, ...)
     {
@@ -422,7 +507,7 @@ class Z80
     inline int consumeClock(int hz)
     {
         reg.consumeClockCounter += hz;
-        if (CB.consumeClock) CB.consumeClock(CB.arg, hz);
+        if (CB.consumeClockEnabled) CB.consumeClock(CB.arg, hz);
         return hz;
     }
 
@@ -521,22 +606,47 @@ class Z80
         return consumeClock(1);
     }
 
-    static inline int OP_CB(Z80* ctx) { return ctx->opSetCB[ctx->readByte(ctx->reg.PC + 1)](ctx); }
-    static inline int OP_ED(Z80* ctx) { return ctx->opSetED[ctx->readByte(ctx->reg.PC + 1)](ctx); }
-    static inline int OP_IX(Z80* ctx) { return ctx->opSetIX[ctx->readByte(ctx->reg.PC + 1)](ctx); }
-    static inline int OP_IY(Z80* ctx) { return ctx->opSetIY[ctx->readByte(ctx->reg.PC + 1)](ctx); }
+    static inline int OP_CB(Z80* ctx)
+    {
+        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        ctx->checkBreakOperandCB(operandNumber);
+        return ctx->opSetCB[operandNumber](ctx);
+    }
+
+    static inline int OP_ED(Z80* ctx)
+    {
+        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        ctx->checkBreakOperandED(operandNumber);
+        return ctx->opSetED[operandNumber](ctx);
+    }
+
+    static inline int OP_IX(Z80* ctx)
+    {
+        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        ctx->checkBreakOperandIX(operandNumber);
+        return ctx->opSetIX[operandNumber](ctx);
+    }
+
+    static inline int OP_IY(Z80* ctx)
+    {
+        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        ctx->checkBreakOperandIY(operandNumber);
+        return ctx->opSetIY[operandNumber](ctx);
+    }
 
     static inline int OP_IX4(Z80* ctx)
     {
-        signed char op3 = ctx->readByte(ctx->reg.PC + 2);
+        signed char op3 = (signed char)ctx->readByte(ctx->reg.PC + 2);
         unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
+        ctx->checkBreakOperandIX4(op4);
         return ctx->opSetIX4[op4](ctx, op3);
     }
 
     static inline int OP_IY4(Z80* ctx)
     {
-        signed char op3 = ctx->readByte(ctx->reg.PC + 2);
+        signed char op3 = (signed char)ctx->readByte(ctx->reg.PC + 2);
         unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
+        ctx->checkBreakOperandIY4(op4);
         return ctx->opSetIY4[op4](ctx, op3);
     }
 
@@ -748,7 +858,7 @@ class Z80
             case 0b110: return &reg.pair.F;
         }
         if (isDebug()) log("detected an unknown register number: $%02X", r);
-        return NULL;
+        return nullptr;
     }
 
     inline char* registerDump(unsigned char r)
@@ -1200,7 +1310,7 @@ class Z80
     inline int LD_R_IX(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = readByte(reg.PC + 2);
+        signed char d = (signed char)readByte(reg.PC + 2);
         unsigned char n = readByte((reg.IX + d) & 0xFFFF);
         if (isDebug()) log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IX, d, n);
         if (rp) *rp = n;
@@ -1249,7 +1359,7 @@ class Z80
     inline int LD_R_IY(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = readByte(reg.PC + 2);
+        signed char d = (signed char)readByte(reg.PC + 2);
         unsigned char n = readByte((reg.IY + d) & 0xFFFF);
         if (isDebug()) log("[%04X] LD %s, (IY<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IY, d, n);
         if (rp) *rp = n;
@@ -1318,8 +1428,8 @@ class Z80
     inline int LD_IX_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         if (isDebug()) log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC, reg.IX, d, registerDump(r));
         if (rp) writeByte(addr, *rp);
         reg.PC += 3;
@@ -1337,8 +1447,8 @@ class Z80
     inline int LD_IY_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         if (isDebug()) log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC, reg.IY, d, registerDump(r));
         if (rp) writeByte(addr, *rp);
         reg.PC += 3;
@@ -1349,9 +1459,9 @@ class Z80
     static inline int LD_IX_N_(Z80* ctx) { return ctx->LD_IX_N(); }
     inline int LD_IX_N()
     {
-        signed char d = readByte(reg.PC + 2);
+        signed char d = (signed char)readByte(reg.PC + 2);
         unsigned char n = readByte(reg.PC + 3);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         if (isDebug()) log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
         writeByte(addr, n, 3);
         reg.PC += 4;
@@ -1362,9 +1472,9 @@ class Z80
     static inline int LD_IY_N_(Z80* ctx) { return ctx->LD_IY_N(); }
     inline int LD_IY_N()
     {
-        signed char d = readByte(reg.PC + 2);
+        signed char d = (signed char)readByte(reg.PC + 2);
         unsigned char n = readByte(reg.PC + 3);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         if (isDebug()) log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
         writeByte(addr, n, 3);
         reg.PC += 4;
@@ -2148,9 +2258,9 @@ class Z80
 
     // Rotate memory (IX+d) Left Circular
     static inline int RLC_IX_(Z80* ctx, signed char d) { return ctx->RLC_IX(d); }
-    inline int RLC_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RLC_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RLC (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = RLC(n);
@@ -2202,9 +2312,9 @@ class Z80
 
     // Rotate memory (IX+d) Right Circular
     static inline int RRC_IX_(Z80* ctx, signed char d) { return ctx->RRC_IX(d); }
-    inline int RRC_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RRC_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RRC (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = RRC(n);
@@ -2256,9 +2366,9 @@ class Z80
 
     // Rotate Left memory
     static inline int RL_IX_(Z80* ctx, signed char d) { return ctx->RL_IX(d); }
-    inline int RL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RL_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RL (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RL(n);
@@ -2310,9 +2420,9 @@ class Z80
 
     // Rotate Right memory
     static inline int RR_IX_(Z80* ctx, signed char d) { return ctx->RR_IX(d); }
-    inline int RR_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RR_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RR (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RR(n);
@@ -2364,9 +2474,9 @@ class Z80
 
     // Shift operand location (IX+d) left Arithmetic
     static inline int SLA_IX_(Z80* ctx, signed char d) { return ctx->SLA_IX(d); }
-    inline int SLA_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SLA_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SLA (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLA(n);
@@ -2418,9 +2528,9 @@ class Z80
 
     // Shift operand location (IX+d) Right Arithmetic
     static inline int SRA_IX_(Z80* ctx, signed char d) { return ctx->SRA_IX(d); }
-    inline int SRA_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SRA_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SRA (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRA(n);
@@ -2472,9 +2582,9 @@ class Z80
 
     // Shift operand location (IX+d) Right Logical
     static inline int SRL_IX_(Z80* ctx, signed char d) { return ctx->SRL_IX(d); }
-    inline int SRL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SRL_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SRL (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRL(n);
@@ -2527,9 +2637,9 @@ class Z80
     // Shift operand location (IX+d) Left Logical
     // NOTE: this function is only for SLL_IX_with_LD
     static inline int SLL_IX_(Z80* ctx, signed char d) { return ctx->SLL_IX(d); }
-    inline int SLL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SLL_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SLL (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLL(n);
@@ -2562,9 +2672,9 @@ class Z80
     // Shift operand location (IY+d) Left Logical
     // NOTE: this function is only for SLL_IY_with_LD
     static inline int SLL_IY_(Z80* ctx, signed char d) { return ctx->SLL_IY(d); }
-    inline int SLL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SLL_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SLL (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLL(n);
@@ -2596,9 +2706,9 @@ class Z80
 
     // Rotate memory (IY+d) Left Circular
     static inline int RLC_IY_(Z80* ctx, signed char d) { return ctx->RLC_IY(d); }
-    inline int RLC_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RLC_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RLC (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = RLC(n);
@@ -2610,9 +2720,9 @@ class Z80
 
     // Rotate memory (IY+d) Right Circular
     static inline int RRC_IY_(Z80* ctx, signed char d) { return ctx->RRC_IY(d); }
-    inline int RRC_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RRC_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RRC (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = RRC(n);
@@ -2624,9 +2734,9 @@ class Z80
 
     // Rotate Left memory
     static inline int RL_IY_(Z80* ctx, signed char d) { return ctx->RL_IY(d); }
-    inline int RL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RL_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RL(n);
@@ -2638,9 +2748,9 @@ class Z80
 
     // Shift operand location (IY+d) left Arithmetic
     static inline int SLA_IY_(Z80* ctx, signed char d) { return ctx->SLA_IY(d); }
-    inline int SLA_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SLA_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SLA (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLA(n);
@@ -2652,9 +2762,9 @@ class Z80
 
     // Rotate Right memory
     static inline int RR_IY_(Z80* ctx, signed char d) { return ctx->RR_IY(d); }
-    inline int RR_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RR_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RR (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RR(n);
@@ -2666,9 +2776,9 @@ class Z80
 
     // Shift operand location (IY+d) Right Arithmetic
     static inline int SRA_IY_(Z80* ctx, signed char d) { return ctx->SRA_IY(d); }
-    inline int SRA_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SRA_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SRA (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRA(n);
@@ -2680,9 +2790,9 @@ class Z80
 
     // Shift operand location (IY+d) Right Logical
     static inline int SRL_IY_(Z80* ctx, signed char d) { return ctx->SRL_IY(d); }
-    inline int SRL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SRL_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SRL (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRL(n);
@@ -2823,8 +2933,8 @@ class Z80
     static inline int ADD_IX_(Z80* ctx) { return ctx->ADD_IX(); }
     inline int ADD_IX()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] ADD %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         addition8(n, 0);
@@ -2836,8 +2946,8 @@ class Z80
     static inline int ADD_IY_(Z80* ctx) { return ctx->ADD_IY(); }
     inline int ADD_IY()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] ADD %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         addition8(n, 0);
@@ -2939,8 +3049,8 @@ class Z80
     static inline int ADC_IX_(Z80* ctx) { return ctx->ADC_IX(); }
     inline int ADC_IX()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
@@ -2953,8 +3063,8 @@ class Z80
     static inline int ADC_IY_(Z80* ctx) { return ctx->ADC_IY(); }
     inline int ADC_IY()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
@@ -3004,8 +3114,8 @@ class Z80
     static inline int INC_IX_(Z80* ctx) { return ctx->INC_IX(); }
     inline int INC_IX()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByIncrement(n);
@@ -3042,8 +3152,8 @@ class Z80
     static inline int INC_IY_(Z80* ctx) { return ctx->INC_IY(); }
     inline int INC_IY()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByIncrement(n);
@@ -3163,8 +3273,8 @@ class Z80
     static inline int SUB_IX_(Z80* ctx) { return ctx->SUB_IX(); }
     inline int SUB_IX()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SUB %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         subtract8(n, 0);
@@ -3176,8 +3286,8 @@ class Z80
     static inline int SUB_IY_(Z80* ctx) { return ctx->SUB_IY(); }
     inline int SUB_IY()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SUB %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         subtract8(n, 0);
@@ -3279,8 +3389,8 @@ class Z80
     static inline int SBC_IX_(Z80* ctx) { return ctx->SBC_IX(); }
     inline int SBC_IX()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
@@ -3293,8 +3403,8 @@ class Z80
     static inline int SBC_IY_(Z80* ctx) { return ctx->SBC_IY(); }
     inline int SBC_IY()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
@@ -3344,8 +3454,8 @@ class Z80
     static inline int DEC_IX_(Z80* ctx) { return ctx->DEC_IX(); }
     inline int DEC_IX()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByDecrement(n);
@@ -3382,8 +3492,8 @@ class Z80
     static inline int DEC_IY_(Z80* ctx) { return ctx->DEC_IY(); }
     inline int DEC_IY()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByDecrement(n);
@@ -3719,8 +3829,8 @@ class Z80
     static inline int AND_IX_(Z80* ctx) { return ctx->AND_IX(); }
     inline int AND_IX()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         and8(n, 3);
@@ -3731,8 +3841,8 @@ class Z80
     static inline int AND_IY_(Z80* ctx) { return ctx->AND_IY(); }
     inline int AND_IY()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         and8(n, 3);
@@ -3819,8 +3929,8 @@ class Z80
     static inline int OR_IX_(Z80* ctx) { return ctx->OR_IX(); }
     inline int OR_IX()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         or8(n, 3);
@@ -3831,8 +3941,8 @@ class Z80
     static inline int OR_IY_(Z80* ctx) { return ctx->OR_IY(); }
     inline int OR_IY()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         or8(n, 3);
@@ -3919,8 +4029,8 @@ class Z80
     static inline int XOR_IX_(Z80* ctx) { return ctx->XOR_IX(); }
     inline int XOR_IX()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         xor8(n, 3);
@@ -3931,8 +4041,8 @@ class Z80
     static inline int XOR_IY_(Z80* ctx) { return ctx->XOR_IY(); }
     inline int XOR_IY()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         xor8(n, 3);
@@ -4114,7 +4224,7 @@ class Z80
     static inline int BIT_IX_7(Z80* ctx, signed char d) { return ctx->BIT_IX(d, 7); }
     inline int BIT_IX(signed char d, unsigned char bit)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] BIT (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
@@ -4148,7 +4258,7 @@ class Z80
     static inline int BIT_IY_7(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 7); }
     inline int BIT_IY(signed char d, unsigned char bit)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] BIT (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
@@ -4284,9 +4394,9 @@ class Z80
     static inline int SET_IX_5(Z80* ctx, signed char d) { return ctx->SET_IX(d, 5); }
     static inline int SET_IX_6(Z80* ctx, signed char d) { return ctx->SET_IX(d, 6); }
     static inline int SET_IX_7(Z80* ctx, signed char d) { return ctx->SET_IX(d, 7); }
-    inline int SET_IX(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SET_IX(signed char d, unsigned char bit, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
@@ -4383,9 +4493,9 @@ class Z80
     static inline int SET_IY_5(Z80* ctx, signed char d) { return ctx->SET_IY(d, 5); }
     static inline int SET_IY_6(Z80* ctx, signed char d) { return ctx->SET_IY(d, 6); }
     static inline int SET_IY_7(Z80* ctx, signed char d) { return ctx->SET_IY(d, 7); }
-    inline int SET_IY(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SET_IY(signed char d, unsigned char bit, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
@@ -4586,9 +4696,9 @@ class Z80
     static inline int RES_IX_5(Z80* ctx, signed char d) { return ctx->RES_IX(d, 5); }
     static inline int RES_IX_6(Z80* ctx, signed char d) { return ctx->RES_IX(d, 6); }
     static inline int RES_IX_7(Z80* ctx, signed char d) { return ctx->RES_IX(d, 7); }
-    inline int RES_IX(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RES_IX(signed char d, unsigned char bit, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RES (IX+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
@@ -4754,9 +4864,9 @@ class Z80
     static inline int RES_IY_5(Z80* ctx, signed char d) { return ctx->RES_IY(d, 5); }
     static inline int RES_IY_6(Z80* ctx, signed char d) { return ctx->RES_IY(d, 6); }
     static inline int RES_IY_7(Z80* ctx, signed char d) { return ctx->RES_IY(d, 7); }
-    inline int RES_IY(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RES_IY(signed char d, unsigned char bit, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RES (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
@@ -4794,7 +4904,7 @@ class Z80
         nn -= isFlagH() ? 1 : 0;
         setFlagY(nn & 0b00000010);
         setFlagX(nn & 0b00001000);
-        setHL(hl + (isIncHL ? 1 : -1));
+        setHL((unsigned short)(hl + (isIncHL ? 1 : -1)));
         bc--;
         setBC(bc);
         setFlagPV(0 != bc);
@@ -4899,8 +5009,8 @@ class Z80
     static inline int CP_IX_(Z80* ctx) { return ctx->CP_IX(); }
     inline int CP_IX()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] CP %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         subtract8(n, 0, true, false);
@@ -4912,8 +5022,8 @@ class Z80
     static inline int CP_IY_(Z80* ctx) { return ctx->CP_IY(); }
     inline int CP_IY()
     {
-        signed char d = readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        signed char d = (signed char)readByte(reg.PC + 2);
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] CP %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         subtract8(n, 0, true, false);
@@ -4972,7 +5082,7 @@ class Z80
     // Jump Relative to PC+e
     static inline int JR_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1);
+        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1);
         if (ctx->isDebug()) ctx->log("[%04X] JR %s", ctx->reg.PC, ctx->relativeDump(e));
         ctx->reg.PC += e;
         ctx->reg.PC += 2;
@@ -4982,7 +5092,7 @@ class Z80
     // Jump Relative to PC+e, if carry
     static inline int JR_C_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1, 3);
+        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1, 3);
         bool execute = ctx->isFlagC();
         if (ctx->isDebug()) ctx->log("[%04X] JR C, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += 2;
@@ -4996,7 +5106,7 @@ class Z80
     // Jump Relative to PC+e, if not carry
     static inline int JR_NC_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1, 3);
+        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1, 3);
         bool execute = !ctx->isFlagC();
         if (ctx->isDebug()) ctx->log("[%04X] JR NC, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += 2;
@@ -5010,7 +5120,7 @@ class Z80
     // Jump Relative to PC+e, if zero
     static inline int JR_Z_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1, 3);
+        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1, 3);
         bool execute = ctx->isFlagZ();
         if (ctx->isDebug()) ctx->log("[%04X] JR Z, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += 2;
@@ -5024,7 +5134,7 @@ class Z80
     // Jump Relative to PC+e, if zero
     static inline int JR_NZ_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1, 3);
+        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1, 3);
         bool execute = !ctx->isFlagZ();
         if (ctx->isDebug()) ctx->log("[%04X] JR NZ, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
         ctx->reg.PC += 2;
@@ -5064,7 +5174,7 @@ class Z80
     // 	Decrement B and Jump relative if B=0
     static inline int DJNZ_E(Z80* ctx)
     {
-        signed char e = ctx->readByte(ctx->reg.PC + 1);
+        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1);
         if (ctx->isDebug()) ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC, ctx->relativeDump(e), ctx->registerDump(0b000));
         ctx->reg.pair.B--;
         ctx->reg.PC += 2;
@@ -5276,7 +5386,7 @@ class Z80
     static inline int IN_A_C(Z80* ctx) { return ctx->IN_R_C(0b111); }
     inline int IN_R_C(unsigned char r, bool setRegister = true)
     {
-        unsigned char* rp = setRegister ? getRegisterPointer(r) : NULL;
+        unsigned char* rp = setRegister ? getRegisterPointer(r) : nullptr;
         unsigned char i = inPort(reg.pair.C);
         if (rp) {
             if (isDebug()) log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
@@ -5310,7 +5420,7 @@ class Z80
     // Load location (HL) with input from port (C); or increment/decrement HL and decrement B
     inline int repeatIN(bool isIncHL, bool isRepeat)
     {
-        reg.WZ = getBC() + (isIncHL ? 1 : -1);
+        reg.WZ = (unsigned short)(getBC() + (isIncHL ? 1 : -1));
         unsigned char i = inPort(reg.pair.C);
         unsigned short hl = getHL();
         if (isDebug()) {
@@ -5325,10 +5435,10 @@ class Z80
         hl += isIncHL ? 1 : -1;
         setHL(hl);
         setFlagZ(reg.pair.B == 0);
-        setFlagN(i & 0x80);                                             // NOTE: undocumented
-        setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                 // NOTE: undocumented
-        setFlagH(isFlagC());                                            // NOTE: undocumented
-        setFlagPV(i + (((reg.pair.C + 1) & 0xFF) & 0x07) ^ reg.pair.B); // NOTE: undocumented
+        setFlagN(i & 0x80);                                               // NOTE: undocumented
+        setFlagC(0xFF < i + ((reg.pair.C + 1) & 0xFF));                   // NOTE: undocumented
+        setFlagH(isFlagC());                                              // NOTE: undocumented
+        setFlagPV((i + (((reg.pair.C + 1) & 0xFF) & 0x07)) ^ reg.pair.B); // NOTE: undocumented
         if (isRepeat && 0 != reg.pair.B) {
             consumeClock(5);
         } else {
@@ -5388,7 +5498,7 @@ class Z80
         }
         outPort(reg.pair.C, o);
         decrementB_forRepeatIO();
-        reg.WZ = getBC() + (isIncHL ? 1 : -1);
+        reg.WZ = (unsigned short)(getBC() + (isIncHL ? 1 : -1));
         hl += isIncHL ? 1 : -1;
         setHL(hl);
         setFlagZ(reg.pair.B == 0);
@@ -5482,6 +5592,60 @@ class Z80
         return consumeClock(2);
     }
 
+    int opLength1[256] = {
+        1, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 00 ~ 0F
+        2, 3, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1, // 10 ~ 1F
+        2, 3, 3, 1, 1, 1, 2, 1, 2, 1, 3, 1, 1, 1, 2, 1, // 20 ~ 2F
+        2, 3, 3, 1, 1, 1, 2, 1, 2, 1, 3, 1, 1, 1, 2, 1, // 30 ~ 3F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 40 ~ 4F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 50 ~ 5F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 60 ~ 6F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 70 ~ 7F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 80 ~ 8F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 90 ~ 9F
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // A0 ~ AF
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // B0 ~ BF
+        1, 1, 3, 3, 3, 1, 2, 1, 1, 1, 3, 2, 3, 3, 2, 1, // C0 ~ CF
+        1, 1, 3, 2, 3, 1, 2, 1, 1, 1, 3, 2, 3, 0, 2, 1, // D0 ~ DF
+        1, 1, 3, 1, 3, 1, 2, 1, 1, 1, 3, 1, 3, 0, 2, 1, // E0 ~ EF
+        1, 1, 3, 1, 3, 1, 2, 1, 1, 1, 3, 1, 3, 0, 2, 1  // F0 ~ FF
+    };
+    int opLengthED[256] = {
+        3, 3, 0, 0, 2, 0, 0, 0, 3, 3, 0, 0, 2, 0, 0, 0, // 00 ~ 0F
+        3, 3, 0, 0, 2, 0, 0, 0, 3, 3, 0, 0, 2, 0, 0, 0, // 10 ~ 1F
+        3, 3, 0, 0, 2, 0, 0, 0, 3, 3, 0, 0, 2, 0, 0, 0, // 20 ~ 2F
+        0, 0, 0, 0, 2, 0, 0, 0, 3, 3, 0, 0, 2, 0, 0, 0, // 30 ~ 3F
+        2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 0, 2, // 40 ~ 4F
+        2, 2, 2, 4, 0, 0, 2, 2, 2, 2, 2, 4, 2, 0, 2, 2, // 50 ~ 5F
+        2, 2, 2, 4, 3, 0, 0, 2, 2, 2, 2, 4, 2, 0, 0, 2, // 60 ~ 6F
+        2, 2, 2, 4, 3, 0, 2, 0, 2, 2, 2, 4, 2, 0, 0, 0, // 70 ~ 7F
+        0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, // 80 ~ 8F
+        0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, // 90 ~ 9F
+        2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, // A0 ~ AF
+        2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, // B0 ~ BF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // C0 ~ CF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // D0 ~ DF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // E0 ~ EF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // F0 ~ FF
+    };
+    int opLengthIXY[256] = {
+        0, 0, 0, 0, 2, 2, 3, 0, 0, 2, 0, 0, 2, 2, 3, 0, // 00 ~ 0F
+        0, 0, 0, 0, 2, 2, 3, 0, 0, 2, 0, 0, 2, 2, 3, 0, // 10 ~ 1F
+        0, 4, 4, 2, 2, 2, 3, 0, 0, 2, 4, 2, 2, 2, 3, 0, // 20 ~ 2F
+        0, 0, 0, 0, 3, 3, 4, 0, 0, 2, 0, 0, 2, 2, 3, 0, // 30 ~ 3F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 40 ~ 4F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 50 ~ 5F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 60 ~ 6F
+        3, 3, 3, 3, 3, 3, 0, 3, 2, 2, 2, 2, 2, 2, 3, 2, // 70 ~ 7F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 80 ~ 8F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 90 ~ 9F
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // A0 ~ AF
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // B0 ~ BF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, // C0 ~ CF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // D0 ~ DF
+        0, 2, 0, 2, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, // E0 ~ EF
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0  // F0 ~ FF
+    };
     int (*opSet1[256])(Z80* ctx) = {
         NOP, LD_BC_NN, LD_BC_A, INC_RP_BC, INC_B, DEC_B, LD_B_N, RLCA, EX_AF_AF2, ADD_HL_BC, LD_A_BC, DEC_RP_BC, INC_C, DEC_C, LD_C_N, RRCA,
         DJNZ_E, LD_DE_NN, LD_DE_A, INC_RP_DE, INC_D, DEC_D, LD_D_N, RLA, JR_E, ADD_HL_DE, LD_A_DE, DEC_RP_DE, INC_E, DEC_E, LD_E_N, RRA,
@@ -5533,40 +5697,40 @@ class Z80
         SET_B_6, SET_C_6, SET_D_6, SET_E_6, SET_H_6, SET_L_6, SET_HL_6, SET_A_6,
         SET_B_7, SET_C_7, SET_D_7, SET_E_7, SET_H_7, SET_L_7, SET_HL_7, SET_A_7};
     int (*opSetED[256])(Z80* ctx) = {
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
         IN_B_C, OUT_C_B, SBC_HL_BC, LD_ADDR_RP_BC, NEG_, RETN_, IM0, LD_I_A_,
-        IN_C_C, OUT_C_C, ADC_HL_BC, LD_RP_ADDR_BC, NULL, RETI_, NULL, LD_R_A_,
-        IN_D_C, OUT_C_D, SBC_HL_DE, LD_ADDR_RP_DE, NULL, NULL, IM1, LD_A_I_,
-        IN_E_C, OUT_C_E, ADC_HL_DE, LD_RP_ADDR_DE, NULL, NULL, IM2, LD_A_R_,
-        IN_H_C, OUT_C_H, SBC_HL_HL, LD_ADDR_RP_HL, NULL, NULL, NULL, RRD_,
-        IN_L_C, OUT_C_L, ADC_HL_HL, LD_RP_ADDR_HL, NULL, NULL, NULL, RLD_,
-        IN_C, OUT_C_0, SBC_HL_SP, LD_ADDR_RP_SP, NULL, NULL, NULL, NULL,
-        IN_A_C, OUT_C_A, ADC_HL_SP, LD_RP_ADDR_SP, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        LDI, CPI, INI, OUTI, NULL, NULL, NULL, NULL,
-        LDD, CPD, IND, OUTD, NULL, NULL, NULL, NULL,
-        LDIR, CPIR, INIR, OUTIR, NULL, NULL, NULL, NULL,
-        LDDR, CPDR, INDR, OUTDR, NULL, NULL, NULL, NULL};
+        IN_C_C, OUT_C_C, ADC_HL_BC, LD_RP_ADDR_BC, nullptr, RETI_, nullptr, LD_R_A_,
+        IN_D_C, OUT_C_D, SBC_HL_DE, LD_ADDR_RP_DE, nullptr, nullptr, IM1, LD_A_I_,
+        IN_E_C, OUT_C_E, ADC_HL_DE, LD_RP_ADDR_DE, nullptr, nullptr, IM2, LD_A_R_,
+        IN_H_C, OUT_C_H, SBC_HL_HL, LD_ADDR_RP_HL, nullptr, nullptr, nullptr, RRD_,
+        IN_L_C, OUT_C_L, ADC_HL_HL, LD_RP_ADDR_HL, nullptr, nullptr, nullptr, RLD_,
+        IN_C, OUT_C_0, SBC_HL_SP, LD_ADDR_RP_SP, nullptr, nullptr, nullptr, nullptr,
+        IN_A_C, OUT_C_A, ADC_HL_SP, LD_RP_ADDR_SP, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        LDI, CPI, INI, OUTI, nullptr, nullptr, nullptr, nullptr,
+        LDD, CPD, IND, OUTD, nullptr, nullptr, nullptr, nullptr,
+        LDIR, CPIR, INIR, OUTIR, nullptr, nullptr, nullptr, nullptr,
+        LDDR, CPDR, INDR, OUTDR, nullptr, nullptr, nullptr, nullptr};
     int (*opSetIX[256])(Z80* ctx) = {
-        NULL, NULL, NULL, NULL, INC_B_2, DEC_B_2, LD_B_N_3, NULL,
-        NULL, ADD_IX_BC, NULL, NULL, INC_C_2, DEC_C_2, LD_C_N_3, NULL,
-        NULL, NULL, NULL, NULL, INC_D_2, DEC_D_2, LD_D_N_3, NULL,
-        NULL, ADD_IX_DE, NULL, NULL, INC_E_2, DEC_E_2, LD_E_N_3, NULL,
-        NULL, LD_IX_NN_, LD_ADDR_IX_, INC_IX_reg_, INC_IXH_, DEC_IXH_, LD_IXH_N_, NULL,
-        NULL, ADD_IX_IX, LD_IX_ADDR_, DEC_IX_reg_, INC_IXL_, DEC_IXL_, LD_IXL_N_, NULL,
-        NULL, NULL, NULL, NULL, INC_IX_, DEC_IX_, LD_IX_N_, NULL,
-        NULL, ADD_IX_SP, NULL, NULL, INC_A_2, DEC_A_2, LD_A_N_3, NULL,
+        nullptr, nullptr, nullptr, nullptr, INC_B_2, DEC_B_2, LD_B_N_3, nullptr,
+        nullptr, ADD_IX_BC, nullptr, nullptr, INC_C_2, DEC_C_2, LD_C_N_3, nullptr,
+        nullptr, nullptr, nullptr, nullptr, INC_D_2, DEC_D_2, LD_D_N_3, nullptr,
+        nullptr, ADD_IX_DE, nullptr, nullptr, INC_E_2, DEC_E_2, LD_E_N_3, nullptr,
+        nullptr, LD_IX_NN_, LD_ADDR_IX_, INC_IX_reg_, INC_IXH_, DEC_IXH_, LD_IXH_N_, nullptr,
+        nullptr, ADD_IX_IX, LD_IX_ADDR_, DEC_IX_reg_, INC_IXL_, DEC_IXL_, LD_IXL_N_, nullptr,
+        nullptr, nullptr, nullptr, nullptr, INC_IX_, DEC_IX_, LD_IX_N_, nullptr,
+        nullptr, ADD_IX_SP, nullptr, nullptr, INC_A_2, DEC_A_2, LD_A_N_3, nullptr,
         LD_B_B_2, LD_B_C_2, LD_B_D_2, LD_B_E_2, LD_B_IXH, LD_B_IXL, LD_B_IX, LD_B_A_2,
         LD_C_B_2, LD_C_C_2, LD_C_D_2, LD_C_E_2, LD_C_IXH, LD_C_IXL, LD_C_IX, LD_C_A_2,
         LD_D_B_2, LD_D_C_2, LD_D_D_2, LD_D_E_2, LD_D_IXH, LD_D_IXL, LD_D_IX, LD_D_A_2,
         LD_E_B_2, LD_E_C_2, LD_E_D_2, LD_E_E_2, LD_E_IXH, LD_E_IXL, LD_E_IX, LD_E_A_2,
         LD_IXH_B, LD_IXH_C, LD_IXH_D, LD_IXH_E, LD_IXH_IXH_, LD_IXH_IXL_, LD_H_IX, LD_IXH_A,
         LD_IXL_B, LD_IXL_C, LD_IXL_D, LD_IXL_E, LD_IXL_IXH_, LD_IXL_IXL_, LD_L_IX, LD_IXL_A,
-        LD_IX_B, LD_IX_C, LD_IX_D, LD_IX_E, LD_IX_H, LD_IX_L, NULL, LD_IX_A,
+        LD_IX_B, LD_IX_C, LD_IX_D, LD_IX_E, LD_IX_H, LD_IX_L, nullptr, LD_IX_A,
         LD_A_B_2, LD_A_C_2, LD_A_D_2, LD_A_E_2, LD_A_IXH, LD_A_IXL, LD_A_IX, LD_A_A_2,
         ADD_B_2, ADD_C_2, ADD_D_2, ADD_E_2, ADD_IXH_, ADD_IXL_, ADD_IX_, ADD_A_2,
         ADC_B_2, ADC_C_2, ADC_D_2, ADC_E_2, ADC_IXH_, ADC_IXL_, ADC_IX_, ADC_A_2,
@@ -5576,30 +5740,30 @@ class Z80
         XOR_B_2, XOR_C_2, XOR_D_2, XOR_E_2, XOR_IXH_, XOR_IXL_, XOR_IX_, XOR_A_2,
         OR_B_2, OR_C_2, OR_D_2, OR_E_2, OR_IXH_, OR_IXL_, OR_IX_, OR_A_2,
         CP_B_2, CP_C_2, CP_D_2, CP_E_2, CP_IXH_, CP_IXL_, CP_IX_, CP_A_2,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, OP_IX4, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, POP_IX_, NULL, EX_SP_IX_, NULL, PUSH_IX_, NULL, NULL,
-        NULL, JP_IX_, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, LD_SP_IX_, NULL, NULL, NULL, NULL, NULL, NULL};
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, OP_IX4, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, POP_IX_, nullptr, EX_SP_IX_, nullptr, PUSH_IX_, nullptr, nullptr,
+        nullptr, JP_IX_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, LD_SP_IX_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     int (*opSetIY[256])(Z80* ctx) = {
-        NULL, NULL, NULL, NULL, INC_B_2, DEC_B_2, LD_B_N_3, NULL,
-        NULL, ADD_IY_BC, NULL, NULL, INC_C_2, DEC_C_2, LD_C_N_3, NULL,
-        NULL, NULL, NULL, NULL, INC_D_2, DEC_D_2, LD_D_N_3, NULL,
-        NULL, ADD_IY_DE, NULL, NULL, INC_E_2, DEC_E_2, LD_E_N_3, NULL,
-        NULL, LD_IY_NN_, LD_ADDR_IY_, INC_IY_reg_, INC_IYH_, DEC_IYH_, LD_IYH_N_, NULL,
-        NULL, ADD_IY_IY, LD_IY_ADDR_, DEC_IY_reg_, INC_IYL_, DEC_IYL_, LD_IYL_N_, NULL,
-        NULL, NULL, NULL, NULL, INC_IY_, DEC_IY_, LD_IY_N_, NULL,
-        NULL, ADD_IY_SP, NULL, NULL, INC_A_2, DEC_A_2, LD_A_N_3, NULL,
+        nullptr, nullptr, nullptr, nullptr, INC_B_2, DEC_B_2, LD_B_N_3, nullptr,
+        nullptr, ADD_IY_BC, nullptr, nullptr, INC_C_2, DEC_C_2, LD_C_N_3, nullptr,
+        nullptr, nullptr, nullptr, nullptr, INC_D_2, DEC_D_2, LD_D_N_3, nullptr,
+        nullptr, ADD_IY_DE, nullptr, nullptr, INC_E_2, DEC_E_2, LD_E_N_3, nullptr,
+        nullptr, LD_IY_NN_, LD_ADDR_IY_, INC_IY_reg_, INC_IYH_, DEC_IYH_, LD_IYH_N_, nullptr,
+        nullptr, ADD_IY_IY, LD_IY_ADDR_, DEC_IY_reg_, INC_IYL_, DEC_IYL_, LD_IYL_N_, nullptr,
+        nullptr, nullptr, nullptr, nullptr, INC_IY_, DEC_IY_, LD_IY_N_, nullptr,
+        nullptr, ADD_IY_SP, nullptr, nullptr, INC_A_2, DEC_A_2, LD_A_N_3, nullptr,
         LD_B_B_2, LD_B_C_2, LD_B_D_2, LD_B_E_2, LD_B_IYH, LD_B_IYL, LD_B_IY, LD_B_A_2,
         LD_C_B_2, LD_C_C_2, LD_C_D_2, LD_C_E_2, LD_C_IYH, LD_C_IYL, LD_C_IY, LD_C_A_2,
         LD_D_B_2, LD_D_C_2, LD_D_D_2, LD_D_E_2, LD_D_IYH, LD_D_IYL, LD_D_IY, LD_D_A_2,
         LD_E_B_2, LD_E_C_2, LD_E_D_2, LD_E_E_2, LD_E_IYH, LD_E_IYL, LD_E_IY, LD_E_A_2,
         LD_IYH_B, LD_IYH_C, LD_IYH_D, LD_IYH_E, LD_IYH_IYH_, LD_IYH_IYL_, LD_H_IY, LD_IYH_A,
         LD_IYL_B, LD_IYL_C, LD_IYL_D, LD_IYL_E, LD_IYL_IYH_, LD_IYL_IYL_, LD_L_IY, LD_IYL_A,
-        LD_IY_B, LD_IY_C, LD_IY_D, LD_IY_E, LD_IY_H, LD_IY_L, NULL, LD_IY_A,
+        LD_IY_B, LD_IY_C, LD_IY_D, LD_IY_E, LD_IY_H, LD_IY_L, nullptr, LD_IY_A,
         LD_A_B_2, LD_A_C_2, LD_A_D_2, LD_A_E_2, LD_A_IYH, LD_A_IYL, LD_A_IY, LD_A_A_2,
         ADD_B_2, ADD_C_2, ADD_D_2, ADD_E_2, ADD_IYH_, ADD_IYL_, ADD_IY_, ADD_A_2,
         ADC_B_2, ADC_C_2, ADC_D_2, ADC_E_2, ADC_IYH_, ADC_IYL_, ADC_IY_, ADC_A_2,
@@ -5609,14 +5773,14 @@ class Z80
         XOR_B_2, XOR_C_2, XOR_D_2, XOR_E_2, XOR_IYH_, XOR_IYL_, XOR_IY_, XOR_A_2,
         OR_B_2, OR_C_2, OR_D_2, OR_E_2, OR_IYH_, OR_IYL_, OR_IY_, OR_A_2,
         CP_B_2, CP_C_2, CP_D_2, CP_E_2, CP_IYH_, CP_IYL_, CP_IY_, CP_A_2,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, OP_IY4, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, POP_IY_, NULL, EX_SP_IY_, NULL, PUSH_IY_, NULL, NULL,
-        NULL, JP_IY_, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, LD_SP_IY_, NULL, NULL, NULL, NULL, NULL, NULL};
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, OP_IY4, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, POP_IY_, nullptr, EX_SP_IY_, nullptr, PUSH_IY_, nullptr, nullptr,
+        nullptr, JP_IY_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, LD_SP_IY_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     int (*opSetIX4[256])(Z80* ctx, signed char d) = {
         RLC_IX_with_LD_B, RLC_IX_with_LD_C, RLC_IX_with_LD_D, RLC_IX_with_LD_E, RLC_IX_with_LD_H, RLC_IX_with_LD_L, RLC_IX_, RLC_IX_with_LD_A,
         RRC_IX_with_LD_B, RRC_IX_with_LD_C, RRC_IX_with_LD_D, RRC_IX_with_LD_E, RRC_IX_with_LD_H, RRC_IX_with_LD_L, RRC_IX_, RRC_IX_with_LD_A,
@@ -5761,18 +5925,19 @@ class Z80
     }
 
   public: // API functions
-    Z80(unsigned char (*read)(void* arg, unsigned short addr),
-        void (*write)(void* arg, unsigned short addr, unsigned char value),
-        unsigned char (*in)(void* arg, unsigned char port),
-        void (*out)(void* arg, unsigned char port, unsigned char value),
+    Z80(std::function<unsigned char(void*, unsigned short)> read,
+        std::function<void(void*, unsigned short, unsigned char)> write,
+        std::function<unsigned char(void*, unsigned char)> in,
+        std::function<void(void*, unsigned char, unsigned char)> out,
         void* arg)
     {
-        ::memset(&CB, 0, sizeof(CB));
-        this->CB.read = read;
-        this->CB.write = write;
-        this->CB.in = in;
-        this->CB.out = out;
+        this->CB.read = std::bind(read, std::placeholders::_1, std::placeholders::_2);
+        this->CB.write = std::bind(write, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        this->CB.in = std::bind(in, std::placeholders::_1, std::placeholders::_2);
+        this->CB.out = std::bind(out, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         this->CB.arg = arg;
+        resetConsumeClockCallback();
+        resetDebugMessage();
         ::memset(&reg, 0, sizeof(reg));
         reg.pair.A = 0xff;
         reg.pair.F = 0xff;
@@ -5788,32 +5953,43 @@ class Z80
         removeAllReturnHandlers();
     }
 
-    void setDebugMessage(void (*debugMessage)(void*, const char*) = NULL)
+    void setDebugMessage(const std::function<void(void*, const char*)>& debugMessage)
     {
-        CB.debugMessage = debugMessage;
+        CB.debugMessageEnabled = true;
+        CB.debugMessage = std::bind(debugMessage, std::placeholders::_1, std::placeholders::_2);
+    }
+
+    void resetDebugMessage()
+    {
+        CB.debugMessageEnabled = false;
     }
 
     inline bool isDebug()
     {
-        return CB.debugMessage != NULL;
+        return CB.debugMessageEnabled;
     }
 
-    void addBreakPoint(unsigned short addr, void (*callback)(void*) = NULL)
+    void addBreakPoint(unsigned short addr, const std::function<void(void*)>& callback)
     {
         CB.breakPoints.push_back(new BreakPoint(addr, callback));
     }
 
-    void removeBreakPoint(void (*callback)(void*))
+    void removeBreakPoint(unsigned short addr)
     {
         int index = 0;
-        for (auto bp : CB.breakPoints) {
-            if (bp->callback == callback) {
-                CB.breakPoints.erase(CB.breakPoints.begin() + index);
-                delete bp;
-                return;
+        bool deleted = false;
+        do {
+            deleted = false;
+            for (auto bp : CB.breakPoints) {
+                if (bp->addr == addr) {
+                    CB.breakPoints.erase(CB.breakPoints.begin() + index);
+                    delete bp;
+                    deleted = true;
+                    break;
+                }
+                index++;
             }
-            index++;
-        }
+        } while (deleted);
     }
 
     void removeAllBreakPoints()
@@ -5822,21 +5998,90 @@ class Z80
         CB.breakPoints.clear();
     }
 
-    void addBreakOperand(unsigned char operandNumber, void (*callback)(void*) = NULL)
+    void addBreakOperand(unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        CB.breakOperands.push_back(new BreakOperand(operandNumber, callback));
+        CB.breakOperands.push_back(new BreakOperand(0, operandNumber, callback));
     }
 
-    void removeBreakOperand(void (*callback)(void*))
+    bool addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+    {
+        switch (prefixNumber) {
+            case 0xCB: CB.breakOperandsCB.push_back(new BreakOperand(0xCB, operandNumber, callback)); return true;
+            case 0xED: CB.breakOperandsED.push_back(new BreakOperand(0xED, operandNumber, callback)); return true;
+            case 0xDD:
+                if (!opLengthIXY[operandNumber]) return false;
+                CB.breakOperandsIX.push_back(new BreakOperand(0xDD, operandNumber, callback));
+                return true;
+            case 0xFD:
+                if (!opLengthIXY[operandNumber]) return false;
+                CB.breakOperandsIY.push_back(new BreakOperand(0xFD, operandNumber, callback));
+                return true;
+        }
+        return false;
+    }
+
+    bool addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+    {
+        if (prefixNumber2 == 0xCB) {
+            if (prefixNumber1 == 0xDD) {
+                CB.breakOperandsIX4.push_back(new BreakOperand(0xDDCB, operandNumber, callback));
+                return true;
+            } else if (prefixNumber2 == 0xFD) {
+                CB.breakOperandsIY4.push_back(new BreakOperand(0xFDCB, operandNumber, callback));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void removeBreakOperand(std::vector<BreakOperand*>* operands, unsigned char operandNumber)
     {
         int index = 0;
-        for (auto bo : CB.breakOperands) {
-            if (bo->callback == callback) {
-                CB.breakOperands.erase(CB.breakOperands.begin() + index);
-                delete bo;
-                return;
+        bool deleted = false;
+        do {
+            deleted = false;
+            for (auto bo : *operands) {
+                if (bo->operandNumber == operandNumber) {
+                    operands->erase(operands->begin() + index);
+                    delete bo;
+                    deleted = true;
+                    break;
+                }
+                index++;
             }
-            index++;
+        } while (deleted);
+    }
+
+    void removeBreakOperand(unsigned char operandNumber)
+    {
+        removeBreakOperand(&CB.breakOperands, operandNumber);
+    }
+
+    void removeBreakOperand(unsigned char prefixNumber, unsigned char operandNumber)
+    {
+        std::vector<BreakOperand*>* breakOperands = nullptr;
+        switch (prefixNumber) {
+            case 0xCB: breakOperands = &CB.breakOperandsCB; break;
+            case 0xED: breakOperands = &CB.breakOperandsED; break;
+            case 0xDD: breakOperands = &CB.breakOperandsIX; break;
+            case 0xFD: breakOperands = &CB.breakOperandsIY; break;
+            default: return;
+        }
+        removeBreakOperand(breakOperands, operandNumber);
+    }
+
+    void removeBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber)
+    {
+        std::vector<BreakOperand*>* breakOperands = nullptr;
+        if (prefixNumber2 == 0xCB) {
+            if (prefixNumber1 == 0xDD) {
+                breakOperands = &CB.breakOperandsIX4;
+            } else if (prefixNumber1 == 0xFD) {
+                breakOperands = &CB.breakOperandsIY4;
+            }
+        }
+        if (breakOperands) {
+            removeBreakOperand(breakOperands, operandNumber);
         }
     }
 
@@ -5846,22 +6091,9 @@ class Z80
         CB.breakOperands.clear();
     }
 
-    void addReturnHandler(void (*callback)(void*))
+    void addReturnHandler(const std::function<void(void*)>& callback)
     {
         CB.returnHandlers.push_back(new ReturnHandler(callback));
-    }
-
-    void removeReturnHandler(void (*callback)(void*))
-    {
-        int index = 0;
-        for (auto handler : CB.returnHandlers) {
-            if (handler->callback == callback) {
-                CB.returnHandlers.erase(CB.returnHandlers.begin() + index);
-                delete handler;
-                return;
-            }
-            index++;
-        }
     }
 
     void removeAllReturnHandlers()
@@ -5870,22 +6102,9 @@ class Z80
         CB.returnHandlers.clear();
     }
 
-    void addCallHandler(void (*callback)(void*))
+    void addCallHandler(const std::function<void(void*)>& callback)
     {
         CB.callHandlers.push_back(new CallHandler(callback));
-    }
-
-    void removeCallHandler(void (*callback)(void*))
-    {
-        int index = 0;
-        for (auto handler : CB.callHandlers) {
-            if (handler->callback == callback) {
-                CB.callHandlers.erase(CB.callHandlers.begin() + index);
-                delete handler;
-                return;
-            }
-            index++;
-        }
     }
 
     void removeAllCallHandlers()
@@ -5894,9 +6113,15 @@ class Z80
         CB.callHandlers.clear();
     }
 
-    void setConsumeClockCallback(void (*consumeClock)(void*, int) = NULL)
+    void setConsumeClockCallback(const std::function<void(void*, int)>& consumeClock)
     {
-        CB.consumeClock = consumeClock;
+        CB.consumeClockEnabled = true;
+        CB.consumeClock = std::bind(consumeClock, std::placeholders::_1, std::placeholders::_2);
+    }
+
+    void resetConsumeClockCallback()
+    {
+        CB.consumeClockEnabled = false;
     }
 
     void requestBreak()
@@ -5951,9 +6176,15 @@ class Z80
         return executed;
     }
 
-    int executeTick4MHz() { return execute(4194304 / 60); }
+    int executeTick4MHz()
+    {
+        return execute(4194304 / 60);
+    }
 
-    int executeTick8MHz() { return execute(8388608 / 60); }
+    int executeTick8MHz()
+    {
+        return execute(8388608 / 60);
+    }
 
     void registerDump()
     {

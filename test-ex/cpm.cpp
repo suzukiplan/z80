@@ -27,7 +27,7 @@ class CPM {
         }
         memset(memory, 0, sizeof(memory));
         fseek(fp, 0, SEEK_SET);
-        if (size != fread(memory + 0x100, 1, size, fp)) {
+        if (size != (long)fread(memory + 0x100, 1, (size_t)size, fp)) {
             printf("Cannot read file: %s\n", cimPath);
             fclose(fp);
             return false;
@@ -63,7 +63,7 @@ class CPM {
         if (0x00 == port) {
             putc(value, stdout);
             if (value != '\n') {
-                lineBuffer[linePointer++] = value;
+                lineBuffer[linePointer++] = (char)value;
             } else {
                 if (lineCallback) {
                     lineCallback(this, lineBuffer);
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     }
     cpm.checkError = checkError;
     z80.reg.PC = 0x0100;
-    z80.addBreakOperand(0x76, [](void* arg) {
+    z80.addBreakOperand(0x76, [](void* arg, unsigned char* opcode, int opcodeLength) {
         ((CPM*)arg)->halted = true;
     });
     z80.addBreakPoint(0xFF04, [](void* arg) {
@@ -136,17 +136,17 @@ int main(int argc, char* argv[])
             puts(msg);
         });
     }
-    cpm.lineCallback = [](CPM* cpm, char* line) {
-        if (cpm->checkError && strstr(line, "ERROR")) {
-            cpm->halted = true;
-            cpm->error = true;
+    cpm.lineCallback = [](CPM* cpmPtr, char* line) {
+        if (cpmPtr->checkError && strstr(line, "ERROR")) {
+            cpmPtr->halted = true;
+            cpmPtr->error = true;
         }
     };
     char animePattern[] = { '/', '-', '\\', '|' };
     int anime = 0;
     unsigned long totalClocks = 0;
     do {
-        totalClocks += z80.execute(35795450); // 10sec in Z80A
+        totalClocks += (unsigned long)z80.execute(35795450); // 10sec in Z80A
         if (cpm.error) {
             printf("\rCPM detected an error at $%04X\n", z80.reg.PC);
         } else if (cpm.halted) {
