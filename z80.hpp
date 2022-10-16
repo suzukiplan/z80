@@ -1421,7 +1421,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         if (isDebug()) log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC, reg.IX, d, registerDump(r));
         if (rp) writeByte(addr, *rp);
         reg.PC += 3;
@@ -1440,7 +1440,7 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         if (isDebug()) log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC, reg.IY, d, registerDump(r));
         if (rp) writeByte(addr, *rp);
         reg.PC += 3;
@@ -1453,7 +1453,7 @@ class Z80
     {
         signed char d = (signed char)readByte(reg.PC + 2);
         unsigned char n = readByte(reg.PC + 3);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         if (isDebug()) log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
         writeByte(addr, n, 3);
         reg.PC += 4;
@@ -1466,7 +1466,7 @@ class Z80
     {
         signed char d = (signed char)readByte(reg.PC + 2);
         unsigned char n = readByte(reg.PC + 3);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         if (isDebug()) log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
         writeByte(addr, n, 3);
         reg.PC += 4;
@@ -2252,7 +2252,7 @@ class Z80
     static inline int RLC_IX_(Z80* ctx, signed char d) { return ctx->RLC_IX(d); }
     inline int RLC_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RLC (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = RLC(n);
@@ -2306,7 +2306,7 @@ class Z80
     static inline int RRC_IX_(Z80* ctx, signed char d) { return ctx->RRC_IX(d); }
     inline int RRC_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RRC (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = RRC(n);
@@ -2360,7 +2360,7 @@ class Z80
     static inline int RL_IX_(Z80* ctx, signed char d) { return ctx->RL_IX(d); }
     inline int RL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RL (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RL(n);
@@ -2414,7 +2414,7 @@ class Z80
     static inline int RR_IX_(Z80* ctx, signed char d) { return ctx->RR_IX(d); }
     inline int RR_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RR (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RR(n);
@@ -2468,7 +2468,7 @@ class Z80
     static inline int SLA_IX_(Z80* ctx, signed char d) { return ctx->SLA_IX(d); }
     inline int SLA_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SLA (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLA(n);
@@ -2522,7 +2522,7 @@ class Z80
     static inline int SRA_IX_(Z80* ctx, signed char d) { return ctx->SRA_IX(d); }
     inline int SRA_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SRA (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRA(n);
@@ -2576,7 +2576,7 @@ class Z80
     static inline int SRL_IX_(Z80* ctx, signed char d) { return ctx->SRL_IX(d); }
     inline int SRL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SRL (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRL(n);
@@ -2631,7 +2631,7 @@ class Z80
     static inline int SLL_IX_(Z80* ctx, signed char d) { return ctx->SLL_IX(d); }
     inline int SLL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SLL (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLL(n);
@@ -2666,7 +2666,7 @@ class Z80
     static inline int SLL_IY_(Z80* ctx, signed char d) { return ctx->SLL_IY(d); }
     inline int SLL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SLL (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLL(n);
@@ -2700,7 +2700,7 @@ class Z80
     static inline int RLC_IY_(Z80* ctx, signed char d) { return ctx->RLC_IY(d); }
     inline int RLC_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RLC (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = RLC(n);
@@ -2714,7 +2714,7 @@ class Z80
     static inline int RRC_IY_(Z80* ctx, signed char d) { return ctx->RRC_IY(d); }
     inline int RRC_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RRC (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = RRC(n);
@@ -2728,7 +2728,7 @@ class Z80
     static inline int RL_IY_(Z80* ctx, signed char d) { return ctx->RL_IY(d); }
     inline int RL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RL(n);
@@ -2742,7 +2742,7 @@ class Z80
     static inline int SLA_IY_(Z80* ctx, signed char d) { return ctx->SLA_IY(d); }
     inline int SLA_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SLA (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLA(n);
@@ -2756,7 +2756,7 @@ class Z80
     static inline int RR_IY_(Z80* ctx, signed char d) { return ctx->RR_IY(d); }
     inline int RR_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RR (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RR(n);
@@ -2770,7 +2770,7 @@ class Z80
     static inline int SRA_IY_(Z80* ctx, signed char d) { return ctx->SRA_IY(d); }
     inline int SRA_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SRA (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRA(n);
@@ -2784,7 +2784,7 @@ class Z80
     static inline int SRL_IY_(Z80* ctx, signed char d) { return ctx->SRL_IY(d); }
     inline int SRL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SRL (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRL(n);
@@ -2926,7 +2926,7 @@ class Z80
     inline int ADD_IX()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] ADD %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         addition8(n, 0);
@@ -2939,7 +2939,7 @@ class Z80
     inline int ADD_IY()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] ADD %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         addition8(n, 0);
@@ -3042,7 +3042,7 @@ class Z80
     inline int ADC_IX()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
@@ -3056,7 +3056,7 @@ class Z80
     inline int ADC_IY()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] ADC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
@@ -3107,7 +3107,7 @@ class Z80
     inline int INC_IX()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByIncrement(n);
@@ -3145,7 +3145,7 @@ class Z80
     inline int INC_IY()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByIncrement(n);
@@ -3266,7 +3266,7 @@ class Z80
     inline int SUB_IX()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SUB %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         subtract8(n, 0);
@@ -3279,7 +3279,7 @@ class Z80
     inline int SUB_IY()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SUB %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         subtract8(n, 0);
@@ -3382,7 +3382,7 @@ class Z80
     inline int SBC_IX()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
@@ -3396,7 +3396,7 @@ class Z80
     inline int SBC_IY()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
         if (isDebug()) log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
@@ -3447,7 +3447,7 @@ class Z80
     inline int DEC_IX()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByDecrement(n);
@@ -3485,7 +3485,7 @@ class Z80
     inline int DEC_IY()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
         setFlagByDecrement(n);
@@ -3822,7 +3822,7 @@ class Z80
     inline int AND_IX()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         and8(n, 3);
@@ -3834,7 +3834,7 @@ class Z80
     inline int AND_IY()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
         and8(n, 3);
@@ -3922,7 +3922,7 @@ class Z80
     inline int OR_IX()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         or8(n, 3);
@@ -3934,7 +3934,7 @@ class Z80
     inline int OR_IY()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
         or8(n, 3);
@@ -4022,7 +4022,7 @@ class Z80
     inline int XOR_IX()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         xor8(n, 3);
@@ -4034,7 +4034,7 @@ class Z80
     inline int XOR_IY()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
         xor8(n, 3);
@@ -4216,7 +4216,7 @@ class Z80
     static inline int BIT_IX_7(Z80* ctx, signed char d) { return ctx->BIT_IX(d, 7); }
     inline int BIT_IX(signed char d, unsigned char bit)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] BIT (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
@@ -4250,7 +4250,7 @@ class Z80
     static inline int BIT_IY_7(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 7); }
     inline int BIT_IY(signed char d, unsigned char bit)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] BIT (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
         switch (bit) {
@@ -4388,7 +4388,7 @@ class Z80
     static inline int SET_IX_7(Z80* ctx, signed char d) { return ctx->SET_IX(d, 7); }
     inline int SET_IX(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
@@ -4487,7 +4487,7 @@ class Z80
     static inline int SET_IY_7(Z80* ctx, signed char d) { return ctx->SET_IY(d, 7); }
     inline int SET_IY(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
@@ -4690,7 +4690,7 @@ class Z80
     static inline int RES_IX_7(Z80* ctx, signed char d) { return ctx->RES_IX(d, 7); }
     inline int RES_IX(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RES (IX+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
@@ -4858,7 +4858,7 @@ class Z80
     static inline int RES_IY_7(Z80* ctx, signed char d) { return ctx->RES_IY(d, 7); }
     inline int RES_IY(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
     {
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] RES (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
@@ -5002,7 +5002,7 @@ class Z80
     inline int CP_IX()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IX + d;
+        unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] CP %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         subtract8(n, 0, true, false);
@@ -5015,7 +5015,7 @@ class Z80
     inline int CP_IY()
     {
         signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = reg.IY + d;
+        unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         if (isDebug()) log("[%04X] CP %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
         subtract8(n, 0, true, false);
