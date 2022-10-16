@@ -13,6 +13,7 @@
 - Change specification of removeBreakOperand:
   - before: specify function pointer for remove
   - after: specify operand number for remove
+- remove warning: `implicit conversion changes signedness: 'unsigned char' to 'signed char' [-Werror,-Wsign-conversion]`
 
 ## Version 1.5.0 (Spt 11, 2022 JST)
 

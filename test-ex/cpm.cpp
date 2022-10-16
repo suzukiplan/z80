@@ -27,7 +27,7 @@ class CPM {
         }
         memset(memory, 0, sizeof(memory));
         fseek(fp, 0, SEEK_SET);
-        if (size != fread(memory + 0x100, 1, size, fp)) {
+        if (size != fread(memory + 0x100, 1, (size_t)size, fp)) {
             printf("Cannot read file: %s\n", cimPath);
             fclose(fp);
             return false;
@@ -63,7 +63,7 @@ class CPM {
         if (0x00 == port) {
             putc(value, stdout);
             if (value != '\n') {
-                lineBuffer[linePointer++] = value;
+                lineBuffer[linePointer++] = (char)value;
             } else {
                 if (lineCallback) {
                     lineCallback(this, lineBuffer);
@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
     int anime = 0;
     unsigned long totalClocks = 0;
     do {
-        totalClocks += z80.execute(35795450); // 10sec in Z80A
+        totalClocks += (unsigned long)z80.execute(35795450); // 10sec in Z80A
         if (cpm.error) {
             printf("\rCPM detected an error at $%04X\n", z80.reg.PC);
         } else if (cpm.halted) {

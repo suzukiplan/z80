@@ -1,10 +1,22 @@
+CFLAGS=-I../ \
+	-Os \
+	-std=c++11 \
+	-Wall \
+	-Wfloat-equal \
+	-Wshadow \
+	-Wunused-variable \
+	-Wsign-conversion \
+	-Wclass-varargs \
+	-Wtype-limits \
+	-Werror
+
 all: cpm zexdoc zexall
 
 clean:
 	-rm cpm
 
 cpm: cpm.cpp ../z80.hpp
-	clang -Os -I../ -std=c++11 -Wall -Wfloat-equal -Wshadow -Werror cpm.cpp -lstdc++ -o cpm
+	clang $(CFLAGS) cpm.cpp -lstdc++ -o cpm
 
 zexdoc: cpm
 	./cpm -e zexdoc.cim
