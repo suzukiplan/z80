@@ -850,7 +850,7 @@ class Z80
             case 0b110: return &reg.pair.F;
         }
         if (isDebug()) log("detected an unknown register number: $%02X", r);
-        return NULL;
+        return nullptr;
     }
 
     inline char* registerDump(unsigned char r)
@@ -2250,7 +2250,7 @@ class Z80
 
     // Rotate memory (IX+d) Left Circular
     static inline int RLC_IX_(Z80* ctx, signed char d) { return ctx->RLC_IX(d); }
-    inline int RLC_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RLC_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
@@ -2304,7 +2304,7 @@ class Z80
 
     // Rotate memory (IX+d) Right Circular
     static inline int RRC_IX_(Z80* ctx, signed char d) { return ctx->RRC_IX(d); }
-    inline int RRC_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RRC_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
@@ -2358,7 +2358,7 @@ class Z80
 
     // Rotate Left memory
     static inline int RL_IX_(Z80* ctx, signed char d) { return ctx->RL_IX(d); }
-    inline int RL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RL_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
@@ -2412,7 +2412,7 @@ class Z80
 
     // Rotate Right memory
     static inline int RR_IX_(Z80* ctx, signed char d) { return ctx->RR_IX(d); }
-    inline int RR_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RR_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
@@ -2466,7 +2466,7 @@ class Z80
 
     // Shift operand location (IX+d) left Arithmetic
     static inline int SLA_IX_(Z80* ctx, signed char d) { return ctx->SLA_IX(d); }
-    inline int SLA_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SLA_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
@@ -2520,7 +2520,7 @@ class Z80
 
     // Shift operand location (IX+d) Right Arithmetic
     static inline int SRA_IX_(Z80* ctx, signed char d) { return ctx->SRA_IX(d); }
-    inline int SRA_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SRA_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
@@ -2574,7 +2574,7 @@ class Z80
 
     // Shift operand location (IX+d) Right Logical
     static inline int SRL_IX_(Z80* ctx, signed char d) { return ctx->SRL_IX(d); }
-    inline int SRL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SRL_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
@@ -2629,7 +2629,7 @@ class Z80
     // Shift operand location (IX+d) Left Logical
     // NOTE: this function is only for SLL_IX_with_LD
     static inline int SLL_IX_(Z80* ctx, signed char d) { return ctx->SLL_IX(d); }
-    inline int SLL_IX(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SLL_IX(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
@@ -2664,7 +2664,7 @@ class Z80
     // Shift operand location (IY+d) Left Logical
     // NOTE: this function is only for SLL_IY_with_LD
     static inline int SLL_IY_(Z80* ctx, signed char d) { return ctx->SLL_IY(d); }
-    inline int SLL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SLL_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
@@ -2698,7 +2698,7 @@ class Z80
 
     // Rotate memory (IY+d) Left Circular
     static inline int RLC_IY_(Z80* ctx, signed char d) { return ctx->RLC_IY(d); }
-    inline int RLC_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RLC_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
@@ -2712,7 +2712,7 @@ class Z80
 
     // Rotate memory (IY+d) Right Circular
     static inline int RRC_IY_(Z80* ctx, signed char d) { return ctx->RRC_IY(d); }
-    inline int RRC_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RRC_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
@@ -2726,7 +2726,7 @@ class Z80
 
     // Rotate Left memory
     static inline int RL_IY_(Z80* ctx, signed char d) { return ctx->RL_IY(d); }
-    inline int RL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RL_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
@@ -2740,7 +2740,7 @@ class Z80
 
     // Shift operand location (IY+d) left Arithmetic
     static inline int SLA_IY_(Z80* ctx, signed char d) { return ctx->SLA_IY(d); }
-    inline int SLA_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SLA_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
@@ -2754,7 +2754,7 @@ class Z80
 
     // Rotate Right memory
     static inline int RR_IY_(Z80* ctx, signed char d) { return ctx->RR_IY(d); }
-    inline int RR_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RR_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
@@ -2768,7 +2768,7 @@ class Z80
 
     // Shift operand location (IY+d) Right Arithmetic
     static inline int SRA_IY_(Z80* ctx, signed char d) { return ctx->SRA_IY(d); }
-    inline int SRA_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SRA_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
@@ -2782,7 +2782,7 @@ class Z80
 
     // Shift operand location (IY+d) Right Logical
     static inline int SRL_IY_(Z80* ctx, signed char d) { return ctx->SRL_IY(d); }
-    inline int SRL_IY(signed char d, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SRL_IY(signed char d, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
@@ -4386,7 +4386,7 @@ class Z80
     static inline int SET_IX_5(Z80* ctx, signed char d) { return ctx->SET_IX(d, 5); }
     static inline int SET_IX_6(Z80* ctx, signed char d) { return ctx->SET_IX(d, 6); }
     static inline int SET_IX_7(Z80* ctx, signed char d) { return ctx->SET_IX(d, 7); }
-    inline int SET_IX(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SET_IX(signed char d, unsigned char bit, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
@@ -4485,7 +4485,7 @@ class Z80
     static inline int SET_IY_5(Z80* ctx, signed char d) { return ctx->SET_IY(d, 5); }
     static inline int SET_IY_6(Z80* ctx, signed char d) { return ctx->SET_IY(d, 6); }
     static inline int SET_IY_7(Z80* ctx, signed char d) { return ctx->SET_IY(d, 7); }
-    inline int SET_IY(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int SET_IY(signed char d, unsigned char bit, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
@@ -4688,7 +4688,7 @@ class Z80
     static inline int RES_IX_5(Z80* ctx, signed char d) { return ctx->RES_IX(d, 5); }
     static inline int RES_IX_6(Z80* ctx, signed char d) { return ctx->RES_IX(d, 6); }
     static inline int RES_IX_7(Z80* ctx, signed char d) { return ctx->RES_IX(d, 7); }
-    inline int RES_IX(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RES_IX(signed char d, unsigned char bit, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
@@ -4856,7 +4856,7 @@ class Z80
     static inline int RES_IY_5(Z80* ctx, signed char d) { return ctx->RES_IY(d, 5); }
     static inline int RES_IY_6(Z80* ctx, signed char d) { return ctx->RES_IY(d, 6); }
     static inline int RES_IY_7(Z80* ctx, signed char d) { return ctx->RES_IY(d, 7); }
-    inline int RES_IY(signed char d, unsigned char bit, unsigned char* rp = NULL, const char* extraLog = NULL)
+    inline int RES_IY(signed char d, unsigned char bit, unsigned char* rp = nullptr, const char* extraLog = nullptr)
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
@@ -5378,7 +5378,7 @@ class Z80
     static inline int IN_A_C(Z80* ctx) { return ctx->IN_R_C(0b111); }
     inline int IN_R_C(unsigned char r, bool setRegister = true)
     {
-        unsigned char* rp = setRegister ? getRegisterPointer(r) : NULL;
+        unsigned char* rp = setRegister ? getRegisterPointer(r) : nullptr;
         unsigned char i = inPort(reg.pair.C);
         if (rp) {
             if (isDebug()) log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
@@ -5689,40 +5689,40 @@ class Z80
         SET_B_6, SET_C_6, SET_D_6, SET_E_6, SET_H_6, SET_L_6, SET_HL_6, SET_A_6,
         SET_B_7, SET_C_7, SET_D_7, SET_E_7, SET_H_7, SET_L_7, SET_HL_7, SET_A_7};
     int (*opSetED[256])(Z80* ctx) = {
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
         IN_B_C, OUT_C_B, SBC_HL_BC, LD_ADDR_RP_BC, NEG_, RETN_, IM0, LD_I_A_,
-        IN_C_C, OUT_C_C, ADC_HL_BC, LD_RP_ADDR_BC, NULL, RETI_, NULL, LD_R_A_,
-        IN_D_C, OUT_C_D, SBC_HL_DE, LD_ADDR_RP_DE, NULL, NULL, IM1, LD_A_I_,
-        IN_E_C, OUT_C_E, ADC_HL_DE, LD_RP_ADDR_DE, NULL, NULL, IM2, LD_A_R_,
-        IN_H_C, OUT_C_H, SBC_HL_HL, LD_ADDR_RP_HL, NULL, NULL, NULL, RRD_,
-        IN_L_C, OUT_C_L, ADC_HL_HL, LD_RP_ADDR_HL, NULL, NULL, NULL, RLD_,
-        IN_C, OUT_C_0, SBC_HL_SP, LD_ADDR_RP_SP, NULL, NULL, NULL, NULL,
-        IN_A_C, OUT_C_A, ADC_HL_SP, LD_RP_ADDR_SP, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        LDI, CPI, INI, OUTI, NULL, NULL, NULL, NULL,
-        LDD, CPD, IND, OUTD, NULL, NULL, NULL, NULL,
-        LDIR, CPIR, INIR, OUTIR, NULL, NULL, NULL, NULL,
-        LDDR, CPDR, INDR, OUTDR, NULL, NULL, NULL, NULL};
+        IN_C_C, OUT_C_C, ADC_HL_BC, LD_RP_ADDR_BC, nullptr, RETI_, nullptr, LD_R_A_,
+        IN_D_C, OUT_C_D, SBC_HL_DE, LD_ADDR_RP_DE, nullptr, nullptr, IM1, LD_A_I_,
+        IN_E_C, OUT_C_E, ADC_HL_DE, LD_RP_ADDR_DE, nullptr, nullptr, IM2, LD_A_R_,
+        IN_H_C, OUT_C_H, SBC_HL_HL, LD_ADDR_RP_HL, nullptr, nullptr, nullptr, RRD_,
+        IN_L_C, OUT_C_L, ADC_HL_HL, LD_RP_ADDR_HL, nullptr, nullptr, nullptr, RLD_,
+        IN_C, OUT_C_0, SBC_HL_SP, LD_ADDR_RP_SP, nullptr, nullptr, nullptr, nullptr,
+        IN_A_C, OUT_C_A, ADC_HL_SP, LD_RP_ADDR_SP, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        LDI, CPI, INI, OUTI, nullptr, nullptr, nullptr, nullptr,
+        LDD, CPD, IND, OUTD, nullptr, nullptr, nullptr, nullptr,
+        LDIR, CPIR, INIR, OUTIR, nullptr, nullptr, nullptr, nullptr,
+        LDDR, CPDR, INDR, OUTDR, nullptr, nullptr, nullptr, nullptr};
     int (*opSetIX[256])(Z80* ctx) = {
-        NULL, NULL, NULL, NULL, INC_B_2, DEC_B_2, LD_B_N_3, NULL,
-        NULL, ADD_IX_BC, NULL, NULL, INC_C_2, DEC_C_2, LD_C_N_3, NULL,
-        NULL, NULL, NULL, NULL, INC_D_2, DEC_D_2, LD_D_N_3, NULL,
-        NULL, ADD_IX_DE, NULL, NULL, INC_E_2, DEC_E_2, LD_E_N_3, NULL,
-        NULL, LD_IX_NN_, LD_ADDR_IX_, INC_IX_reg_, INC_IXH_, DEC_IXH_, LD_IXH_N_, NULL,
-        NULL, ADD_IX_IX, LD_IX_ADDR_, DEC_IX_reg_, INC_IXL_, DEC_IXL_, LD_IXL_N_, NULL,
-        NULL, NULL, NULL, NULL, INC_IX_, DEC_IX_, LD_IX_N_, NULL,
-        NULL, ADD_IX_SP, NULL, NULL, INC_A_2, DEC_A_2, LD_A_N_3, NULL,
+        nullptr, nullptr, nullptr, nullptr, INC_B_2, DEC_B_2, LD_B_N_3, nullptr,
+        nullptr, ADD_IX_BC, nullptr, nullptr, INC_C_2, DEC_C_2, LD_C_N_3, nullptr,
+        nullptr, nullptr, nullptr, nullptr, INC_D_2, DEC_D_2, LD_D_N_3, nullptr,
+        nullptr, ADD_IX_DE, nullptr, nullptr, INC_E_2, DEC_E_2, LD_E_N_3, nullptr,
+        nullptr, LD_IX_NN_, LD_ADDR_IX_, INC_IX_reg_, INC_IXH_, DEC_IXH_, LD_IXH_N_, nullptr,
+        nullptr, ADD_IX_IX, LD_IX_ADDR_, DEC_IX_reg_, INC_IXL_, DEC_IXL_, LD_IXL_N_, nullptr,
+        nullptr, nullptr, nullptr, nullptr, INC_IX_, DEC_IX_, LD_IX_N_, nullptr,
+        nullptr, ADD_IX_SP, nullptr, nullptr, INC_A_2, DEC_A_2, LD_A_N_3, nullptr,
         LD_B_B_2, LD_B_C_2, LD_B_D_2, LD_B_E_2, LD_B_IXH, LD_B_IXL, LD_B_IX, LD_B_A_2,
         LD_C_B_2, LD_C_C_2, LD_C_D_2, LD_C_E_2, LD_C_IXH, LD_C_IXL, LD_C_IX, LD_C_A_2,
         LD_D_B_2, LD_D_C_2, LD_D_D_2, LD_D_E_2, LD_D_IXH, LD_D_IXL, LD_D_IX, LD_D_A_2,
         LD_E_B_2, LD_E_C_2, LD_E_D_2, LD_E_E_2, LD_E_IXH, LD_E_IXL, LD_E_IX, LD_E_A_2,
         LD_IXH_B, LD_IXH_C, LD_IXH_D, LD_IXH_E, LD_IXH_IXH_, LD_IXH_IXL_, LD_H_IX, LD_IXH_A,
         LD_IXL_B, LD_IXL_C, LD_IXL_D, LD_IXL_E, LD_IXL_IXH_, LD_IXL_IXL_, LD_L_IX, LD_IXL_A,
-        LD_IX_B, LD_IX_C, LD_IX_D, LD_IX_E, LD_IX_H, LD_IX_L, NULL, LD_IX_A,
+        LD_IX_B, LD_IX_C, LD_IX_D, LD_IX_E, LD_IX_H, LD_IX_L, nullptr, LD_IX_A,
         LD_A_B_2, LD_A_C_2, LD_A_D_2, LD_A_E_2, LD_A_IXH, LD_A_IXL, LD_A_IX, LD_A_A_2,
         ADD_B_2, ADD_C_2, ADD_D_2, ADD_E_2, ADD_IXH_, ADD_IXL_, ADD_IX_, ADD_A_2,
         ADC_B_2, ADC_C_2, ADC_D_2, ADC_E_2, ADC_IXH_, ADC_IXL_, ADC_IX_, ADC_A_2,
@@ -5732,30 +5732,30 @@ class Z80
         XOR_B_2, XOR_C_2, XOR_D_2, XOR_E_2, XOR_IXH_, XOR_IXL_, XOR_IX_, XOR_A_2,
         OR_B_2, OR_C_2, OR_D_2, OR_E_2, OR_IXH_, OR_IXL_, OR_IX_, OR_A_2,
         CP_B_2, CP_C_2, CP_D_2, CP_E_2, CP_IXH_, CP_IXL_, CP_IX_, CP_A_2,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, OP_IX4, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, POP_IX_, NULL, EX_SP_IX_, NULL, PUSH_IX_, NULL, NULL,
-        NULL, JP_IX_, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, LD_SP_IX_, NULL, NULL, NULL, NULL, NULL, NULL};
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, OP_IX4, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, POP_IX_, nullptr, EX_SP_IX_, nullptr, PUSH_IX_, nullptr, nullptr,
+        nullptr, JP_IX_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, LD_SP_IX_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     int (*opSetIY[256])(Z80* ctx) = {
-        NULL, NULL, NULL, NULL, INC_B_2, DEC_B_2, LD_B_N_3, NULL,
-        NULL, ADD_IY_BC, NULL, NULL, INC_C_2, DEC_C_2, LD_C_N_3, NULL,
-        NULL, NULL, NULL, NULL, INC_D_2, DEC_D_2, LD_D_N_3, NULL,
-        NULL, ADD_IY_DE, NULL, NULL, INC_E_2, DEC_E_2, LD_E_N_3, NULL,
-        NULL, LD_IY_NN_, LD_ADDR_IY_, INC_IY_reg_, INC_IYH_, DEC_IYH_, LD_IYH_N_, NULL,
-        NULL, ADD_IY_IY, LD_IY_ADDR_, DEC_IY_reg_, INC_IYL_, DEC_IYL_, LD_IYL_N_, NULL,
-        NULL, NULL, NULL, NULL, INC_IY_, DEC_IY_, LD_IY_N_, NULL,
-        NULL, ADD_IY_SP, NULL, NULL, INC_A_2, DEC_A_2, LD_A_N_3, NULL,
+        nullptr, nullptr, nullptr, nullptr, INC_B_2, DEC_B_2, LD_B_N_3, nullptr,
+        nullptr, ADD_IY_BC, nullptr, nullptr, INC_C_2, DEC_C_2, LD_C_N_3, nullptr,
+        nullptr, nullptr, nullptr, nullptr, INC_D_2, DEC_D_2, LD_D_N_3, nullptr,
+        nullptr, ADD_IY_DE, nullptr, nullptr, INC_E_2, DEC_E_2, LD_E_N_3, nullptr,
+        nullptr, LD_IY_NN_, LD_ADDR_IY_, INC_IY_reg_, INC_IYH_, DEC_IYH_, LD_IYH_N_, nullptr,
+        nullptr, ADD_IY_IY, LD_IY_ADDR_, DEC_IY_reg_, INC_IYL_, DEC_IYL_, LD_IYL_N_, nullptr,
+        nullptr, nullptr, nullptr, nullptr, INC_IY_, DEC_IY_, LD_IY_N_, nullptr,
+        nullptr, ADD_IY_SP, nullptr, nullptr, INC_A_2, DEC_A_2, LD_A_N_3, nullptr,
         LD_B_B_2, LD_B_C_2, LD_B_D_2, LD_B_E_2, LD_B_IYH, LD_B_IYL, LD_B_IY, LD_B_A_2,
         LD_C_B_2, LD_C_C_2, LD_C_D_2, LD_C_E_2, LD_C_IYH, LD_C_IYL, LD_C_IY, LD_C_A_2,
         LD_D_B_2, LD_D_C_2, LD_D_D_2, LD_D_E_2, LD_D_IYH, LD_D_IYL, LD_D_IY, LD_D_A_2,
         LD_E_B_2, LD_E_C_2, LD_E_D_2, LD_E_E_2, LD_E_IYH, LD_E_IYL, LD_E_IY, LD_E_A_2,
         LD_IYH_B, LD_IYH_C, LD_IYH_D, LD_IYH_E, LD_IYH_IYH_, LD_IYH_IYL_, LD_H_IY, LD_IYH_A,
         LD_IYL_B, LD_IYL_C, LD_IYL_D, LD_IYL_E, LD_IYL_IYH_, LD_IYL_IYL_, LD_L_IY, LD_IYL_A,
-        LD_IY_B, LD_IY_C, LD_IY_D, LD_IY_E, LD_IY_H, LD_IY_L, NULL, LD_IY_A,
+        LD_IY_B, LD_IY_C, LD_IY_D, LD_IY_E, LD_IY_H, LD_IY_L, nullptr, LD_IY_A,
         LD_A_B_2, LD_A_C_2, LD_A_D_2, LD_A_E_2, LD_A_IYH, LD_A_IYL, LD_A_IY, LD_A_A_2,
         ADD_B_2, ADD_C_2, ADD_D_2, ADD_E_2, ADD_IYH_, ADD_IYL_, ADD_IY_, ADD_A_2,
         ADC_B_2, ADC_C_2, ADC_D_2, ADC_E_2, ADC_IYH_, ADC_IYL_, ADC_IY_, ADC_A_2,
@@ -5765,14 +5765,14 @@ class Z80
         XOR_B_2, XOR_C_2, XOR_D_2, XOR_E_2, XOR_IYH_, XOR_IYL_, XOR_IY_, XOR_A_2,
         OR_B_2, OR_C_2, OR_D_2, OR_E_2, OR_IYH_, OR_IYL_, OR_IY_, OR_A_2,
         CP_B_2, CP_C_2, CP_D_2, CP_E_2, CP_IYH_, CP_IYL_, CP_IY_, CP_A_2,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, OP_IY4, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, POP_IY_, NULL, EX_SP_IY_, NULL, PUSH_IY_, NULL, NULL,
-        NULL, JP_IY_, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, LD_SP_IY_, NULL, NULL, NULL, NULL, NULL, NULL};
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, OP_IY4, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, POP_IY_, nullptr, EX_SP_IY_, nullptr, PUSH_IY_, nullptr, nullptr,
+        nullptr, JP_IY_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, LD_SP_IY_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     int (*opSetIX4[256])(Z80* ctx, signed char d) = {
         RLC_IX_with_LD_B, RLC_IX_with_LD_C, RLC_IX_with_LD_D, RLC_IX_with_LD_E, RLC_IX_with_LD_H, RLC_IX_with_LD_L, RLC_IX_, RLC_IX_with_LD_A,
         RRC_IX_with_LD_B, RRC_IX_with_LD_C, RRC_IX_with_LD_D, RRC_IX_with_LD_E, RRC_IX_with_LD_H, RRC_IX_with_LD_L, RRC_IX_, RRC_IX_with_LD_A,
@@ -5944,14 +5944,14 @@ class Z80
         removeAllReturnHandlers();
     }
 
-    void setDebugMessage(void (*debugMessage)(void*, const char*) = NULL)
+    void setDebugMessage(void (*debugMessage)(void*, const char*) = nullptr)
     {
         CB.debugMessage = debugMessage;
     }
 
     inline bool isDebug()
     {
-        return CB.debugMessage != NULL;
+        return CB.debugMessage != nullptr;
     }
 
     void addBreakPoint(unsigned short addr, const std::function<void(void*)>& callback)
@@ -6041,7 +6041,7 @@ class Z80
 
     void removeBreakOperand(unsigned char prefixNumber, unsigned char operandNumber)
     {
-        std::vector<BreakOperand*>* breakOperands = NULL;
+        std::vector<BreakOperand*>* breakOperands = nullptr;
         switch (prefixNumber) {
             case 0xCB: breakOperands = &CB.breakOperandsCB; break;
             case 0xED: breakOperands = &CB.breakOperandsED; break;
@@ -6054,7 +6054,7 @@ class Z80
 
     void removeBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber)
     {
-        std::vector<BreakOperand*>* breakOperands = NULL;
+        std::vector<BreakOperand*>* breakOperands = nullptr;
         if (prefixNumber2 == 0xCB) {
             if (prefixNumber1 == 0xDD) {
                 breakOperands = &CB.breakOperandsIX4;
@@ -6121,7 +6121,7 @@ class Z80
         CB.callHandlers.clear();
     }
 
-    void setConsumeClockCallback(void (*consumeClock)(void*, int) = NULL)
+    void setConsumeClockCallback(void (*consumeClock)(void*, int) = nullptr)
     {
         CB.consumeClock = consumeClock;
     }
