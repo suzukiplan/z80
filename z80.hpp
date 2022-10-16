@@ -4896,7 +4896,7 @@ class Z80
         nn -= isFlagH() ? 1 : 0;
         setFlagY(nn & 0b00000010);
         setFlagX(nn & 0b00001000);
-        setHL(hl + (isIncHL ? 1 : -1));
+        setHL((unsigned short)(hl + (isIncHL ? 1 : -1)));
         bc--;
         setBC(bc);
         setFlagPV(0 != bc);
@@ -5412,7 +5412,7 @@ class Z80
     // Load location (HL) with input from port (C); or increment/decrement HL and decrement B
     inline int repeatIN(bool isIncHL, bool isRepeat)
     {
-        reg.WZ = getBC() + (isIncHL ? 1 : -1);
+        reg.WZ = (unsigned short)(getBC() + (isIncHL ? 1 : -1));
         unsigned char i = inPort(reg.pair.C);
         unsigned short hl = getHL();
         if (isDebug()) {
@@ -5490,7 +5490,7 @@ class Z80
         }
         outPort(reg.pair.C, o);
         decrementB_forRepeatIO();
-        reg.WZ = getBC() + (isIncHL ? 1 : -1);
+        reg.WZ = (unsigned short)(getBC() + (isIncHL ? 1 : -1));
         hl += isIncHL ? 1 : -1;
         setHL(hl);
         setFlagZ(reg.pair.B == 0);
