@@ -191,7 +191,8 @@ class Z80
         void (*out)(void* arg, unsigned char port, unsigned char value);
         std::function<void(void*, const char*)> debugMessage;
         bool debugMessageEnabled;
-        void (*consumeClock)(void* arg, int clock);
+        std::function<void(void*, int)> consumeClock;
+        bool consumeClockEnabled;
         std::vector<BreakPoint*> breakPoints;
         std::vector<BreakOperand*> breakOperands;
         std::vector<BreakOperand*> breakOperandsCB;
@@ -500,7 +501,7 @@ class Z80
     inline int consumeClock(int hz)
     {
         reg.consumeClockCounter += hz;
-        if (CB.consumeClock) CB.consumeClock(CB.arg, hz);
+        if (CB.consumeClockEnabled) CB.consumeClock(CB.arg, hz);
         return hz;
     }
 
@@ -5929,7 +5930,7 @@ class Z80
         this->CB.in = in;
         this->CB.out = out;
         this->CB.arg = arg;
-        setConsumeClockCallback(NULL);
+        resetConsumeClockCallback();
         resetDebugMessage();
         ::memset(&reg, 0, sizeof(reg));
         reg.pair.A = 0xff;
@@ -6132,9 +6133,15 @@ class Z80
         CB.callHandlers.clear();
     }
 
-    void setConsumeClockCallback(void (*consumeClock_)(void*, int) = nullptr)
+    void setConsumeClockCallback(const std::function<void(void*, int)>& consumeClock)
     {
-        CB.consumeClock = consumeClock_;
+        CB.consumeClockEnabled = true;
+        CB.consumeClock = std::bind(consumeClock, std::placeholders::_1, std::placeholders::_2);
+    }
+
+    void resetConsumeClockCallback()
+    {
+        CB.consumeClockEnabled = false;
     }
 
     void requestBreak()
