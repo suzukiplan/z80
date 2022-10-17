@@ -203,7 +203,7 @@ class Z80
         bool debugMessageEnabled;
         std::function<void(void*, int)> consumeClock;
         bool consumeClockEnabled;
-        std::vector<BreakPoint*> breakPoints;
+        std::map<int, std::vector<BreakPoint*>*> breakPoints;
         std::map<int, std::vector<BreakOperand*>*> breakOperands;
         std::vector<ReturnHandler*> returnHandlers;
         std::vector<CallHandler*> callHandlers;
@@ -214,12 +214,10 @@ class Z80
 
     inline void checkBreakPoint()
     {
-        if (!CB.breakPoints.empty()) {
-            for (auto bp : CB.breakPoints) {
-                if (bp->addr == reg.PC) {
-                    bp->callback(CB.arg);
-                }
-            }
+        auto it = CB.breakPoints.find(reg.PC);
+        if (it == CB.breakPoints.end()) return;
+        for (auto bp : *CB.breakPoints[reg.PC]) {
+            bp->callback(CB.arg);
         }
     }
 
@@ -282,6 +280,7 @@ class Z80
 
     inline void checkBreakOperand(int operandNumber)
     {
+        if (CB.breakOperands.empty()) return;
         auto it = CB.breakOperands.find(operandNumber);
         if (it == CB.breakOperands.end()) return;
         unsigned char opcode[16];
@@ -6009,31 +6008,31 @@ class Z80
 
     void addBreakPoint(unsigned short addr, const std::function<void(void*)>& callback)
     {
-        CB.breakPoints.push_back(new BreakPoint(addr, callback));
+        auto it = CB.breakPoints.find(addr);
+        if (it == CB.breakPoints.end()) {
+            CB.breakPoints[addr] = new std::vector<BreakPoint*>();
+        }
+        CB.breakPoints[addr]->push_back(new BreakPoint(addr, callback));
     }
 
     void removeBreakPoint(unsigned short addr)
     {
-        int index = 0;
-        bool deleted = false;
-        do {
-            deleted = false;
-            for (auto bp : CB.breakPoints) {
-                if (bp->addr == addr) {
-                    CB.breakPoints.erase(CB.breakPoints.begin() + index);
-                    delete bp;
-                    deleted = true;
-                    break;
-                }
-                index++;
-            }
-        } while (deleted);
+        auto it = CB.breakPoints.find(addr);
+        if (it == CB.breakPoints.end()) return;
+        for (auto bp : *CB.breakPoints[addr]) delete bp;
+        delete CB.breakPoints[addr];
+        CB.breakPoints.erase(it);
     }
 
     void removeAllBreakPoints()
     {
-        for (auto bp : CB.breakPoints) delete bp;
-        CB.breakPoints.clear();
+        std::vector<int> keys;
+        for (auto it = CB.breakPoints.begin(); it != CB.breakPoints.end(); it++) {
+            keys.push_back(it->first);
+        }
+        for (auto key : keys) {
+            removeBreakPoint(key);
+        }
     }
 
     void addBreakOperand_(int prefixNumber, int operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
@@ -6073,22 +6072,8 @@ class Z80
     {
         auto it = CB.breakOperands.find(operandNumber);
         if (it == CB.breakOperands.end()) return;
-        auto operands = CB.breakOperands[operandNumber];
-        int index = 0;
-        bool deleted = false;
-        do {
-            deleted = false;
-            for (auto bo : *operands) {
-                if (bo->operandNumber == operandNumber) {
-                    operands->erase(operands->begin() + index);
-                    delete bo;
-                    deleted = true;
-                    break;
-                }
-                index++;
-            }
-        } while (deleted);
-        delete operands;
+        for (auto bo : *CB.breakOperands[operandNumber]) delete bo;
+        delete CB.breakOperands[operandNumber];
         CB.breakOperands.erase(it);
     }
 
