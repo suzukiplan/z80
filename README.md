@@ -106,6 +106,19 @@ void outPort(void* arg, unsigned char port, unsigned char value)
     Z80 z80(readByte, writeByte, inPort, outPort, &mmu);
 ```
 
+Note that by default, only the lower 8 bits of the port number can be obtained in the callback argument, and the upper 8 bits must be referenced from register B.
+
+If you want to get it in 16 bits from the beginning, please initialize with `setPort16Callback` as follows:
+
+```c++
+    Z80 z80(readByte, writeByte, &mmu);
+    z80.setPort16Callback([](void* arg, unsigned short port) {
+        // port: the full (A0 through A15) of the address bus to select the I/O device at one of 65536 possible ports
+    }, [](void* arg, unsigned short port, unsigned char value) {
+        // port: the full (A0 through A15) of the address bus to select the I/O device at one of 65536 possible ports
+    });
+```
+
 ### 4. Execute
 
 ```c++
