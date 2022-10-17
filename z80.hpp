@@ -28,13 +28,13 @@
 #define INCLUDE_Z80_HPP
 #include <functional>
 #include <limits.h>
+#include <map>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <vector>
-#include <map>
 
 class Z80
 {
@@ -6107,7 +6107,7 @@ class Z80
         n |= prefixNumber2;
         n <<= 8;
         n |= operandNumber;
-        removeBreakOperand(n);        
+        removeBreakOperand(n);
     }
 
     void removeAllBreakOperands()
