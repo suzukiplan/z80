@@ -193,8 +193,11 @@ class Z80
     struct Callback {
         std::function<unsigned char(void*, unsigned short)> read;
         std::function<void(void*, unsigned short, unsigned char)> write;
-        std::function<unsigned char(void*, unsigned char)> in;
-        std::function<void(void*, unsigned char, unsigned char)> out;
+        bool port16;
+        std::function<unsigned char(void*, unsigned char)> in8;
+        std::function<void(void*, unsigned char, unsigned char)> out8;
+        std::function<unsigned char(void*, unsigned short)> in16;
+        std::function<void(void*, unsigned short, unsigned char)> out16;
         std::function<void(void*, const char*)> debugMessage;
         bool debugMessageEnabled;
         std::function<void(void*, int)> consumeClock;
@@ -511,16 +514,24 @@ class Z80
         return hz;
     }
 
+    inline unsigned short getPort16(unsigned char c)
+    {
+        unsigned short result = (unsigned short)reg.pair.B;
+        result <<= 8;
+        result |= c;
+        return result;
+    }
+
     inline unsigned char inPort(unsigned char port, int clock = 4)
     {
-        unsigned char byte = CB.in(CB.arg, port);
+        unsigned char byte = CB.port16 ? CB.in16(CB.arg, getPort16(port)) : CB.in8(CB.arg, port);
         consumeClock(clock);
         return byte;
     }
 
     inline void outPort(unsigned char port, unsigned char value, int clock = 4)
     {
-        CB.out(CB.arg, port, value);
+        CB.port16 ? CB.out16(CB.arg, getPort16(port), value) : CB.out8(CB.arg, port, value);
         consumeClock(clock);
     }
 
@@ -5927,15 +5938,46 @@ class Z80
   public: // API functions
     Z80(std::function<unsigned char(void*, unsigned short)> read,
         std::function<void(void*, unsigned short, unsigned char)> write,
-        std::function<unsigned char(void*, unsigned char)> in,
-        std::function<void(void*, unsigned char, unsigned char)> out,
+        std::function<unsigned char(void*, unsigned char)> in8,
+        std::function<void(void*, unsigned char, unsigned char)> out8,
         void* arg)
     {
         this->CB.read = std::bind(read, std::placeholders::_1, std::placeholders::_2);
         this->CB.write = std::bind(write, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-        this->CB.in = std::bind(in, std::placeholders::_1, std::placeholders::_2);
-        this->CB.out = std::bind(out, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        setPort8Callback(in8, out8);
         this->CB.arg = arg;
+        initialize();
+    }
+
+    // without set in/out callbacks
+    Z80(std::function<unsigned char(void*, unsigned short)> read,
+        std::function<void(void*, unsigned short, unsigned char)> write,
+        void* arg)
+    {
+        this->CB.read = std::bind(read, std::placeholders::_1, std::placeholders::_2);
+        this->CB.write = std::bind(write, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        this->CB.arg = arg;
+        initialize();
+    }
+
+    void setPort8Callback(std::function<unsigned char(void*, unsigned char)> in8,
+                          std::function<void(void*, unsigned char, unsigned char)> out8)
+    {
+        this->CB.port16 = false;
+        this->CB.in8 = std::bind(in8, std::placeholders::_1, std::placeholders::_2);
+        this->CB.out8 = std::bind(out8, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    }
+
+    void setPort16Callback(std::function<unsigned char(void*, unsigned short)> in16,
+                           std::function<void(void*, unsigned short, unsigned char)> out16)
+    {
+        this->CB.port16 = true;
+        this->CB.in16 = std::bind(in16, std::placeholders::_1, std::placeholders::_2);
+        this->CB.out16 = std::bind(out16, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    }
+
+    void initialize()
+    {
         resetConsumeClockCallback();
         resetDebugMessage();
         ::memset(&reg, 0, sizeof(reg));
