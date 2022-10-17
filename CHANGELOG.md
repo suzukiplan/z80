@@ -3,8 +3,8 @@
 ## Version 1.7.0 (Oct 17, 2022 JST)
 
 - Add new constructor without specify in/out callbacks.
-- Add an 8bit in/out port method: `setPort8Callback`
-- Add an 16bit in/out port method: `setPort16Callback`
+- Add the set 8bit in/out port callbacks method: `setPort8Callback`
+- Add the set 16bit in/out port callbacks method: `setPort16Callback`
 
 ## Version 1.6.0 (Oct 16, 2022 JST)
 
