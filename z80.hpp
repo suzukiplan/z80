@@ -34,6 +34,7 @@
 #include <string.h>
 #include <time.h>
 #include <vector>
+#include <map>
 
 class Z80
 {
@@ -203,13 +204,7 @@ class Z80
         std::function<void(void*, int)> consumeClock;
         bool consumeClockEnabled;
         std::vector<BreakPoint*> breakPoints;
-        std::vector<BreakOperand*> breakOperands;
-        std::vector<BreakOperand*> breakOperandsCB;
-        std::vector<BreakOperand*> breakOperandsED;
-        std::vector<BreakOperand*> breakOperandsIX;
-        std::vector<BreakOperand*> breakOperandsIX4;
-        std::vector<BreakOperand*> breakOperandsIY;
-        std::vector<BreakOperand*> breakOperandsIY4;
+        std::map<int, std::vector<BreakOperand*>*> breakOperands;
         std::vector<ReturnHandler*> returnHandlers;
         std::vector<CallHandler*> callHandlers;
         void* arg;
@@ -285,27 +280,28 @@ class Z80
         }
     }
 
-    inline void checkBreakOperand(std::vector<BreakOperand*>* operands, unsigned char operandNumber)
+    inline void checkBreakOperand(int operandNumber)
     {
+        auto it = CB.breakOperands.find(operandNumber);
+        if (it == CB.breakOperands.end()) return;
         unsigned char opcode[16];
         int opcodeLength = 16;
-        if (!operands->empty()) {
-            for (auto bo : *operands) {
-                if (bo->operandNumber == operandNumber) {
-                    readFullOpcode(bo, opcode, &opcodeLength);
-                    bo->callback(CB.arg, opcode, opcodeLength);
-                }
+        bool first = true;
+        for (auto bo : *CB.breakOperands[operandNumber]) {
+            if (first) {
+                readFullOpcode(bo, opcode, &opcodeLength);
+                first = false;
             }
+            bo->callback(CB.arg, opcode, opcodeLength);
         }
     }
 
-    inline void checkBreakOperand(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperands, operandNumber); }
-    inline void checkBreakOperandCB(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsCB, operandNumber); }
-    inline void checkBreakOperandED(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsED, operandNumber); }
-    inline void checkBreakOperandIX(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIX, operandNumber); }
-    inline void checkBreakOperandIY(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIY, operandNumber); }
-    inline void checkBreakOperandIX4(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIX4, operandNumber); }
-    inline void checkBreakOperandIY4(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIY4, operandNumber); }
+    inline void checkBreakOperandCB(unsigned char operandNumber) { checkBreakOperand(0xCB00 | operandNumber); }
+    inline void checkBreakOperandED(unsigned char operandNumber) { checkBreakOperand(0xED00 | operandNumber); }
+    inline void checkBreakOperandIX(unsigned char operandNumber) { checkBreakOperand(0xDD00 | operandNumber); }
+    inline void checkBreakOperandIY(unsigned char operandNumber) { checkBreakOperand(0xFD00 | operandNumber); }
+    inline void checkBreakOperandIX4(unsigned char operandNumber) { checkBreakOperand(0xDDCB00 | operandNumber); }
+    inline void checkBreakOperandIY4(unsigned char operandNumber) { checkBreakOperand(0xFDCB00 | operandNumber); }
 
     inline void log(const char* format, ...)
     {
@@ -6040,44 +6036,44 @@ class Z80
         CB.breakPoints.clear();
     }
 
+    void addBreakOperand_(int prefixNumber, int operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+    {
+        auto it = CB.breakOperands.find(operandNumber);
+        if (it == CB.breakOperands.end()) {
+            CB.breakOperands[operandNumber] = new std::vector<BreakOperand*>();
+        }
+        CB.breakOperands[operandNumber]->push_back(new BreakOperand(prefixNumber, operandNumber & 0xFF, callback));
+    }
+
     void addBreakOperand(unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        CB.breakOperands.push_back(new BreakOperand(0, operandNumber, callback));
+        addBreakOperand_(0, (int)operandNumber, callback);
     }
 
-    bool addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+    void addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        switch (prefixNumber) {
-            case 0xCB: CB.breakOperandsCB.push_back(new BreakOperand(0xCB, operandNumber, callback)); return true;
-            case 0xED: CB.breakOperandsED.push_back(new BreakOperand(0xED, operandNumber, callback)); return true;
-            case 0xDD:
-                if (!opLengthIXY[operandNumber]) return false;
-                CB.breakOperandsIX.push_back(new BreakOperand(0xDD, operandNumber, callback));
-                return true;
-            case 0xFD:
-                if (!opLengthIXY[operandNumber]) return false;
-                CB.breakOperandsIY.push_back(new BreakOperand(0xFD, operandNumber, callback));
-                return true;
-        }
-        return false;
+        int n = prefixNumber;
+        n <<= 8;
+        n |= operandNumber;
+        addBreakOperand_((int)prefixNumber, n, callback);
     }
 
-    bool addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+    void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        if (prefixNumber2 == 0xCB) {
-            if (prefixNumber1 == 0xDD) {
-                CB.breakOperandsIX4.push_back(new BreakOperand(0xDDCB, operandNumber, callback));
-                return true;
-            } else if (prefixNumber2 == 0xFD) {
-                CB.breakOperandsIY4.push_back(new BreakOperand(0xFDCB, operandNumber, callback));
-                return true;
-            }
-        }
-        return false;
+        int n = prefixNumber1;
+        n <<= 8;
+        n |= prefixNumber2;
+        int prefixNumber = n;
+        n <<= 8;
+        n |= operandNumber;
+        addBreakOperand_(prefixNumber, n, callback);
     }
 
-    void removeBreakOperand(std::vector<BreakOperand*>* operands, unsigned char operandNumber)
+    void removeBreakOperand(int operandNumber)
     {
+        auto it = CB.breakOperands.find(operandNumber);
+        if (it == CB.breakOperands.end()) return;
+        auto operands = CB.breakOperands[operandNumber];
         int index = 0;
         bool deleted = false;
         do {
@@ -6092,45 +6088,37 @@ class Z80
                 index++;
             }
         } while (deleted);
-    }
-
-    void removeBreakOperand(unsigned char operandNumber)
-    {
-        removeBreakOperand(&CB.breakOperands, operandNumber);
+        delete operands;
+        CB.breakOperands.erase(it);
     }
 
     void removeBreakOperand(unsigned char prefixNumber, unsigned char operandNumber)
     {
-        std::vector<BreakOperand*>* breakOperands = nullptr;
-        switch (prefixNumber) {
-            case 0xCB: breakOperands = &CB.breakOperandsCB; break;
-            case 0xED: breakOperands = &CB.breakOperandsED; break;
-            case 0xDD: breakOperands = &CB.breakOperandsIX; break;
-            case 0xFD: breakOperands = &CB.breakOperandsIY; break;
-            default: return;
-        }
-        removeBreakOperand(breakOperands, operandNumber);
+        int n = prefixNumber;
+        n <<= 8;
+        n |= operandNumber;
+        removeBreakOperand(n);
     }
 
     void removeBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber)
     {
-        std::vector<BreakOperand*>* breakOperands = nullptr;
-        if (prefixNumber2 == 0xCB) {
-            if (prefixNumber1 == 0xDD) {
-                breakOperands = &CB.breakOperandsIX4;
-            } else if (prefixNumber1 == 0xFD) {
-                breakOperands = &CB.breakOperandsIY4;
-            }
-        }
-        if (breakOperands) {
-            removeBreakOperand(breakOperands, operandNumber);
-        }
+        int n = prefixNumber1;
+        n <<= 8;
+        n |= prefixNumber2;
+        n <<= 8;
+        n |= operandNumber;
+        removeBreakOperand(n);        
     }
 
     void removeAllBreakOperands()
     {
-        for (auto bo : CB.breakOperands) delete bo;
-        CB.breakOperands.clear();
+        std::vector<int> keys;
+        for (auto it = CB.breakOperands.begin(); it != CB.breakOperands.end(); it++) {
+            keys.push_back(it->first);
+        }
+        for (auto key : keys) {
+            removeBreakOperand(key);
+        }
     }
 
     void addReturnHandler(const std::function<void(void*)>& callback)

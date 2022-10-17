@@ -5,6 +5,7 @@
 - Add new constructor without specify in/out callbacks.
 - Add the set 8bit in/out port callbacks method: `setPort8Callback`
 - Add the set 16bit in/out port callbacks method: `setPort16Callback`
+- Optimize performance: `BreakOperands`
 
 ## Version 1.6.0 (Oct 16, 2022 JST)
 
