@@ -80,13 +80,13 @@ void writeByte(void* arg, unsigned short addr, unsigned char value)
 }
 
 // IN operand request from CPU
-unsigned char inPort(void* arg, unsigned char port)
+unsigned char inPort(void* arg, unsigned short port)
 {
     return ((MMU*)arg)->IO[port];
 }
 
 // OUT operand request from CPU
-void outPort(void* arg, unsigned char port, unsigned char value)
+void outPort(void* arg, unsigned short port, unsigned char value)
 {
     ((MMU*)arg)->IO[port] = value;
 }
@@ -108,15 +108,10 @@ void outPort(void* arg, unsigned char port, unsigned char value)
 
 Note that by default, only the lower 8 bits of the port number can be obtained in the callback argument, and the upper 8 bits must be referenced from register B.
 
-If you want to get it in 16 bits from the beginning, please initialize with `setPort16Callback` as follows:
+If you want to get it in 16 bits from the beginning, please initialize with 6th argument to `true` as follows:
 
 ```c++
-    Z80 z80(&mmu);
-    z80.setupPort16Callback(readByte, writeByte, [](void* arg, unsigned short port) {
-        // port: the full (A0 through A15) of the address bus to select the I/O device at one of 65536 possible ports
-    }, [](void* arg, unsigned short port, unsigned char value) {
-        // port: the full (A0 through A15) of the address bus to select the I/O device at one of 65536 possible ports
-    });
+    Z80 z80(&mmu, readByte, writeByte, inPort, outPort, true);
 ```
 
 By default, all callbacks use function pointers rather than `std::function`.
@@ -130,9 +125,9 @@ SUZUKI PLAN - Z80 Emulator provides a means to register callback functions with 
         return 0x00; // read procedure
     }, [&hoge](void* arg, unsigned char addr, unsigned char value) {
         // write procedure
-    }, [&hoge](void* arg, unsigned char port) {
+    }, [&hoge](void* arg, unsigned short port) {
         return 0x00; // input port procedure
-    }, [](void* arg, unsigned char port, unsigned char value) {
+    }, [](void* arg, unsigned short port, unsigned char value) {
         // output port procedure
     });
 ```

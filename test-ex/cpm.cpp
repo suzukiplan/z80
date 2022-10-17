@@ -84,8 +84,8 @@ class CPM {
 // bridge static functions
 static inline unsigned char readMemory(void* arg, unsigned short addr) { return ((CPM*)arg)->readMemory(addr); }
 static inline void writeMemory(void* arg, unsigned short addr, unsigned char value) { ((CPM*)arg)->writeMemory(addr, value); }
-static inline unsigned char inPort(void* arg, unsigned char port) { return ((CPM*)arg)->inPort(port); }
-static inline void outPort(void* arg, unsigned char port, unsigned char value) { ((CPM*)arg)->outPort(port, value); }
+static inline unsigned char inPort(void* arg, unsigned short port) { return ((CPM*)arg)->inPort(port); }
+static inline void outPort(void* arg, unsigned short port, unsigned char value) { ((CPM*)arg)->outPort(port, value); }
 
 int main(int argc, char* argv[])
 {

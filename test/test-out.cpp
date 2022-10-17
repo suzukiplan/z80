@@ -17,19 +17,19 @@ int main()
             return rom[addr & 0xFF];
         }, [](void* arg, unsigned char addr, unsigned char value) {
             // nothing to do
-        }, [](void* arg, unsigned char port) {
+        }, [](void* arg, unsigned short port) {
             printf("IN port A <- $%02X%02X\n",
                 ((Z80*)arg)->reg.pair.B, // the top half (A8 through A15) of the address bus (reg.B)
                 port // the bottom half (A0 through A7) of the address bus to select the I/O device at one of 256 possible ports
             );
             return 0x00;
-        }, [](void* arg, unsigned char port, unsigned char value) {
+        }, [](void* arg, unsigned short port, unsigned char value) {
             printf("OUT port $%02X%02X <- $%02X\n",
                 ((Z80*)arg)->reg.pair.B, // the top half (A8 through A15) of the address bus (reg.B)
                 port, // the bottom half (A0 through A7) of the address bus to select the I/O device at one of 256 possible ports
                 value
             );
-        });
+        }, false);
         z80.setDebugMessage([](void* arg, const char* msg) { puts(msg); });
         z80.execute(50);
     }
@@ -38,7 +38,7 @@ int main()
         puts("=== 16bit port mode ===");
         Z80 z80(&z80);
         // Set 16bit in/out callback
-        z80.setupPort16CallbackFC([&rom](void* arg, unsigned short addr) {
+        z80.setupCallbackFC([&rom](void* arg, unsigned short addr) {
             return rom[addr & 0xFF];
         }, [](void* arg, unsigned char addr, unsigned char value) {
             // nothing to do
@@ -52,7 +52,7 @@ int main()
                 port, // the full (A0 through A15) of the address bus to select the I/O device at one of 65536 possible ports
                 value
             );
-        });
+        }, true);
         z80.setDebugMessage([](void* arg, const char* msg) { puts(msg); });
         z80.execute(50);
     }

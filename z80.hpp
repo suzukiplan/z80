@@ -191,7 +191,7 @@ class Z80
         }
     }
 
-    class Read16Callback
+    class ReadCallback
     {
       private:
         unsigned char (*fp)(void* arg, unsigned short addr);
@@ -213,29 +213,7 @@ class Z80
         }
     };
 
-    class Read8Callback
-    {
-      private:
-        unsigned char (*fp)(void* arg, unsigned char addr);
-        std::function<unsigned char(void*, unsigned char)> fc;
-
-      public:
-        void setupFP(unsigned char (*fp_)(void* arg, unsigned char addr))
-        {
-            fp = fp_;
-        }
-        void setupFC(const std::function<unsigned char(void*, unsigned char)>& fc_)
-        {
-            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
-            fp = nullptr;
-        }
-        unsigned char invoke(void* arg, unsigned char addr)
-        {
-            return fp ? fp(arg, addr) : fc(arg, addr);
-        }
-    };
-
-    class Write16Callback
+    class WriteCallback
     {
       private:
         void (*fp)(void* arg, unsigned short addr, unsigned char value);
@@ -252,28 +230,6 @@ class Z80
             fp = nullptr;
         }
         void invoke(void* arg, unsigned short addr, unsigned char value)
-        {
-            fp ? fp(arg, addr, value) : fc(arg, addr, value);
-        }
-    };
-
-    class Write8Callback
-    {
-      private:
-        void (*fp)(void* arg, unsigned char addr, unsigned char value);
-        std::function<void(void*, unsigned char, unsigned char value)> fc;
-
-      public:
-        void setupFP(void (*fp_)(void* arg, unsigned char addr, unsigned char value))
-        {
-            fp = fp_;
-        }
-        void setupFC(const std::function<void(void*, unsigned char, unsigned char)>& fc_)
-        {
-            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-            fp = nullptr;
-        }
-        void invoke(void* arg, unsigned char addr, unsigned char value)
         {
             fp ? fp(arg, addr, value) : fc(arg, addr, value);
         }
@@ -332,13 +288,11 @@ class Z80
     };
 
     struct Callback {
-        Read16Callback read;
-        Write16Callback write;
-        bool port16;
-        Read8Callback in8;
-        Write8Callback out8;
-        Read16Callback in16;
-        Write16Callback out16;
+        ReadCallback read;
+        WriteCallback write;
+        bool returnPortAs16Bits;
+        ReadCallback in;
+        WriteCallback out;
         DebugMessageCallback debugMessage;
         bool debugMessageEnabled;
         ConsumeClockCallback consumeClock;
@@ -659,14 +613,14 @@ class Z80
 
     inline unsigned char inPort(unsigned char port, int clock = 4)
     {
-        unsigned char byte = CB.port16 ? CB.in16.invoke(CB.arg, getPort16(port)) : CB.in8.invoke(CB.arg, port);
+        unsigned char byte = CB.in.invoke(CB.arg, CB.returnPortAs16Bits ? getPort16(port) : port);
         consumeClock(clock);
         return byte;
     }
 
     inline void outPort(unsigned char port, unsigned char value, int clock = 4)
     {
-        CB.port16 ? CB.out16.invoke(CB.arg, getPort16(port), value) : CB.out8.invoke(CB.arg, port, value);
+        CB.out.invoke(CB.arg, CB.returnPortAs16Bits ? getPort16(port) : port, value);
         consumeClock(clock);
     }
 
@@ -6073,11 +6027,13 @@ class Z80
   public: // API functions
     Z80(unsigned char (*read)(void* arg, unsigned short addr),
         void (*write)(void* arg, unsigned short addr, unsigned char value),
-        unsigned char (*in)(void* arg, unsigned char port),
-        void (*out)(void* arg, unsigned char port, unsigned char value),
-        void* arg)
+        unsigned char (*in)(void* arg, unsigned short port),
+        void (*out)(void* arg, unsigned short port, unsigned char value),
+        void* arg,
+        bool returnPortAs16Bits = false)
     {
         this->CB.arg = arg;
+        this->CB.returnPortAs16Bits = returnPortAs16Bits;
         setupCallback(read, write, in, out);
         initialize();
     }
@@ -6091,52 +6047,29 @@ class Z80
 
     void setupCallback(unsigned char (*read)(void* arg, unsigned short addr),
                        void (*write)(void* arg, unsigned short addr, unsigned char value),
-                       unsigned char (*in)(void* arg, unsigned char port),
-                       void (*out)(void* arg, unsigned char port, unsigned char value))
+                       unsigned char (*in)(void* arg, unsigned short port),
+                       void (*out)(void* arg, unsigned short port, unsigned char value),
+                       bool returnPortAs16Bits = false)
     {
         this->CB.read.setupFP(read);
         this->CB.write.setupFP(write);
-        this->CB.port16 = false;
-        this->CB.in8.setupFP(in);
-        this->CB.out8.setupFP(out);
-    }
-
-    void setupPort16Callback(unsigned char (*read)(void* arg, unsigned short addr),
-                             void (*write)(void* arg, unsigned short addr, unsigned char value),
-                             unsigned char (*in)(void* arg, unsigned short port),
-                             void (*out)(void* arg, unsigned short port, unsigned char value))
-    {
-        this->CB.read.setupFP(read);
-        this->CB.write.setupFP(write);
-        this->CB.port16 = true;
-        this->CB.in16.setupFP(in);
-        this->CB.out16.setupFP(out);
+        this->CB.in.setupFP(in);
+        this->CB.out.setupFP(out);
+        this->CB.returnPortAs16Bits = returnPortAs16Bits;
     }
 
     // NOTE: Performance issue is exist
     void setupCallbackFC(std::function<unsigned char(void*, unsigned short)> read,
                          std::function<void(void*, unsigned short, unsigned char)> write,
-                         std::function<unsigned char(void*, unsigned char)> in,
-                         std::function<void(void*, unsigned char, unsigned char)> out)
+                         std::function<unsigned char(void*, unsigned short)> in,
+                         std::function<void(void*, unsigned short, unsigned char)> out,
+                         bool returnPortAs16Bits = false)
     {
         this->CB.read.setupFC(read);
         this->CB.write.setupFC(write);
-        this->CB.port16 = false;
-        this->CB.in8.setupFC(in);
-        this->CB.out8.setupFC(out);
-    }
-
-    // NOTE: Performance issue is exist
-    void setupPort16CallbackFC(std::function<unsigned char(void*, unsigned short)> read,
-                               std::function<void(void*, unsigned short, unsigned char)> write,
-                               std::function<unsigned char(void*, unsigned short)> in,
-                               std::function<void(void*, unsigned short, unsigned char)> out)
-    {
-        this->CB.read.setupFC(read);
-        this->CB.write.setupFC(write);
-        this->CB.port16 = true;
-        this->CB.in16.setupFC(in);
-        this->CB.out16.setupFC(out);
+        this->CB.in.setupFC(in);
+        this->CB.out.setupFC(out);
+        this->CB.returnPortAs16Bits = returnPortAs16Bits;
     }
 
     void initialize()
