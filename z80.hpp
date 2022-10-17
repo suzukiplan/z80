@@ -28,12 +28,12 @@
 #define INCLUDE_Z80_HPP
 #include <functional>
 #include <limits.h>
+#include <map>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unordered_map>
 #include <vector>
 
 class Z80
@@ -203,8 +203,8 @@ class Z80
         bool debugMessageEnabled;
         std::function<void(void*, int)> consumeClock;
         bool consumeClockEnabled;
-        std::unordered_map<int, std::vector<BreakPoint*>*> breakPoints;
-        std::unordered_map<int, std::vector<BreakOperand*>*> breakOperands;
+        std::map<int, std::vector<BreakPoint*>*> breakPoints;
+        std::map<int, std::vector<BreakOperand*>*> breakOperands;
         std::vector<ReturnHandler*> returnHandlers;
         std::vector<CallHandler*> callHandlers;
         void* arg;
