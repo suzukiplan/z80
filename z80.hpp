@@ -6302,16 +6302,16 @@ class Z80
         CB.callHandlers.clear();
     }
 
-    void setConsumeClockCallback(void (*consumeClock)(void* arg, int clocks))
+    void setConsumeClockCallback(void (*consumeClock_)(void* arg, int clocks))
     {
         CB.consumeClockEnabled = true;
-        CB.consumeClock.setupFP(consumeClock);
+        CB.consumeClock.setupFP(consumeClock_);
     }
 
-    void setConsumeClockCallbackFC(const std::function<void(void*, int)>& consumeClock)
+    void setConsumeClockCallbackFC(const std::function<void(void*, int)>& consumeClock_)
     {
         CB.consumeClockEnabled = true;
-        CB.consumeClock.setupFC(consumeClock);
+        CB.consumeClock.setupFC(consumeClock_);
     }
 
     void resetConsumeClockCallback()
