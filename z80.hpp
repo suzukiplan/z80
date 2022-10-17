@@ -88,7 +88,7 @@ class Z80
     inline unsigned char readByte(unsigned short addr, int clock = 4)
     {
         if (clock && wtc.read) consumeClock(wtc.read);
-        unsigned char byte = CB.read(CB.arg, addr);
+        unsigned char byte = CB.read.invoke(CB.arg, addr);
         if (clock) consumeClock(clock);
         return byte;
     }
@@ -96,7 +96,7 @@ class Z80
     inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
     {
         if (wtc.write) consumeClock(wtc.write);
-        CB.write(CB.arg, addr, value);
+        CB.write.invoke(CB.arg, addr, value);
         consumeClock(clock);
     }
 
@@ -191,17 +191,157 @@ class Z80
         }
     }
 
+    class Read16Callback
+    {
+      private:
+        unsigned char (*fp)(void* arg, unsigned short addr);
+        std::function<unsigned char(void*, unsigned short)> fc;
+
+      public:
+        void setupFP(unsigned char (*fp_)(void* arg, unsigned short addr))
+        {
+            fp = fp_;
+        }
+        void setupFC(const std::function<unsigned char(void*, unsigned short)>& fc_)
+        {
+            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
+            fp = nullptr;
+        }
+        unsigned char invoke(void* arg, unsigned short addr)
+        {
+            return fp ? fp(arg, addr) : fc(arg, addr);
+        }
+    };
+
+    class Read8Callback
+    {
+      private:
+        unsigned char (*fp)(void* arg, unsigned char addr);
+        std::function<unsigned char(void*, unsigned char)> fc;
+
+      public:
+        void setupFP(unsigned char (*fp_)(void* arg, unsigned char addr))
+        {
+            fp = fp_;
+        }
+        void setupFC(const std::function<unsigned char(void*, unsigned char)>& fc_)
+        {
+            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
+            fp = nullptr;
+        }
+        unsigned char invoke(void* arg, unsigned char addr)
+        {
+            return fp ? fp(arg, addr) : fc(arg, addr);
+        }
+    };
+
+    class Write16Callback
+    {
+      private:
+        void (*fp)(void* arg, unsigned short addr, unsigned char value);
+        std::function<void(void*, unsigned short, unsigned char value)> fc;
+
+      public:
+        void setupFP(void (*fp_)(void* arg, unsigned short addr, unsigned char value))
+        {
+            fp = fp_;
+        }
+        void setupFC(const std::function<void(void*, unsigned short, unsigned char)>& fc_)
+        {
+            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+            fp = nullptr;
+        }
+        void invoke(void* arg, unsigned short addr, unsigned char value)
+        {
+            fp ? fp(arg, addr, value) : fc(arg, addr, value);
+        }
+    };
+
+    class Write8Callback
+    {
+      private:
+        void (*fp)(void* arg, unsigned char addr, unsigned char value);
+        std::function<void(void*, unsigned char, unsigned char value)> fc;
+
+      public:
+        void setupFP(void (*fp_)(void* arg, unsigned char addr, unsigned char value))
+        {
+            fp = fp_;
+        }
+        void setupFC(const std::function<void(void*, unsigned char, unsigned char)>& fc_)
+        {
+            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+            fp = nullptr;
+        }
+        void invoke(void* arg, unsigned char addr, unsigned char value)
+        {
+            fp ? fp(arg, addr, value) : fc(arg, addr, value);
+        }
+    };
+
+    class DebugMessageCallback
+    {
+      private:
+        void (*fp)(void* arg, const char* msg);
+        std::function<void(void*, const char*)> fc;
+
+      public:
+        DebugMessageCallback()
+        {
+            fp = NULL;
+        }
+        void setupFP(void (*fp_)(void* arg, const char* msg))
+        {
+            fp = fp_;
+        }
+        void setupFC(const std::function<void(void*, const char*)>& fc_)
+        {
+            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
+            fp = nullptr;
+        }
+        void invoke(void* arg, const char* msg)
+        {
+            fp ? fp(arg, msg) : fc(arg, msg);
+        }
+    };
+
+    class ConsumeClockCallback
+    {
+      private:
+        void (*fp)(void* arg, int clocks);
+        std::function<void(void*, int)> fc;
+
+      public:
+        ConsumeClockCallback()
+        {
+            fp = NULL;
+        }
+        void setupFP(void (*fp_)(void* arg, int clocks))
+        {
+            fp = fp_;
+        }
+        void setupFC(const std::function<void(void*, int)>& fc_)
+        {
+            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
+            fp = nullptr;
+        }
+        void invoke(void* arg, int clocks)
+        {
+            fp ? fp(arg, clocks) : fc(arg, clocks);
+        }
+    };
+
     struct Callback {
-        std::function<unsigned char(void*, unsigned short)> read;
-        std::function<void(void*, unsigned short, unsigned char)> write;
+        Read16Callback read;
+        Write16Callback write;
         bool port16;
-        std::function<unsigned char(void*, unsigned char)> in8;
-        std::function<void(void*, unsigned char, unsigned char)> out8;
-        std::function<unsigned char(void*, unsigned short)> in16;
-        std::function<void(void*, unsigned short, unsigned char)> out16;
-        std::function<void(void*, const char*)> debugMessage;
+        Read8Callback in8;
+        Write8Callback out8;
+        Read16Callback in16;
+        Write16Callback out16;
+        DebugMessageCallback debugMessage;
         bool debugMessageEnabled;
-        std::function<void(void*, int)> consumeClock;
+        ConsumeClockCallback consumeClock;
         bool consumeClockEnabled;
         std::map<int, std::vector<BreakPoint*>*> breakPoints;
         std::map<int, std::vector<BreakOperand*>*> breakOperands;
@@ -309,7 +449,7 @@ class Z80
         va_start(args, format);
         vsnprintf(buf, sizeof(buf), format, args);
         va_end(args);
-        CB.debugMessage(CB.arg, buf);
+        CB.debugMessage.invoke(CB.arg, buf);
     }
 
     inline unsigned short getAF()
@@ -505,7 +645,7 @@ class Z80
     inline int consumeClock(int hz)
     {
         reg.consumeClockCounter += hz;
-        if (CB.consumeClockEnabled) CB.consumeClock(CB.arg, hz);
+        if (CB.consumeClockEnabled && hz) CB.consumeClock.invoke(CB.arg, hz);
         return hz;
     }
 
@@ -519,14 +659,14 @@ class Z80
 
     inline unsigned char inPort(unsigned char port, int clock = 4)
     {
-        unsigned char byte = CB.port16 ? CB.in16(CB.arg, getPort16(port)) : CB.in8(CB.arg, port);
+        unsigned char byte = CB.port16 ? CB.in16.invoke(CB.arg, getPort16(port)) : CB.in8.invoke(CB.arg, port);
         consumeClock(clock);
         return byte;
     }
 
     inline void outPort(unsigned char port, unsigned char value, int clock = 4)
     {
-        CB.port16 ? CB.out16(CB.arg, getPort16(port), value) : CB.out8(CB.arg, port, value);
+        CB.port16 ? CB.out16.invoke(CB.arg, getPort16(port), value) : CB.out8.invoke(CB.arg, port, value);
         consumeClock(clock);
     }
 
@@ -5931,44 +6071,72 @@ class Z80
     }
 
   public: // API functions
-    Z80(std::function<unsigned char(void*, unsigned short)> read,
-        std::function<void(void*, unsigned short, unsigned char)> write,
-        std::function<unsigned char(void*, unsigned char)> in8,
-        std::function<void(void*, unsigned char, unsigned char)> out8,
+    Z80(unsigned char (*read)(void* arg, unsigned short addr),
+        void (*write)(void* arg, unsigned short addr, unsigned char value),
+        unsigned char (*in)(void* arg, unsigned char port),
+        void (*out)(void* arg, unsigned char port, unsigned char value),
         void* arg)
     {
-        this->CB.read = std::bind(read, std::placeholders::_1, std::placeholders::_2);
-        this->CB.write = std::bind(write, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-        setPort8Callback(in8, out8);
+        this->CB.arg = arg;
+        setupCallback(read, write, in, out);
+        initialize();
+    }
+
+    // without setup callbacks
+    Z80(void* arg)
+    {
         this->CB.arg = arg;
         initialize();
     }
 
-    // without set in/out callbacks
-    Z80(std::function<unsigned char(void*, unsigned short)> read,
-        std::function<void(void*, unsigned short, unsigned char)> write,
-        void* arg)
+    void setupCallback(unsigned char (*read)(void* arg, unsigned short addr),
+                       void (*write)(void* arg, unsigned short addr, unsigned char value),
+                       unsigned char (*in)(void* arg, unsigned char port),
+                       void (*out)(void* arg, unsigned char port, unsigned char value))
     {
-        this->CB.read = std::bind(read, std::placeholders::_1, std::placeholders::_2);
-        this->CB.write = std::bind(write, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-        this->CB.arg = arg;
-        initialize();
-    }
-
-    void setPort8Callback(std::function<unsigned char(void*, unsigned char)> in8,
-                          std::function<void(void*, unsigned char, unsigned char)> out8)
-    {
+        this->CB.read.setupFP(read);
+        this->CB.write.setupFP(write);
         this->CB.port16 = false;
-        this->CB.in8 = std::bind(in8, std::placeholders::_1, std::placeholders::_2);
-        this->CB.out8 = std::bind(out8, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        this->CB.in8.setupFP(in);
+        this->CB.out8.setupFP(out);
     }
 
-    void setPort16Callback(std::function<unsigned char(void*, unsigned short)> in16,
-                           std::function<void(void*, unsigned short, unsigned char)> out16)
+    void setupPort16Callback(unsigned char (*read)(void* arg, unsigned short addr),
+                             void (*write)(void* arg, unsigned short addr, unsigned char value),
+                             unsigned char (*in)(void* arg, unsigned short port),
+                             void (*out)(void* arg, unsigned short port, unsigned char value))
     {
+        this->CB.read.setupFP(read);
+        this->CB.write.setupFP(write);
         this->CB.port16 = true;
-        this->CB.in16 = std::bind(in16, std::placeholders::_1, std::placeholders::_2);
-        this->CB.out16 = std::bind(out16, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        this->CB.in16.setupFP(in);
+        this->CB.out16.setupFP(out);
+    }
+
+    // NOTE: Performance issue is exist
+    void setupCallbackFC(std::function<unsigned char(void*, unsigned short)> read,
+                         std::function<void(void*, unsigned short, unsigned char)> write,
+                         std::function<unsigned char(void*, unsigned char)> in,
+                         std::function<void(void*, unsigned char, unsigned char)> out)
+    {
+        this->CB.read.setupFC(read);
+        this->CB.write.setupFC(write);
+        this->CB.port16 = false;
+        this->CB.in8.setupFC(in);
+        this->CB.out8.setupFC(out);
+    }
+
+    // NOTE: Performance issue is exist
+    void setupPort16CallbackFC(std::function<unsigned char(void*, unsigned short)> read,
+                               std::function<void(void*, unsigned short, unsigned char)> write,
+                               std::function<unsigned char(void*, unsigned short)> in,
+                               std::function<void(void*, unsigned short, unsigned char)> out)
+    {
+        this->CB.read.setupFC(read);
+        this->CB.write.setupFC(write);
+        this->CB.port16 = true;
+        this->CB.in16.setupFC(in);
+        this->CB.out16.setupFC(out);
     }
 
     void initialize()
@@ -5990,10 +6158,16 @@ class Z80
         removeAllReturnHandlers();
     }
 
-    void setDebugMessage(const std::function<void(void*, const char*)>& debugMessage)
+    void setDebugMessageFC(const std::function<void(void*, const char*)>& debugMessage)
     {
         CB.debugMessageEnabled = true;
-        CB.debugMessage = std::bind(debugMessage, std::placeholders::_1, std::placeholders::_2);
+        CB.debugMessage.setupFC(debugMessage);
+    }
+
+    void setDebugMessage(void (*debugMessage)(void* arg, const char* msg))
+    {
+        CB.debugMessageEnabled = true;
+        CB.debugMessage.setupFP(debugMessage);
     }
 
     void resetDebugMessage()
@@ -6128,10 +6302,16 @@ class Z80
         CB.callHandlers.clear();
     }
 
-    void setConsumeClockCallback(const std::function<void(void*, int)>& consumeClock)
+    void setConsumeClockCallback(void (*consumeClock)(void* arg, int clocks))
     {
         CB.consumeClockEnabled = true;
-        CB.consumeClock = std::bind(consumeClock, std::placeholders::_1, std::placeholders::_2);
+        CB.consumeClock.setupFP(consumeClock);
+    }
+
+    void setConsumeClockCallbackFC(const std::function<void(void*, int)>& consumeClock)
+    {
+        CB.consumeClockEnabled = true;
+        CB.consumeClock.setupFC(consumeClock);
     }
 
     void resetConsumeClockCallback()

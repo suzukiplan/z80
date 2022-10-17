@@ -2,9 +2,15 @@
 
 ## Version 1.7.0 (Oct 17, 2022 JST)
 
+- **Destructive** change specification of callbacks
+  - before: use `std::function` all (version 1.6.0 or later)
+  - after:
+    - by default: use function pointer (same as version 1.5.0 or past)
+    - optional: use `std::function` if use `setCallbackFC`
+  - This is due to the very frequent callback invocations and the problem that `std::function` does not provide sufficient performance.
 - Add new constructor without specify in/out callbacks.
-- Add the set 8bit in/out port callbacks method: `setPort8Callback`
-- Add the set 16bit in/out port callbacks method: `setPort16Callback`
+- Add the set 8bit in/out port callbacks method: `setPort8Callback` and `setPort8CallbackFC`
+- Add the set 16bit in/out port callbacks method: `setPort16Callback` and `setPort16CallbackFC`
 - Optimize performance: `BreakOperands` and `BreakPoints`
 
 ## Version 1.6.0 (Oct 16, 2022 JST)
