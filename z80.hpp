@@ -307,7 +307,7 @@ class Z80
         char buf[1024];
         va_list args;
         va_start(args, format);
-        vsprintf(buf, format, args);
+        vsnprintf(buf, sizeof(buf), format, args);
         va_end(args);
         CB.debugMessage(CB.arg, buf);
     }
@@ -879,14 +879,14 @@ class Z80
         static char F[16];
         static char unknown[2];
         switch (r & 0b111) {
-            case 0b111: sprintf(A, "A<$%02X>", reg.pair.A); return A;
-            case 0b000: sprintf(B, "B<$%02X>", reg.pair.B); return B;
-            case 0b001: sprintf(C, "C<$%02X>", reg.pair.C); return C;
-            case 0b010: sprintf(D, "D<$%02X>", reg.pair.D); return D;
-            case 0b011: sprintf(E, "E<$%02X>", reg.pair.E); return E;
-            case 0b100: sprintf(H, "H<$%02X>", reg.pair.H); return H;
-            case 0b101: sprintf(L, "L<$%02X>", reg.pair.L); return L;
-            case 0b110: sprintf(F, "F<$%02X>", reg.pair.F); return F;
+            case 0b111: snprintf(A, sizeof(A), "A<$%02X>", reg.pair.A); return A;
+            case 0b000: snprintf(B, sizeof(B), "B<$%02X>", reg.pair.B); return B;
+            case 0b001: snprintf(C, sizeof(C), "C<$%02X>", reg.pair.C); return C;
+            case 0b010: snprintf(D, sizeof(D), "D<$%02X>", reg.pair.D); return D;
+            case 0b011: snprintf(E, sizeof(E), "E<$%02X>", reg.pair.E); return E;
+            case 0b100: snprintf(H, sizeof(H), "H<$%02X>", reg.pair.H); return H;
+            case 0b101: snprintf(L, sizeof(L), "L<$%02X>", reg.pair.L); return L;
+            case 0b110: snprintf(F, sizeof(F), "F<$%02X>", reg.pair.F); return F;
         }
         unknown[0] = '?';
         unknown[1] = '\0';
@@ -916,9 +916,9 @@ class Z80
         if (e < 0) {
             int ee = -e;
             ee -= 2;
-            sprintf(buf, "$%04X - %d = $%04X", reg.PC, ee, reg.PC + e + 2);
+            snprintf(buf, sizeof(buf), "$%04X - %d = $%04X", reg.PC, ee, reg.PC + e + 2);
         } else {
-            sprintf(buf, "$%04X + %d = $%04X", reg.PC, e + 2, reg.PC + e + 2);
+            snprintf(buf, sizeof(buf), "$%04X + %d = $%04X", reg.PC, e + 2, reg.PC + e + 2);
         }
         return buf;
     }
@@ -934,13 +934,13 @@ class Z80
         static char L[16];
         static char unknown[2] = "?";
         switch (r) {
-            case 0b111: sprintf(A, "A'<$%02X>", reg.back.A); return A;
-            case 0b000: sprintf(B, "B'<$%02X>", reg.back.B); return B;
-            case 0b001: sprintf(C, "C'<$%02X>", reg.back.C); return C;
-            case 0b010: sprintf(D, "D'<$%02X>", reg.back.D); return D;
-            case 0b011: sprintf(E, "E'<$%02X>", reg.back.E); return E;
-            case 0b100: sprintf(H, "H'<$%02X>", reg.back.H); return H;
-            case 0b101: sprintf(L, "L'<$%02X>", reg.back.L); return L;
+            case 0b111: snprintf(A, sizeof(A), "A'<$%02X>", reg.back.A); return A;
+            case 0b000: snprintf(B, sizeof(B), "B'<$%02X>", reg.back.B); return B;
+            case 0b001: snprintf(C, sizeof(C), "C'<$%02X>", reg.back.C); return C;
+            case 0b010: snprintf(D, sizeof(D), "D'<$%02X>", reg.back.D); return D;
+            case 0b011: snprintf(E, sizeof(E), "E'<$%02X>", reg.back.E); return E;
+            case 0b100: snprintf(H, sizeof(H), "H'<$%02X>", reg.back.H); return H;
+            case 0b101: snprintf(L, sizeof(L), "L'<$%02X>", reg.back.L); return L;
             default: return unknown;
         }
     }
@@ -953,10 +953,10 @@ class Z80
         static char SP[16];
         static char unknown[2] = "?";
         switch (ptn & 0b11) {
-            case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
-            case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
-            case 0b10: sprintf(HL, "HL<$%02X%02X>", reg.pair.H, reg.pair.L); return HL;
-            case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
+            case 0b00: snprintf(BC, sizeof(BC), "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
+            case 0b01: snprintf(DE, sizeof(DE), "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
+            case 0b10: snprintf(HL, sizeof(HL), "HL<$%02X%02X>", reg.pair.H, reg.pair.L); return HL;
+            case 0b11: snprintf(SP, sizeof(SP), "SP<$%04X>", reg.SP); return SP;
             default: return unknown;
         }
     }
@@ -969,10 +969,10 @@ class Z80
         static char SP[16];
         static char unknown[2] = "?";
         switch (ptn & 0b11) {
-            case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
-            case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
-            case 0b10: sprintf(IX, "IX<$%04X>", reg.IX); return IX;
-            case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
+            case 0b00: snprintf(BC, sizeof(BC), "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
+            case 0b01: snprintf(DE, sizeof(DE), "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
+            case 0b10: snprintf(IX, sizeof(IX), "IX<$%04X>", reg.IX); return IX;
+            case 0b11: snprintf(SP, sizeof(SP), "SP<$%04X>", reg.SP); return SP;
             default: return unknown;
         }
     }
@@ -985,10 +985,10 @@ class Z80
         static char SP[16];
         static char unknown[2] = "?";
         switch (ptn & 0b11) {
-            case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
-            case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
-            case 0b10: sprintf(IY, "IY<$%04X>", reg.IY); return IY;
-            case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
+            case 0b00: snprintf(BC, sizeof(BC), "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
+            case 0b01: snprintf(DE, sizeof(DE), "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
+            case 0b10: snprintf(IY, sizeof(IY), "IY<$%04X>", reg.IY); return IY;
+            case 0b11: snprintf(SP, sizeof(SP), "SP<$%04X>", reg.SP); return SP;
             default: return unknown;
         }
     }
@@ -2289,7 +2289,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2309,7 +2309,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2343,7 +2343,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2363,7 +2363,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2397,7 +2397,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2417,7 +2417,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2451,7 +2451,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2471,7 +2471,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2505,7 +2505,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2525,7 +2525,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2559,7 +2559,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2579,7 +2579,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2613,7 +2613,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2633,7 +2633,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2668,7 +2668,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2703,7 +2703,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -4483,7 +4483,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -4582,7 +4582,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -4785,7 +4785,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -4854,7 +4854,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
