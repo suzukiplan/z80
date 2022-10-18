@@ -231,6 +231,8 @@ break#7 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
 break#8 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
 break#9 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
 [0009] JP $0000
+executed: 51Hz
+total clocks = 102Hz
 
 ===== remove all break points =====
 
@@ -309,6 +311,8 @@ break#7 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
 break#8 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
 break#9 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
 [0009] JP $0000
+executed: 51Hz
+total clocks = 153Hz
 
 ===== remove break operand ED =====
 
@@ -367,6 +371,8 @@ break#7 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
 break#8 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
 break#9 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
 [0009] JP $0000
+executed: 51Hz
+total clocks = 204Hz
 
 ===== remove all break operands =====
 
@@ -375,3 +381,15 @@ break#9 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
 [0005] OUT (C<$34>), A<$01>
 [0007] IN A<$01>, (C<$34>) = $00
 [0009] JP $0000
+executed: 51Hz
+total clocks = 255Hz
+
+===== reset debug message =====
+
+executed: 51Hz
+total clocks = 306Hz
+
+===== reset consume clock callback =====
+
+executed: 51Hz
+total clocks = 306Hz
