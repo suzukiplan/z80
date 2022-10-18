@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.7.1 (Oct 18, 2022, JST)
+
+- A bug that prevented `addBreakOperand` from working as expected has been addressed.
+
 ## Version 1.7.0 (Oct 17, 2022 JST)
 
 - **Destructive** change specification of in/out callback:
