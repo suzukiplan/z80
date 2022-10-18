@@ -14,6 +14,7 @@ all:
 	make test-status
 	make test-im2
 	make test-branch
+	make test-out
 
 test-clock:
 	clang $(CFLAGS) test-clock.cpp -lstdc++
@@ -32,3 +33,8 @@ test-branch:
 	clang $(CFLAGS) test-branch.cpp -lstdc++
 	./a.out > test-branch.txt
 	cat test-branch.txt
+
+test-out:
+	clang $(CFLAGS) test-out.cpp -lstdc++
+	./a.out > test-out.txt
+	cat test-out.txt

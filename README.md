@@ -80,13 +80,13 @@ void writeByte(void* arg, unsigned short addr, unsigned char value)
 }
 
 // IN operand request from CPU
-unsigned char inPort(void* arg, unsigned char port)
+unsigned char inPort(void* arg, unsigned short port)
 {
     return ((MMU*)arg)->IO[port];
 }
 
 // OUT operand request from CPU
-void outPort(void* arg, unsigned char port, unsigned char value)
+void outPort(void* arg, unsigned short port, unsigned char value)
 {
     ((MMU*)arg)->IO[port] = value;
 }
@@ -105,6 +105,36 @@ void outPort(void* arg, unsigned char port, unsigned char value)
      */
     Z80 z80(readByte, writeByte, inPort, outPort, &mmu);
 ```
+
+Note that by default, only the lower 8 bits of the port number can be obtained in the callback argument, and the upper 8 bits must be referenced from register B.
+
+If you want to get it in 16 bits from the beginning, please initialize with 6th argument to `true` as follows:
+
+```c++
+    Z80 z80(&mmu, readByte, writeByte, inPort, outPort, true);
+```
+
+Normally, `std::function` is used for callbacks, but in more performance-sensitive cases, a function pointer can be used.
+
+```c++
+    Z80 z80(&mmu);
+    z80.setupCallbackFP([](void* arg, unsigned short addr) {
+        return 0x00; // read procedure
+    }, [](void* arg, unsigned char addr, unsigned char value) {
+        // write procedure
+    }, [](void* arg, unsigned short port) {
+        return 0x00; // input port procedure
+    }, [](void* arg, unsigned short port, unsigned char value) {
+        // output port procedure
+    });
+```
+
+However, using function pointers causes inconveniences such as the inability to specify a capture in a lambda expression.
+In most cases, optimization with the `-O2` option will not cause performance problems, but in case environments where more severe performance is required, `setupCallbackFP` is recommended.
+
+The following article (in Japanese) provides a performance comparison between function pointers and `std::function`:
+
+https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
 
 ### 4. Execute
 
@@ -145,6 +175,7 @@ Debug message contains dynamic disassembly results step by step.
 ```
 
 - call `resetDebugMessage` if you want to remove the detector.
+- call `setDebugMessageFP` if you want to use the function pointer.
 
 ### Use break point
 
@@ -203,6 +234,7 @@ If you want to implement stricter synchronization, you can capture the CPU clock
 ```
 
 - call `resetConsumeClockCallback` if you want to remove the detector.
+- call `setConsumeClockCallbackFP` if you want to use the function pointer.
 
 > With this callback, the CPU cycle (clock) can be synchronized in units of 3 to 4 Hz, and while the execution of a single Z80 instruction requires approximately 10 to 20 Hz of CPU cycle (time), the SUZUKI PLAN - Z80 Emulator can synchronize the CPU cycle (time) for fetch, execution, write back, etc. However, the SUZUKI PLAN - Z80 Emulator can synchronize fetches, executions, writes, backs, etc. in smaller units. This makes it easy to implement severe timing emulation.
 

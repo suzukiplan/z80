@@ -28,6 +28,7 @@
 #define INCLUDE_Z80_HPP
 #include <functional>
 #include <limits.h>
+#include <map>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -87,7 +88,7 @@ class Z80
     inline unsigned char readByte(unsigned short addr, int clock = 4)
     {
         if (clock && wtc.read) consumeClock(wtc.read);
-        unsigned char byte = CB.read(CB.arg, addr);
+        unsigned char byte = CB.read.invoke(CB.arg, addr);
         if (clock) consumeClock(clock);
         return byte;
     }
@@ -95,7 +96,7 @@ class Z80
     inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
     {
         if (wtc.write) consumeClock(wtc.write);
-        CB.write(CB.arg, addr, value);
+        CB.write.invoke(CB.arg, addr, value);
         consumeClock(clock);
     }
 
@@ -190,23 +191,114 @@ class Z80
         }
     }
 
+    class ReadCallback
+    {
+      private:
+        unsigned char (*fp)(void* arg, unsigned short addr);
+        std::function<unsigned char(void*, unsigned short)> fc;
+
+      public:
+        void setupFP(unsigned char (*fp_)(void* arg, unsigned short addr))
+        {
+            fp = fp_;
+        }
+        void setupFC(const std::function<unsigned char(void*, unsigned short)>& fc_)
+        {
+            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
+            fp = nullptr;
+        }
+        unsigned char invoke(void* arg, unsigned short addr)
+        {
+            return fp ? fp(arg, addr) : fc(arg, addr);
+        }
+    };
+
+    class WriteCallback
+    {
+      private:
+        void (*fp)(void* arg, unsigned short addr, unsigned char value);
+        std::function<void(void*, unsigned short, unsigned char value)> fc;
+
+      public:
+        void setupFP(void (*fp_)(void* arg, unsigned short addr, unsigned char value))
+        {
+            fp = fp_;
+        }
+        void setupFC(const std::function<void(void*, unsigned short, unsigned char)>& fc_)
+        {
+            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+            fp = nullptr;
+        }
+        void invoke(void* arg, unsigned short addr, unsigned char value)
+        {
+            fp ? fp(arg, addr, value) : fc(arg, addr, value);
+        }
+    };
+
+    class DebugMessageCallback
+    {
+      private:
+        void (*fp)(void* arg, const char* msg);
+        std::function<void(void*, const char*)> fc;
+
+      public:
+        DebugMessageCallback()
+        {
+            fp = NULL;
+        }
+        void setupFP(void (*fp_)(void* arg, const char* msg))
+        {
+            fp = fp_;
+        }
+        void setupFC(const std::function<void(void*, const char*)>& fc_)
+        {
+            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
+            fp = nullptr;
+        }
+        void invoke(void* arg, const char* msg)
+        {
+            fp ? fp(arg, msg) : fc(arg, msg);
+        }
+    };
+
+    class ConsumeClockCallback
+    {
+      private:
+        void (*fp)(void* arg, int clocks);
+        std::function<void(void*, int)> fc;
+
+      public:
+        ConsumeClockCallback()
+        {
+            fp = NULL;
+        }
+        void setupFP(void (*fp_)(void* arg, int clocks))
+        {
+            fp = fp_;
+        }
+        void setupFC(const std::function<void(void*, int)>& fc_)
+        {
+            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
+            fp = nullptr;
+        }
+        void invoke(void* arg, int clocks)
+        {
+            fp ? fp(arg, clocks) : fc(arg, clocks);
+        }
+    };
+
     struct Callback {
-        std::function<unsigned char(void*, unsigned short)> read;
-        std::function<void(void*, unsigned short, unsigned char)> write;
-        std::function<unsigned char(void*, unsigned char)> in;
-        std::function<void(void*, unsigned char, unsigned char)> out;
-        std::function<void(void*, const char*)> debugMessage;
+        ReadCallback read;
+        WriteCallback write;
+        bool returnPortAs16Bits;
+        ReadCallback in;
+        WriteCallback out;
+        DebugMessageCallback debugMessage;
         bool debugMessageEnabled;
-        std::function<void(void*, int)> consumeClock;
+        ConsumeClockCallback consumeClock;
         bool consumeClockEnabled;
-        std::vector<BreakPoint*> breakPoints;
-        std::vector<BreakOperand*> breakOperands;
-        std::vector<BreakOperand*> breakOperandsCB;
-        std::vector<BreakOperand*> breakOperandsED;
-        std::vector<BreakOperand*> breakOperandsIX;
-        std::vector<BreakOperand*> breakOperandsIX4;
-        std::vector<BreakOperand*> breakOperandsIY;
-        std::vector<BreakOperand*> breakOperandsIY4;
+        std::map<int, std::vector<BreakPoint*>*> breakPoints;
+        std::map<int, std::vector<BreakOperand*>*> breakOperands;
         std::vector<ReturnHandler*> returnHandlers;
         std::vector<CallHandler*> callHandlers;
         void* arg;
@@ -216,12 +308,10 @@ class Z80
 
     inline void checkBreakPoint()
     {
-        if (!CB.breakPoints.empty()) {
-            for (auto bp : CB.breakPoints) {
-                if (bp->addr == reg.PC) {
-                    bp->callback(CB.arg);
-                }
-            }
+        auto it = CB.breakPoints.find(reg.PC);
+        if (it == CB.breakPoints.end()) return;
+        for (auto bp : *CB.breakPoints[reg.PC]) {
+            bp->callback(CB.arg);
         }
     }
 
@@ -282,36 +372,38 @@ class Z80
         }
     }
 
-    inline void checkBreakOperand(std::vector<BreakOperand*>* operands, unsigned char operandNumber)
+    inline void checkBreakOperand(int operandNumber)
     {
+        if (CB.breakOperands.empty()) return;
+        auto it = CB.breakOperands.find(operandNumber);
+        if (it == CB.breakOperands.end()) return;
         unsigned char opcode[16];
         int opcodeLength = 16;
-        if (!operands->empty()) {
-            for (auto bo : *operands) {
-                if (bo->operandNumber == operandNumber) {
-                    readFullOpcode(bo, opcode, &opcodeLength);
-                    bo->callback(CB.arg, opcode, opcodeLength);
-                }
+        bool first = true;
+        for (auto bo : *CB.breakOperands[operandNumber]) {
+            if (first) {
+                readFullOpcode(bo, opcode, &opcodeLength);
+                first = false;
             }
+            bo->callback(CB.arg, opcode, opcodeLength);
         }
     }
 
-    inline void checkBreakOperand(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperands, operandNumber); }
-    inline void checkBreakOperandCB(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsCB, operandNumber); }
-    inline void checkBreakOperandED(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsED, operandNumber); }
-    inline void checkBreakOperandIX(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIX, operandNumber); }
-    inline void checkBreakOperandIY(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIY, operandNumber); }
-    inline void checkBreakOperandIX4(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIX4, operandNumber); }
-    inline void checkBreakOperandIY4(unsigned char operandNumber) { checkBreakOperand(&CB.breakOperandsIY4, operandNumber); }
+    inline void checkBreakOperandCB(unsigned char operandNumber) { checkBreakOperand(0xCB00 | operandNumber); }
+    inline void checkBreakOperandED(unsigned char operandNumber) { checkBreakOperand(0xED00 | operandNumber); }
+    inline void checkBreakOperandIX(unsigned char operandNumber) { checkBreakOperand(0xDD00 | operandNumber); }
+    inline void checkBreakOperandIY(unsigned char operandNumber) { checkBreakOperand(0xFD00 | operandNumber); }
+    inline void checkBreakOperandIX4(unsigned char operandNumber) { checkBreakOperand(0xDDCB00 | operandNumber); }
+    inline void checkBreakOperandIY4(unsigned char operandNumber) { checkBreakOperand(0xFDCB00 | operandNumber); }
 
     inline void log(const char* format, ...)
     {
         char buf[1024];
         va_list args;
         va_start(args, format);
-        vsprintf(buf, format, args);
+        vsnprintf(buf, sizeof(buf), format, args);
         va_end(args);
-        CB.debugMessage(CB.arg, buf);
+        CB.debugMessage.invoke(CB.arg, buf);
     }
 
     inline unsigned short getAF()
@@ -507,20 +599,28 @@ class Z80
     inline int consumeClock(int hz)
     {
         reg.consumeClockCounter += hz;
-        if (CB.consumeClockEnabled) CB.consumeClock(CB.arg, hz);
+        if (CB.consumeClockEnabled && hz) CB.consumeClock.invoke(CB.arg, hz);
         return hz;
+    }
+
+    inline unsigned short getPort16(unsigned char c)
+    {
+        unsigned short result = (unsigned short)reg.pair.B;
+        result <<= 8;
+        result |= c;
+        return result;
     }
 
     inline unsigned char inPort(unsigned char port, int clock = 4)
     {
-        unsigned char byte = CB.in(CB.arg, port);
+        unsigned char byte = CB.in.invoke(CB.arg, CB.returnPortAs16Bits ? getPort16(port) : port);
         consumeClock(clock);
         return byte;
     }
 
     inline void outPort(unsigned char port, unsigned char value, int clock = 4)
     {
-        CB.out(CB.arg, port, value);
+        CB.out.invoke(CB.arg, CB.returnPortAs16Bits ? getPort16(port) : port, value);
         consumeClock(clock);
     }
 
@@ -873,14 +973,14 @@ class Z80
         static char F[16];
         static char unknown[2];
         switch (r & 0b111) {
-            case 0b111: sprintf(A, "A<$%02X>", reg.pair.A); return A;
-            case 0b000: sprintf(B, "B<$%02X>", reg.pair.B); return B;
-            case 0b001: sprintf(C, "C<$%02X>", reg.pair.C); return C;
-            case 0b010: sprintf(D, "D<$%02X>", reg.pair.D); return D;
-            case 0b011: sprintf(E, "E<$%02X>", reg.pair.E); return E;
-            case 0b100: sprintf(H, "H<$%02X>", reg.pair.H); return H;
-            case 0b101: sprintf(L, "L<$%02X>", reg.pair.L); return L;
-            case 0b110: sprintf(F, "F<$%02X>", reg.pair.F); return F;
+            case 0b111: snprintf(A, sizeof(A), "A<$%02X>", reg.pair.A); return A;
+            case 0b000: snprintf(B, sizeof(B), "B<$%02X>", reg.pair.B); return B;
+            case 0b001: snprintf(C, sizeof(C), "C<$%02X>", reg.pair.C); return C;
+            case 0b010: snprintf(D, sizeof(D), "D<$%02X>", reg.pair.D); return D;
+            case 0b011: snprintf(E, sizeof(E), "E<$%02X>", reg.pair.E); return E;
+            case 0b100: snprintf(H, sizeof(H), "H<$%02X>", reg.pair.H); return H;
+            case 0b101: snprintf(L, sizeof(L), "L<$%02X>", reg.pair.L); return L;
+            case 0b110: snprintf(F, sizeof(F), "F<$%02X>", reg.pair.F); return F;
         }
         unknown[0] = '?';
         unknown[1] = '\0';
@@ -910,9 +1010,9 @@ class Z80
         if (e < 0) {
             int ee = -e;
             ee -= 2;
-            sprintf(buf, "$%04X - %d = $%04X", reg.PC, ee, reg.PC + e + 2);
+            snprintf(buf, sizeof(buf), "$%04X - %d = $%04X", reg.PC, ee, reg.PC + e + 2);
         } else {
-            sprintf(buf, "$%04X + %d = $%04X", reg.PC, e + 2, reg.PC + e + 2);
+            snprintf(buf, sizeof(buf), "$%04X + %d = $%04X", reg.PC, e + 2, reg.PC + e + 2);
         }
         return buf;
     }
@@ -928,13 +1028,13 @@ class Z80
         static char L[16];
         static char unknown[2] = "?";
         switch (r) {
-            case 0b111: sprintf(A, "A'<$%02X>", reg.back.A); return A;
-            case 0b000: sprintf(B, "B'<$%02X>", reg.back.B); return B;
-            case 0b001: sprintf(C, "C'<$%02X>", reg.back.C); return C;
-            case 0b010: sprintf(D, "D'<$%02X>", reg.back.D); return D;
-            case 0b011: sprintf(E, "E'<$%02X>", reg.back.E); return E;
-            case 0b100: sprintf(H, "H'<$%02X>", reg.back.H); return H;
-            case 0b101: sprintf(L, "L'<$%02X>", reg.back.L); return L;
+            case 0b111: snprintf(A, sizeof(A), "A'<$%02X>", reg.back.A); return A;
+            case 0b000: snprintf(B, sizeof(B), "B'<$%02X>", reg.back.B); return B;
+            case 0b001: snprintf(C, sizeof(C), "C'<$%02X>", reg.back.C); return C;
+            case 0b010: snprintf(D, sizeof(D), "D'<$%02X>", reg.back.D); return D;
+            case 0b011: snprintf(E, sizeof(E), "E'<$%02X>", reg.back.E); return E;
+            case 0b100: snprintf(H, sizeof(H), "H'<$%02X>", reg.back.H); return H;
+            case 0b101: snprintf(L, sizeof(L), "L'<$%02X>", reg.back.L); return L;
             default: return unknown;
         }
     }
@@ -947,10 +1047,10 @@ class Z80
         static char SP[16];
         static char unknown[2] = "?";
         switch (ptn & 0b11) {
-            case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
-            case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
-            case 0b10: sprintf(HL, "HL<$%02X%02X>", reg.pair.H, reg.pair.L); return HL;
-            case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
+            case 0b00: snprintf(BC, sizeof(BC), "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
+            case 0b01: snprintf(DE, sizeof(DE), "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
+            case 0b10: snprintf(HL, sizeof(HL), "HL<$%02X%02X>", reg.pair.H, reg.pair.L); return HL;
+            case 0b11: snprintf(SP, sizeof(SP), "SP<$%04X>", reg.SP); return SP;
             default: return unknown;
         }
     }
@@ -963,10 +1063,10 @@ class Z80
         static char SP[16];
         static char unknown[2] = "?";
         switch (ptn & 0b11) {
-            case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
-            case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
-            case 0b10: sprintf(IX, "IX<$%04X>", reg.IX); return IX;
-            case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
+            case 0b00: snprintf(BC, sizeof(BC), "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
+            case 0b01: snprintf(DE, sizeof(DE), "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
+            case 0b10: snprintf(IX, sizeof(IX), "IX<$%04X>", reg.IX); return IX;
+            case 0b11: snprintf(SP, sizeof(SP), "SP<$%04X>", reg.SP); return SP;
             default: return unknown;
         }
     }
@@ -979,10 +1079,10 @@ class Z80
         static char SP[16];
         static char unknown[2] = "?";
         switch (ptn & 0b11) {
-            case 0b00: sprintf(BC, "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
-            case 0b01: sprintf(DE, "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
-            case 0b10: sprintf(IY, "IY<$%04X>", reg.IY); return IY;
-            case 0b11: sprintf(SP, "SP<$%04X>", reg.SP); return SP;
+            case 0b00: snprintf(BC, sizeof(BC), "BC<$%02X%02X>", reg.pair.B, reg.pair.C); return BC;
+            case 0b01: snprintf(DE, sizeof(DE), "DE<$%02X%02X>", reg.pair.D, reg.pair.E); return DE;
+            case 0b10: snprintf(IY, sizeof(IY), "IY<$%04X>", reg.IY); return IY;
+            case 0b11: snprintf(SP, sizeof(SP), "SP<$%04X>", reg.SP); return SP;
             default: return unknown;
         }
     }
@@ -2283,7 +2383,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2303,7 +2403,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2337,7 +2437,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2357,7 +2457,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2391,7 +2491,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2411,7 +2511,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2445,7 +2545,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2465,7 +2565,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2499,7 +2599,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2519,7 +2619,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2553,7 +2653,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2573,7 +2673,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2607,7 +2707,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2627,7 +2727,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2662,7 +2762,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -2697,7 +2797,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -4477,7 +4577,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -4576,7 +4676,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -4779,7 +4879,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -4848,7 +4948,7 @@ class Z80
         char buf[80];
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) {
-            sprintf(buf, " --> %s", registerDump(r));
+            snprintf(buf, sizeof(buf), " --> %s", registerDump(r));
         } else {
             buf[0] = '\0';
         }
@@ -5927,15 +6027,51 @@ class Z80
   public: // API functions
     Z80(std::function<unsigned char(void*, unsigned short)> read,
         std::function<void(void*, unsigned short, unsigned char)> write,
-        std::function<unsigned char(void*, unsigned char)> in,
-        std::function<void(void*, unsigned char, unsigned char)> out,
-        void* arg)
+        std::function<unsigned char(void*, unsigned short)> in,
+        std::function<void(void*, unsigned short, unsigned char)> out,
+        void* arg,
+        bool returnPortAs16Bits = false)
     {
-        this->CB.read = std::bind(read, std::placeholders::_1, std::placeholders::_2);
-        this->CB.write = std::bind(write, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-        this->CB.in = std::bind(in, std::placeholders::_1, std::placeholders::_2);
-        this->CB.out = std::bind(out, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         this->CB.arg = arg;
+        initialize();
+        setupCallback(read, write, in, out, returnPortAs16Bits);
+    }
+
+    // without setup callbacks
+    Z80(void* arg)
+    {
+        this->CB.arg = arg;
+        initialize();
+    }
+
+    void setupCallback(std::function<unsigned char(void*, unsigned short)> read,
+                       std::function<void(void*, unsigned short, unsigned char)> write,
+                       std::function<unsigned char(void*, unsigned short)> in,
+                       std::function<void(void*, unsigned short, unsigned char)> out,
+                       bool returnPortAs16Bits = false)
+    {
+        this->CB.read.setupFC(read);
+        this->CB.write.setupFC(write);
+        this->CB.in.setupFC(in);
+        this->CB.out.setupFC(out);
+        this->CB.returnPortAs16Bits = returnPortAs16Bits;
+    }
+
+    void setupCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
+                         void (*write)(void* arg, unsigned short addr, unsigned char value),
+                         unsigned char (*in)(void* arg, unsigned short port),
+                         void (*out)(void* arg, unsigned short port, unsigned char value),
+                         bool returnPortAs16Bits = false)
+    {
+        this->CB.read.setupFP(read);
+        this->CB.write.setupFP(write);
+        this->CB.in.setupFP(in);
+        this->CB.out.setupFP(out);
+        this->CB.returnPortAs16Bits = returnPortAs16Bits;
+    }
+
+    void initialize()
+    {
         resetConsumeClockCallback();
         resetDebugMessage();
         ::memset(&reg, 0, sizeof(reg));
@@ -5956,7 +6092,13 @@ class Z80
     void setDebugMessage(const std::function<void(void*, const char*)>& debugMessage)
     {
         CB.debugMessageEnabled = true;
-        CB.debugMessage = std::bind(debugMessage, std::placeholders::_1, std::placeholders::_2);
+        CB.debugMessage.setupFC(debugMessage);
+    }
+
+    void setDebugMessageFP(void (*debugMessage)(void* arg, const char* msg))
+    {
+        CB.debugMessageEnabled = true;
+        CB.debugMessage.setupFP(debugMessage);
     }
 
     void resetDebugMessage()
@@ -5971,124 +6113,102 @@ class Z80
 
     void addBreakPoint(unsigned short addr, const std::function<void(void*)>& callback)
     {
-        CB.breakPoints.push_back(new BreakPoint(addr, callback));
+        auto it = CB.breakPoints.find(addr);
+        if (it == CB.breakPoints.end()) {
+            CB.breakPoints[addr] = new std::vector<BreakPoint*>();
+        }
+        CB.breakPoints[addr]->push_back(new BreakPoint(addr, callback));
     }
 
     void removeBreakPoint(unsigned short addr)
     {
-        int index = 0;
-        bool deleted = false;
-        do {
-            deleted = false;
-            for (auto bp : CB.breakPoints) {
-                if (bp->addr == addr) {
-                    CB.breakPoints.erase(CB.breakPoints.begin() + index);
-                    delete bp;
-                    deleted = true;
-                    break;
-                }
-                index++;
-            }
-        } while (deleted);
+        auto it = CB.breakPoints.find(addr);
+        if (it == CB.breakPoints.end()) return;
+        for (auto bp : *CB.breakPoints[addr]) delete bp;
+        delete CB.breakPoints[addr];
+        CB.breakPoints.erase(it);
     }
 
     void removeAllBreakPoints()
     {
-        for (auto bp : CB.breakPoints) delete bp;
-        CB.breakPoints.clear();
+        std::vector<int> keys;
+        for (auto it = CB.breakPoints.begin(); it != CB.breakPoints.end(); it++) {
+            keys.push_back(it->first);
+        }
+        for (auto key : keys) {
+            removeBreakPoint(key);
+        }
+    }
+
+    void addBreakOperand_(int prefixNumber, int operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+    {
+        auto it = CB.breakOperands.find(operandNumber);
+        if (it == CB.breakOperands.end()) {
+            CB.breakOperands[operandNumber] = new std::vector<BreakOperand*>();
+        }
+        CB.breakOperands[operandNumber]->push_back(new BreakOperand(prefixNumber, operandNumber & 0xFF, callback));
     }
 
     void addBreakOperand(unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        CB.breakOperands.push_back(new BreakOperand(0, operandNumber, callback));
+        addBreakOperand_(0, (int)operandNumber, callback);
     }
 
-    bool addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+    void addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        switch (prefixNumber) {
-            case 0xCB: CB.breakOperandsCB.push_back(new BreakOperand(0xCB, operandNumber, callback)); return true;
-            case 0xED: CB.breakOperandsED.push_back(new BreakOperand(0xED, operandNumber, callback)); return true;
-            case 0xDD:
-                if (!opLengthIXY[operandNumber]) return false;
-                CB.breakOperandsIX.push_back(new BreakOperand(0xDD, operandNumber, callback));
-                return true;
-            case 0xFD:
-                if (!opLengthIXY[operandNumber]) return false;
-                CB.breakOperandsIY.push_back(new BreakOperand(0xFD, operandNumber, callback));
-                return true;
-        }
-        return false;
+        int n = prefixNumber;
+        n <<= 8;
+        n |= operandNumber;
+        addBreakOperand_((int)prefixNumber, n, callback);
     }
 
-    bool addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+    void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        if (prefixNumber2 == 0xCB) {
-            if (prefixNumber1 == 0xDD) {
-                CB.breakOperandsIX4.push_back(new BreakOperand(0xDDCB, operandNumber, callback));
-                return true;
-            } else if (prefixNumber2 == 0xFD) {
-                CB.breakOperandsIY4.push_back(new BreakOperand(0xFDCB, operandNumber, callback));
-                return true;
-            }
-        }
-        return false;
+        int n = prefixNumber1;
+        n <<= 8;
+        n |= prefixNumber2;
+        int prefixNumber = n;
+        n <<= 8;
+        n |= operandNumber;
+        addBreakOperand_(prefixNumber, n, callback);
     }
 
-    void removeBreakOperand(std::vector<BreakOperand*>* operands, unsigned char operandNumber)
+    void removeBreakOperand(int operandNumber)
     {
-        int index = 0;
-        bool deleted = false;
-        do {
-            deleted = false;
-            for (auto bo : *operands) {
-                if (bo->operandNumber == operandNumber) {
-                    operands->erase(operands->begin() + index);
-                    delete bo;
-                    deleted = true;
-                    break;
-                }
-                index++;
-            }
-        } while (deleted);
-    }
-
-    void removeBreakOperand(unsigned char operandNumber)
-    {
-        removeBreakOperand(&CB.breakOperands, operandNumber);
+        auto it = CB.breakOperands.find(operandNumber);
+        if (it == CB.breakOperands.end()) return;
+        for (auto bo : *CB.breakOperands[operandNumber]) delete bo;
+        delete CB.breakOperands[operandNumber];
+        CB.breakOperands.erase(it);
     }
 
     void removeBreakOperand(unsigned char prefixNumber, unsigned char operandNumber)
     {
-        std::vector<BreakOperand*>* breakOperands = nullptr;
-        switch (prefixNumber) {
-            case 0xCB: breakOperands = &CB.breakOperandsCB; break;
-            case 0xED: breakOperands = &CB.breakOperandsED; break;
-            case 0xDD: breakOperands = &CB.breakOperandsIX; break;
-            case 0xFD: breakOperands = &CB.breakOperandsIY; break;
-            default: return;
-        }
-        removeBreakOperand(breakOperands, operandNumber);
+        int n = prefixNumber;
+        n <<= 8;
+        n |= operandNumber;
+        removeBreakOperand(n);
     }
 
     void removeBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber)
     {
-        std::vector<BreakOperand*>* breakOperands = nullptr;
-        if (prefixNumber2 == 0xCB) {
-            if (prefixNumber1 == 0xDD) {
-                breakOperands = &CB.breakOperandsIX4;
-            } else if (prefixNumber1 == 0xFD) {
-                breakOperands = &CB.breakOperandsIY4;
-            }
-        }
-        if (breakOperands) {
-            removeBreakOperand(breakOperands, operandNumber);
-        }
+        int n = prefixNumber1;
+        n <<= 8;
+        n |= prefixNumber2;
+        n <<= 8;
+        n |= operandNumber;
+        removeBreakOperand(n);
     }
 
     void removeAllBreakOperands()
     {
-        for (auto bo : CB.breakOperands) delete bo;
-        CB.breakOperands.clear();
+        std::vector<int> keys;
+        for (auto it = CB.breakOperands.begin(); it != CB.breakOperands.end(); it++) {
+            keys.push_back(it->first);
+        }
+        for (auto key : keys) {
+            removeBreakOperand(key);
+        }
     }
 
     void addReturnHandler(const std::function<void(void*)>& callback)
@@ -6113,10 +6233,16 @@ class Z80
         CB.callHandlers.clear();
     }
 
-    void setConsumeClockCallback(const std::function<void(void*, int)>& consumeClock)
+    void setConsumeClockCallbackFP(void (*consumeClock_)(void* arg, int clocks))
     {
         CB.consumeClockEnabled = true;
-        CB.consumeClock = std::bind(consumeClock, std::placeholders::_1, std::placeholders::_2);
+        CB.consumeClock.setupFP(consumeClock_);
+    }
+
+    void setConsumeClockCallback(const std::function<void(void*, int)>& consumeClock_)
+    {
+        CB.consumeClockEnabled = true;
+        CB.consumeClock.setupFC(consumeClock_);
     }
 
     void resetConsumeClockCallback()

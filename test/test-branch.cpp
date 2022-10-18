@@ -14,8 +14,8 @@ static void writeMemory(void* arg, unsigned short addr, unsigned char value)
     ram[addr & 0x7FFF] = value;
 }
 
-static unsigned char inPort(void* arg, unsigned char port) { return 0xFF; }
-static void outPort(void* arg, unsigned char port, unsigned char value) {}
+static unsigned char inPort(void* arg, unsigned short port) { return 0xFF; }
+static void outPort(void* arg, unsigned short port, unsigned char value) {}
 
 static void printIdent()
 {

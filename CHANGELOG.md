@@ -1,5 +1,26 @@
 # Change log
 
+## Version 1.7.0 (Oct 17, 2022 JST)
+
+- **Destructive** change specification of in/out callback:
+  - before: 2nd argument is `unsigned char`
+    - `std::function<unsigned char(void*, unsigned char)> in`
+    - `std::function<void(void*, unsigned char, unsigned char)> out`
+  - after: 2nd argument is `unsigned short`
+    - `std::function<unsigned char(void*, unsigned short)> in`
+    - `std::function<void(void*, unsigned short, unsigned char)> out`
+- Add an argument `returnPortAs16Bits` to the constructor to specify whether the port should receive 16-bit
+- Add a constructor without set callbacks
+- Add the set callbacks method: `setupCallback` and `setupCallbackFP`
+  - `setupCallback` ... using `std::function`
+  - `setupCallbackFP` ... using function pointer
+- Add the set callback as function ponter methods:
+  - `setDebugMessageFP`
+  - `setConsumeClockFP`
+- Optimize performance: `BreakOperands` and `BreakPoints`
+  - before: liner search the target address/opcode
+  - after: binary search the target address/opcode
+
 ## Version 1.6.0 (Oct 16, 2022 JST)
 
 - Use `std::function` ... `constructor, addBreakPoint, addBreakOperand, setDebugMessage, setConsumeClockCallback, addReturnHandler, addCallHandler`

@@ -31,8 +31,8 @@ void writeMemory(void* ctx, unsigned short addr, unsigned char value)
     ram[addr & 0x00FF] = value;
 }
 
-unsigned char readPort(void* ctx, unsigned char port) { return 0x00; }
-void writePort(void* ctx, unsigned char port, unsigned char value) {}
+unsigned char readPort(void* ctx, unsigned short port) { return 0x00; }
+void writePort(void* ctx, unsigned short port, unsigned char value) {}
 
 int main()
 {

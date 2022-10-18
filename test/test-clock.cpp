@@ -27,12 +27,12 @@ void writeByte(void* arg, unsigned short addr, unsigned char value)
     ((MMU*)arg)->RAM[addr] = value;
 }
 
-unsigned char inPort(void* arg, unsigned char port)
+unsigned char inPort(void* arg, unsigned short port)
 {
     return ((MMU*)arg)->IO[port];
 }
 
-void outPort(void* arg, unsigned char port, unsigned char value)
+void outPort(void* arg, unsigned short port, unsigned char value)
 {
     ((MMU*)arg)->IO[port] = value;
 }
