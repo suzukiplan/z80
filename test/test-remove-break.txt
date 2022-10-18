@@ -1,0 +1,377 @@
+break 0x0000 (0)
+break 0x0000 (1)
+break 0x0000 (2)
+break 0x0000 (3)
+break 0x0000 (4)
+break 0x0000 (5)
+break 0x0000 (6)
+break 0x0000 (7)
+break 0x0000 (8)
+break 0x0000 (9)
+break#0 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#1 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#2 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#3 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#4 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#5 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#6 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#7 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#8 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#9 op1=00, op2=01 (len=3) ... opcode=01,34,12
+[0000] LD BC<$0000>, $1234
+break 0x0003 (0)
+break 0x0003 (1)
+break 0x0003 (2)
+break 0x0003 (3)
+break 0x0003 (4)
+break 0x0003 (5)
+break 0x0003 (6)
+break 0x0003 (7)
+break 0x0003 (8)
+break 0x0003 (9)
+break#0 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#1 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#2 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#3 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#4 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#5 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#6 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#7 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#8 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#9 op1=00, op2=3E (len=2) ... opcode=3E,01
+[0003] LD A<$FF>, $01
+break 0x0005 (0)
+break 0x0005 (1)
+break 0x0005 (2)
+break 0x0005 (3)
+break 0x0005 (4)
+break 0x0005 (5)
+break 0x0005 (6)
+break 0x0005 (7)
+break 0x0005 (8)
+break 0x0005 (9)
+break#0 op1=00, op2=ED (len=0) ... opcode=
+break#1 op1=00, op2=ED (len=0) ... opcode=
+break#2 op1=00, op2=ED (len=0) ... opcode=
+break#3 op1=00, op2=ED (len=0) ... opcode=
+break#4 op1=00, op2=ED (len=0) ... opcode=
+break#5 op1=00, op2=ED (len=0) ... opcode=
+break#6 op1=00, op2=ED (len=0) ... opcode=
+break#7 op1=00, op2=ED (len=0) ... opcode=
+break#8 op1=00, op2=ED (len=0) ... opcode=
+break#9 op1=00, op2=ED (len=0) ... opcode=
+break#0 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#1 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#2 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#3 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#4 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#5 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#6 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#7 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#8 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#9 op1=ED, op2=79 (len=2) ... opcode=ED,79
+[0005] OUT (C<$34>), A<$01>
+break 0x0007 (0)
+break 0x0007 (1)
+break 0x0007 (2)
+break 0x0007 (3)
+break 0x0007 (4)
+break 0x0007 (5)
+break 0x0007 (6)
+break 0x0007 (7)
+break 0x0007 (8)
+break 0x0007 (9)
+break#0 op1=00, op2=ED (len=0) ... opcode=
+break#1 op1=00, op2=ED (len=0) ... opcode=
+break#2 op1=00, op2=ED (len=0) ... opcode=
+break#3 op1=00, op2=ED (len=0) ... opcode=
+break#4 op1=00, op2=ED (len=0) ... opcode=
+break#5 op1=00, op2=ED (len=0) ... opcode=
+break#6 op1=00, op2=ED (len=0) ... opcode=
+break#7 op1=00, op2=ED (len=0) ... opcode=
+break#8 op1=00, op2=ED (len=0) ... opcode=
+break#9 op1=00, op2=ED (len=0) ... opcode=
+break#0 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#1 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#2 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#3 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#4 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#5 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#6 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#7 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#8 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#9 op1=ED, op2=78 (len=2) ... opcode=ED,78
+[0007] IN A<$01>, (C<$34>) = $00
+break 0x0009 (0)
+break 0x0009 (1)
+break 0x0009 (2)
+break 0x0009 (3)
+break 0x0009 (4)
+break 0x0009 (5)
+break 0x0009 (6)
+break 0x0009 (7)
+break 0x0009 (8)
+break 0x0009 (9)
+break#0 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#1 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#2 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#3 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#4 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#5 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#6 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#7 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#8 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#9 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+[0009] JP $0000
+
+===== remove break point 3 and 7 =====
+
+break 0x0000 (0)
+break 0x0000 (1)
+break 0x0000 (2)
+break 0x0000 (3)
+break 0x0000 (4)
+break 0x0000 (5)
+break 0x0000 (6)
+break 0x0000 (7)
+break 0x0000 (8)
+break 0x0000 (9)
+break#0 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#1 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#2 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#3 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#4 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#5 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#6 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#7 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#8 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#9 op1=00, op2=01 (len=3) ... opcode=01,34,12
+[0000] LD BC<$1234>, $1234
+break#0 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#1 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#2 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#3 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#4 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#5 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#6 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#7 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#8 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#9 op1=00, op2=3E (len=2) ... opcode=3E,01
+[0003] LD A<$00>, $01
+break 0x0005 (0)
+break 0x0005 (1)
+break 0x0005 (2)
+break 0x0005 (3)
+break 0x0005 (4)
+break 0x0005 (5)
+break 0x0005 (6)
+break 0x0005 (7)
+break 0x0005 (8)
+break 0x0005 (9)
+break#0 op1=00, op2=ED (len=0) ... opcode=
+break#1 op1=00, op2=ED (len=0) ... opcode=
+break#2 op1=00, op2=ED (len=0) ... opcode=
+break#3 op1=00, op2=ED (len=0) ... opcode=
+break#4 op1=00, op2=ED (len=0) ... opcode=
+break#5 op1=00, op2=ED (len=0) ... opcode=
+break#6 op1=00, op2=ED (len=0) ... opcode=
+break#7 op1=00, op2=ED (len=0) ... opcode=
+break#8 op1=00, op2=ED (len=0) ... opcode=
+break#9 op1=00, op2=ED (len=0) ... opcode=
+break#0 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#1 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#2 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#3 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#4 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#5 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#6 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#7 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#8 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#9 op1=ED, op2=79 (len=2) ... opcode=ED,79
+[0005] OUT (C<$34>), A<$01>
+break#0 op1=00, op2=ED (len=0) ... opcode=
+break#1 op1=00, op2=ED (len=0) ... opcode=
+break#2 op1=00, op2=ED (len=0) ... opcode=
+break#3 op1=00, op2=ED (len=0) ... opcode=
+break#4 op1=00, op2=ED (len=0) ... opcode=
+break#5 op1=00, op2=ED (len=0) ... opcode=
+break#6 op1=00, op2=ED (len=0) ... opcode=
+break#7 op1=00, op2=ED (len=0) ... opcode=
+break#8 op1=00, op2=ED (len=0) ... opcode=
+break#9 op1=00, op2=ED (len=0) ... opcode=
+break#0 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#1 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#2 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#3 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#4 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#5 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#6 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#7 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#8 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#9 op1=ED, op2=78 (len=2) ... opcode=ED,78
+[0007] IN A<$01>, (C<$34>) = $00
+break 0x0009 (0)
+break 0x0009 (1)
+break 0x0009 (2)
+break 0x0009 (3)
+break 0x0009 (4)
+break 0x0009 (5)
+break 0x0009 (6)
+break 0x0009 (7)
+break 0x0009 (8)
+break 0x0009 (9)
+break#0 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#1 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#2 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#3 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#4 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#5 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#6 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#7 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#8 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#9 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+[0009] JP $0000
+
+===== remove all break points =====
+
+break#0 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#1 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#2 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#3 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#4 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#5 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#6 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#7 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#8 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#9 op1=00, op2=01 (len=3) ... opcode=01,34,12
+[0000] LD BC<$1234>, $1234
+break#0 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#1 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#2 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#3 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#4 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#5 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#6 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#7 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#8 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#9 op1=00, op2=3E (len=2) ... opcode=3E,01
+[0003] LD A<$00>, $01
+break#0 op1=00, op2=ED (len=0) ... opcode=
+break#1 op1=00, op2=ED (len=0) ... opcode=
+break#2 op1=00, op2=ED (len=0) ... opcode=
+break#3 op1=00, op2=ED (len=0) ... opcode=
+break#4 op1=00, op2=ED (len=0) ... opcode=
+break#5 op1=00, op2=ED (len=0) ... opcode=
+break#6 op1=00, op2=ED (len=0) ... opcode=
+break#7 op1=00, op2=ED (len=0) ... opcode=
+break#8 op1=00, op2=ED (len=0) ... opcode=
+break#9 op1=00, op2=ED (len=0) ... opcode=
+break#0 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#1 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#2 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#3 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#4 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#5 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#6 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#7 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#8 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#9 op1=ED, op2=79 (len=2) ... opcode=ED,79
+[0005] OUT (C<$34>), A<$01>
+break#0 op1=00, op2=ED (len=0) ... opcode=
+break#1 op1=00, op2=ED (len=0) ... opcode=
+break#2 op1=00, op2=ED (len=0) ... opcode=
+break#3 op1=00, op2=ED (len=0) ... opcode=
+break#4 op1=00, op2=ED (len=0) ... opcode=
+break#5 op1=00, op2=ED (len=0) ... opcode=
+break#6 op1=00, op2=ED (len=0) ... opcode=
+break#7 op1=00, op2=ED (len=0) ... opcode=
+break#8 op1=00, op2=ED (len=0) ... opcode=
+break#9 op1=00, op2=ED (len=0) ... opcode=
+break#0 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#1 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#2 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#3 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#4 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#5 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#6 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#7 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#8 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#9 op1=ED, op2=78 (len=2) ... opcode=ED,78
+[0007] IN A<$01>, (C<$34>) = $00
+break#0 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#1 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#2 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#3 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#4 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#5 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#6 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#7 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#8 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#9 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+[0009] JP $0000
+
+===== remove break operand ED =====
+
+break#0 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#1 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#2 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#3 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#4 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#5 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#6 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#7 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#8 op1=00, op2=01 (len=3) ... opcode=01,34,12
+break#9 op1=00, op2=01 (len=3) ... opcode=01,34,12
+[0000] LD BC<$1234>, $1234
+break#0 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#1 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#2 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#3 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#4 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#5 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#6 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#7 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#8 op1=00, op2=3E (len=2) ... opcode=3E,01
+break#9 op1=00, op2=3E (len=2) ... opcode=3E,01
+[0003] LD A<$00>, $01
+break#0 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#1 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#2 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#3 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#4 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#5 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#6 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#7 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#8 op1=ED, op2=79 (len=2) ... opcode=ED,79
+break#9 op1=ED, op2=79 (len=2) ... opcode=ED,79
+[0005] OUT (C<$34>), A<$01>
+break#0 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#1 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#2 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#3 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#4 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#5 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#6 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#7 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#8 op1=ED, op2=78 (len=2) ... opcode=ED,78
+break#9 op1=ED, op2=78 (len=2) ... opcode=ED,78
+[0007] IN A<$01>, (C<$34>) = $00
+break#0 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#1 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#2 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#3 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#4 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#5 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#6 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#7 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#8 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+break#9 op1=00, op2=C3 (len=3) ... opcode=C3,00,00
+[0009] JP $0000
+
+===== remove all break operands =====
+
+[0000] LD BC<$1234>, $1234
+[0003] LD A<$00>, $01
+[0005] OUT (C<$34>), A<$01>
+[0007] IN A<$01>, (C<$34>) = $00
+[0009] JP $0000

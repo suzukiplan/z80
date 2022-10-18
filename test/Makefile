@@ -15,6 +15,7 @@ all:
 	make test-im2
 	make test-branch
 	make test-out
+	make test-remove-break
 
 test-clock:
 	clang $(CFLAGS) test-clock.cpp -lstdc++
@@ -38,3 +39,8 @@ test-out:
 	clang $(CFLAGS) test-out.cpp -lstdc++
 	./a.out > test-out.txt
 	cat test-out.txt
+
+test-remove-break:
+	clang $(CFLAGS) test-remove-break.cpp -lstdc++
+	./a.out > test-remove-break.txt
+	cat test-remove-break.txt
