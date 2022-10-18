@@ -131,66 +131,6 @@ class Z80
     inline unsigned char IFF_NMI() { return 0b01000000; }
     inline unsigned char IFF_HALT() { return 0b10000000; }
 
-    class BreakPoint
-    {
-      public:
-        unsigned short addr;
-        std::function<void(void*)> callback;
-        BreakPoint(unsigned short addr_, const std::function<void(void*)>& callback_)
-        {
-            this->addr = addr_;
-            this->callback = std::bind(callback_, std::placeholders::_1);
-        }
-    };
-
-    class BreakOperand
-    {
-      public:
-        int prefixNumber;
-        unsigned char operandNumber;
-        std::function<void(void*, unsigned char*, int)> callback;
-        BreakOperand(int prefixNumber_, unsigned char operandNumber_, const std::function<void(void*, unsigned char*, int)>& callback_)
-        {
-            this->prefixNumber = prefixNumber_;
-            this->operandNumber = operandNumber_;
-            this->callback = std::bind(callback_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-        }
-    };
-
-    class ReturnHandler
-    {
-      public:
-        std::function<void(void*)> callback;
-        ReturnHandler(const std::function<void(void*)>& callback_)
-        {
-            this->callback = std::bind(callback_, std::placeholders::_1);
-        }
-    };
-
-    inline void invokeReturnHandlers()
-    {
-        for (auto handler : this->CB.returnHandlers) {
-            handler->callback(this->CB.arg);
-        }
-    }
-
-    class CallHandler
-    {
-      public:
-        std::function<void(void*)> callback;
-        CallHandler(const std::function<void(void*)>& callback_)
-        {
-            this->callback = std::bind(callback_, std::placeholders::_1);
-        }
-    };
-
-    inline void invokeCallHandlers()
-    {
-        for (auto handler : this->CB.callHandlers) {
-            handler->callback(this->CB.arg);
-        }
-    }
-
     template <typename T>
     class CoExistenceCallback;
     template <typename ReturnType, typename... ArgumentTypes>
@@ -207,6 +147,101 @@ class Z80
         inline ReturnType operator()(ArgumentTypes... args) { return fp ? fp(args...) : fc(args...); }
     };
 
+    class BreakPoint
+    {
+      public:
+        unsigned short addr;
+        CoExistenceCallback<void(void*)> callback;
+    };
+
+    class BreakPointFC : public BreakPoint
+    {
+      public:
+        BreakPointFC(unsigned short addr_, const std::function<void(void*)>& callback_)
+        {
+            this->addr = addr_;
+            this->callback.setupAsFunctionObject(callback_);
+        }
+    };
+
+    class BreakPointFP : public BreakPoint
+    {
+      public:
+        BreakPointFP(unsigned short addr_, void (*callback_)(void*))
+        {
+            this->addr = addr_;
+            this->callback.setupAsFunctionPointer(callback_);
+        }
+    };
+
+    class BreakOperand
+    {
+      public:
+        int prefixNumber;
+        unsigned char operandNumber;
+        CoExistenceCallback<void(void*, unsigned char*, int)> callback;
+    };
+
+    class BreakOperandFC : public BreakOperand
+    {
+      public:
+        BreakOperandFC(int prefixNumber_, unsigned char operandNumber_, const std::function<void(void*, unsigned char*, int)>& callback_)
+        {
+            this->prefixNumber = prefixNumber_;
+            this->operandNumber = operandNumber_;
+            this->callback.setupAsFunctionObject(callback_);
+        }
+    };
+
+    class BreakOperandFP : public BreakOperand
+    {
+      public:
+        BreakOperandFP(int prefixNumber_, unsigned char operandNumber_, void (*callback_)(void*, unsigned char*, int))
+        {
+            this->prefixNumber = prefixNumber_;
+            this->operandNumber = operandNumber_;
+            this->callback.setupAsFunctionPointer(callback_);
+        }
+    };
+
+    class SimpleHandler
+    {
+      public:
+        CoExistenceCallback<void(void*)> callback;
+    };
+
+    class SimpleHandlerFC : public SimpleHandler
+    {
+      public:
+        SimpleHandlerFC(const std::function<void(void*)>& callback_)
+        {
+            this->callback.setupAsFunctionObject(callback_);
+        }
+    };
+
+    class SimpleHandlerFP : public SimpleHandler
+    {
+      public:
+        SimpleHandlerFP(void (*callback_)(void*))
+        {
+            this->callback.setupAsFunctionPointer(callback_);
+        }
+    };
+
+    inline void invokeReturnHandlers()
+    {
+        for (auto handler : this->CB.returnHandlers) {
+            handler->callback(this->CB.arg);
+        }
+    }
+
+    inline void invokeCallHandlers()
+    {
+        for (auto handler : this->CB.callHandlers) {
+            handler->callback(this->CB.arg);
+        }
+    }
+
     struct Callback {
         CoExistenceCallback<unsigned char(void*, unsigned short)> read;
         CoExistenceCallback<void(void*, unsigned short, unsigned char)> write;
@@ -219,8 +254,8 @@ class Z80
         bool consumeClockEnabled;
         std::map<int, std::vector<BreakPoint*>*> breakPoints;
         std::map<int, std::vector<BreakOperand*>*> breakOperands;
-        std::vector<ReturnHandler*> returnHandlers;
-        std::vector<CallHandler*> callHandlers;
+        std::vector<SimpleHandler*> returnHandlers;
+        std::vector<SimpleHandler*> callHandlers;
         void* arg;
     } CB;
 
@@ -326,26 +361,19 @@ class Z80
         CB.debugMessage(CB.arg, buf);
     }
 
-    inline unsigned short getAF()
-    {
-        unsigned short result = reg.pair.A;
-        result <<= 8;
-        result |= reg.pair.F;
-        return result;
-    }
+    inline unsigned short getAF() { return make16FromLE(reg.pair.F, reg.pair.A); }
+    inline unsigned short getAF2() { return make16FromLE(reg.back.F, reg.back.A); }
+    inline unsigned short getBC() { return make16FromLE(reg.pair.C, reg.pair.B); }
+    inline unsigned short getBC2() { return make16FromLE(reg.back.C, reg.back.B); }
+    inline unsigned short getDE() { return make16FromLE(reg.pair.E, reg.pair.D); }
+    inline unsigned short getDE2() { return make16FromLE(reg.back.E, reg.back.D); }
+    inline unsigned short getHL() { return make16FromLE(reg.pair.L, reg.pair.H); }
+    inline unsigned short getHL2() { return make16FromLE(reg.back.L, reg.back.H); }
 
     inline void setAF(unsigned short value)
     {
         reg.pair.A = (value & 0xFF00) >> 8;
         reg.pair.F = (value & 0x00FF);
-    }
-
-    inline unsigned short getAF2()
-    {
-        unsigned short result = reg.back.A;
-        result <<= 8;
-        result |= reg.back.F;
-        return result;
     }
 
     inline void setAF2(unsigned short value)
@@ -354,26 +382,10 @@ class Z80
         reg.back.F = (value & 0x00FF);
     }
 
-    inline unsigned short getBC()
-    {
-        unsigned short result = reg.pair.B;
-        result <<= 8;
-        result |= reg.pair.C;
-        return result;
-    }
-
     inline void setBC(unsigned short value)
     {
         reg.pair.B = (value & 0xFF00) >> 8;
         reg.pair.C = (value & 0x00FF);
-    }
-
-    inline unsigned short getBC2()
-    {
-        unsigned short result = reg.back.B;
-        result <<= 8;
-        result |= reg.back.C;
-        return result;
     }
 
     inline void setBC2(unsigned short value)
@@ -382,26 +394,10 @@ class Z80
         reg.back.C = (value & 0x00FF);
     }
 
-    inline unsigned short getDE()
-    {
-        unsigned short result = reg.pair.D;
-        result <<= 8;
-        result |= reg.pair.E;
-        return result;
-    }
-
     inline void setDE(unsigned short value)
     {
         reg.pair.D = (value & 0xFF00) >> 8;
         reg.pair.E = (value & 0x00FF);
-    }
-
-    inline unsigned short getDE2()
-    {
-        unsigned short result = reg.back.D;
-        result <<= 8;
-        result |= reg.back.E;
-        return result;
     }
 
     inline void setDE2(unsigned short value)
@@ -410,26 +406,10 @@ class Z80
         reg.back.E = (value & 0x00FF);
     }
 
-    inline unsigned short getHL()
-    {
-        unsigned short result = reg.pair.H;
-        result <<= 8;
-        result |= reg.pair.L;
-        return result;
-    }
-
     inline void setHL(unsigned short value)
     {
         reg.pair.H = (value & 0xFF00) >> 8;
         reg.pair.L = (value & 0x00FF);
-    }
-
-    inline unsigned short getHL2()
-    {
-        unsigned short result = reg.back.H;
-        result <<= 8;
-        result |= reg.back.L;
-        return result;
     }
 
     inline void setHL2(unsigned short value)
@@ -523,13 +503,7 @@ class Z80
         return hz;
     }
 
-    inline unsigned short getPort16(unsigned char c)
-    {
-        unsigned short result = (unsigned short)reg.pair.B;
-        result <<= 8;
-        result |= c;
-        return result;
-    }
+    inline unsigned short getPort16(unsigned char c) { return make16FromLE(c, reg.pair.B); }
 
     inline unsigned char inPort(unsigned char port, int clock = 4)
     {
@@ -706,8 +680,7 @@ class Z80
     // Load Acc. wth location (nn)
     static inline int LD_A_NN(Z80* ctx)
     {
-        unsigned short addr = ctx->readByte(ctx->reg.PC + 1, 3);
-        addr += ctx->readByte(ctx->reg.PC + 2, 3) << 8;
+        unsigned short addr = ctx->make16FromLE(ctx->readByte(ctx->reg.PC + 1, 3), ctx->readByte(ctx->reg.PC + 2, 3));
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC, addr, n);
         ctx->reg.pair.A = n;
@@ -740,8 +713,7 @@ class Z80
     // Load location (nn) with Acc.
     static inline int LD_NN_A(Z80* ctx)
     {
-        unsigned short addr = ctx->readByte(ctx->reg.PC + 1, 3);
-        addr += ctx->readByte(ctx->reg.PC + 2, 3) << 8;
+        unsigned short addr = ctx->make16FromLE(ctx->readByte(ctx->reg.PC + 1, 3), ctx->readByte(ctx->reg.PC + 2, 3));
         unsigned char n = ctx->reg.pair.A;
         if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC, addr, n);
         ctx->writeByte(addr, n, 3);
@@ -754,7 +726,7 @@ class Z80
     {
         unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = ctx->make16FromLE(nL, nH);
         unsigned char l = ctx->readByte(addr, 3);
         unsigned char h = ctx->readByte(addr + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%02X%02X", ctx->reg.PC, ctx->getHL(), addr, h, l);
@@ -769,7 +741,7 @@ class Z80
     {
         unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = ctx->make16FromLE(nL, nH);
         if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), %s", ctx->reg.PC, addr, ctx->registerPairDump(0b10));
         ctx->writeByte(addr, ctx->reg.pair.L, 3);
         ctx->writeByte(addr + 1, ctx->reg.pair.H, 3);
@@ -1528,7 +1500,7 @@ class Z80
             case 0b11:
                 // SP is not managed in pair structure, so calculate directly
                 if (isDebug()) log("[%04X] LD SP<$%04X>, $%02X%02X", reg.PC, reg.SP, nH, nL);
-                reg.SP = (nH << 8) + nL;
+                reg.SP = make16FromLE(nL, nH);
                 reg.PC += 3;
                 return 0;
             default:
@@ -1548,7 +1520,7 @@ class Z80
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
         if (isDebug()) log("[%04X] LD IX, $%02X%02X", reg.PC, nH, nL);
-        reg.IX = (nH << 8) + nL;
+        reg.IX = make16FromLE(nL, nH);
         reg.PC += 4;
         return 0;
     }
@@ -1559,7 +1531,7 @@ class Z80
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
         if (isDebug()) log("[%04X] LD IY, $%02X%02X", reg.PC, nH, nL);
-        reg.IY = (nH << 8) + nL;
+        reg.IY = make16FromLE(nL, nH);
         reg.PC += 4;
         return 0;
     }
@@ -1573,7 +1545,7 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         unsigned char l = readByte(addr, 3);
         unsigned char h = readByte(addr + 1, 3);
         reg.WZ = addr + 1;
@@ -1592,7 +1564,7 @@ class Z80
                 reg.pair.L = l;
                 break;
             case 0b11:
-                reg.SP = (h << 8) + l;
+                reg.SP = make16FromLE(l, h);
                 break;
             default:
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
@@ -1611,7 +1583,7 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         if (isDebug()) log("[%04X] LD ($%04X), %s", reg.PC, addr, registerPairDump(rp));
         unsigned char l;
         unsigned char h;
@@ -1649,11 +1621,11 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         unsigned char l = readByte(addr, 3);
         unsigned char h = readByte(addr + 1, 3);
         if (isDebug()) log("[%04X] LD IX<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IX, nH, nL, h, l);
-        reg.IX = (h << 8) + l;
+        reg.IX = make16FromLE(l, h);
         reg.PC += 4;
         return 0;
     }
@@ -1664,11 +1636,11 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         unsigned char l = readByte(addr, 3);
         unsigned char h = readByte(addr + 1, 3);
         if (isDebug()) log("[%04X] LD IY<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IY, nH, nL, h, l);
-        reg.IY = (h << 8) + l;
+        reg.IY = make16FromLE(l, h);
         reg.PC += 4;
         return 0;
     }
@@ -1678,7 +1650,7 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         if (isDebug()) log("[%04X] LD ($%04X), IX<$%04X>", reg.PC, addr, reg.IX);
         unsigned char l = reg.IX & 0x00FF;
         unsigned char h = (reg.IX & 0xFF00) >> 8;
@@ -1693,7 +1665,7 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         if (isDebug()) log("[%04X] LD ($%04X), IY<$%04X>", reg.PC, addr, reg.IY);
         unsigned char l = reg.IY & 0x00FF;
         unsigned char h = (reg.IY & 0xFF00) >> 8;
@@ -1780,7 +1752,7 @@ class Z80
         if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IX<$%04X>", reg.PC, reg.SP, h, l, reg.IX);
         writeByte(reg.SP, x);
         writeByte(reg.SP + 1, i, 3);
-        reg.IX = (h << 8) + l;
+        reg.IX = make16FromLE(l, h);
         reg.PC += 2;
         return 0;
     }
@@ -1796,7 +1768,7 @@ class Z80
         if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IY<$%04X>", reg.PC, reg.SP, h, l, reg.IY);
         writeByte(reg.SP, y);
         writeByte(reg.SP + 1, i, 3);
-        reg.IY = (h << 8) + l;
+        reg.IY = make16FromLE(l, h);
         reg.PC += 2;
         return 0;
     }
@@ -1889,7 +1861,7 @@ class Z80
         unsigned char l = readByte(reg.SP++, 3);
         unsigned char h = readByte(reg.SP++, 3);
         if (isDebug()) log("[%04X] POP IX <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
-        reg.IX = (h << 8) + l;
+        reg.IX = make16FromLE(l, h);
         reg.PC += 2;
         return 0;
     }
@@ -1915,7 +1887,7 @@ class Z80
         unsigned char l = readByte(reg.SP++, 3);
         unsigned char h = readByte(reg.SP++, 3);
         if (isDebug()) log("[%04X] POP IY <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
-        reg.IY = (h << 8) + l;
+        reg.IY = make16FromLE(l, h);
         reg.PC += 2;
         return 0;
     }
@@ -5056,7 +5028,7 @@ class Z80
     {
         unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = ctx->make16FromLE(nL, nH);
         if (ctx->isDebug()) ctx->log("[%04X] JP $%04X", ctx->reg.PC, addr);
         ctx->reg.PC = addr;
         ctx->reg.WZ = addr;
@@ -5076,7 +5048,7 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 1, 3);
         unsigned char nH = readByte(reg.PC + 2, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         if (isDebug()) log("[%04X] JP %s, $%04X", reg.PC, conditionDump(c), addr);
         bool jump;
         switch (c) {
@@ -5210,7 +5182,7 @@ class Z80
     {
         unsigned char nL = ctx->readByte(ctx->reg.PC + 1);
         unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = ctx->make16FromLE(nL, nH);
         if (ctx->isDebug()) ctx->log("[%04X] CALL $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
         ctx->reg.PC += 3;
         unsigned char pcL = ctx->reg.PC & 0x00FF;
@@ -5230,7 +5202,7 @@ class Z80
         ctx->invokeReturnHandlers();
         unsigned char nL = ctx->readByte(ctx->reg.SP, 3);
         unsigned char nH = ctx->readByte(ctx->reg.SP + 1, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = ctx->make16FromLE(nL, nH);
         if (ctx->isDebug()) ctx->log("[%04X] RET to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
         ctx->reg.SP += 2;
         ctx->reg.PC = addr;
@@ -5263,7 +5235,7 @@ class Z80
         }
         unsigned char nL = readByte(reg.PC + 1, 3);
         unsigned char nH = readByte(reg.PC + 2, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         if (isDebug()) log("[%04X] CALL %s, $%04X (%s) <execute:%s>", reg.PC, conditionDump(c), addr, registerPairDump(0b11), execute ? "YES" : "NO");
         reg.PC += 3;
         if (execute) {
@@ -5310,7 +5282,7 @@ class Z80
         invokeReturnHandlers();
         unsigned char nL = readByte(reg.SP);
         unsigned char nH = readByte(reg.SP + 1, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         if (isDebug()) log("[%04X] RET %s to $%04X (%s) <execute:YES>", reg.PC, conditionDump(c), addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
@@ -5325,7 +5297,7 @@ class Z80
         invokeReturnHandlers();
         unsigned char nL = readByte(reg.SP, 3);
         unsigned char nH = readByte(reg.SP + 1, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         if (isDebug()) log("[%04X] RETI to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
@@ -5341,7 +5313,7 @@ class Z80
         invokeReturnHandlers();
         unsigned char nL = readByte(reg.SP, 3);
         unsigned char nH = readByte(reg.SP + 1, 3);
-        unsigned short addr = (nH << 8) + nL;
+        unsigned short addr = make16FromLE(nL, nH);
         if (isDebug()) log("[%04X] RETN to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
@@ -5923,11 +5895,8 @@ class Z80
                     writeByte(reg.SP - 1, pcH);
                     writeByte(reg.SP - 2, pcL);
                     reg.SP -= 2;
-                    unsigned short addr = reg.I;
-                    addr <<= 8;
-                    addr |= reg.interruptVector;
-                    unsigned short pc = readByte(addr);
-                    pc += ((unsigned short)readByte(addr + 1)) << 8;
+                    unsigned short addr = make16FromLE(reg.interruptVector, reg.I);
+                    unsigned short pc = make16FromLE(readByte(addr), readByte(addr + 1));
                     if (isDebug()) log("EXECUTE INT MODE2: ($%04X) = $%04X", addr, pc);
                     reg.PC = pc;
                     consumeClock(3);
@@ -6031,13 +6000,30 @@ class Z80
         return CB.debugMessageEnabled;
     }
 
+    inline unsigned short make16FromLE(unsigned char low, unsigned char high)
+    {
+        unsigned short n = high;
+        n <<= 8;
+        n |= low;
+        return n;
+    }
+
     void addBreakPoint(unsigned short addr, const std::function<void(void*)>& callback)
     {
         auto it = CB.breakPoints.find(addr);
         if (it == CB.breakPoints.end()) {
             CB.breakPoints[addr] = new std::vector<BreakPoint*>();
         }
-        CB.breakPoints[addr]->push_back(new BreakPoint(addr, callback));
+        CB.breakPoints[addr]->push_back(new BreakPointFC(addr, callback));
+    }
+
+    void addBreakPointFP(unsigned short addr, void (*callback)(void*))
+    {
+        auto it = CB.breakPoints.find(addr);
+        if (it == CB.breakPoints.end()) {
+            CB.breakPoints[addr] = new std::vector<BreakPoint*>();
+        }
+        CB.breakPoints[addr]->push_back(new BreakPointFP(addr, callback));
     }
 
     void removeBreakPoint(unsigned short addr)
@@ -6066,7 +6052,7 @@ class Z80
         if (it == CB.breakOperands.end()) {
             CB.breakOperands[operandNumber] = new std::vector<BreakOperand*>();
         }
-        CB.breakOperands[operandNumber]->push_back(new BreakOperand(prefixNumber, operandNumber, callback));
+        CB.breakOperands[operandNumber]->push_back(new BreakOperandFC(prefixNumber, operandNumber, callback));
     }
 
     void addBreakOperand(unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
@@ -6076,21 +6062,44 @@ class Z80
 
     void addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        int n = prefixNumber;
-        n <<= 8;
-        n |= operandNumber;
-        addBreakOperand_((int)prefixNumber, n, callback);
+        addBreakOperand_((int)prefixNumber, make16FromLE(operandNumber, prefixNumber), callback);
     }
 
     void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        int n = prefixNumber1;
-        n <<= 8;
-        n |= prefixNumber2;
+        int n = make16FromLE(prefixNumber2, prefixNumber1);
         int prefixNumber = n;
         n <<= 8;
         n |= operandNumber;
         addBreakOperand_(prefixNumber, n, callback);
+    }
+
+    void addBreakOperandFP_(int prefixNumber, int operandNumber, void (*callback)(void*, unsigned char*, int))
+    {
+        auto it = CB.breakOperands.find(operandNumber);
+        if (it == CB.breakOperands.end()) {
+            CB.breakOperands[operandNumber] = new std::vector<BreakOperand*>();
+        }
+        CB.breakOperands[operandNumber]->push_back(new BreakOperandFP(prefixNumber, operandNumber, callback));
+    }
+
+    void addBreakOperandFP(unsigned char operandNumber, void (*callback)(void*, unsigned char*, int))
+    {
+        addBreakOperandFP_(0, (int)operandNumber, callback);
+    }
+
+    void addBreakOperandFP(unsigned char prefixNumber, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int))
+    {
+        addBreakOperandFP_((int)prefixNumber, make16FromLE(operandNumber, prefixNumber), callback);
+    }
+
+    void addBreakOperandFP(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int))
+    {
+        int n = make16FromLE(prefixNumber2, prefixNumber1);
+        int prefixNumber = n;
+        n <<= 8;
+        n |= operandNumber;
+        addBreakOperandFP_(prefixNumber, n, callback);
     }
 
     void removeBreakOperand(int operandNumber)
@@ -6104,17 +6113,12 @@ class Z80
 
     void removeBreakOperand(unsigned char prefixNumber, unsigned char operandNumber)
     {
-        int n = prefixNumber;
-        n <<= 8;
-        n |= operandNumber;
-        removeBreakOperand(n);
+        removeBreakOperand(make16FromLE(operandNumber, prefixNumber));
     }
 
     void removeBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber)
     {
-        int n = prefixNumber1;
-        n <<= 8;
-        n |= prefixNumber2;
+        int n = make16FromLE(prefixNumber2, prefixNumber1);
         n <<= 8;
         n |= operandNumber;
         removeBreakOperand(n);
@@ -6133,7 +6137,12 @@ class Z80
 
     void addReturnHandler(const std::function<void(void*)>& callback)
     {
-        CB.returnHandlers.push_back(new ReturnHandler(callback));
+        CB.returnHandlers.push_back(new SimpleHandlerFC(callback));
+    }
+
+    void addReturnHandlerFP(void (*callback)(void*))
+    {
+        CB.returnHandlers.push_back(new SimpleHandlerFP(callback));
     }
 
     void removeAllReturnHandlers()
@@ -6144,7 +6153,12 @@ class Z80
 
     void addCallHandler(const std::function<void(void*)>& callback)
     {
-        CB.callHandlers.push_back(new CallHandler(callback));
+        CB.callHandlers.push_back(new SimpleHandlerFC(callback));
+    }
+
+    void addCallHandlerFP(void (*callback)(void*))
+    {
+        CB.callHandlers.push_back(new SimpleHandlerFP(callback));
     }
 
     void removeAllCallHandlers()
