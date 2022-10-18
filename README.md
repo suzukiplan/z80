@@ -114,11 +114,11 @@ If you want to get it in 16 bits from the beginning, please initialize with 6th 
     Z80 z80(&mmu, readByte, writeByte, inPort, outPort, true);
 ```
 
-Normally, `std::function` is used for callbacks, but in more performance-sensitive cases, a function pointer method can be used.
+Normally, `std::function` is used for callbacks, but in more performance-sensitive cases, a function pointer can be used.
 
 ```c++
     Z80 z80(&mmu);
-    z80.setupPort16CallbackFP([](void* arg, unsigned short addr) {
+    z80.setupCallbackFP([](void* arg, unsigned short addr) {
         return 0x00; // read procedure
     }, [](void* arg, unsigned char addr, unsigned char value) {
         // write procedure
@@ -129,7 +129,8 @@ Normally, `std::function` is used for callbacks, but in more performance-sensiti
     });
 ```
 
-In most cases, optimization with the -O2 option will not cause performance problems, but in case environments where more severe performance is required, FP is recommended.
+However, using function pointers causes inconveniences such as the inability to specify a capture in a lambda expression.
+In most cases, optimization with the `-O2` option will not cause performance problems, but in case environments where more severe performance is required, `setupCallbackFP` is recommended.
 
 The following article (in Japanese) provides a performance comparison between function pointers and `std::function`:
 
