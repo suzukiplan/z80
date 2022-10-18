@@ -88,7 +88,7 @@ class Z80
     inline unsigned char readByte(unsigned short addr, int clock = 4)
     {
         if (clock && wtc.read) consumeClock(wtc.read);
-        unsigned char byte = CB.read.invoke(CB.arg, addr);
+        unsigned char byte = CB.read(CB.arg, addr);
         if (clock) consumeClock(clock);
         return byte;
     }
@@ -96,7 +96,7 @@ class Z80
     inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
     {
         if (wtc.write) consumeClock(wtc.write);
-        CB.write.invoke(CB.arg, addr, value);
+        CB.write(CB.arg, addr, value);
         consumeClock(clock);
     }
 
@@ -191,111 +191,31 @@ class Z80
         }
     }
 
-    class ReadCallback
+    template <typename T>
+    class CoExistenceCallback;
+    template <typename ReturnType, typename... ArgumentTypes>
+    class CoExistenceCallback<ReturnType(ArgumentTypes...)>
     {
       private:
-        unsigned char (*fp)(void* arg, unsigned short addr);
-        std::function<unsigned char(void*, unsigned short)> fc;
+        ReturnType (*fp)(ArgumentTypes...);
+        std::function<ReturnType(ArgumentTypes...)> fc;
 
       public:
-        void setupFP(unsigned char (*fp_)(void* arg, unsigned short addr))
-        {
-            fp = fp_;
-        }
-        void setupFC(const std::function<unsigned char(void*, unsigned short)>& fc_)
-        {
-            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
-            fp = nullptr;
-        }
-        unsigned char invoke(void* arg, unsigned short addr)
-        {
-            return fp ? fp(arg, addr) : fc(arg, addr);
-        }
-    };
-
-    class WriteCallback
-    {
-      private:
-        void (*fp)(void* arg, unsigned short addr, unsigned char value);
-        std::function<void(void*, unsigned short, unsigned char value)> fc;
-
-      public:
-        void setupFP(void (*fp_)(void* arg, unsigned short addr, unsigned char value))
-        {
-            fp = fp_;
-        }
-        void setupFC(const std::function<void(void*, unsigned short, unsigned char)>& fc_)
-        {
-            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-            fp = nullptr;
-        }
-        void invoke(void* arg, unsigned short addr, unsigned char value)
-        {
-            fp ? fp(arg, addr, value) : fc(arg, addr, value);
-        }
-    };
-
-    class DebugMessageCallback
-    {
-      private:
-        void (*fp)(void* arg, const char* msg);
-        std::function<void(void*, const char*)> fc;
-
-      public:
-        DebugMessageCallback()
-        {
-            fp = NULL;
-        }
-        void setupFP(void (*fp_)(void* arg, const char* msg))
-        {
-            fp = fp_;
-        }
-        void setupFC(const std::function<void(void*, const char*)>& fc_)
-        {
-            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
-            fp = nullptr;
-        }
-        void invoke(void* arg, const char* msg)
-        {
-            fp ? fp(arg, msg) : fc(arg, msg);
-        }
-    };
-
-    class ConsumeClockCallback
-    {
-      private:
-        void (*fp)(void* arg, int clocks);
-        std::function<void(void*, int)> fc;
-
-      public:
-        ConsumeClockCallback()
-        {
-            fp = NULL;
-        }
-        void setupFP(void (*fp_)(void* arg, int clocks))
-        {
-            fp = fp_;
-        }
-        void setupFC(const std::function<void(void*, int)>& fc_)
-        {
-            fc = std::bind(fc_, std::placeholders::_1, std::placeholders::_2);
-            fp = nullptr;
-        }
-        void invoke(void* arg, int clocks)
-        {
-            fp ? fp(arg, clocks) : fc(arg, clocks);
-        }
+        CoExistenceCallback() { fp = nullptr; }
+        void setupAsFunctionObject(const std::function<ReturnType(ArgumentTypes...)>& fc_) { fc = fc_; }
+        void setupAsFunctionPointer(ReturnType (*fp_)(ArgumentTypes...)) { fp = fp_; }
+        inline ReturnType operator()(ArgumentTypes... args) { return fp ? fp(args...) : fc(args...); }
     };
 
     struct Callback {
-        ReadCallback read;
-        WriteCallback write;
+        CoExistenceCallback<unsigned char(void*, unsigned short)> read;
+        CoExistenceCallback<void(void*, unsigned short, unsigned char)> write;
         bool returnPortAs16Bits;
-        ReadCallback in;
-        WriteCallback out;
-        DebugMessageCallback debugMessage;
+        CoExistenceCallback<unsigned char(void*, unsigned short)> in;
+        CoExistenceCallback<void(void*, unsigned short, unsigned char)> out;
+        CoExistenceCallback<void(void*, const char*)> debugMessage;
         bool debugMessageEnabled;
-        ConsumeClockCallback consumeClock;
+        CoExistenceCallback<void(void*, int)> consumeClock;
         bool consumeClockEnabled;
         std::map<int, std::vector<BreakPoint*>*> breakPoints;
         std::map<int, std::vector<BreakOperand*>*> breakOperands;
@@ -403,7 +323,7 @@ class Z80
         va_start(args, format);
         vsnprintf(buf, sizeof(buf), format, args);
         va_end(args);
-        CB.debugMessage.invoke(CB.arg, buf);
+        CB.debugMessage(CB.arg, buf);
     }
 
     inline unsigned short getAF()
@@ -599,7 +519,7 @@ class Z80
     inline int consumeClock(int hz)
     {
         reg.consumeClockCounter += hz;
-        if (CB.consumeClockEnabled && hz) CB.consumeClock.invoke(CB.arg, hz);
+        if (CB.consumeClockEnabled && hz) CB.consumeClock(CB.arg, hz);
         return hz;
     }
 
@@ -613,14 +533,14 @@ class Z80
 
     inline unsigned char inPort(unsigned char port, int clock = 4)
     {
-        unsigned char byte = CB.in.invoke(CB.arg, CB.returnPortAs16Bits ? getPort16(port) : port);
+        unsigned char byte = CB.in(CB.arg, CB.returnPortAs16Bits ? getPort16(port) : port);
         consumeClock(clock);
         return byte;
     }
 
     inline void outPort(unsigned char port, unsigned char value, int clock = 4)
     {
-        CB.out.invoke(CB.arg, CB.returnPortAs16Bits ? getPort16(port) : port, value);
+        CB.out(CB.arg, CB.returnPortAs16Bits ? getPort16(port) : port, value);
         consumeClock(clock);
     }
 
@@ -6050,10 +5970,10 @@ class Z80
                        std::function<void(void*, unsigned short, unsigned char)> out,
                        bool returnPortAs16Bits = false)
     {
-        this->CB.read.setupFC(read);
-        this->CB.write.setupFC(write);
-        this->CB.in.setupFC(in);
-        this->CB.out.setupFC(out);
+        this->CB.read.setupAsFunctionObject(read);
+        this->CB.write.setupAsFunctionObject(write);
+        this->CB.in.setupAsFunctionObject(in);
+        this->CB.out.setupAsFunctionObject(out);
         this->CB.returnPortAs16Bits = returnPortAs16Bits;
     }
 
@@ -6063,10 +5983,10 @@ class Z80
                          void (*out)(void* arg, unsigned short port, unsigned char value),
                          bool returnPortAs16Bits = false)
     {
-        this->CB.read.setupFP(read);
-        this->CB.write.setupFP(write);
-        this->CB.in.setupFP(in);
-        this->CB.out.setupFP(out);
+        this->CB.read.setupAsFunctionPointer(read);
+        this->CB.write.setupAsFunctionPointer(write);
+        this->CB.in.setupAsFunctionPointer(in);
+        this->CB.out.setupAsFunctionPointer(out);
         this->CB.returnPortAs16Bits = returnPortAs16Bits;
     }
 
@@ -6092,13 +6012,13 @@ class Z80
     void setDebugMessage(const std::function<void(void*, const char*)>& debugMessage)
     {
         CB.debugMessageEnabled = true;
-        CB.debugMessage.setupFC(debugMessage);
+        CB.debugMessage.setupAsFunctionObject(debugMessage);
     }
 
     void setDebugMessageFP(void (*debugMessage)(void* arg, const char* msg))
     {
         CB.debugMessageEnabled = true;
-        CB.debugMessage.setupFP(debugMessage);
+        CB.debugMessage.setupAsFunctionPointer(debugMessage);
     }
 
     void resetDebugMessage()
@@ -6236,13 +6156,13 @@ class Z80
     void setConsumeClockCallbackFP(void (*consumeClock_)(void* arg, int clocks))
     {
         CB.consumeClockEnabled = true;
-        CB.consumeClock.setupFP(consumeClock_);
+        CB.consumeClock.setupAsFunctionPointer(consumeClock_);
     }
 
     void setConsumeClockCallback(const std::function<void(void*, int)>& consumeClock_)
     {
         CB.consumeClockEnabled = true;
-        CB.consumeClock.setupFC(consumeClock_);
+        CB.consumeClock.setupAsFunctionObject(consumeClock_);
     }
 
     void resetConsumeClockCallback()
