@@ -106,6 +106,8 @@ void outPort(void* arg, unsigned short port, unsigned char value)
     Z80 z80(readByte, writeByte, inPort, outPort, &mmu);
 ```
 
+#### 3-1. Cases when want to use 16bit port 
+
 Note that by default, only the lower 8 bits of the port number can be obtained in the callback argument, and the upper 8 bits must be referenced from register B.
 
 If you want to get it in 16 bits from the beginning, please initialize with 6th argument to `true` as follows:
@@ -113,6 +115,8 @@ If you want to get it in 16 bits from the beginning, please initialize with 6th 
 ```c++
     Z80 z80(&mmu, readByte, writeByte, inPort, outPort, true);
 ```
+
+#### 3-2. Cases when performance-sensitive
 
 Normally, `std::function` is used for callbacks, but in more performance-sensitive cases, a function pointer can be used.
 
