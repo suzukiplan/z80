@@ -1,5 +1,13 @@
 # Change log
 
+## Version 1.8.0
+
+- add new FP methods:
+  - `addBreakPointFP`
+  - `addBreakOperandFP`
+  - `addReturnHandlerFP`
+  - `addCallHandlerFP`
+
 ## Version 1.7.1 (Oct 18, 2022, JST)
 
 - A bug that prevented `addBreakOperand` from working as expected has been addressed.

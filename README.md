@@ -195,6 +195,7 @@ If you want to execute processing just before executing an instruction of specif
 
 - `addBreakPoint` can set multiple breakpoints.
 - call `removeBreakPoint` or `removeAllBreakPoints` if you want to remove the break point(s).
+- call `addBreakPointFP` if you want to use the function pointer.
 
 ### Use break operand
 
@@ -226,6 +227,7 @@ If you want to execute processing just before executing an instruction of specif
 - the opcode and length at break are stored in `opcode` and `opcodeLength` when the callback is made.
 - `addBreakOperand` can set multiple breakpoints.
 - call `removeBreakOperand` or `removeAllBreakOperands` if you want to remove the break operand(s).
+- call `addBreakOperandFP` if you want to use the function pointer.
 
 ### Detect clock consuming
 
@@ -277,6 +279,7 @@ CallHandler will be called back immediately **after** a branch by a CALL instruc
 
 - `addCallHandler` can set multiple CallHandlers.
 - call `removeAllCallHandlers` if you want to remove the CallHandler(s).
+- call `addCallHandlerFP` if you want to use the function pointer.
 - CallHandler also catches branches caused by interrupts.
 - In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
 
@@ -301,6 +304,7 @@ ReturnHandler will be called back immediately **before** a branch by a RET instr
 
 - `addReturnHandler` can set multiple ReturnHandlers.
 - call `removeAllReturnHandlers` if you want to remove the ReturnHandler(s).
+- call `addReturnHandlerFP` if you want to use the function pointer.
 - In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
 
 ## License
