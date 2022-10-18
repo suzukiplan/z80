@@ -6025,17 +6025,16 @@ class Z80
     }
 
   public: // API functions
-    Z80(unsigned char (*read)(void* arg, unsigned short addr),
-        void (*write)(void* arg, unsigned short addr, unsigned char value),
-        unsigned char (*in)(void* arg, unsigned short port),
-        void (*out)(void* arg, unsigned short port, unsigned char value),
+    Z80(std::function<unsigned char(void*, unsigned short)> read,
+        std::function<void(void*, unsigned short, unsigned char)> write,
+        std::function<unsigned char(void*, unsigned short)> in,
+        std::function<void(void*, unsigned short, unsigned char)> out,
         void* arg,
         bool returnPortAs16Bits = false)
     {
         this->CB.arg = arg;
-        this->CB.returnPortAs16Bits = returnPortAs16Bits;
-        setupCallback(read, write, in, out);
         initialize();
+        setupCallback(read, write, in, out, returnPortAs16Bits);
     }
 
     // without setup callbacks
@@ -6045,30 +6044,29 @@ class Z80
         initialize();
     }
 
-    void setupCallback(unsigned char (*read)(void* arg, unsigned short addr),
-                       void (*write)(void* arg, unsigned short addr, unsigned char value),
-                       unsigned char (*in)(void* arg, unsigned short port),
-                       void (*out)(void* arg, unsigned short port, unsigned char value),
+    void setupCallback(std::function<unsigned char(void*, unsigned short)> read,
+                       std::function<void(void*, unsigned short, unsigned char)> write,
+                       std::function<unsigned char(void*, unsigned short)> in,
+                       std::function<void(void*, unsigned short, unsigned char)> out,
                        bool returnPortAs16Bits = false)
-    {
-        this->CB.read.setupFP(read);
-        this->CB.write.setupFP(write);
-        this->CB.in.setupFP(in);
-        this->CB.out.setupFP(out);
-        this->CB.returnPortAs16Bits = returnPortAs16Bits;
-    }
-
-    // NOTE: Performance issue is exist
-    void setupCallbackFC(std::function<unsigned char(void*, unsigned short)> read,
-                         std::function<void(void*, unsigned short, unsigned char)> write,
-                         std::function<unsigned char(void*, unsigned short)> in,
-                         std::function<void(void*, unsigned short, unsigned char)> out,
-                         bool returnPortAs16Bits = false)
     {
         this->CB.read.setupFC(read);
         this->CB.write.setupFC(write);
         this->CB.in.setupFC(in);
         this->CB.out.setupFC(out);
+        this->CB.returnPortAs16Bits = returnPortAs16Bits;
+    }
+
+    void setupCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
+                         void (*write)(void* arg, unsigned short addr, unsigned char value),
+                         unsigned char (*in)(void* arg, unsigned short port),
+                         void (*out)(void* arg, unsigned short port, unsigned char value),
+                         bool returnPortAs16Bits = false)
+    {
+        this->CB.read.setupFP(read);
+        this->CB.write.setupFP(write);
+        this->CB.in.setupFP(in);
+        this->CB.out.setupFP(out);
         this->CB.returnPortAs16Bits = returnPortAs16Bits;
     }
 
@@ -6091,13 +6089,13 @@ class Z80
         removeAllReturnHandlers();
     }
 
-    void setDebugMessageFC(const std::function<void(void*, const char*)>& debugMessage)
+    void setDebugMessage(const std::function<void(void*, const char*)>& debugMessage)
     {
         CB.debugMessageEnabled = true;
         CB.debugMessage.setupFC(debugMessage);
     }
 
-    void setDebugMessage(void (*debugMessage)(void* arg, const char* msg))
+    void setDebugMessageFP(void (*debugMessage)(void* arg, const char* msg))
     {
         CB.debugMessageEnabled = true;
         CB.debugMessage.setupFP(debugMessage);
@@ -6235,13 +6233,13 @@ class Z80
         CB.callHandlers.clear();
     }
 
-    void setConsumeClockCallback(void (*consumeClock_)(void* arg, int clocks))
+    void setConsumeClockCallbackFP(void (*consumeClock_)(void* arg, int clocks))
     {
         CB.consumeClockEnabled = true;
         CB.consumeClock.setupFP(consumeClock_);
     }
 
-    void setConsumeClockCallbackFC(const std::function<void(void*, int)>& consumeClock_)
+    void setConsumeClockCallback(const std::function<void(void*, int)>& consumeClock_)
     {
         CB.consumeClockEnabled = true;
         CB.consumeClock.setupFC(consumeClock_);

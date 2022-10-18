@@ -118,7 +118,8 @@ int main(int argc, char* argv[])
         return 1;
     }
     CPM cpm;
-    Z80 z80(readMemory, writeMemory, inPort, outPort, &cpm);
+    Z80 z80(&cpm);
+    z80.setupCallbackFP(readMemory, writeMemory, inPort, outPort);
     if (!cpm.init(cimPath)) {
         puts("Cannot initialized");
         return -1;

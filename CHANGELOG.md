@@ -2,16 +2,24 @@
 
 ## Version 1.7.0 (Oct 17, 2022 JST)
 
-- **Destructive** change specification of callbacks
-  - before: use `std::function` all (version 1.6.0 or later)
-  - after:
-    - by default: use function pointer (same as version 1.5.0 or past)
-    - optional: use `std::function` if use `setCallbackFC`
-  - This is due to the very frequent callback invocations and the problem that `std::function` does not provide sufficient performance.
-- Add new constructor without specify in/out callbacks.
-- Add the set 8bit in/out port callbacks method: `setPort8Callback` and `setPort8CallbackFC`
-- Add the set 16bit in/out port callbacks method: `setPort16Callback` and `setPort16CallbackFC`
+- **Destructive** change specification of in/out callback:
+  - before: 2nd argument is `unsigned char`
+    - `std::function<unsigned char(void*, unsigned char)> in`
+    - `std::function<void(void*, unsigned char, unsigned char)> out`
+  - after: 2nd argument is `unsigned short`
+    - `std::function<unsigned char(void*, unsigned short)> in`
+    - `std::function<void(void*, unsigned short, unsigned char)> out`
+- Add an argument `returnPortAs16Bits` to the constructor to specify whether the port should receive 16-bit
+- Add a constructor without set callbacks
+- Add the set callbacks method: `setupCallback` and `setupCallbackFP`
+  - `setupCallback` ... using `std::function`
+  - `setupCallbackFP` ... using function pointer
+- Add the set callback as function ponter methods:
+  - `setDebugMessageFP`
+  - `setConsumeClockFP`
 - Optimize performance: `BreakOperands` and `BreakPoints`
+  - before: liner search the target address/opcode
+  - after: binary search the target address/opcode
 
 ## Version 1.6.0 (Oct 16, 2022 JST)
 

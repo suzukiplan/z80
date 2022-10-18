@@ -114,33 +114,15 @@ If you want to get it in 16 bits from the beginning, please initialize with 6th 
     Z80 z80(&mmu, readByte, writeByte, inPort, outPort, true);
 ```
 
-By default, all callbacks use function pointers rather than `std::function`.
-This is due to the very frequent callback invocations and the problem that `std::function` does not provide sufficient performance.
-
-SUZUKI PLAN - Z80 Emulator provides a means to register callback functions with `std::function`. Please use following if you do not need to worry about performance issues:
+Normally, `std::function` is used for callbacks, but in more performance-sensitive cases, a function pointer method can be used.
 
 ```c++
     Z80 z80(&mmu);
-    z80.setupCallbackFC([&hoge](void* arg, unsigned short addr) {
+    z80.setupPort16CallbackFP([](void* arg, unsigned short addr) {
         return 0x00; // read procedure
-    }, [&hoge](void* arg, unsigned char addr, unsigned char value) {
+    }, [](void* arg, unsigned char addr, unsigned char value) {
         // write procedure
-    }, [&hoge](void* arg, unsigned short port) {
-        return 0x00; // input port procedure
-    }, [](void* arg, unsigned short port, unsigned char value) {
-        // output port procedure
-    });
-```
-
-or
-
-```c++
-    Z80 z80(&mmu);
-    z80.setupPort16CallbackFC([&hoge](void* arg, unsigned short addr) {
-        return 0x00; // read procedure
-    }, [&hoge](void* arg, unsigned char addr, unsigned char value) {
-        // write procedure
-    }, [&hoge](void* arg, unsigned short port) {
+    }, [](void* arg, unsigned short port) {
         return 0x00; // input port procedure
     }, [](void* arg, unsigned short port, unsigned char value) {
         // output port procedure
@@ -186,7 +168,7 @@ Debug message contains dynamic disassembly results step by step.
 ```
 
 - call `resetDebugMessage` if you want to remove the detector.
-- call `setDebugMessageFC` if you want to use `std::function`.
+- call `setDebugMessageFP` if you want to use the function pointer.
 
 ### Use break point
 
@@ -245,7 +227,7 @@ If you want to implement stricter synchronization, you can capture the CPU clock
 ```
 
 - call `resetConsumeClockCallback` if you want to remove the detector.
-- call `setConsumeClockCallbackFC` if you want to use `std::function`.
+- call `setConsumeClockCallbackFP` if you want to use the function pointer.
 
 > With this callback, the CPU cycle (clock) can be synchronized in units of 3 to 4 Hz, and while the execution of a single Z80 instruction requires approximately 10 to 20 Hz of CPU cycle (time), the SUZUKI PLAN - Z80 Emulator can synchronize the CPU cycle (time) for fetch, execution, write back, etc. However, the SUZUKI PLAN - Z80 Emulator can synchronize fetches, executions, writes, backs, etc. in smaller units. This makes it easy to implement severe timing emulation.
 
