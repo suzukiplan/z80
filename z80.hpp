@@ -6146,7 +6146,7 @@ class Z80
         if (it == CB.breakOperands.end()) {
             CB.breakOperands[operandNumber] = new std::vector<BreakOperand*>();
         }
-        CB.breakOperands[operandNumber]->push_back(new BreakOperand(prefixNumber, operandNumber & 0xFF, callback));
+        CB.breakOperands[operandNumber]->push_back(new BreakOperand(prefixNumber, operandNumber, callback));
     }
 
     void addBreakOperand(unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
