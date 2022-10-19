@@ -149,6 +149,7 @@ https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
 #### 4-2. Interruption of execution
 
 - Execution of the `requestBreak` method can abort the `execute` at an arbitrary time.
+- In the case of a typical 8-bit game console emulator implementation, it is assumed that synchronization with the VDP (and sound-module) is performed by `consumeClock`, and `requestBreak` is executed when the VDP emits the V-SYNC signal.
 
 #### 4-3. Example
 
@@ -189,14 +190,14 @@ Result is following:
 
 ```
 ===== execute(0) =====
-actualExecuteClocks = 0Hz
+actualExecuteClocks = 0Hz ... 0 is specified, no instruction is executed at all
 ===== execute(1) =====
 consume 2Hz
 consume 2Hz
 consume 3Hz
 consume 3Hz
 [0000] LD BC<$0000>, $1234
-actualExecuteClocks = 10Hz
+actualExecuteClocks = 10Hz ... specify 1 to single step execution
 ===== execute(0x7FFFFFFF) =====
 consume 2Hz
 consume 2Hz
@@ -207,7 +208,7 @@ consume 2Hz
 consume 4Hz
 [0005] OUT (C<$34>), A<$01>
 consume 4Hz
-actualExecuteClocks = 19Hz
+actualExecuteClocks = 19Hz ... 2147483647Hz+ is not executed but interrupted after completion of OUT due to requestBreak during OUT execution
 ```
 
 ### 5. Generate interrupt
