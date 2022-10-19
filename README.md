@@ -139,17 +139,16 @@ https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
     int actualExecuteClocks = z80.execute(1234);
 ```
 
-#### 4-1. Minimum actual execute clocks
+#### 4-1. Actual execute clocks
 
-- The `execute` method executes an instruction repeatedly until the number of clocks elapsed since the function was executed exceeds the number of clocks specified in the argument each time an instruction is executed.
-- Therefore, the actual execute clocks may be larger than the value specified in the argument, depending on the contents of the program to be executed.
+- The `execute` method repeats the execution of an instruction until the total number of clocks from the time of the call is greater than or equal to the value specified in the "clocks" argument.
 - If a value less than or equal to 0 is specified, no instruction is executed at all.
-- If you want step execution, you can specify 1
+- If you want single operand execution, you can specify 1.
 
 #### 4-2. Interruption of execution
 
 - Execution of the `requestBreak` method can abort the `execute` at an arbitrary time.
-- In the case of a typical 8-bit game console emulator implementation, it is assumed that synchronization with the VDP (and sound-module) is performed by `consumeClock`, and `requestBreak` is executed when the VDP emits the V-SYNC signal.
+- In the case of a typical 8-bit game console emulator implementation, our assumed usage that synchronization with the VDP (and sound-module) is performed by `consumeClock`, and `requestBreak` is executed when the VDP emits the V-SYNC signal.
 
 #### 4-3. Example
 
