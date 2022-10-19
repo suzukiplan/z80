@@ -370,53 +370,14 @@ class Z80
     inline unsigned short getHL() { return make16BitsFromLE(reg.pair.L, reg.pair.H); }
     inline unsigned short getHL2() { return make16BitsFromLE(reg.back.L, reg.back.H); }
 
-    inline void setAF(unsigned short value)
-    {
-        reg.pair.A = (value & 0xFF00) >> 8;
-        reg.pair.F = (value & 0x00FF);
-    }
-
-    inline void setAF2(unsigned short value)
-    {
-        reg.back.A = (value & 0xFF00) >> 8;
-        reg.back.F = (value & 0x00FF);
-    }
-
-    inline void setBC(unsigned short value)
-    {
-        reg.pair.B = (value & 0xFF00) >> 8;
-        reg.pair.C = (value & 0x00FF);
-    }
-
-    inline void setBC2(unsigned short value)
-    {
-        reg.back.B = (value & 0xFF00) >> 8;
-        reg.back.C = (value & 0x00FF);
-    }
-
-    inline void setDE(unsigned short value)
-    {
-        reg.pair.D = (value & 0xFF00) >> 8;
-        reg.pair.E = (value & 0x00FF);
-    }
-
-    inline void setDE2(unsigned short value)
-    {
-        reg.back.D = (value & 0xFF00) >> 8;
-        reg.back.E = (value & 0x00FF);
-    }
-
-    inline void setHL(unsigned short value)
-    {
-        reg.pair.H = (value & 0xFF00) >> 8;
-        reg.pair.L = (value & 0x00FF);
-    }
-
-    inline void setHL2(unsigned short value)
-    {
-        reg.back.H = (value & 0xFF00) >> 8;
-        reg.back.L = (value & 0x00FF);
-    }
+    inline void setAF(unsigned short value) { splitTo8BitsPair(value, &reg.pair.A, &reg.pair.F); }
+    inline void setAF2(unsigned short value) { splitTo8BitsPair(value, &reg.back.A, &reg.back.F); }
+    inline void setBC(unsigned short value) { splitTo8BitsPair(value, &reg.pair.B, &reg.pair.C); }
+    inline void setBC2(unsigned short value) { splitTo8BitsPair(value, &reg.back.B, &reg.back.C); }
+    inline void setDE(unsigned short value) { splitTo8BitsPair(value, &reg.pair.D, &reg.pair.E); }
+    inline void setDE2(unsigned short value) { splitTo8BitsPair(value, &reg.back.D, &reg.back.E); }
+    inline void setHL(unsigned short value) { splitTo8BitsPair(value, &reg.pair.H, &reg.pair.L); }
+    inline void setHL2(unsigned short value) { splitTo8BitsPair(value, &reg.back.H, &reg.back.L); }
 
     inline unsigned short getRP(unsigned char rp)
     {
@@ -450,24 +411,10 @@ class Z80
 
     inline void setRP(unsigned char rp, unsigned short value)
     {
-        unsigned char h = (value & 0xFF00) >> 8;
-        unsigned char l = value & 0x00FF;
         switch (rp & 0b11) {
-            case 0b00: {
-                reg.pair.B = h;
-                reg.pair.C = l;
-                break;
-            }
-            case 0b01: {
-                reg.pair.D = h;
-                reg.pair.E = l;
-                break;
-            }
-            case 0b10: {
-                reg.pair.H = h;
-                reg.pair.L = l;
-                break;
-            }
+            case 0b00: setBC(value); break;
+            case 0b01: setDE(value); break;
+            case 0b10: setHL(value); break;
             default: reg.SP = value;
         }
     }
@@ -476,6 +423,8 @@ class Z80
     inline unsigned char getIXL() { return reg.IX & 0x00Ff; }
     inline unsigned char getIYH() { return (reg.IY & 0xFF00) >> 8; }
     inline unsigned char getIYL() { return reg.IY & 0x00Ff; }
+    inline unsigned char getPCH() { return (reg.PC & 0xFF00) >> 8; }
+    inline unsigned char getPCL() { return reg.PC & 0x00Ff; }
     inline void setIXH(unsigned char v) { reg.IX = (reg.IX & 0x00FF) + v * 256; }
     inline void setIXL(unsigned char v) { reg.IX = (reg.IX & 0xFF00) + v; }
     inline void setIYH(unsigned char v) { reg.IY = (reg.IY & 0x00FF) + v * 256; }
@@ -727,11 +676,9 @@ class Z80
         unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
         unsigned short addr = ctx->make16BitsFromLE(nL, nH);
-        unsigned char l = ctx->readByte(addr, 3);
-        unsigned char h = ctx->readByte(addr + 1, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%02X%02X", ctx->reg.PC, ctx->getHL(), addr, h, l);
-        ctx->reg.pair.L = l;
-        ctx->reg.pair.H = h;
+        unsigned short hl = ctx->make16BitsFromLE(ctx->readByte(addr, 3), ctx->readByte(addr + 1, 3));
+        if (ctx->isDebug()) ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%04X", ctx->reg.PC, ctx->getHL(), addr, hl);
+        ctx->setHL(hl);
         ctx->reg.PC += 3;
         return 0;
     }
@@ -785,14 +732,12 @@ class Z80
 
     static inline int EX_SP_HL(Z80* ctx)
     {
-        unsigned char l = ctx->readByte(ctx->reg.SP);
-        unsigned char h = ctx->readByte(ctx->reg.SP + 1);
+        unsigned short nn = ctx->make16BitsFromLE(ctx->readByte(ctx->reg.SP), ctx->readByte(ctx->reg.SP + 1));
         unsigned short hl = ctx->getHL();
-        if (ctx->isDebug()) ctx->log("[%04X] EX (SP<$%04X>) = $%02X%02X, HL<$%04X>", ctx->reg.PC, ctx->reg.SP, h, l, hl);
+        if (ctx->isDebug()) ctx->log("[%04X] EX (SP<$%04X>) = $%04X, HL<$%04X>", ctx->reg.PC, ctx->reg.SP, nn, hl);
         ctx->writeByte(ctx->reg.SP, ctx->reg.pair.L);
         ctx->writeByte(ctx->reg.SP + 1, ctx->reg.pair.H, 3);
-        ctx->reg.pair.L = l;
-        ctx->reg.pair.H = h;
+        ctx->setHL(nn);
         ctx->reg.PC++;
         return 0;
     }
@@ -828,11 +773,9 @@ class Z80
     static inline int POP_AF(Z80* ctx)
     {
         unsigned short sp = ctx->reg.SP;
-        unsigned char l = ctx->readByte(ctx->reg.SP++, 3);
-        unsigned char h = ctx->readByte(ctx->reg.SP++, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] POP AF <SP:$%04X> = $%02X%02X", ctx->reg.PC, sp, h, l);
-        ctx->reg.pair.F = l;
-        ctx->reg.pair.A = h;
+        unsigned short hl = ctx->make16BitsFromLE(ctx->readByte(ctx->reg.SP++, 3), ctx->readByte(ctx->reg.SP++, 3));
+        if (ctx->isDebug()) ctx->log("[%04X] POP AF <SP:$%04X> = $%04X", ctx->reg.PC, sp, hl);
+        ctx->setAF(hl);
         ctx->reg.PC++;
         return 0;
     }
@@ -1367,7 +1310,7 @@ class Z80
     static inline int LD_E_IYH(Z80* ctx) { return ctx->LD_R_IYH(0b011); }
     inline int LD_R_IYH(unsigned char r)
     {
-        unsigned char iyh = (reg.IY & 0xFF00) >> 8;
+        unsigned char iyh = getIYH();
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] LD %s, IYH<$%02X>", reg.PC, registerDump(r), iyh);
         if (rp) *rp = iyh;
@@ -1383,7 +1326,7 @@ class Z80
     static inline int LD_E_IYL(Z80* ctx) { return ctx->LD_R_IYL(0b011); }
     inline int LD_R_IYL(unsigned char r)
     {
-        unsigned char iyl = reg.IY & 0x00FF;
+        unsigned char iyl = getIYL();
         unsigned char* rp = getRegisterPointer(r);
         if (isDebug()) log("[%04X] LD %s, IYL<$%02X>", reg.PC, registerDump(r), iyl);
         if (rp) *rp = iyl;
@@ -1546,26 +1489,14 @@ class Z80
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
         unsigned short addr = make16BitsFromLE(nL, nH);
-        unsigned char l = readByte(addr, 3);
-        unsigned char h = readByte(addr + 1, 3);
+        unsigned short hl = make16BitsFromLE(readByte(addr, 3), readByte(addr + 1, 3));
         reg.WZ = addr + 1;
-        if (isDebug()) log("[%04X] LD %s, ($%02X%02X) = $%02X%02X", reg.PC, registerPairDump(rp), nH, nL, h, l);
+        if (isDebug()) log("[%04X] LD %s, ($%02X%02X) = $%04X", reg.PC, registerPairDump(rp), nH, nL, hl);
         switch (rp) {
-            case 0b00:
-                reg.pair.B = h;
-                reg.pair.C = l;
-                break;
-            case 0b01:
-                reg.pair.D = h;
-                reg.pair.E = l;
-                break;
-            case 0b10:
-                reg.pair.H = h;
-                reg.pair.L = l;
-                break;
-            case 0b11:
-                reg.SP = make16BitsFromLE(l, h);
-                break;
+            case 0b00: setBC(hl); break;
+            case 0b01: setDE(hl); break;
+            case 0b10: setHL(hl); break;
+            case 0b11: reg.SP = hl; break;
             default:
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
@@ -1601,8 +1532,7 @@ class Z80
                 l = reg.pair.L;
                 break;
             case 0b11:
-                h = (reg.SP & 0xFF00) >> 8;
-                l = reg.SP & 0x00FF;
+                splitTo8BitsPair(reg.SP, &h, &l);
                 break;
             default:
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
@@ -1652,8 +1582,8 @@ class Z80
         unsigned char nH = readByte(reg.PC + 3, 3);
         unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] LD ($%04X), IX<$%04X>", reg.PC, addr, reg.IX);
-        unsigned char l = reg.IX & 0x00FF;
-        unsigned char h = (reg.IX & 0xFF00) >> 8;
+        unsigned char l = getIXL();
+        unsigned char h = getIXH();
         writeByte(addr, l, 3);
         writeByte(addr + 1, h, 3);
         reg.PC += 4;
@@ -1667,8 +1597,8 @@ class Z80
         unsigned char nH = readByte(reg.PC + 3, 3);
         unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] LD ($%04X), IY<$%04X>", reg.PC, addr, reg.IY);
-        unsigned char l = reg.IY & 0x00FF;
-        unsigned char h = (reg.IY & 0xFF00) >> 8;
+        unsigned char l = getIYL();
+        unsigned char h = getIYH();
         writeByte(addr, l, 3);
         writeByte(addr + 1, h, 3);
         reg.PC += 4;
@@ -1747,8 +1677,8 @@ class Z80
     {
         unsigned char l = readByte(reg.SP);
         unsigned char h = readByte(reg.SP + 1);
-        unsigned char i = (reg.IX & 0xFF00) >> 8;
-        unsigned char x = reg.IX & 0x00FF;
+        unsigned char i = getIXH();
+        unsigned char x = getIXL();
         if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IX<$%04X>", reg.PC, reg.SP, h, l, reg.IX);
         writeByte(reg.SP, x);
         writeByte(reg.SP + 1, i, 3);
@@ -1763,8 +1693,8 @@ class Z80
     {
         unsigned char l = readByte(reg.SP);
         unsigned char h = readByte(reg.SP + 1);
-        unsigned char i = (reg.IY & 0xFF00) >> 8;
-        unsigned char y = reg.IY & 0x00FF;
+        unsigned char i = getIYH();
+        unsigned char y = getIYL();
         if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IY<$%04X>", reg.PC, reg.SP, h, l, reg.IY);
         writeByte(reg.SP, y);
         writeByte(reg.SP + 1, i, 3);
@@ -1845,8 +1775,8 @@ class Z80
     inline int PUSH_IX()
     {
         if (isDebug()) log("[%04X] PUSH IX<$%04X> <SP:$%04X>", reg.PC, reg.IX, reg.SP);
-        unsigned char h = (reg.IX & 0xFF00) >> 8;
-        unsigned char l = reg.IX & 0x00FF;
+        unsigned char h = getIXH();
+        unsigned char l = getIXL();
         writeByte(--reg.SP, h);
         writeByte(--reg.SP, l, 3);
         reg.PC += 2;
@@ -1871,8 +1801,8 @@ class Z80
     inline int PUSH_IY()
     {
         if (isDebug()) log("[%04X] PUSH IY<$%04X> <SP:$%04X>", reg.PC, reg.IY, reg.SP);
-        unsigned char h = (reg.IY & 0xFF00) >> 8;
-        unsigned char l = reg.IY & 0x00FF;
+        unsigned char h = getIYH();
+        unsigned char l = getIYL();
         writeByte(--reg.SP, h);
         writeByte(--reg.SP, l, 3);
         reg.PC += 2;
@@ -5185,10 +5115,8 @@ class Z80
         unsigned short addr = ctx->make16BitsFromLE(nL, nH);
         if (ctx->isDebug()) ctx->log("[%04X] CALL $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
         ctx->reg.PC += 3;
-        unsigned char pcL = ctx->reg.PC & 0x00FF;
-        unsigned char pcH = (ctx->reg.PC & 0xFF00) >> 8;
-        ctx->writeByte(ctx->reg.SP - 1, pcH, 3);
-        ctx->writeByte(ctx->reg.SP - 2, pcL, 3);
+        ctx->writeByte(ctx->reg.SP - 1, ctx->getPCH(), 3);
+        ctx->writeByte(ctx->reg.SP - 2, ctx->getPCL(), 3);
         ctx->reg.SP -= 2;
         ctx->reg.WZ = addr;
         ctx->reg.PC = addr;
@@ -5239,10 +5167,8 @@ class Z80
         if (isDebug()) log("[%04X] CALL %s, $%04X (%s) <execute:%s>", reg.PC, conditionDump(c), addr, registerPairDump(0b11), execute ? "YES" : "NO");
         reg.PC += 3;
         if (execute) {
-            unsigned char pcL = reg.PC & 0x00FF;
-            unsigned char pcH = (reg.PC & 0xFF00) >> 8;
-            writeByte(reg.SP - 1, pcH);
-            writeByte(reg.SP - 2, pcL, 3);
+            writeByte(reg.SP - 1, getPCH());
+            writeByte(reg.SP - 2, getPCL(), 3);
             reg.SP -= 2;
             reg.PC = addr;
             invokeCallHandlers();
@@ -5345,10 +5271,8 @@ class Z80
         unsigned short addr = t * 8;
         if (isDebug()) log("[%04X] RST $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         if (incrementPC) reg.PC++;
-        unsigned char pcH = (reg.PC & 0xFF00) >> 8;
-        unsigned char pcL = reg.PC & 0x00FF;
-        writeByte(reg.SP - 1, pcH);
-        writeByte(reg.SP - 2, pcL, 3);
+        writeByte(reg.SP - 1, getPCH());
+        writeByte(reg.SP - 2, getPCL(), 3);
         reg.SP -= 2;
         reg.WZ = addr;
         reg.PC = addr;
@@ -5858,10 +5782,8 @@ class Z80
             reg.R = ((reg.R + 1) & 0x7F) | (reg.R & 0x80);
             reg.IFF |= IFF_NMI();
             reg.IFF &= ~IFF1();
-            unsigned char pcL = reg.PC & 0x00FF;
-            unsigned char pcH = (reg.PC & 0xFF00) >> 8;
-            writeByte(reg.SP - 1, pcH);
-            writeByte(reg.SP - 2, pcL);
+            writeByte(reg.SP - 1, getPCH());
+            writeByte(reg.SP - 2, getPCL());
             reg.SP -= 2;
             reg.PC = reg.interruptAddrN;
             consumeClock(11);
@@ -5890,10 +5812,8 @@ class Z80
                     RST(7, false);
                     break;
                 case 2: { // mode 2
-                    unsigned char pcL = reg.PC & 0x00FF;
-                    unsigned char pcH = (reg.PC & 0xFF00) >> 8;
-                    writeByte(reg.SP - 1, pcH);
-                    writeByte(reg.SP - 2, pcL);
+                    writeByte(reg.SP - 1, getPCH());
+                    writeByte(reg.SP - 2, getPCL());
                     reg.SP -= 2;
                     unsigned short addr = make16BitsFromLE(reg.interruptVector, reg.I);
                     unsigned short pc = make16BitsFromLE(readByte(addr), readByte(addr + 1));
@@ -6032,6 +5952,12 @@ class Z80
         n <<= 8;
         n |= low;
         return n;
+    }
+
+    inline void splitTo8BitsPair(unsigned short value, unsigned char* high, unsigned char* low)
+    {
+        *high = (value & 0xFF00) >> 8;
+        *low = value & 0xFF;
     }
 
     void addBreakPoint(unsigned short addr, const std::function<void(void*)>& callback)
