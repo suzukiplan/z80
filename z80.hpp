@@ -5939,11 +5939,24 @@ class Z80
                        std::function<void(void*, unsigned short, unsigned char)> out,
                        bool returnPortAs16Bits = false)
     {
-        this->CB.read.setupAsFunctionObject(read);
-        this->CB.write.setupAsFunctionObject(write);
-        this->CB.in.setupAsFunctionObject(in);
-        this->CB.out.setupAsFunctionObject(out);
-        this->CB.returnPortAs16Bits = returnPortAs16Bits;
+        setupMemoryCallback(read, write);
+        setupDeviceCallback(in, out, returnPortAs16Bits);
+    }
+
+    void setupMemoryCallback(std::function<unsigned char(void*, unsigned short)> read,
+                             std::function<void(void*, unsigned short, unsigned char)> write)
+    {
+        CB.read.setupAsFunctionObject(read);
+        CB.write.setupAsFunctionObject(write);
+    }
+
+    void setupDeviceCallback(std::function<unsigned char(void*, unsigned short)> in,
+                             std::function<void(void*, unsigned short, unsigned char)> out,
+                             bool returnPortAs16Bits)
+    {
+        CB.in.setupAsFunctionObject(in);
+        CB.out.setupAsFunctionObject(out);
+        CB.returnPortAs16Bits = returnPortAs16Bits;
     }
 
     void setupCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
@@ -5952,11 +5965,24 @@ class Z80
                          void (*out)(void* arg, unsigned short port, unsigned char value),
                          bool returnPortAs16Bits = false)
     {
-        this->CB.read.setupAsFunctionPointer(read);
-        this->CB.write.setupAsFunctionPointer(write);
-        this->CB.in.setupAsFunctionPointer(in);
-        this->CB.out.setupAsFunctionPointer(out);
-        this->CB.returnPortAs16Bits = returnPortAs16Bits;
+        setupMemoryCallbackFP(read, write);
+        setupDeviceCallbackFP(in, out, returnPortAs16Bits);
+    }
+
+    void setupMemoryCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
+                               void (*write)(void* arg, unsigned short addr, unsigned char value))
+    {
+        CB.read.setupAsFunctionPointer(read);
+        CB.write.setupAsFunctionPointer(write);
+    }
+
+    void setupDeviceCallbackFP(unsigned char (*in)(void* arg, unsigned short addr),
+                               void (*out)(void* arg, unsigned short addr, unsigned char value),
+                               bool returnPortAs16Bits)
+    {
+        CB.in.setupAsFunctionPointer(in);
+        CB.out.setupAsFunctionPointer(out);
+        CB.returnPortAs16Bits = returnPortAs16Bits;
     }
 
     void initialize()
