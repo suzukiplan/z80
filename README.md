@@ -147,8 +147,13 @@ https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
 
 #### 4-2. Interruption of execution
 
-- Execution of the `requestBreak` method can abort the `execute` at an arbitrary time.
-- In the case of a typical 8-bit game console emulator implementation, our assumed usage that synchronization with the VDP (and sound-module) is performed by `consumeClock`, and `requestBreak` is executed when the VDP emits the V-SYNC signal.
+Execution of the `requestBreak` method can abort the `execute` at an arbitrary time.
+
+> A typical 8-bit game console emulator implementation that I envision:
+>
+> - Implement synchronization with Video Display Processor (VDP) and other devices (sound modules, etc.) in `consumeClock` callback.
+> - Call `requestBreak` when V-SYNC signal is received from VDP.
+> - Call `execute` with a large value such as `INT_MAX`.
 
 #### 4-3. Example
 
