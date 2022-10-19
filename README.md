@@ -261,7 +261,7 @@ If you want to execute processing just before executing an instruction of specif
     });
 ```
 
-- `addBreakPoint` can set multiple breakpoints.
+- `addBreakPoint` can set multiple breakpoints for the same address.
 - call `removeBreakPoint` or `removeAllBreakPoints` if you want to remove the break point(s).
 - call `addBreakPointFP` if you want to use the function pointer.
 
@@ -293,7 +293,7 @@ If you want to execute processing just before executing an instruction of specif
 ```
 
 - the opcode and length at break are stored in `opcode` and `opcodeLength` when the callback is made.
-- `addBreakOperand` can set multiple breakpoints.
+- `addBreakOperand` can set multiple breakpoints for the same operand.
 - call `removeBreakOperand` or `removeAllBreakOperands` if you want to remove the break operand(s).
 - call `addBreakOperandFP` if you want to use the function pointer.
 
