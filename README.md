@@ -128,9 +128,9 @@ Normally, `std::function` is used for callbacks, but in more performance-sensiti
 However, using function pointers causes inconveniences such as the inability to specify a capture in a lambda expression.
 In most cases, optimization with the `-O2` option will not cause performance problems, but in case environments where more severe performance is required, `setupCallbackFP` is recommended.
 
-The following article (in Japanese) provides a performance comparison between function pointers and `std::function`:
-
-https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
+> The following article (in Japanese) provides a performance comparison between function pointers and `std::function`:
+>
+> https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
 
 ### 4. Execute
 
