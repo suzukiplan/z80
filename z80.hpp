@@ -361,14 +361,14 @@ class Z80
         CB.debugMessage(CB.arg, buf);
     }
 
-    inline unsigned short getAF() { return make16FromLE(reg.pair.F, reg.pair.A); }
-    inline unsigned short getAF2() { return make16FromLE(reg.back.F, reg.back.A); }
-    inline unsigned short getBC() { return make16FromLE(reg.pair.C, reg.pair.B); }
-    inline unsigned short getBC2() { return make16FromLE(reg.back.C, reg.back.B); }
-    inline unsigned short getDE() { return make16FromLE(reg.pair.E, reg.pair.D); }
-    inline unsigned short getDE2() { return make16FromLE(reg.back.E, reg.back.D); }
-    inline unsigned short getHL() { return make16FromLE(reg.pair.L, reg.pair.H); }
-    inline unsigned short getHL2() { return make16FromLE(reg.back.L, reg.back.H); }
+    inline unsigned short getAF() { return make16BitsFromLE(reg.pair.F, reg.pair.A); }
+    inline unsigned short getAF2() { return make16BitsFromLE(reg.back.F, reg.back.A); }
+    inline unsigned short getBC() { return make16BitsFromLE(reg.pair.C, reg.pair.B); }
+    inline unsigned short getBC2() { return make16BitsFromLE(reg.back.C, reg.back.B); }
+    inline unsigned short getDE() { return make16BitsFromLE(reg.pair.E, reg.pair.D); }
+    inline unsigned short getDE2() { return make16BitsFromLE(reg.back.E, reg.back.D); }
+    inline unsigned short getHL() { return make16BitsFromLE(reg.pair.L, reg.pair.H); }
+    inline unsigned short getHL2() { return make16BitsFromLE(reg.back.L, reg.back.H); }
 
     inline void setAF(unsigned short value)
     {
@@ -503,7 +503,7 @@ class Z80
         return hz;
     }
 
-    inline unsigned short getPort16(unsigned char c) { return make16FromLE(c, reg.pair.B); }
+    inline unsigned short getPort16(unsigned char c) { return make16BitsFromLE(c, reg.pair.B); }
 
     inline unsigned char inPort(unsigned char port, int clock = 4)
     {
@@ -680,7 +680,7 @@ class Z80
     // Load Acc. wth location (nn)
     static inline int LD_A_NN(Z80* ctx)
     {
-        unsigned short addr = ctx->make16FromLE(ctx->readByte(ctx->reg.PC + 1, 3), ctx->readByte(ctx->reg.PC + 2, 3));
+        unsigned short addr = ctx->make16BitsFromLE(ctx->readByte(ctx->reg.PC + 1, 3), ctx->readByte(ctx->reg.PC + 2, 3));
         unsigned char n = ctx->readByte(addr, 3);
         if (ctx->isDebug()) ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC, addr, n);
         ctx->reg.pair.A = n;
@@ -713,7 +713,7 @@ class Z80
     // Load location (nn) with Acc.
     static inline int LD_NN_A(Z80* ctx)
     {
-        unsigned short addr = ctx->make16FromLE(ctx->readByte(ctx->reg.PC + 1, 3), ctx->readByte(ctx->reg.PC + 2, 3));
+        unsigned short addr = ctx->make16BitsFromLE(ctx->readByte(ctx->reg.PC + 1, 3), ctx->readByte(ctx->reg.PC + 2, 3));
         unsigned char n = ctx->reg.pair.A;
         if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC, addr, n);
         ctx->writeByte(addr, n, 3);
@@ -726,7 +726,7 @@ class Z80
     {
         unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = ctx->make16FromLE(nL, nH);
+        unsigned short addr = ctx->make16BitsFromLE(nL, nH);
         unsigned char l = ctx->readByte(addr, 3);
         unsigned char h = ctx->readByte(addr + 1, 3);
         if (ctx->isDebug()) ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%02X%02X", ctx->reg.PC, ctx->getHL(), addr, h, l);
@@ -741,7 +741,7 @@ class Z80
     {
         unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = ctx->make16FromLE(nL, nH);
+        unsigned short addr = ctx->make16BitsFromLE(nL, nH);
         if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), %s", ctx->reg.PC, addr, ctx->registerPairDump(0b10));
         ctx->writeByte(addr, ctx->reg.pair.L, 3);
         ctx->writeByte(addr + 1, ctx->reg.pair.H, 3);
@@ -1500,7 +1500,7 @@ class Z80
             case 0b11:
                 // SP is not managed in pair structure, so calculate directly
                 if (isDebug()) log("[%04X] LD SP<$%04X>, $%02X%02X", reg.PC, reg.SP, nH, nL);
-                reg.SP = make16FromLE(nL, nH);
+                reg.SP = make16BitsFromLE(nL, nH);
                 reg.PC += 3;
                 return 0;
             default:
@@ -1520,7 +1520,7 @@ class Z80
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
         if (isDebug()) log("[%04X] LD IX, $%02X%02X", reg.PC, nH, nL);
-        reg.IX = make16FromLE(nL, nH);
+        reg.IX = make16BitsFromLE(nL, nH);
         reg.PC += 4;
         return 0;
     }
@@ -1531,7 +1531,7 @@ class Z80
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
         if (isDebug()) log("[%04X] LD IY, $%02X%02X", reg.PC, nH, nL);
-        reg.IY = make16FromLE(nL, nH);
+        reg.IY = make16BitsFromLE(nL, nH);
         reg.PC += 4;
         return 0;
     }
@@ -1545,7 +1545,7 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         unsigned char l = readByte(addr, 3);
         unsigned char h = readByte(addr + 1, 3);
         reg.WZ = addr + 1;
@@ -1564,7 +1564,7 @@ class Z80
                 reg.pair.L = l;
                 break;
             case 0b11:
-                reg.SP = make16FromLE(l, h);
+                reg.SP = make16BitsFromLE(l, h);
                 break;
             default:
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
@@ -1583,7 +1583,7 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] LD ($%04X), %s", reg.PC, addr, registerPairDump(rp));
         unsigned char l;
         unsigned char h;
@@ -1621,11 +1621,11 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         unsigned char l = readByte(addr, 3);
         unsigned char h = readByte(addr + 1, 3);
         if (isDebug()) log("[%04X] LD IX<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IX, nH, nL, h, l);
-        reg.IX = make16FromLE(l, h);
+        reg.IX = make16BitsFromLE(l, h);
         reg.PC += 4;
         return 0;
     }
@@ -1636,11 +1636,11 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         unsigned char l = readByte(addr, 3);
         unsigned char h = readByte(addr + 1, 3);
         if (isDebug()) log("[%04X] LD IY<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IY, nH, nL, h, l);
-        reg.IY = make16FromLE(l, h);
+        reg.IY = make16BitsFromLE(l, h);
         reg.PC += 4;
         return 0;
     }
@@ -1650,7 +1650,7 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] LD ($%04X), IX<$%04X>", reg.PC, addr, reg.IX);
         unsigned char l = reg.IX & 0x00FF;
         unsigned char h = (reg.IX & 0xFF00) >> 8;
@@ -1665,7 +1665,7 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 2, 3);
         unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] LD ($%04X), IY<$%04X>", reg.PC, addr, reg.IY);
         unsigned char l = reg.IY & 0x00FF;
         unsigned char h = (reg.IY & 0xFF00) >> 8;
@@ -1752,7 +1752,7 @@ class Z80
         if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IX<$%04X>", reg.PC, reg.SP, h, l, reg.IX);
         writeByte(reg.SP, x);
         writeByte(reg.SP + 1, i, 3);
-        reg.IX = make16FromLE(l, h);
+        reg.IX = make16BitsFromLE(l, h);
         reg.PC += 2;
         return 0;
     }
@@ -1768,7 +1768,7 @@ class Z80
         if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IY<$%04X>", reg.PC, reg.SP, h, l, reg.IY);
         writeByte(reg.SP, y);
         writeByte(reg.SP + 1, i, 3);
-        reg.IY = make16FromLE(l, h);
+        reg.IY = make16BitsFromLE(l, h);
         reg.PC += 2;
         return 0;
     }
@@ -1861,7 +1861,7 @@ class Z80
         unsigned char l = readByte(reg.SP++, 3);
         unsigned char h = readByte(reg.SP++, 3);
         if (isDebug()) log("[%04X] POP IX <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
-        reg.IX = make16FromLE(l, h);
+        reg.IX = make16BitsFromLE(l, h);
         reg.PC += 2;
         return 0;
     }
@@ -1887,7 +1887,7 @@ class Z80
         unsigned char l = readByte(reg.SP++, 3);
         unsigned char h = readByte(reg.SP++, 3);
         if (isDebug()) log("[%04X] POP IY <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
-        reg.IY = make16FromLE(l, h);
+        reg.IY = make16BitsFromLE(l, h);
         reg.PC += 2;
         return 0;
     }
@@ -5028,7 +5028,7 @@ class Z80
     {
         unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
         unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = ctx->make16FromLE(nL, nH);
+        unsigned short addr = ctx->make16BitsFromLE(nL, nH);
         if (ctx->isDebug()) ctx->log("[%04X] JP $%04X", ctx->reg.PC, addr);
         ctx->reg.PC = addr;
         ctx->reg.WZ = addr;
@@ -5048,7 +5048,7 @@ class Z80
     {
         unsigned char nL = readByte(reg.PC + 1, 3);
         unsigned char nH = readByte(reg.PC + 2, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] JP %s, $%04X", reg.PC, conditionDump(c), addr);
         bool jump;
         switch (c) {
@@ -5182,7 +5182,7 @@ class Z80
     {
         unsigned char nL = ctx->readByte(ctx->reg.PC + 1);
         unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = ctx->make16FromLE(nL, nH);
+        unsigned short addr = ctx->make16BitsFromLE(nL, nH);
         if (ctx->isDebug()) ctx->log("[%04X] CALL $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
         ctx->reg.PC += 3;
         unsigned char pcL = ctx->reg.PC & 0x00FF;
@@ -5202,7 +5202,7 @@ class Z80
         ctx->invokeReturnHandlers();
         unsigned char nL = ctx->readByte(ctx->reg.SP, 3);
         unsigned char nH = ctx->readByte(ctx->reg.SP + 1, 3);
-        unsigned short addr = ctx->make16FromLE(nL, nH);
+        unsigned short addr = ctx->make16BitsFromLE(nL, nH);
         if (ctx->isDebug()) ctx->log("[%04X] RET to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
         ctx->reg.SP += 2;
         ctx->reg.PC = addr;
@@ -5235,7 +5235,7 @@ class Z80
         }
         unsigned char nL = readByte(reg.PC + 1, 3);
         unsigned char nH = readByte(reg.PC + 2, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] CALL %s, $%04X (%s) <execute:%s>", reg.PC, conditionDump(c), addr, registerPairDump(0b11), execute ? "YES" : "NO");
         reg.PC += 3;
         if (execute) {
@@ -5282,7 +5282,7 @@ class Z80
         invokeReturnHandlers();
         unsigned char nL = readByte(reg.SP);
         unsigned char nH = readByte(reg.SP + 1, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] RET %s to $%04X (%s) <execute:YES>", reg.PC, conditionDump(c), addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
@@ -5297,7 +5297,7 @@ class Z80
         invokeReturnHandlers();
         unsigned char nL = readByte(reg.SP, 3);
         unsigned char nH = readByte(reg.SP + 1, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] RETI to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
@@ -5313,7 +5313,7 @@ class Z80
         invokeReturnHandlers();
         unsigned char nL = readByte(reg.SP, 3);
         unsigned char nH = readByte(reg.SP + 1, 3);
-        unsigned short addr = make16FromLE(nL, nH);
+        unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] RETN to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
         reg.SP += 2;
         reg.PC = addr;
@@ -5895,8 +5895,8 @@ class Z80
                     writeByte(reg.SP - 1, pcH);
                     writeByte(reg.SP - 2, pcL);
                     reg.SP -= 2;
-                    unsigned short addr = make16FromLE(reg.interruptVector, reg.I);
-                    unsigned short pc = make16FromLE(readByte(addr), readByte(addr + 1));
+                    unsigned short addr = make16BitsFromLE(reg.interruptVector, reg.I);
+                    unsigned short pc = make16BitsFromLE(readByte(addr), readByte(addr + 1));
                     if (isDebug()) log("EXECUTE INT MODE2: ($%04X) = $%04X", addr, pc);
                     reg.PC = pc;
                     consumeClock(3);
@@ -6026,7 +6026,7 @@ class Z80
         return CB.debugMessageEnabled;
     }
 
-    inline unsigned short make16FromLE(unsigned char low, unsigned char high)
+    inline unsigned short make16BitsFromLE(unsigned char low, unsigned char high)
     {
         unsigned short n = high;
         n <<= 8;
@@ -6088,12 +6088,12 @@ class Z80
 
     void addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        addBreakOperand_((int)prefixNumber, make16FromLE(operandNumber, prefixNumber), callback);
+        addBreakOperand_((int)prefixNumber, make16BitsFromLE(operandNumber, prefixNumber), callback);
     }
 
     void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
-        int n = make16FromLE(prefixNumber2, prefixNumber1);
+        int n = make16BitsFromLE(prefixNumber2, prefixNumber1);
         int prefixNumber = n;
         n <<= 8;
         n |= operandNumber;
@@ -6116,12 +6116,12 @@ class Z80
 
     void addBreakOperandFP(unsigned char prefixNumber, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int))
     {
-        addBreakOperandFP_((int)prefixNumber, make16FromLE(operandNumber, prefixNumber), callback);
+        addBreakOperandFP_((int)prefixNumber, make16BitsFromLE(operandNumber, prefixNumber), callback);
     }
 
     void addBreakOperandFP(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int))
     {
-        int n = make16FromLE(prefixNumber2, prefixNumber1);
+        int n = make16BitsFromLE(prefixNumber2, prefixNumber1);
         int prefixNumber = n;
         n <<= 8;
         n |= operandNumber;
@@ -6139,12 +6139,12 @@ class Z80
 
     void removeBreakOperand(unsigned char prefixNumber, unsigned char operandNumber)
     {
-        removeBreakOperand(make16FromLE(operandNumber, prefixNumber));
+        removeBreakOperand(make16BitsFromLE(operandNumber, prefixNumber));
     }
 
     void removeBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber)
     {
-        int n = make16FromLE(prefixNumber2, prefixNumber1);
+        int n = make16BitsFromLE(prefixNumber2, prefixNumber1);
         n <<= 8;
         n |= operandNumber;
         removeBreakOperand(n);
