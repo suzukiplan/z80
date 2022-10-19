@@ -147,6 +147,75 @@ https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
     int actualExecuteClocks = z80.execute(1234);
 ```
 
+#### 4-1. Minimum actual execute clocks
+
+- The `execute` method executes an instruction repeatedly until the number of clocks elapsed since the function was executed exceeds the number of clocks specified in the argument each time an instruction is executed.
+- Therefore, the actual execute clocks may be larger than the value specified in the argument, depending on the contents of the program to be executed.
+- If a value less than or equal to 0 is specified, no instruction is executed at all.
+- If you want step execution, you can specify 1
+
+#### 4-2. Interruption of execution
+
+- Execution of the `requestBreak` method can abort the `execute` at an arbitrary time.
+
+#### 4-3. Example
+
+```c++
+#include "z80.hpp"
+
+int main()
+{
+    unsigned char rom[256] = {
+        0x01, 0x34, 0x12, // LD BC, $1234
+        0x3E, 0x01,       // LD A, $01
+        0xED, 0x79,       // OUT (C), A
+        0xED, 0x78,       // IN A, (C)
+        0xc3, 0x09, 0x00, // JMP $0009
+    };
+    Z80 z80([=](void* arg, unsigned short addr) { return rom[addr & 0xFF]; },
+            [](void* arg, unsigned short addr, unsigned char value) {},
+            [](void* arg, unsigned short port) { return 0x00; },
+            [](void* arg, unsigned short port, unsigned char value) {
+                // request break the execute function after output port operand has executed.
+                ((Z80*)arg)->requestBreak();
+            }, &z80);
+    z80.setDebugMessage([](void* arg, const char* msg) { puts(msg); });
+    z80.setConsumeClockCallback([](void* arg, int clocks) { printf("consume %dHz\n", clocks); });
+    puts("===== execute(0) =====");
+    printf("actualExecuteClocks = %dHz\n", z80.execute(0));
+    puts("===== execute(1) =====");
+    printf("actualExecuteClocks = %dHz\n", z80.execute(1));
+    puts("===== execute(0x7FFFFFFF) =====");
+    printf("actualExecuteClocks = %dHz\n", z80.execute(0x7FFFFFFF));
+    return 0;
+}
+```
+
+Result is following:
+
+```
+===== execute(0) =====
+actualExecuteClocks = 0Hz
+===== execute(1) =====
+consume 2Hz
+consume 2Hz
+consume 3Hz
+consume 3Hz
+[0000] LD BC<$0000>, $1234
+actualExecuteClocks = 10Hz
+===== execute(0x7FFFFFFF) =====
+consume 2Hz
+consume 2Hz
+consume 3Hz
+[0003] LD A<$FF>, $01
+consume 2Hz
+consume 2Hz
+consume 4Hz
+[0005] OUT (C<$34>), A<$01>
+consume 4Hz
+actualExecuteClocks = 19Hz
+```
+
 ### 5. Generate interrupt
 
 #### IRQ; Interrupt Request

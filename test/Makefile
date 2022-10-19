@@ -10,12 +10,18 @@ CFLAGS=-I../ \
 	-Werror
 
 all:
+	make test-execute
 	make test-clock
 	make test-status
 	make test-im2
 	make test-branch
 	make test-out
 	make test-remove-break
+
+test-execute:
+	clang $(CFLAGS) test-execute.cpp -lstdc++
+	./a.out > test-execute.txt
+	cat test-execute.txt
 
 test-clock:
 	clang $(CFLAGS) test-clock.cpp -lstdc++

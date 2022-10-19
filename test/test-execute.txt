@@ -1,0 +1,20 @@
+===== execute(0) =====
+actualExecuteClocks = 0Hz
+===== execute(1) =====
+consume 2Hz
+consume 2Hz
+consume 3Hz
+consume 3Hz
+[0000] LD BC<$0000>, $1234
+actualExecuteClocks = 10Hz
+===== execute(0x7FFFFFFF) =====
+consume 2Hz
+consume 2Hz
+consume 3Hz
+[0003] LD A<$FF>, $01
+consume 2Hz
+consume 2Hz
+consume 4Hz
+[0005] OUT (C<$34>), A<$01>
+consume 4Hz
+actualExecuteClocks = 19Hz
