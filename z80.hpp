@@ -773,7 +773,8 @@ class Z80
     static inline int POP_AF(Z80* ctx)
     {
         unsigned short sp = ctx->reg.SP;
-        unsigned short hl = ctx->make16BitsFromLE(ctx->readByte(ctx->reg.SP++, 3), ctx->readByte(ctx->reg.SP++, 3));
+        unsigned short hl = ctx->make16BitsFromLE(ctx->readByte(sp, 3), ctx->readByte(sp + 1, 3));
+        ctx->reg.SP += 2;
         if (ctx->isDebug()) ctx->log("[%04X] POP AF <SP:$%04X> = $%04X", ctx->reg.PC, sp, hl);
         ctx->setAF(hl);
         ctx->reg.PC++;
