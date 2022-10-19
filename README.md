@@ -122,15 +122,7 @@ Normally, `std::function` is used for callbacks, but in more performance-sensiti
 
 ```c++
     Z80 z80(&mmu);
-    z80.setupCallbackFP([](void* arg, unsigned short addr) {
-        return 0x00; // read procedure
-    }, [](void* arg, unsigned char addr, unsigned char value) {
-        // write procedure
-    }, [](void* arg, unsigned short port) {
-        return 0x00; // input port procedure
-    }, [](void* arg, unsigned short port, unsigned char value) {
-        // output port procedure
-    });
+    z80.setupCallbackFP(readByte, writeByte, inPort, outPort);
 ```
 
 However, using function pointers causes inconveniences such as the inability to specify a capture in a lambda expression.
