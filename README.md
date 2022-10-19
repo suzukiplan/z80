@@ -152,6 +152,8 @@ https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
 
 #### 4-3. Example
 
+Code: [test/test-execute.cpp](test/test-execute.cpp)
+
 ```c++
 #include "z80.hpp"
 
