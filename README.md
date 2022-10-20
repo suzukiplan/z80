@@ -131,6 +131,15 @@ In most cases, optimization with the `-O2` option will not cause performance pro
 > The following article (in Japanese) provides a performance comparison between function pointers and `std::function`:
 >
 > https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
+>
+> The above article gives an example of the time it took to execute 100 million times call of function-pointer and three patterns of `std::function` calls (`bind`, `direct`, `lambda`)  as following:
+>
+> |Optimization Option|function pointer|`bind`|`direct`|`lambda`|
+> |:-:|-:|-:|-:|-:|
+> |none|228894μs|6459751μs|2958097μs|2782300μs|
+> |-O|191496μs|2482582μs|960868μs|668010μs|
+> |-O2|100359μs|287467μs|313414μs|222633μs|
+> |-Ofast|91904μs|279341μs|285927μs|188635μs|
 
 ### 4. Execute
 
