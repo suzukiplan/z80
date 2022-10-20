@@ -685,7 +685,7 @@ class Z80
         unsigned char n = ctx->reg.pair.A;
         if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC, addr, n);
         ctx->writeByte(addr, n, 3);
-        ctx->reg.PC += 3;
+        ctx->reg.PC++;
         return 0;
     }
 
@@ -1441,8 +1441,6 @@ class Z80
     static inline int LD_SP_NN(Z80* ctx) { return ctx->LD_RP_NN(0b11); }
     inline int LD_RP_NN(unsigned char rp)
     {
-        unsigned char nL = readByte(reg.PC + 1, 3);
-        unsigned char nH = readByte(reg.PC + 2, 3);
         unsigned char* rH;
         unsigned char* rL;
         switch (rp) {
@@ -1458,20 +1456,29 @@ class Z80
                 rH = &reg.pair.H;
                 rL = &reg.pair.L;
                 break;
-            case 0b11:
+            case 0b11: {
                 // SP is not managed in pair structure, so calculate directly
-                if (isDebug()) log("[%04X] LD SP<$%04X>, $%02X%02X", reg.PC, reg.SP, nH, nL);
+                unsigned short sp = reg.SP;
+                unsigned char nL = readByte(++reg.PC, 3);
+                reg.SP &= 0xFF00;
+                reg.SP |= nL;
+                unsigned char nH = readByte(++reg.PC, 3);
                 reg.SP = make16BitsFromLE(nL, nH);
-                reg.PC += 3;
+                if (isDebug()) log("[%04X] LD SP<$%04X>, $%04X", reg.PC - 2, sp, reg.SP);
+                reg.PC++;
                 return 0;
+            }
             default:
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        if (isDebug()) log("[%04X] LD %s, $%02X%02X", reg.PC, registerPairDump(rp), nH, nL);
-        *rH = nH;
+        const char* dump = isDebug() ? registerPairDump(rp) : "";
+        unsigned char nL = readByte(++reg.PC, 3);
         *rL = nL;
-        reg.PC += 3;
+        unsigned char nH = readByte(++reg.PC, 3);
+        *rH = nH;
+        if (isDebug()) log("[%04X] LD %s, $%02X%02X", reg.PC - 2, dump, nH, nL);
+        reg.PC++;
         return 0;
     }
 
