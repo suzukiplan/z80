@@ -136,10 +136,10 @@ In most cases, optimization with the `-O2` option will not cause performance pro
 >
 > |Optimization Option|function pointer|`bind`|`direct`|`lambda`|
 > |:-:|-:|-:|-:|-:|
-> |none|228894μs|6459751μs|2958097μs|2782300μs|
-> |-O|191496μs|2482582μs|960868μs|668010μs|
-> |-O2|100359μs|287467μs|313414μs|222633μs|
-> |-Ofast|91904μs|279341μs|285927μs|188635μs|
+> |none|228,894μs|6,459,751μs|2,958,097μs|2,782,300μs|
+> |-O|191,496μs|2,482,582μs|960868μs|668010μs|
+> |-O2|100,359μs|287,467μs|313,414μs|222,633μs|
+> |-Ofast|91,904μs|27,9341μs|285,927μs|188,635μs|
 
 ### 4. Execute
 
