@@ -50,3 +50,8 @@ test-remove-break:
 	clang $(CFLAGS) test-remove-break.cpp -lstdc++
 	./a.out > test-remove-break.txt
 	cat test-remove-break.txt
+
+test-checkreg-on-callback:
+	clang $(CFLAGS) test-checkreg-on-callback.cpp -lstdc++
+	./a.out > test-checkreg-on-callback.txt
+	cat test-checkreg-on-callback.txt

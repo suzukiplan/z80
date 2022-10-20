@@ -1,0 +1,4 @@
+Read memory ... $0000 SP=FFFF, PC=0000 <expect: SP=FFFF, PC=0000>
+Read memory ... $0001 SP=FFFF, PC=0001 <expect: SP=FFFF, PC=0001>
+Read memory ... $0002 SP=FFFF, PC=0002 <expect: SP=FFFF, PC=0002>
+[0000] LD A, ($8001) = $FF

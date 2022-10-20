@@ -644,11 +644,13 @@ class Z80
     // Load Acc. wth location (nn)
     static inline int LD_A_NN(Z80* ctx)
     {
-        unsigned short addr = ctx->make16BitsFromLE(ctx->readByte(ctx->reg.PC + 1, 3), ctx->readByte(ctx->reg.PC + 2, 3));
+        unsigned char l = ctx->readByte(++ctx->reg.PC, 3);
+        unsigned char h = ctx->readByte(++ctx->reg.PC, 3);
+        unsigned short addr = ctx->make16BitsFromLE(l, h);
         unsigned char n = ctx->readByte(addr, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC, addr, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC - 2, addr, n);
         ctx->reg.pair.A = n;
-        ctx->reg.PC += 3;
+        ctx->reg.PC++;
         return 0;
     }
 
