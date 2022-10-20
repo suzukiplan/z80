@@ -66,14 +66,14 @@ class Z80
         unsigned short interruptVector; // interrupt vector for IRQ
         unsigned short interruptAddrN;  // interrupt address for NMI
         unsigned short WZ;
-        __attribute__((unused)) unsigned short reserved16;
+        unsigned short reserved16;
         unsigned char R;
         unsigned char I;
         unsigned char IFF;
         unsigned char interrupt; // NI-- --mm (N: NMI, I: IRQ, mm: mode)
         unsigned char consumeClockCounter;
         unsigned char execEI;
-        __attribute__((unused)) unsigned char reserved8[2];
+        unsigned char reserved8[2];
     } reg;
 
     inline unsigned char flagS() { return 0b10000000; }
