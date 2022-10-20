@@ -146,18 +146,18 @@ int main(int argc, char* argv[])
     };
     char animePattern[] = { '/', '-', '\\', '|' };
     int anime = 0;
-    long long totalClocks = 0;
+    long  totalClocks = 0;
     auto start = std::chrono::steady_clock::now();
     do {
-        totalClocks += (long long)z80.execute(35795450); // 10sec in Z80A
+        totalClocks += (long)z80.execute(35795450); // 10sec in Z80A
         if (cpm.error) {
             printf("\rCPM detected an error at $%04X\n", z80.reg.PC);
         } else if (cpm.halted) {
             auto end = std::chrono::steady_clock::now();
-            printf("CPM halted at $%04X (total: %lldHz ... about %lld seconds in Z80A)\n", z80.reg.PC, totalClocks, totalClocks / 3579545);
-            auto us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-            auto pw = totalClocks * 100000000 / 3579545 / us;
-            printf("Actual execution time: %lld.%lld seconds (x%lld.%lld times higher performance than Z80A)\n", us / 1000000, us % 1000000, pw / 100, pw % 100);
+            printf("CPM halted at $%04X (total: %ldHz ... about %ld seconds in Z80A)\n", z80.reg.PC, totalClocks, totalClocks / 3579545);
+            long us = (long)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+            long pw = totalClocks * 100000000 / 3579545 / us;
+            printf("Actual execution time: %ld.%ld seconds (x%ld.%ld times higher performance than Z80A)\n", us / 1000000, us % 1000000, pw / 100, pw % 100);
         } else if (!noAnimation) {
             putc(animePattern[anime++], stdout);
             anime &= 3;
