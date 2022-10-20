@@ -66,14 +66,14 @@ class Z80
         unsigned short interruptVector; // interrupt vector for IRQ
         unsigned short interruptAddrN;  // interrupt address for NMI
         unsigned short WZ;
-        unsigned short reserved16;
+        __attribute__((unused)) unsigned short reserved16;
         unsigned char R;
         unsigned char I;
         unsigned char IFF;
         unsigned char interrupt; // NI-- --mm (N: NMI, I: IRQ, mm: mode)
         unsigned char consumeClockCounter;
         unsigned char execEI;
-        unsigned char reserved8[2];
+        __attribute__((unused)) unsigned char reserved8[2];
     } reg;
 
     inline unsigned char flagS() { return 0b10000000; }
@@ -124,6 +124,21 @@ class Z80
     inline bool isFlagPV() { return reg.pair.F & flagPV(); }
     inline bool isFlagN() { return reg.pair.F & flagN(); }
     inline bool isFlagC() { return reg.pair.F & flagC(); }
+
+    inline bool checkConditionFlag(unsigned char c)
+    {
+        switch (c) {
+            case 0: return !isFlagZ();
+            case 1: return isFlagZ();
+            case 2: return !isFlagC();
+            case 3: return isFlagC();
+            case 4: return !isFlagPV();
+            case 5: return isFlagPV();
+            case 6: return !isFlagS();
+            case 7: return isFlagS();
+            default: return false;
+        }
+    }
 
     inline unsigned char IFF1() { return 0b00000001; }
     inline unsigned char IFF2() { return 0b00000100; }
@@ -1021,8 +1036,6 @@ class Z80
     static inline int LD_C_N_3(Z80* ctx) { return ctx->LD_R_N(0b001, 3); }
     static inline int LD_D_N_3(Z80* ctx) { return ctx->LD_R_N(0b010, 3); }
     static inline int LD_E_N_3(Z80* ctx) { return ctx->LD_R_N(0b011, 3); }
-    static inline int LD_H_N_3(Z80* ctx) { return ctx->LD_R_N(0b100, 3); }
-    static inline int LD_L_N_3(Z80* ctx) { return ctx->LD_R_N(0b101, 3); }
     inline int LD_R_N(unsigned char r, int pc = 2)
     {
         unsigned char* rp = getRegisterPointer(r);
@@ -3008,8 +3021,6 @@ class Z80
     static inline int INC_C_2(Z80* ctx) { return ctx->INC_R(0b001, 2); }
     static inline int INC_D_2(Z80* ctx) { return ctx->INC_R(0b010, 2); }
     static inline int INC_E_2(Z80* ctx) { return ctx->INC_R(0b011, 2); }
-    static inline int INC_H_2(Z80* ctx) { return ctx->INC_R(0b100, 2); }
-    static inline int INC_L_2(Z80* ctx) { return ctx->INC_R(0b101, 2); }
     static inline int INC_A_2(Z80* ctx) { return ctx->INC_R(0b111, 2); }
     inline int INC_R(unsigned char r, int pc = 1)
     {
@@ -3348,8 +3359,6 @@ class Z80
     static inline int DEC_C_2(Z80* ctx) { return ctx->DEC_R(0b001, 2); }
     static inline int DEC_D_2(Z80* ctx) { return ctx->DEC_R(0b010, 2); }
     static inline int DEC_E_2(Z80* ctx) { return ctx->DEC_R(0b011, 2); }
-    static inline int DEC_H_2(Z80* ctx) { return ctx->DEC_R(0b100, 2); }
-    static inline int DEC_L_2(Z80* ctx) { return ctx->DEC_R(0b101, 2); }
     static inline int DEC_A_2(Z80* ctx) { return ctx->DEC_R(0b111, 2); }
     inline int DEC_R(unsigned char r, int pc = 1)
     {
@@ -4092,7 +4101,7 @@ class Z80
             case 6: n = *rp & 0b01000000; break;
             case 7: n = *rp & 0b10000000; break;
         }
-        setFlagZ(n ? false : true);
+        setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
@@ -4102,7 +4111,7 @@ class Z80
         return 0;
     }
 
-    // Test BIT b of lacation (HL)
+    // Test BIT b of location (HL)
     static inline int BIT_HL_0(Z80* ctx) { return ctx->BIT_HL(0); }
     static inline int BIT_HL_1(Z80* ctx) { return ctx->BIT_HL(1); }
     static inline int BIT_HL_2(Z80* ctx) { return ctx->BIT_HL(2); }
@@ -4126,7 +4135,7 @@ class Z80
             case 6: n &= 0b01000000; break;
             case 7: n &= 0b10000000; break;
         }
-        setFlagZ(n ? false : true);
+        setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
@@ -4136,7 +4145,7 @@ class Z80
         return 0;
     }
 
-    // Test BIT b of lacation (IX+d)
+    // Test BIT b of location (IX+d)
     static inline int BIT_IX_0(Z80* ctx, signed char d) { return ctx->BIT_IX(d, 0); }
     static inline int BIT_IX_1(Z80* ctx, signed char d) { return ctx->BIT_IX(d, 1); }
     static inline int BIT_IX_2(Z80* ctx, signed char d) { return ctx->BIT_IX(d, 2); }
@@ -4160,7 +4169,7 @@ class Z80
             case 6: n &= 0b01000000; break;
             case 7: n &= 0b10000000; break;
         }
-        setFlagZ(n ? false : true);
+        setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
@@ -4170,7 +4179,7 @@ class Z80
         return 0;
     }
 
-    // Test BIT b of lacation (IY+d)
+    // Test BIT b of location (IY+d)
     static inline int BIT_IY_0(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 0); }
     static inline int BIT_IY_1(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 1); }
     static inline int BIT_IY_2(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 2); }
@@ -4194,7 +4203,7 @@ class Z80
             case 6: n &= 0b01000000; break;
             case 7: n &= 0b10000000; break;
         }
-        setFlagZ(n ? false : true);
+        setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
@@ -4279,7 +4288,7 @@ class Z80
         return 0;
     }
 
-    // SET bit b of lacation (HL)
+    // SET bit b of location (HL)
     static inline int SET_HL_0(Z80* ctx) { return ctx->SET_HL(0); }
     static inline int SET_HL_1(Z80* ctx) { return ctx->SET_HL(1); }
     static inline int SET_HL_2(Z80* ctx) { return ctx->SET_HL(2); }
@@ -4308,7 +4317,7 @@ class Z80
         return 0;
     }
 
-    // SET bit b of lacation (IX+d)
+    // SET bit b of location (IX+d)
     static inline int SET_IX_0(Z80* ctx, signed char d) { return ctx->SET_IX(d, 0); }
     static inline int SET_IX_1(Z80* ctx, signed char d) { return ctx->SET_IX(d, 1); }
     static inline int SET_IX_2(Z80* ctx, signed char d) { return ctx->SET_IX(d, 2); }
@@ -4338,7 +4347,7 @@ class Z80
         return 0;
     }
 
-    // SET bit b of lacation (IX+d) with load Reg.
+    // SET bit b of location (IX+d) with load Reg.
     static inline int SET_IX_0_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IX_with_LD(d, 0, 0b000); }
     static inline int SET_IX_1_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IX_with_LD(d, 1, 0b000); }
     static inline int SET_IX_2_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IX_with_LD(d, 2, 0b000); }
@@ -4407,7 +4416,7 @@ class Z80
         return SET_IX(d, bit, rp, buf);
     }
 
-    // SET bit b of lacation (IY+d)
+    // SET bit b of location (IY+d)
     static inline int SET_IY_0(Z80* ctx, signed char d) { return ctx->SET_IY(d, 0); }
     static inline int SET_IY_1(Z80* ctx, signed char d) { return ctx->SET_IY(d, 1); }
     static inline int SET_IY_2(Z80* ctx, signed char d) { return ctx->SET_IY(d, 2); }
@@ -4437,7 +4446,7 @@ class Z80
         return 0;
     }
 
-    // SET bit b of lacation (IY+d) with load Reg.
+    // SET bit b of location (IY+d) with load Reg.
     static inline int SET_IY_0_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 0, 0b000); }
     static inline int SET_IY_1_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 1, 0b000); }
     static inline int SET_IY_2_with_LD_B(Z80* ctx, signed char d) { return ctx->SET_IY_with_LD(d, 2, 0b000); }
@@ -4581,7 +4590,7 @@ class Z80
         return 0;
     }
 
-    // RESET bit b of lacation (HL)
+    // RESET bit b of location (HL)
     static inline int RES_HL_0(Z80* ctx) { return ctx->RES_HL(0); }
     static inline int RES_HL_1(Z80* ctx) { return ctx->RES_HL(1); }
     static inline int RES_HL_2(Z80* ctx) { return ctx->RES_HL(2); }
@@ -4610,7 +4619,7 @@ class Z80
         return 0;
     }
 
-    // RESET bit b of lacation (IX+d)
+    // RESET bit b of location (IX+d)
     static inline int RES_IX_0(Z80* ctx, signed char d) { return ctx->RES_IX(d, 0); }
     static inline int RES_IX_1(Z80* ctx, signed char d) { return ctx->RES_IX(d, 1); }
     static inline int RES_IX_2(Z80* ctx, signed char d) { return ctx->RES_IX(d, 2); }
@@ -4640,7 +4649,7 @@ class Z80
         return 0;
     }
 
-    // RESET bit b of lacation (IX+d) with load Reg.
+    // RESET bit b of location (IX+d) with load Reg.
     static inline int RES_IX_0_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IX_with_LD(d, 0, 0b000); }
     static inline int RES_IX_1_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IX_with_LD(d, 1, 0b000); }
     static inline int RES_IX_2_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IX_with_LD(d, 2, 0b000); }
@@ -4709,7 +4718,7 @@ class Z80
         return RES_IX(d, bit, rp, buf);
     }
 
-    // RESET bit b of lacation (IY+d) with load Reg.
+    // RESET bit b of location (IY+d) with load Reg.
     static inline int RES_IY_0_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 0, 0b000); }
     static inline int RES_IY_1_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 1, 0b000); }
     static inline int RES_IY_2_with_LD_B(Z80* ctx, signed char d) { return ctx->RES_IY_with_LD(d, 2, 0b000); }
@@ -4778,7 +4787,7 @@ class Z80
         return RES_IY(d, bit, rp, buf);
     }
 
-    // RESET bit b of lacation (IY+d)
+    // RESET bit b of location (IY+d)
     static inline int RES_IY_0(Z80* ctx, signed char d) { return ctx->RES_IY(d, 0); }
     static inline int RES_IY_1(Z80* ctx, signed char d) { return ctx->RES_IY(d, 1); }
     static inline int RES_IY_2(Z80* ctx, signed char d) { return ctx->RES_IY(d, 2); }
@@ -4981,19 +4990,7 @@ class Z80
         unsigned char nH = readByte(reg.PC + 2, 3);
         unsigned short addr = make16BitsFromLE(nL, nH);
         if (isDebug()) log("[%04X] JP %s, $%04X", reg.PC, conditionDump(c), addr);
-        bool jump;
-        switch (c) {
-            case 0: jump = isFlagZ() ? false : true; break;
-            case 1: jump = isFlagZ() ? true : false; break;
-            case 2: jump = isFlagC() ? false : true; break;
-            case 3: jump = isFlagC() ? true : false; break;
-            case 4: jump = isFlagPV() ? false : true; break;
-            case 5: jump = isFlagPV() ? true : false; break;
-            case 6: jump = isFlagS() ? false : true; break;
-            case 7: jump = isFlagS() ? true : false; break;
-            default: jump = false;
-        }
-        if (jump) {
+        if (checkConditionFlag(c)) {
             reg.PC = addr;
         } else {
             reg.PC += 3;
@@ -5150,18 +5147,7 @@ class Z80
     static inline int CALL_C7_NN(Z80* ctx) { return ctx->CALL_C_NN(7); }
     inline int CALL_C_NN(unsigned char c)
     {
-        bool execute;
-        switch (c) {
-            case 0b000: execute = isFlagZ() ? false : true; break;
-            case 0b001: execute = isFlagZ() ? true : false; break;
-            case 0b010: execute = isFlagC() ? false : true; break;
-            case 0b011: execute = isFlagC() ? true : false; break;
-            case 0b100: execute = isFlagPV() ? false : true; break;
-            case 0b101: execute = isFlagPV() ? true : false; break;
-            case 0b110: execute = isFlagS() ? false : true; break;
-            case 0b111: execute = isFlagS() ? true : false; break;
-            default: execute = false;
-        }
+        bool execute = checkConditionFlag(c);
         unsigned char nL = readByte(reg.PC + 1, 3);
         unsigned char nH = readByte(reg.PC + 2, 3);
         unsigned short addr = make16BitsFromLE(nL, nH);
@@ -5189,19 +5175,7 @@ class Z80
     static inline int RET_C7(Z80* ctx) { return ctx->RET_C(7); }
     inline int RET_C(unsigned char c)
     {
-        bool execute;
-        switch (c) {
-            case 0: execute = isFlagZ() ? false : true; break;
-            case 1: execute = isFlagZ() ? true : false; break;
-            case 2: execute = isFlagC() ? false : true; break;
-            case 3: execute = isFlagC() ? true : false; break;
-            case 4: execute = isFlagPV() ? false : true; break;
-            case 5: execute = isFlagPV() ? true : false; break;
-            case 6: execute = isFlagS() ? false : true; break;
-            case 7: execute = isFlagS() ? true : false; break;
-            default: execute = false;
-        }
-        if (!execute) {
+        if (!checkConditionFlag(c)) {
             if (isDebug()) log("[%04X] RET %s <execute:NO>", reg.PC, conditionDump(c));
             reg.PC++;
             return consumeClock(1);
