@@ -679,7 +679,9 @@ class Z80
     // Load location (nn) with Acc.
     static inline int LD_NN_A(Z80* ctx)
     {
-        unsigned short addr = ctx->make16BitsFromLE(ctx->readByte(ctx->reg.PC + 1, 3), ctx->readByte(ctx->reg.PC + 2, 3));
+        unsigned char l = ctx->readByte(++ctx->reg.PC, 3);
+        unsigned char h = ctx->readByte(++ctx->reg.PC, 3);
+        unsigned short addr = ctx->make16BitsFromLE(l, h);
         unsigned char n = ctx->reg.pair.A;
         if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC, addr, n);
         ctx->writeByte(addr, n, 3);

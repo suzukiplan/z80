@@ -2,3 +2,7 @@ Read memory ... $0000 SP=FFFF, PC=0000 <expect: SP=FFFF, PC=0000>
 Read memory ... $0001 SP=FFFF, PC=0001 <expect: SP=FFFF, PC=0001>
 Read memory ... $0002 SP=FFFF, PC=0002 <expect: SP=FFFF, PC=0002>
 [0000] LD A, ($8001) = $FF
+Read memory ... $0003 SP=FFFF, PC=0003 <expect: SP=FFFF, PC=0003>
+Read memory ... $0004 SP=FFFF, PC=0004 <expect: SP=FFFF, PC=0004>
+Read memory ... $0005 SP=FFFF, PC=0005 <expect: SP=FFFF, PC=0005>
+[0005] LD ($8002), A<$FF>

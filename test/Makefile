@@ -10,6 +10,7 @@ CFLAGS=-I../ \
 	-Werror
 
 all:
+	make test-checkreg-on-callback
 	make test-execute
 	make test-clock
 	make test-status
