@@ -3,6 +3,10 @@
 int main()
 {
     unsigned short expectIndex = 0;
+    int expectAF[] = {0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, -1 };
+    int expectBC[] = {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, -1 };
+    int expectDE[] = {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, -1 };
+    int expectHL[] = {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, -1 };
     int expectPC[] = {0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, -1 };
     int expectSP[] = {0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, -1 };
     unsigned char rom[256] = {
@@ -13,8 +17,17 @@ int main()
         if (addr < 0x100) {
             unsigned short sp = ((Z80*)arg)->reg.SP;
             unsigned short pc = ((Z80*)arg)->reg.PC;
-            printf("Read memory ... $%04X SP=%04X, PC=%04X <expect: SP=%04X, PC=%04X>\n", addr, sp, pc, expectSP[expectIndex], expectPC[expectIndex]);
-            if (sp != expectSP[expectIndex] || pc != expectPC[expectIndex]) {
+            unsigned short af = (unsigned short)(((Z80*)arg)->reg.pair.A * 256 + ((Z80*)arg)->reg.pair.F);
+            unsigned short bc = (unsigned short)(((Z80*)arg)->reg.pair.B * 256 + ((Z80*)arg)->reg.pair.C);
+            unsigned short de = (unsigned short)(((Z80*)arg)->reg.pair.D * 256 + ((Z80*)arg)->reg.pair.E);
+            unsigned short hl = (unsigned short)(((Z80*)arg)->reg.pair.H * 256 + ((Z80*)arg)->reg.pair.L);
+            printf("Read memory ... $%04X AF=%04X, BC=%04X, DE=%04X, HL=%04X, SP=%04X, PC=%04X\n", addr, af, bc, de, hl, sp, pc);
+            if (af != expectAF[expectIndex] || 
+                bc != expectBC[expectIndex] ||
+                de != expectDE[expectIndex] ||
+                hl != expectHL[expectIndex] ||
+                sp != expectSP[expectIndex] ||
+                pc != expectPC[expectIndex]) {
                 puts("unexpected!");
                 exit(-1);
             }
