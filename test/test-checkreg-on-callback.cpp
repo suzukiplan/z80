@@ -51,6 +51,22 @@ int main()
         0xFFFF, 0xFFFF, 0xFFFF,
         0xFFFF, 0xFFFF, 0xFF06,
         -1};
+    int expectIX[] = {
+        0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000,
+        -1};
+    int expectIY[] = {
+        0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000,
+        -1};
     unsigned char rom[256] = {
         0x3A, 0x01, 0x80, // LD A, (NN)
         0x32, 0x02, 0x80, // LD (NN), A
@@ -67,15 +83,27 @@ int main()
             unsigned short bc = (unsigned short)(((Z80*)arg)->reg.pair.B * 256 + ((Z80*)arg)->reg.pair.C);
             unsigned short de = (unsigned short)(((Z80*)arg)->reg.pair.D * 256 + ((Z80*)arg)->reg.pair.E);
             unsigned short hl = (unsigned short)(((Z80*)arg)->reg.pair.H * 256 + ((Z80*)arg)->reg.pair.L);
-            printf("Read memory ... $%04X AF=%04X, BC=%04X, DE=%04X, HL=%04X, SP=%04X, PC=%04X\n", addr, af, bc, de, hl, sp, pc);
+            unsigned short ix = ((Z80*)arg)->reg.IX;
+            unsigned short iy = ((Z80*)arg)->reg.IY;
+            printf("Read memory ... $%04X AF=%04X, BC=%04X, DE=%04X, HL=%04X, IX=%04X, IY=%04X, SP=%04X, PC=%04X\n", addr, af, bc, de, hl, ix, iy, sp, pc);
             if (af != expectAF[expectIndex] || 
                 bc != expectBC[expectIndex] ||
                 de != expectDE[expectIndex] ||
                 hl != expectHL[expectIndex] ||
+                ix != expectIX[expectIndex] ||
+                iy != expectIY[expectIndex] ||
                 sp != expectSP[expectIndex] ||
                 pc != expectPC[expectIndex]) {
                 puts("unexpected!");
-                printf("expected: AF=%04X, BC=%04X, DE=%04X, HL=%04X, SP=%04X, PC=%04X\n", expectAF[expectIndex], expectBC[expectIndex], expectDE[expectIndex], expectHL[expectIndex], expectSP[expectIndex], expectPC[expectIndex]);
+                printf("expected:             AF=%04X, BC=%04X, DE=%04X, HL=%04X, IX=%04X, IY=%04X, SP=%04X, PC=%04X\n",
+                    expectAF[expectIndex], 
+                    expectBC[expectIndex], 
+                    expectDE[expectIndex], 
+                    expectHL[expectIndex], 
+                    expectIX[expectIndex], 
+                    expectIY[expectIndex], 
+                    expectSP[expectIndex], 
+                    expectPC[expectIndex]);
                 exit(-1);
             }
             expectIndex++;
