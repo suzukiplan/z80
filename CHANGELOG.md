@@ -12,6 +12,7 @@
   - `setupDeviceCallback` (split from setupCallback)
   - `setupMemoryCallbackFP` (split from setupCallbackFP)
   - `setupDeviceCallbackFP` (split from setupCallbackFP)
+- Implicit call the callback setter methods (`with FP`), when a function pointer that is not template is explicitly specified when a callback setter methods (`without FP`) was called.
 
 ## Version 1.7.1 (Oct 18, 2022, JST)
 
