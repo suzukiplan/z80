@@ -40,9 +40,9 @@ class Z80
 {
   public: // Interface data types
     struct WaitClocks {
-        int fretch; // Wait T-cycle (Hz) before fetching instruction (default is 0 = no wait)
-        int read;   // Wait T-cycle (Hz) before to read memory (default is 0 = no wait)
-        int write;  // Wait T-cycle (Hz) before to write memory (default is 0 = no wait)
+        int fetch; // Wait T-cycle (Hz) before fetching instruction (default is 0 = no wait)
+        int read;  // Wait T-cycle (Hz) before to read memory (default is 0 = no wait)
+        int write; // Wait T-cycle (Hz) before to write memory (default is 0 = no wait)
     } wtc;
 
     struct RegisterPair {
@@ -293,7 +293,7 @@ class Z80
                 opcode[0] = operand->operandNumber;
                 *opcodeLength = opLength1[opcode[0]];
                 for (int i = 1; i < *opcodeLength; i++) {
-                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                    opcode[i] = readByte(reg.PC + i - 1, 0); // read without consume clocks
                 }
                 break;
             case 0xCB:
@@ -306,7 +306,7 @@ class Z80
                 opcode[1] = operand->operandNumber;
                 *opcodeLength = opLengthED[opcode[1]];
                 for (int i = 2; i < *opcodeLength; i++) {
-                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                    opcode[i] = readByte(reg.PC + i - 2, 0); // read without consume clocks
                 }
                 break;
             case 0xDD:
@@ -314,7 +314,7 @@ class Z80
                 opcode[1] = operand->operandNumber;
                 *opcodeLength = opLengthIXY[opcode[1]];
                 for (int i = 2; i < *opcodeLength; i++) {
-                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                    opcode[i] = readByte(reg.PC + i - 2, 0); // read without consume clocks
                 }
                 break;
             case 0xFD:
@@ -322,21 +322,21 @@ class Z80
                 opcode[1] = operand->operandNumber;
                 *opcodeLength = opLengthIXY[opcode[1]];
                 for (int i = 2; i < *opcodeLength; i++) {
-                    opcode[i] = readByte(reg.PC + i, 0); // read without consume clocks
+                    opcode[i] = readByte(reg.PC + i - 2, 0); // read without consume clocks
                 }
                 break;
             case 0xDDCB:
                 opcode[0] = 0xDD;
                 opcode[1] = 0xCB;
                 opcode[2] = operand->operandNumber;
-                opcode[3] = readByte(reg.PC + 3, 0);
+                opcode[3] = readByte(reg.PC, 0);
                 *opcodeLength = 4;
                 break;
             case 0xFDCB:
                 opcode[0] = 0xFD;
                 opcode[1] = 0xCB;
                 opcode[2] = operand->operandNumber;
-                opcode[3] = readByte(reg.PC + 3, 0);
+                opcode[3] = readByte(reg.PC, 0);
                 *opcodeLength = 4;
                 break;
         }
@@ -435,11 +435,15 @@ class Z80
     }
 
     inline unsigned char getIXH() { return (reg.IX & 0xFF00) >> 8; }
-    inline unsigned char getIXL() { return reg.IX & 0x00Ff; }
+    inline unsigned char getIXL() { return reg.IX & 0x00FF; }
     inline unsigned char getIYH() { return (reg.IY & 0xFF00) >> 8; }
-    inline unsigned char getIYL() { return reg.IY & 0x00Ff; }
+    inline unsigned char getIYL() { return reg.IY & 0x00FF; }
     inline unsigned char getPCH() { return (reg.PC & 0xFF00) >> 8; }
-    inline unsigned char getPCL() { return reg.PC & 0x00Ff; }
+    inline unsigned char getPCL() { return reg.PC & 0x00FF; }
+    inline void setPCH(unsigned char v) { reg.PC = (reg.PC & 0x00FF) + v * 256; }
+    inline void setPCL(unsigned char v) { reg.PC = (reg.PC & 0xFF00) + v; }
+    inline void setSPH(unsigned char v) { reg.SP = (reg.SP & 0x00FF) + v * 256; }
+    inline void setSPL(unsigned char v) { reg.SP = (reg.SP & 0xFF00) + v; }
     inline void setIXH(unsigned char v) { reg.IX = (reg.IX & 0x00FF) + v * 256; }
     inline void setIXL(unsigned char v) { reg.IX = (reg.IX & 0xFF00) + v; }
     inline void setIYH(unsigned char v) { reg.IY = (reg.IY & 0x00FF) + v * 256; }
@@ -484,32 +488,28 @@ class Z80
 
     static inline int NOP(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] NOP", ctx->reg.PC);
-        ctx->reg.PC++;
+        if (ctx->isDebug()) ctx->log("[%04X] NOP", ctx->reg.PC - 1);
         return 0;
     }
 
     static inline int HALT(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] HALT", ctx->reg.PC);
+        if (ctx->isDebug()) ctx->log("[%04X] HALT", ctx->reg.PC - 1);
         ctx->reg.IFF |= ctx->IFF_HALT();
-        ctx->reg.PC++;
         return 0;
     }
 
     static inline int DI(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] DI", ctx->reg.PC);
+        if (ctx->isDebug()) ctx->log("[%04X] DI", ctx->reg.PC - 1);
         ctx->reg.IFF &= ~(ctx->IFF1() | ctx->IFF2());
-        ctx->reg.PC++;
         return 0;
     }
 
     static inline int EI(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] EI", ctx->reg.PC);
+        if (ctx->isDebug()) ctx->log("[%04X] EI", ctx->reg.PC - 1);
         ctx->reg.IFF |= ctx->IFF1() | ctx->IFF2();
-        ctx->reg.PC++;
         ctx->reg.execEI = 1;
         return 0;
     }
@@ -519,91 +519,86 @@ class Z80
     static inline int IM2(Z80* ctx) { return ctx->IM(2); }
     inline int IM(unsigned char interrptMode)
     {
-        if (isDebug()) log("[%04X] IM %d", reg.PC, interrptMode);
+        if (isDebug()) log("[%04X] IM %d", reg.PC - 2, interrptMode);
         reg.interrupt &= 0b11111100;
         reg.interrupt |= interrptMode & 0b11;
-        reg.PC += 2;
         return 0;
     }
 
     static inline int LD_A_I_(Z80* ctx) { return ctx->LD_A_I(); }
     inline int LD_A_I()
     {
-        if (isDebug()) log("[%04X] LD A<$%02X>, I<$%02X>", reg.PC, reg.pair.A, reg.I);
+        if (isDebug()) log("[%04X] LD A<$%02X>, I<$%02X>", reg.PC - 2, reg.pair.A, reg.I);
         reg.pair.A = reg.I;
         setFlagPV(reg.IFF & IFF2());
-        reg.PC += 2;
         return consumeClock(1);
     }
 
     static inline int LD_I_A_(Z80* ctx) { return ctx->LD_I_A(); }
     inline int LD_I_A()
     {
-        if (isDebug()) log("[%04X] LD I<$%02X>, A<$%02X>", reg.PC, reg.I, reg.pair.A);
+        if (isDebug()) log("[%04X] LD I<$%02X>, A<$%02X>", reg.PC - 2, reg.I, reg.pair.A);
         reg.I = reg.pair.A;
-        reg.PC += 2;
         return consumeClock(1);
     }
 
     static inline int LD_A_R_(Z80* ctx) { return ctx->LD_A_R(); }
     inline int LD_A_R()
     {
-        if (isDebug()) log("[%04X] LD A<$%02X>, R<$%02X>", reg.PC, reg.pair.A, reg.R);
+        if (isDebug()) log("[%04X] LD A<$%02X>, R<$%02X>", reg.PC - 2, reg.pair.A, reg.R);
         reg.pair.A = reg.R;
         setFlagPV(reg.IFF & IFF1());
-        reg.PC += 2;
         return consumeClock(1);
     }
 
     static inline int LD_R_A_(Z80* ctx) { return ctx->LD_R_A(); }
     inline int LD_R_A()
     {
-        if (isDebug()) log("[%04X] LD R<$%02X>, A<$%02X>", reg.PC, reg.R, reg.pair.A);
+        if (isDebug()) log("[%04X] LD R<$%02X>, A<$%02X>", reg.PC - 2, reg.R, reg.pair.A);
         reg.R = reg.pair.A;
-        reg.PC += 2;
         return consumeClock(1);
     }
 
     static inline int OP_CB(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        unsigned char operandNumber = ctx->fetch(4);
         ctx->checkBreakOperandCB(operandNumber);
         return ctx->opSetCB[operandNumber](ctx);
     }
 
     static inline int OP_ED(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        unsigned char operandNumber = ctx->fetch(4);
         ctx->checkBreakOperandED(operandNumber);
         return ctx->opSetED[operandNumber](ctx);
     }
 
     static inline int OP_IX(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        unsigned char operandNumber = ctx->fetch(4);
         ctx->checkBreakOperandIX(operandNumber);
         return ctx->opSetIX[operandNumber](ctx);
     }
 
     static inline int OP_IY(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->readByte(ctx->reg.PC + 1);
+        unsigned char operandNumber = ctx->fetch(4);
         ctx->checkBreakOperandIY(operandNumber);
         return ctx->opSetIY[operandNumber](ctx);
     }
 
     static inline int OP_IX4(Z80* ctx)
     {
-        signed char op3 = (signed char)ctx->readByte(ctx->reg.PC + 2);
-        unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
+        signed char op3 = (signed char)ctx->fetch(4);
+        unsigned char op4 = ctx->fetch(4);
         ctx->checkBreakOperandIX4(op4);
         return ctx->opSetIX4[op4](ctx, op3);
     }
 
     static inline int OP_IY4(Z80* ctx)
     {
-        signed char op3 = (signed char)ctx->readByte(ctx->reg.PC + 2);
-        unsigned char op4 = ctx->readByte(ctx->reg.PC + 3);
+        signed char op3 = (signed char)ctx->fetch(4);
+        unsigned char op4 = ctx->fetch(4);
         ctx->checkBreakOperandIY4(op4);
         return ctx->opSetIY4[op4](ctx, op3);
     }
@@ -611,11 +606,10 @@ class Z80
     // Load location (HL) with value n
     static inline int LD_HL_N(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        unsigned char n = ctx->fetch(3);
         unsigned short hl = ctx->getHL();
-        if (ctx->isDebug()) ctx->log("[%04X] LD (HL<$%04X>), $%02X", ctx->reg.PC, hl, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD (HL<$%04X>), $%02X", ctx->reg.PC - 2, hl, n);
         ctx->writeByte(hl, n, 3);
-        ctx->reg.PC += 2;
         return 0;
     }
 
@@ -624,9 +618,8 @@ class Z80
     {
         unsigned short addr = ctx->getBC();
         unsigned char n = ctx->readByte(addr, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] LD A, (BC<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD A, (BC<$%02X%02X>) = $%02X", ctx->reg.PC - 1, ctx->reg.pair.B, ctx->reg.pair.C, n);
         ctx->reg.pair.A = n;
-        ctx->reg.PC++;
         return 0;
     }
 
@@ -635,22 +628,20 @@ class Z80
     {
         unsigned short addr = ctx->getDE();
         unsigned char n = ctx->readByte(addr, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] LD A, (DE<$%02X%02X>) = $%02X", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD A, (DE<$%02X%02X>) = $%02X", ctx->reg.PC - 1, ctx->reg.pair.D, ctx->reg.pair.E, n);
         ctx->reg.pair.A = n;
-        ctx->reg.PC++;
         return 0;
     }
 
     // Load Acc. wth location (nn)
     static inline int LD_A_NN(Z80* ctx)
     {
-        unsigned char l = ctx->readByte(++ctx->reg.PC, 3);
-        unsigned char h = ctx->readByte(++ctx->reg.PC, 3);
+        unsigned char l = ctx->fetch(3);
+        unsigned char h = ctx->fetch(3);
         unsigned short addr = ctx->make16BitsFromLE(l, h);
         unsigned char n = ctx->readByte(addr, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC - 2, addr, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD A, ($%04X) = $%02X", ctx->reg.PC - 3, addr, n);
         ctx->reg.pair.A = n;
-        ctx->reg.PC++;
         return 0;
     }
 
@@ -659,9 +650,8 @@ class Z80
     {
         unsigned short addr = ctx->getBC();
         unsigned char n = ctx->reg.pair.A;
-        if (ctx->isDebug()) ctx->log("[%04X] LD (BC<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.B, ctx->reg.pair.C, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD (BC<$%02X%02X>), A<$%02X>", ctx->reg.PC - 1, ctx->reg.pair.B, ctx->reg.pair.C, n);
         ctx->writeByte(addr, n, 3);
-        ctx->reg.PC++;
         return 0;
     }
 
@@ -670,58 +660,49 @@ class Z80
     {
         unsigned short addr = ctx->getDE();
         unsigned char n = ctx->reg.pair.A;
-        if (ctx->isDebug()) ctx->log("[%04X] LD (DE<$%02X%02X>), A<$%02X>", ctx->reg.PC, ctx->reg.pair.D, ctx->reg.pair.E, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD (DE<$%02X%02X>), A<$%02X>", ctx->reg.PC - 1, ctx->reg.pair.D, ctx->reg.pair.E, n);
         ctx->writeByte(addr, n, 3);
-        ctx->reg.PC++;
         return 0;
     }
 
     // Load location (nn) with Acc.
     static inline int LD_NN_A(Z80* ctx)
     {
-        unsigned char l = ctx->readByte(++ctx->reg.PC, 3);
-        unsigned char h = ctx->readByte(++ctx->reg.PC, 3);
+        unsigned char l = ctx->fetch(3);
+        unsigned char h = ctx->fetch(3);
         unsigned short addr = ctx->make16BitsFromLE(l, h);
         unsigned char n = ctx->reg.pair.A;
-        if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC, addr, n);
+        if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), A<$%02X>", ctx->reg.PC - 3, addr, n);
         ctx->writeByte(addr, n, 3);
-        ctx->reg.PC++;
         return 0;
     }
 
     // Load HL with location (nn).
     static inline int LD_HL_ADDR(Z80* ctx)
     {
-        unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
-        unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = ctx->make16BitsFromLE(nL, nH);
-        unsigned short hl = ctx->make16BitsFromLE(ctx->readByte(addr, 3), ctx->readByte(addr + 1, 3));
-        if (ctx->isDebug()) ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%04X", ctx->reg.PC, ctx->getHL(), addr, hl);
-        ctx->setHL(hl);
-        ctx->reg.PC += 3;
+        unsigned short addr = ctx->make16BitsFromLE(ctx->fetch(3), ctx->fetch(3));
+        unsigned short hl = ctx->getHL();
+        ctx->reg.pair.L = ctx->readByte(addr, 3);
+        ctx->reg.pair.H = ctx->readByte(addr + 1, 3);
+        if (ctx->isDebug()) ctx->log("[%04X] LD HL<$%04X>, ($%04X) = $%04X", ctx->reg.PC - 3, hl, addr, ctx->getHL());
         return 0;
     }
 
     // Load location (nn) with HL.
     static inline int LD_ADDR_HL(Z80* ctx)
     {
-        unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
-        unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = ctx->make16BitsFromLE(nL, nH);
-        if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), %s", ctx->reg.PC, addr, ctx->registerPairDump(0b10));
+        unsigned short addr = ctx->make16BitsFromLE(ctx->fetch(3), ctx->fetch(3));
+        if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), %s", ctx->reg.PC - 3, addr, ctx->registerPairDump(0b10));
         ctx->writeByte(addr, ctx->reg.pair.L, 3);
         ctx->writeByte(addr + 1, ctx->reg.pair.H, 3);
-        ctx->reg.PC += 3;
         return 0;
     }
 
     // Load SP with HL.
     static inline int LD_SP_HL(Z80* ctx)
     {
-        unsigned short value = ctx->getHL();
-        if (ctx->isDebug()) ctx->log("[%04X] LD %s, HL<$%04X>", ctx->reg.PC, ctx->registerPairDump(0b11), value);
-        ctx->reg.SP = value;
-        ctx->reg.PC++;
+        if (ctx->isDebug()) ctx->log("[%04X] LD %s, HL<$%04X>", ctx->reg.PC - 1, ctx->registerPairDump(0b11), ctx->getHL());
+        ctx->reg.SP = ctx->getHL();
         return ctx->consumeClock(2);
     }
 
@@ -730,10 +711,9 @@ class Z80
     {
         unsigned short de = ctx->getDE();
         unsigned short hl = ctx->getHL();
-        if (ctx->isDebug()) ctx->log("[%04X] EX %s, %s", ctx->reg.PC, ctx->registerPairDump(0b01), ctx->registerPairDump(0b10));
+        if (ctx->isDebug()) ctx->log("[%04X] EX %s, %s", ctx->reg.PC - 1, ctx->registerPairDump(0b01), ctx->registerPairDump(0b10));
         ctx->setDE(hl);
         ctx->setHL(de);
-        ctx->reg.PC++;
         return 0;
     }
 
@@ -742,28 +722,29 @@ class Z80
     {
         unsigned short af = ctx->getAF();
         unsigned short af2 = ctx->getAF2();
-        if (ctx->isDebug()) ctx->log("[%04X] EX AF<$%02X%02X>, AF'<$%02X%02X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.back.A, ctx->reg.back.F);
+        if (ctx->isDebug()) ctx->log("[%04X] EX AF<$%02X%02X>, AF'<$%02X%02X>", ctx->reg.PC - 1, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.back.A, ctx->reg.back.F);
         ctx->setAF(af2);
         ctx->setAF2(af);
-        ctx->reg.PC++;
         return 0;
     }
 
     static inline int EX_SP_HL(Z80* ctx)
     {
-        unsigned short nn = ctx->make16BitsFromLE(ctx->readByte(ctx->reg.SP), ctx->readByte(ctx->reg.SP + 1));
+        unsigned short sp = ctx->reg.SP;
+        unsigned char l = ctx->pop(4);
+        unsigned char h = ctx->pop(4);
         unsigned short hl = ctx->getHL();
-        if (ctx->isDebug()) ctx->log("[%04X] EX (SP<$%04X>) = $%04X, HL<$%04X>", ctx->reg.PC, ctx->reg.SP, nn, hl);
-        ctx->writeByte(ctx->reg.SP, ctx->reg.pair.L);
-        ctx->writeByte(ctx->reg.SP + 1, ctx->reg.pair.H, 3);
-        ctx->setHL(nn);
-        ctx->reg.PC++;
+        if (ctx->isDebug()) ctx->log("[%04X] EX (SP<$%04X>) = $%02X%02X, HL<$%04X>", ctx->reg.PC - 1, sp, h, l, hl);
+        ctx->push(ctx->reg.pair.H, 4);
+        ctx->reg.pair.H = h;
+        ctx->push(ctx->reg.pair.L, 3);
+        ctx->reg.pair.L = l;
         return 0;
     }
 
     static inline int EXX(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] EXX", ctx->reg.PC);
+        if (ctx->isDebug()) ctx->log("[%04X] EXX", ctx->reg.PC - 1);
         unsigned short bc = ctx->getBC();
         unsigned short bc2 = ctx->getBC2();
         unsigned short de = ctx->getDE();
@@ -776,27 +757,35 @@ class Z80
         ctx->setDE2(de);
         ctx->setHL(hl2);
         ctx->setHL2(hl);
-        ctx->reg.PC++;
         return 0;
+    }
+
+    inline void push(unsigned char value, int clocks)
+    {
+        reg.SP--;
+        writeByte(reg.SP, value, clocks);
+    }
+
+    inline unsigned char pop(int clocks)
+    {
+        unsigned char value = readByte(reg.SP, clocks);
+        reg.SP++;
+        return value;
     }
 
     static inline int PUSH_AF(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] PUSH AF<$%02X%02X> <SP:$%04X>", ctx->reg.PC, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.SP);
-        ctx->writeByte(--ctx->reg.SP, ctx->reg.pair.A);
-        ctx->writeByte(--ctx->reg.SP, ctx->reg.pair.F, 3);
-        ctx->reg.PC++;
+        if (ctx->isDebug()) ctx->log("[%04X] PUSH AF<$%02X%02X> <SP:$%04X>", ctx->reg.PC - 1, ctx->reg.pair.A, ctx->reg.pair.F, ctx->reg.SP);
+        ctx->push(ctx->reg.pair.A, 4);
+        ctx->push(ctx->reg.pair.F, 3);
         return 0;
     }
 
     static inline int POP_AF(Z80* ctx)
     {
-        unsigned short sp = ctx->reg.SP;
-        unsigned short hl = ctx->make16BitsFromLE(ctx->readByte(sp, 3), ctx->readByte(sp + 1, 3));
-        ctx->reg.SP += 2;
-        if (ctx->isDebug()) ctx->log("[%04X] POP AF <SP:$%04X> = $%04X", ctx->reg.PC, sp, hl);
-        ctx->setAF(hl);
-        ctx->reg.PC++;
+        ctx->reg.pair.F = ctx->pop(3);
+        ctx->reg.pair.A = ctx->pop(3);
+        if (ctx->isDebug()) ctx->log("[%04X] POP AF <SP:$%04X> = $%04X", ctx->reg.PC - 1, ctx->reg.SP - 2, ctx->getAF());
         return 0;
     }
 
@@ -814,6 +803,22 @@ class Z80
         }
         if (isDebug()) log("detected an unknown register number: $%02X", r);
         return nullptr;
+    }
+
+    inline unsigned char getRegister(unsigned char r)
+    {
+        switch (r) {
+            case 0b111: return reg.pair.A;
+            case 0b000: return reg.pair.B;
+            case 0b001: return reg.pair.C;
+            case 0b010: return reg.pair.D;
+            case 0b011: return reg.pair.E;
+            case 0b100: return reg.pair.H;
+            case 0b101: return reg.pair.L;
+            case 0b110: return reg.pair.F;
+        }
+        if (isDebug()) log("detected an unknown register number: $%02X", r);
+        return 0xFF;
     }
 
     inline char* registerDump(unsigned char r)
@@ -859,15 +864,15 @@ class Z80
         return CN;
     }
 
-    inline char* relativeDump(signed char e)
+    inline char* relativeDump(unsigned short pc, signed char e)
     {
         static char buf[80];
         if (e < 0) {
             int ee = -e;
             ee -= 2;
-            snprintf(buf, sizeof(buf), "$%04X - %d = $%04X", reg.PC, ee, reg.PC + e + 2);
+            snprintf(buf, sizeof(buf), "$%04X - %d = $%04X", pc, ee, pc + e + 2);
         } else {
-            snprintf(buf, sizeof(buf), "$%04X + %d = $%04X", reg.PC, e + 2, reg.PC + e + 2);
+            snprintf(buf, sizeof(buf), "$%04X + %d = $%04X", pc, e + 2, pc + e + 2);
         }
         return buf;
     }
@@ -1021,9 +1026,8 @@ class Z80
     {
         unsigned char* r1p = getRegisterPointer(r1);
         unsigned char* r2p = getRegisterPointer(r2);
-        if (isDebug()) log("[%04X] LD %s, %s", reg.PC, registerDump(r1), registerDump(r2));
+        if (isDebug()) log("[%04X] LD %s, %s", reg.PC - counter, registerDump(r1), registerDump(r2));
         if (r1p && r2p) *r1p = *r2p;
-        reg.PC += counter;
         return 0;
     }
 
@@ -1043,10 +1047,9 @@ class Z80
     inline int LD_R_N(unsigned char r, int pc = 2)
     {
         unsigned char* rp = getRegisterPointer(r);
-        unsigned char n = readByte(reg.PC + 1, 3);
-        if (isDebug()) log("[%04X] LD %s, $%02X", reg.PC, registerDump(r), n);
+        unsigned char n = fetch(3);
+        if (isDebug()) log("[%04X] LD %s, $%02X", reg.PC - pc, registerDump(r), n);
         if (rp) *rp = n;
-        reg.PC += pc;
         return 0;
     }
 
@@ -1054,10 +1057,9 @@ class Z80
     static inline int LD_IXH_N_(Z80* ctx) { return ctx->LD_IXH_N(); }
     inline int LD_IXH_N()
     {
-        unsigned char n = readByte(reg.PC + 2, 3);
-        if (isDebug()) log("[%04X] LD IXH, $%02X", reg.PC, n);
+        unsigned char n = fetch(3);
+        if (isDebug()) log("[%04X] LD IXH, $%02X", reg.PC - 3, n);
         setIXH(n);
-        reg.PC += 3;
         return 0;
     }
 
@@ -1070,9 +1072,8 @@ class Z80
     inline int LD_IXH_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] LD IXH, %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] LD IXH, %s", reg.PC - 2, registerDump(r));
         setIXH(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -1080,9 +1081,7 @@ class Z80
     static inline int LD_IXH_IXH_(Z80* ctx) { return ctx->LD_IXH_IXH(); }
     inline int LD_IXH_IXH()
     {
-        if (isDebug()) log("[%04X] LD IXH, IXH<$%02X>", reg.PC, getIXH());
-        // nothing to do
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] LD IXH, IXH<$%02X>", reg.PC - 2, getIXH());
         return 0;
     }
 
@@ -1090,9 +1089,8 @@ class Z80
     static inline int LD_IXH_IXL_(Z80* ctx) { return ctx->LD_IXH_IXL(); }
     inline int LD_IXH_IXL()
     {
-        if (isDebug()) log("[%04X] LD IXH, IXL<$%02X>", reg.PC, getIXL());
+        if (isDebug()) log("[%04X] LD IXH, IXL<$%02X>", reg.PC - 2, getIXL());
         setIXH(getIXL());
-        reg.PC += 2;
         return 0;
     }
 
@@ -1100,10 +1098,9 @@ class Z80
     static inline int LD_IXL_N_(Z80* ctx) { return ctx->LD_IXL_N(); }
     inline int LD_IXL_N()
     {
-        unsigned char n = readByte(reg.PC + 2, 3);
-        if (isDebug()) log("[%04X] LD IXL, $%02X", reg.PC, n);
+        unsigned char n = fetch(3);
+        if (isDebug()) log("[%04X] LD IXL, $%02X", reg.PC - 3, n);
         setIXL(n);
-        reg.PC += 3;
         return 0;
     }
 
@@ -1116,9 +1113,8 @@ class Z80
     inline int LD_IXL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] LD IXL, %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] LD IXL, %s", reg.PC - 2, registerDump(r));
         setIXL(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -1126,9 +1122,8 @@ class Z80
     static inline int LD_IXL_IXH_(Z80* ctx) { return ctx->LD_IXL_IXH(); }
     inline int LD_IXL_IXH()
     {
-        if (isDebug()) log("[%04X] LD IXL, IXH<$%02X>", reg.PC, getIXH());
+        if (isDebug()) log("[%04X] LD IXL, IXH<$%02X>", reg.PC - 2, getIXH());
         setIXL(getIXH());
-        reg.PC += 2;
         return 0;
     }
 
@@ -1136,9 +1131,7 @@ class Z80
     static inline int LD_IXL_IXL_(Z80* ctx) { return ctx->LD_IXL_IXL(); }
     inline int LD_IXL_IXL()
     {
-        if (isDebug()) log("[%04X] LD IXL, IXL<$%02X>", reg.PC, getIXL());
-        // nothing to do
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] LD IXL, IXL<$%02X>", reg.PC - 2, getIXL());
         return 0;
     }
 
@@ -1146,10 +1139,9 @@ class Z80
     static inline int LD_IYH_N_(Z80* ctx) { return ctx->LD_IYH_N(); }
     inline int LD_IYH_N()
     {
-        unsigned char n = readByte(reg.PC + 2, 3);
-        if (isDebug()) log("[%04X] LD IYH, $%02X", reg.PC, n);
+        unsigned char n = fetch(3);
+        if (isDebug()) log("[%04X] LD IYH, $%02X", reg.PC - 3, n);
         setIYH(n);
-        reg.PC += 3;
         return 0;
     }
 
@@ -1162,9 +1154,8 @@ class Z80
     inline int LD_IYH_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] LD IYH, %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] LD IYH, %s", reg.PC - 2, registerDump(r));
         setIYH(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -1172,9 +1163,7 @@ class Z80
     static inline int LD_IYH_IYH_(Z80* ctx) { return ctx->LD_IYH_IYH(); }
     inline int LD_IYH_IYH()
     {
-        if (isDebug()) log("[%04X] LD IYH, IYH<$%02X>", reg.PC, getIYH());
-        // nothing to do
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] LD IYH, IYH<$%02X>", reg.PC - 2, getIYH());
         return 0;
     }
 
@@ -1182,9 +1171,8 @@ class Z80
     static inline int LD_IYH_IYL_(Z80* ctx) { return ctx->LD_IYH_IYL(); }
     inline int LD_IYH_IYL()
     {
-        if (isDebug()) log("[%04X] LD IYH, IYL<$%02X>", reg.PC, getIYL());
+        if (isDebug()) log("[%04X] LD IYH, IYL<$%02X>", reg.PC - 2, getIYL());
         setIYH(getIYL());
-        reg.PC += 2;
         return 0;
     }
 
@@ -1192,10 +1180,9 @@ class Z80
     static inline int LD_IYL_N_(Z80* ctx) { return ctx->LD_IYL_N(); }
     inline int LD_IYL_N()
     {
-        unsigned char n = readByte(reg.PC + 2, 3);
-        if (isDebug()) log("[%04X] LD IYL, $%02X", reg.PC, n);
+        unsigned char n = fetch(3);
+        if (isDebug()) log("[%04X] LD IYL, $%02X", reg.PC - 3, n);
         setIYL(n);
-        reg.PC += 3;
         return 0;
     }
 
@@ -1208,9 +1195,8 @@ class Z80
     inline int LD_IYL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] LD IYL, %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] LD IYL, %s", reg.PC - 2, registerDump(r));
         setIYL(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -1218,9 +1204,8 @@ class Z80
     static inline int LD_IYL_IYH_(Z80* ctx) { return ctx->LD_IYL_IYH(); }
     inline int LD_IYL_IYH()
     {
-        if (isDebug()) log("[%04X] LD IYL, IYH<$%02X>", reg.PC, getIYH());
+        if (isDebug()) log("[%04X] LD IYL, IYH<$%02X>", reg.PC - 2, getIYH());
         setIYL(getIYH());
-        reg.PC += 2;
         return 0;
     }
 
@@ -1228,9 +1213,7 @@ class Z80
     static inline int LD_IYL_IYL_(Z80* ctx) { return ctx->LD_IYL_IYL(); }
     inline int LD_IYL_IYL()
     {
-        if (isDebug()) log("[%04X] LD IYL, IYL<$%02X>", reg.PC, getIYL());
-        // nothing to do
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] LD IYL, IYL<$%02X>", reg.PC - 2, getIYL());
         return 0;
     }
 
@@ -1246,9 +1229,8 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char n = readByte(getHL(), 3);
-        if (isDebug()) log("[%04X] LD %s, (%s) = $%02X", reg.PC, registerDump(r), registerPairDump(0b10), n);
+        if (isDebug()) log("[%04X] LD %s, (%s) = $%02X", reg.PC - 1, registerDump(r), registerPairDump(0b10), n);
         if (rp) *rp = n;
-        reg.PC += 1;
         return 0;
     }
 
@@ -1263,11 +1245,10 @@ class Z80
     inline int LD_R_IX(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned char n = readByte((reg.IX + d) & 0xFFFF);
-        if (isDebug()) log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IX, d, n);
+        if (isDebug()) log("[%04X] LD %s, (IX<$%04X>+$%02X) = $%02X", reg.PC - 3, registerDump(r), reg.IX, d, n);
         if (rp) *rp = n;
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -1280,9 +1261,8 @@ class Z80
     inline int LD_R_IXH(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] LD %s, IXH<$%02X>", reg.PC, registerDump(r), getIXH());
+        if (isDebug()) log("[%04X] LD %s, IXH<$%02X>", reg.PC - 2, registerDump(r), getIXH());
         if (rp) *rp = getIXH();
-        reg.PC += 2;
         return 0;
     }
 
@@ -1295,9 +1275,8 @@ class Z80
     inline int LD_R_IXL(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] LD %s, IXL<$%02X>", reg.PC, registerDump(r), getIXL());
+        if (isDebug()) log("[%04X] LD %s, IXL<$%02X>", reg.PC - 2, registerDump(r), getIXL());
         if (rp) *rp = getIXL();
-        reg.PC += 2;
         return 0;
     }
 
@@ -1312,11 +1291,10 @@ class Z80
     inline int LD_R_IY(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned char n = readByte((reg.IY + d) & 0xFFFF);
-        if (isDebug()) log("[%04X] LD %s, (IY<$%04X>+$%02X) = $%02X", reg.PC, registerDump(r), reg.IY, d, n);
+        if (isDebug()) log("[%04X] LD %s, (IY<$%04X>+$%02X) = $%02X", reg.PC - 3, registerDump(r), reg.IY, d, n);
         if (rp) *rp = n;
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -1330,9 +1308,8 @@ class Z80
     {
         unsigned char iyh = getIYH();
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] LD %s, IYH<$%02X>", reg.PC, registerDump(r), iyh);
+        if (isDebug()) log("[%04X] LD %s, IYH<$%02X>", reg.PC - 2, registerDump(r), iyh);
         if (rp) *rp = iyh;
-        reg.PC += 2;
         return 0;
     }
 
@@ -1346,9 +1323,8 @@ class Z80
     {
         unsigned char iyl = getIYL();
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] LD %s, IYL<$%02X>", reg.PC, registerDump(r), iyl);
+        if (isDebug()) log("[%04X] LD %s, IYL<$%02X>", reg.PC - 2, registerDump(r), iyl);
         if (rp) *rp = iyl;
-        reg.PC += 2;
         return 0;
     }
 
@@ -1364,9 +1340,8 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned short addr = getHL();
-        if (isDebug()) log("[%04X] LD (%s), %s", reg.PC, registerPairDump(0b10), registerDump(r));
+        if (isDebug()) log("[%04X] LD (%s), %s", reg.PC - 1, registerPairDump(0b10), registerDump(r));
         writeByte(addr, *rp, 3);
-        reg.PC += 1;
         return 0;
     }
 
@@ -1381,11 +1356,10 @@ class Z80
     inline int LD_IX_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IX + d);
-        if (isDebug()) log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC, reg.IX, d, registerDump(r));
+        if (isDebug()) log("[%04X] LD (IX<$%04X>+$%02X), %s", reg.PC - 3, reg.IX, d, registerDump(r));
         if (rp) writeByte(addr, *rp);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -1400,11 +1374,10 @@ class Z80
     inline int LD_IY_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IY + d);
-        if (isDebug()) log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC, reg.IY, d, registerDump(r));
+        if (isDebug()) log("[%04X] LD (IY<$%04X>+$%02X), %s", reg.PC - 3, reg.IY, d, registerDump(r));
         if (rp) writeByte(addr, *rp);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -1412,12 +1385,11 @@ class Z80
     static inline int LD_IX_N_(Z80* ctx) { return ctx->LD_IX_N(); }
     inline int LD_IX_N()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned char n = readByte(reg.PC + 3);
+        signed char d = (signed char)fetch(4);
+        unsigned char n = fetch(4);
         unsigned short addr = (unsigned short)(reg.IX + d);
-        if (isDebug()) log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC, reg.IX, d, n);
         writeByte(addr, n, 3);
-        reg.PC += 4;
+        if (isDebug()) log("[%04X] LD (IX<$%04X>+$%02X), $%02X", reg.PC - 4, reg.IX, d, n);
         return 0;
     }
 
@@ -1425,12 +1397,11 @@ class Z80
     static inline int LD_IY_N_(Z80* ctx) { return ctx->LD_IY_N(); }
     inline int LD_IY_N()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned char n = readByte(reg.PC + 3);
+        signed char d = (signed char)fetch(4);
+        unsigned char n = fetch(4);
         unsigned short addr = (unsigned short)(reg.IY + d);
-        if (isDebug()) log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC, reg.IY, d, n);
         writeByte(addr, n, 3);
-        reg.PC += 4;
+        if (isDebug()) log("[%04X] LD (IY<$%04X>+$%02X), $%02X", reg.PC - 4, reg.IY, d, n);
         return 0;
     }
 
@@ -1459,13 +1430,9 @@ class Z80
             case 0b11: {
                 // SP is not managed in pair structure, so calculate directly
                 unsigned short sp = reg.SP;
-                unsigned char nL = readByte(++reg.PC, 3);
-                reg.SP &= 0xFF00;
-                reg.SP |= nL;
-                unsigned char nH = readByte(++reg.PC, 3);
-                reg.SP = make16BitsFromLE(nL, nH);
-                if (isDebug()) log("[%04X] LD SP<$%04X>, $%04X", reg.PC - 2, sp, reg.SP);
-                reg.PC++;
+                setSPL(fetch(3));
+                setSPH(fetch(3));
+                if (isDebug()) log("[%04X] LD SP<$%04X>, $%04X", reg.PC - 3, sp, reg.SP);
                 return 0;
             }
             default:
@@ -1473,34 +1440,29 @@ class Z80
                 return -1;
         }
         const char* dump = isDebug() ? registerPairDump(rp) : "";
-        unsigned char nL = readByte(++reg.PC, 3);
+        unsigned char nL = fetch(3);
         *rL = nL;
-        unsigned char nH = readByte(++reg.PC, 3);
+        unsigned char nH = fetch(3);
         *rH = nH;
-        if (isDebug()) log("[%04X] LD %s, $%02X%02X", reg.PC - 2, dump, nH, nL);
-        reg.PC++;
+        if (isDebug()) log("[%04X] LD %s, $%02X%02X", reg.PC - 3, dump, nH, nL);
         return 0;
     }
 
     static inline int LD_IX_NN_(Z80* ctx) { return ctx->LD_IX_NN(); }
     inline int LD_IX_NN()
     {
-        unsigned char nL = readByte(reg.PC + 2, 3);
-        unsigned char nH = readByte(reg.PC + 3, 3);
-        if (isDebug()) log("[%04X] LD IX, $%02X%02X", reg.PC, nH, nL);
-        reg.IX = make16BitsFromLE(nL, nH);
-        reg.PC += 4;
+        setIXL(fetch(3));
+        setIXH(fetch(3));
+        if (isDebug()) log("[%04X] LD IX, $%04X", reg.PC - 4, reg.IX);
         return 0;
     }
 
     static inline int LD_IY_NN_(Z80* ctx) { return ctx->LD_IY_NN(); }
     inline int LD_IY_NN()
     {
-        unsigned char nL = readByte(reg.PC + 2, 3);
-        unsigned char nH = readByte(reg.PC + 3, 3);
-        if (isDebug()) log("[%04X] LD IY, $%02X%02X", reg.PC, nH, nL);
-        reg.IY = make16BitsFromLE(nL, nH);
-        reg.PC += 4;
+        setIYL(fetch(3));
+        setIYH(fetch(3));
+        if (isDebug()) log("[%04X] LD IY, $%04X", reg.PC - 4, reg.IY);
         return 0;
     }
 
@@ -1511,22 +1473,41 @@ class Z80
     static inline int LD_RP_ADDR_SP(Z80* ctx) { return ctx->LD_RP_ADDR(0b11); }
     inline int LD_RP_ADDR(unsigned char rp)
     {
-        unsigned char nL = readByte(reg.PC + 2, 3);
-        unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        unsigned short hl = make16BitsFromLE(readByte(addr, 3), readByte(addr + 1, 3));
-        reg.WZ = addr + 1;
-        if (isDebug()) log("[%04X] LD %s, ($%02X%02X) = $%04X", reg.PC, registerPairDump(rp), nH, nL, hl);
+        unsigned char l = fetch(3);
+        unsigned char h = fetch(3);
+        unsigned short addr = make16BitsFromLE(l, h);
+        unsigned char* rL;
+        unsigned char* rH;
         switch (rp) {
-            case 0b00: setBC(hl); break;
-            case 0b01: setDE(hl); break;
-            case 0b10: setHL(hl); break;
-            case 0b11: reg.SP = hl; break;
+            case 0:
+                rH = &reg.pair.B;
+                rL = &reg.pair.C;
+                break;
+            case 1:
+                rH = &reg.pair.D;
+                rL = &reg.pair.E;
+                break;
+            case 2:
+                rH = &reg.pair.H;
+                rL = &reg.pair.L;
+                break;
+            case 3: {
+                const char* dump = isDebug() ? registerPairDump(rp) : "";
+                setSPL(readByte(addr, 3));
+                setSPH(readByte(addr + 1, 3));
+                reg.WZ = addr + 1;
+                if (isDebug()) log("[%04X] LD %s, ($%04X) = $%04X", reg.PC - 4, dump, addr, reg.SP);
+                return 0;
+            }
             default:
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        reg.PC += 4;
+        const char* dump = isDebug() ? registerPairDump(rp) : "";
+        *rL = readByte(addr, 3);
+        *rH = readByte(addr + 1, 3);
+        reg.WZ = addr + 1;
+        if (isDebug()) log("[%04X] LD %s, ($%04X) = $%04X", reg.PC - 4, dump, addr, make16BitsFromLE(*rL, *rH));
         return 0;
     }
 
@@ -1537,12 +1518,10 @@ class Z80
     static inline int LD_ADDR_RP_SP(Z80* ctx) { return ctx->LD_ADDR_RP(0b11); }
     inline int LD_ADDR_RP(unsigned char rp)
     {
-        unsigned char nL = readByte(reg.PC + 2, 3);
-        unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        if (isDebug()) log("[%04X] LD ($%04X), %s", reg.PC, addr, registerPairDump(rp));
-        unsigned char l;
-        unsigned char h;
+        unsigned char l = fetch(3);
+        unsigned char h = fetch(3);
+        unsigned short addr = make16BitsFromLE(l, h);
+        if (isDebug()) log("[%04X] LD ($%04X), %s", reg.PC - 4, addr, registerPairDump(rp));
         switch (rp) {
             case 0b00:
                 h = reg.pair.B;
@@ -1566,7 +1545,6 @@ class Z80
         writeByte(addr, l, 3);
         writeByte(addr + 1, h, 3);
         reg.WZ = addr + 1;
-        reg.PC += 4;
         return 0;
     }
 
@@ -1574,14 +1552,13 @@ class Z80
     static inline int LD_IX_ADDR_(Z80* ctx) { return ctx->LD_IX_ADDR(); }
     inline int LD_IX_ADDR()
     {
-        unsigned char nL = readByte(reg.PC + 2, 3);
-        unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        unsigned char l = readByte(addr, 3);
-        unsigned char h = readByte(addr + 1, 3);
-        if (isDebug()) log("[%04X] LD IX<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IX, nH, nL, h, l);
-        reg.IX = make16BitsFromLE(l, h);
-        reg.PC += 4;
+        unsigned char l = fetch(3);
+        unsigned char h = fetch(3);
+        unsigned short addr = make16BitsFromLE(l, h);
+        unsigned short ix = reg.IX;
+        setIXL(readByte(addr, 3));
+        setIXH(readByte(addr + 1, 3));
+        if (isDebug()) log("[%04X] LD IX<$%04X>, ($%04X) = $%04X", reg.PC - 4, ix, addr, reg.IX);
         return 0;
     }
 
@@ -1589,44 +1566,37 @@ class Z80
     static inline int LD_IY_ADDR_(Z80* ctx) { return ctx->LD_IY_ADDR(); }
     inline int LD_IY_ADDR()
     {
-        unsigned char nL = readByte(reg.PC + 2, 3);
-        unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        unsigned char l = readByte(addr, 3);
-        unsigned char h = readByte(addr + 1, 3);
-        if (isDebug()) log("[%04X] LD IY<$%04X>, ($%02X%02X) = $%02X%02X", reg.PC, reg.IY, nH, nL, h, l);
-        reg.IY = make16BitsFromLE(l, h);
-        reg.PC += 4;
+        unsigned char l = fetch(3);
+        unsigned char h = fetch(3);
+        unsigned short addr = make16BitsFromLE(l, h);
+        unsigned short iy = reg.IY;
+        setIYL(readByte(addr, 3));
+        setIYH(readByte(addr + 1, 3));
+        if (isDebug()) log("[%04X] LD IY<$%04X>, ($%04X) = $%04X", reg.PC - 4, iy, addr, reg.IY);
         return 0;
     }
 
     static inline int LD_ADDR_IX_(Z80* ctx) { return ctx->LD_ADDR_IX(); }
     inline int LD_ADDR_IX()
     {
-        unsigned char nL = readByte(reg.PC + 2, 3);
-        unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        if (isDebug()) log("[%04X] LD ($%04X), IX<$%04X>", reg.PC, addr, reg.IX);
-        unsigned char l = getIXL();
-        unsigned char h = getIXH();
-        writeByte(addr, l, 3);
-        writeByte(addr + 1, h, 3);
-        reg.PC += 4;
+        unsigned char l = fetch(3);
+        unsigned char h = fetch(3);
+        unsigned short addr = make16BitsFromLE(l, h);
+        if (isDebug()) log("[%04X] LD ($%04X), IX<$%04X>", reg.PC - 4, addr, reg.IX);
+        writeByte(addr, getIXL(), 3);
+        writeByte(addr + 1, getIXH(), 3);
         return 0;
     }
 
     static inline int LD_ADDR_IY_(Z80* ctx) { return ctx->LD_ADDR_IY(); }
     inline int LD_ADDR_IY()
     {
-        unsigned char nL = readByte(reg.PC + 2, 3);
-        unsigned char nH = readByte(reg.PC + 3, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        if (isDebug()) log("[%04X] LD ($%04X), IY<$%04X>", reg.PC, addr, reg.IY);
-        unsigned char l = getIYL();
-        unsigned char h = getIYH();
-        writeByte(addr, l, 3);
-        writeByte(addr + 1, h, 3);
-        reg.PC += 4;
+        unsigned char l = fetch(3);
+        unsigned char h = fetch(3);
+        unsigned short addr = make16BitsFromLE(l, h);
+        if (isDebug()) log("[%04X] LD ($%04X), IY<$%04X>", reg.PC - 4, addr, reg.IY);
+        writeByte(addr, getIYL(), 3);
+        writeByte(addr + 1, getIYH(), 3);
         return 0;
     }
 
@@ -1634,10 +1604,8 @@ class Z80
     static inline int LD_SP_IX_(Z80* ctx) { return ctx->LD_SP_IX(); }
     inline int LD_SP_IX()
     {
-        unsigned short value = reg.IX;
-        if (isDebug()) log("[%04X] LD %s, IX<$%04X>", reg.PC, registerPairDump(0b11), value);
-        reg.SP = value;
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] LD %s, IX<$%04X>", reg.PC - 2, registerPairDump(0b11), reg.IX);
+        reg.SP = reg.IX;
         return consumeClock(2);
     }
 
@@ -1645,10 +1613,8 @@ class Z80
     static inline int LD_SP_IY_(Z80* ctx) { return ctx->LD_SP_IY(); }
     inline int LD_SP_IY()
     {
-        unsigned short value = reg.IY;
-        if (isDebug()) log("[%04X] LD %s, IY<$%04X>", reg.PC, registerPairDump(0b11), value);
-        reg.SP = value;
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] LD %s, IY<$%04X>", reg.PC - 2, registerPairDump(0b11), reg.IY);
+        reg.SP = reg.IY;
         return consumeClock(2);
     }
 
@@ -1657,9 +1623,9 @@ class Z80
     {
         if (isDebug()) {
             if (isIncDEHL) {
-                if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "LDIR" : "LDI", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+                if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC - 2, isRepeat ? "LDIR" : "LDI", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
             } else {
-                if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC, isRepeat ? "LDDR" : "LDD", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
+                if (isDebug()) log("[%04X] %s ... %s, %s, %s", reg.PC - 2, isRepeat ? "LDDR" : "LDD", registerPairDump(0b00), registerPairDump(0b01), registerPairDump(0b10));
             }
         }
         unsigned short bc = getBC();
@@ -1685,9 +1651,8 @@ class Z80
         setFlagY(an & 0b00000010);
         setFlagX(an & 0b00001000);
         if (isRepeat && 0 != bc) {
+            reg.PC -= 2;
             consumeClock(5);
-        } else {
-            reg.PC += 2;
         }
         return 0;
     }
@@ -1700,15 +1665,14 @@ class Z80
     static inline int EX_SP_IX_(Z80* ctx) { return ctx->EX_SP_IX(); }
     inline int EX_SP_IX()
     {
-        unsigned char l = readByte(reg.SP);
-        unsigned char h = readByte(reg.SP + 1);
-        unsigned char i = getIXH();
-        unsigned char x = getIXL();
-        if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IX<$%04X>", reg.PC, reg.SP, h, l, reg.IX);
-        writeByte(reg.SP, x);
-        writeByte(reg.SP + 1, i, 3);
-        reg.IX = make16BitsFromLE(l, h);
-        reg.PC += 2;
+        unsigned short sp = reg.SP;
+        unsigned char l = pop(4);
+        unsigned char h = pop(4);
+        if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IX<$%04X>", reg.PC - 2, sp, h, l, reg.IX);
+        push(getIXH(), 4);
+        setIXH(h);
+        push(getIXL(), 3);
+        setIXL(l);
         return 0;
     }
 
@@ -1716,15 +1680,14 @@ class Z80
     static inline int EX_SP_IY_(Z80* ctx) { return ctx->EX_SP_IY(); }
     inline int EX_SP_IY()
     {
-        unsigned char l = readByte(reg.SP);
-        unsigned char h = readByte(reg.SP + 1);
-        unsigned char i = getIYH();
-        unsigned char y = getIYL();
-        if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IY<$%04X>", reg.PC, reg.SP, h, l, reg.IY);
-        writeByte(reg.SP, y);
-        writeByte(reg.SP + 1, i, 3);
-        reg.IY = make16BitsFromLE(l, h);
-        reg.PC += 2;
+        unsigned short sp = reg.SP;
+        unsigned char l = pop(4);
+        unsigned char h = pop(4);
+        if (isDebug()) log("[%04X] EX (SP<$%04X>) = $%02X%02X, IY<$%04X>", reg.PC - 2, sp, h, l, reg.IY);
+        push(getIYH(), 4);
+        setIYH(h);
+        push(getIYL(), 3);
+        setIYL(l);
         return 0;
     }
 
@@ -1734,29 +1697,24 @@ class Z80
     static inline int PUSH_HL(Z80* ctx) { return ctx->PUSH_RP(0b10); }
     inline int PUSH_RP(unsigned char rp)
     {
-        if (isDebug()) log("[%04X] PUSH %s <SP:$%04X>", reg.PC, registerPairDump(rp), reg.SP);
-        unsigned char l;
-        unsigned char h;
+        if (isDebug()) log("[%04X] PUSH %s <SP:$%04X>", reg.PC - 1, registerPairDump(rp), reg.SP);
         switch (rp) {
             case 0b00:
-                h = reg.pair.B;
-                l = reg.pair.C;
+                push(reg.pair.B, 4);
+                push(reg.pair.C, 3);
                 break;
             case 0b01:
-                h = reg.pair.D;
-                l = reg.pair.E;
+                push(reg.pair.D, 4);
+                push(reg.pair.E, 3);
                 break;
             case 0b10:
-                h = reg.pair.H;
-                l = reg.pair.L;
+                push(reg.pair.H, 4);
+                push(reg.pair.L, 3);
                 break;
             default:
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        writeByte(--reg.SP, h);
-        writeByte(--reg.SP, l, 3);
-        reg.PC++;
         return 0;
     }
 
@@ -1767,31 +1725,29 @@ class Z80
     inline int POP_RP(unsigned char rp)
     {
         unsigned short sp = reg.SP;
-        unsigned char* l;
-        unsigned char* h;
+        const char* dump = isDebug() ? registerPairDump(rp) : "";
+        unsigned short after;
         switch (rp) {
             case 0b00:
-                h = &reg.pair.B;
-                l = &reg.pair.C;
+                reg.pair.C = pop(3);
+                reg.pair.B = pop(3);
+                after = getBC();
                 break;
             case 0b01:
-                h = &reg.pair.D;
-                l = &reg.pair.E;
+                reg.pair.E = pop(3);
+                reg.pair.D = pop(3);
+                after = getDE();
                 break;
             case 0b10:
-                h = &reg.pair.H;
-                l = &reg.pair.L;
+                reg.pair.L = pop(3);
+                reg.pair.H = pop(3);
+                after = getHL();
                 break;
             default:
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
                 return -1;
         }
-        unsigned char lm = readByte(reg.SP++, 3);
-        unsigned char hm = readByte(reg.SP++, 3);
-        if (isDebug()) log("[%04X] POP %s <SP:$%04X> = $%02X%02X", reg.PC, registerPairDump(rp), sp, hm, lm);
-        *l = lm;
-        *h = hm;
-        reg.PC++;
+        if (isDebug()) log("[%04X] POP %s <SP:$%04X> = $%04X", reg.PC - 1, dump, sp, after);
         return 0;
     }
 
@@ -1799,12 +1755,9 @@ class Z80
     static inline int PUSH_IX_(Z80* ctx) { return ctx->PUSH_IX(); }
     inline int PUSH_IX()
     {
-        if (isDebug()) log("[%04X] PUSH IX<$%04X> <SP:$%04X>", reg.PC, reg.IX, reg.SP);
-        unsigned char h = getIXH();
-        unsigned char l = getIXL();
-        writeByte(--reg.SP, h);
-        writeByte(--reg.SP, l, 3);
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] PUSH IX<$%04X> <SP:$%04X>", reg.PC - 2, reg.IX, reg.SP);
+        push(getIXH(), 4);
+        push(getIXL(), 3);
         return 0;
     }
 
@@ -1813,11 +1766,9 @@ class Z80
     inline int POP_IX()
     {
         unsigned short sp = reg.SP;
-        unsigned char l = readByte(reg.SP++, 3);
-        unsigned char h = readByte(reg.SP++, 3);
-        if (isDebug()) log("[%04X] POP IX <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
-        reg.IX = make16BitsFromLE(l, h);
-        reg.PC += 2;
+        setIXL(pop(3));
+        setIXH(pop(3));
+        if (isDebug()) log("[%04X] POP IX <SP:$%04X> = $%04X", reg.PC - 2, sp, reg.IX);
         return 0;
     }
 
@@ -1825,12 +1776,9 @@ class Z80
     static inline int PUSH_IY_(Z80* ctx) { return ctx->PUSH_IY(); }
     inline int PUSH_IY()
     {
-        if (isDebug()) log("[%04X] PUSH IY<$%04X> <SP:$%04X>", reg.PC, reg.IY, reg.SP);
-        unsigned char h = getIYH();
-        unsigned char l = getIYL();
-        writeByte(--reg.SP, h);
-        writeByte(--reg.SP, l, 3);
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] PUSH IY<$%04X> <SP:$%04X>", reg.PC - 2, reg.IY, reg.SP);
+        push(getIYH(), 4);
+        push(getIYL(), 3);
         return 0;
     }
 
@@ -1839,11 +1787,9 @@ class Z80
     inline int POP_IY()
     {
         unsigned short sp = reg.SP;
-        unsigned char l = readByte(reg.SP++, 3);
-        unsigned char h = readByte(reg.SP++, 3);
-        if (isDebug()) log("[%04X] POP IY <SP:$%04X> = $%02X%02X", reg.PC, sp, h, l);
-        reg.IY = make16BitsFromLE(l, h);
-        reg.PC += 2;
+        setIYL(pop(3));
+        setIYH(pop(3));
+        if (isDebug()) log("[%04X] POP IY <SP:$%04X> = $%04X", reg.PC - 2, sp, reg.IY);
         return 0;
     }
 
@@ -1941,33 +1887,29 @@ class Z80
 
     static inline int RLCA(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] RLCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] RLCA <A:$%02X, C:%s>", ctx->reg.PC - 1, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
         ctx->reg.pair.A = ctx->RLC(ctx->reg.pair.A, true);
-        ctx->reg.PC++;
         return 0;
     }
 
     static inline int RRCA(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] RRCA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] RRCA <A:$%02X, C:%s>", ctx->reg.PC - 1, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
         ctx->reg.pair.A = ctx->RRC(ctx->reg.pair.A, true);
-        ctx->reg.PC++;
         return 0;
     }
 
     static inline int RLA(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] RLA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] RLA <A:$%02X, C:%s>", ctx->reg.PC - 1, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
         ctx->reg.pair.A = ctx->RL(ctx->reg.pair.A, true);
-        ctx->reg.PC++;
         return 0;
     }
 
     static inline int RRA(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] RRA <A:$%02X, C:%s>", ctx->reg.PC, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] RRA <A:$%02X, C:%s>", ctx->reg.PC - 1, ctx->reg.pair.A, ctx->isFlagC() ? "ON" : "OFF");
         ctx->reg.pair.A = ctx->RR(ctx->reg.pair.A, true);
-        ctx->reg.PC++;
         return 0;
     }
 
@@ -1982,9 +1924,8 @@ class Z80
     inline int RLC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] RLC %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] RLC %s", reg.PC - 2, registerDump(r));
         *rp = RLC(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -1999,9 +1940,8 @@ class Z80
     inline int RL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] RL %s <C:%s>", reg.PC, registerDump(r), isFlagC() ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RL %s <C:%s>", reg.PC - 2, registerDump(r), isFlagC() ? "ON" : "OFF");
         *rp = RL(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2016,9 +1956,8 @@ class Z80
     inline int SLA_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] SLA %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] SLA %s", reg.PC - 2, registerDump(r));
         *rp = SLA(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2033,9 +1972,8 @@ class Z80
     inline int RRC_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] RRC %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] RRC %s", reg.PC - 2, registerDump(r));
         *rp = RRC(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2050,9 +1988,8 @@ class Z80
     inline int RR_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] RR %s <C:%s>", reg.PC, registerDump(r), isFlagC() ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RR %s <C:%s>", reg.PC - 2, registerDump(r), isFlagC() ? "ON" : "OFF");
         *rp = RR(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2067,9 +2004,8 @@ class Z80
     inline int SRA_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] SRA %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] SRA %s", reg.PC - 2, registerDump(r));
         *rp = SRA(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2084,9 +2020,8 @@ class Z80
     inline int SRL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] SRL %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] SRL %s", reg.PC - 2, registerDump(r));
         *rp = SRL(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2101,9 +2036,8 @@ class Z80
     inline int SLL_R(unsigned char r)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] SLL %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] SLL %s", reg.PC - 2, registerDump(r));
         *rp = SLL(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2113,9 +2047,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RLC (HL<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] RLC (HL<$%04X>) = $%02X", reg.PC - 2, addr, n);
         writeByte(addr, RLC(n), 3);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2125,9 +2058,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RL (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, isFlagC() ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RL (HL<$%04X>) = $%02X <C:%s>", reg.PC - 2, addr, n, isFlagC() ? "ON" : "OFF");
         writeByte(addr, RL(n), 3);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2137,9 +2069,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SLA (HL<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] SLA (HL<$%04X>) = $%02X", reg.PC - 2, addr, n);
         writeByte(addr, SLA(n), 3);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2149,9 +2080,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RRC (HL<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] RRC (HL<$%04X>) = $%02X", reg.PC - 2, addr, n);
         writeByte(addr, RRC(n), 3);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2161,9 +2091,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RR (HL<$%04X>) = $%02X <C:%s>", reg.PC, addr, n, isFlagC() ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] RR (HL<$%04X>) = $%02X <C:%s>", reg.PC - 2, addr, n, isFlagC() ? "ON" : "OFF");
         writeByte(addr, RR(n), 3);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2173,9 +2102,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SRA (HL<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] SRA (HL<$%04X>) = $%02X", reg.PC - 2, addr, n);
         writeByte(addr, SRA(n), 3);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2185,9 +2113,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SRL (HL<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] SRL (HL<$%04X>) = $%02X", reg.PC - 2, addr, n);
         writeByte(addr, SRL(n), 3);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2197,9 +2124,8 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SLL (HL<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] SLL (HL<$%04X>) = $%02X", reg.PC - 2, addr, n);
         writeByte(addr, SLL(n), 3);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2209,11 +2135,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RLC (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RLC (IX+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = RLC(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2263,11 +2188,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RRC (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RRC (IX+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = RRC(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2317,11 +2241,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RL (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RL (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC - 4, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RL(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2371,11 +2294,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RR (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RR (IX+d<$%04X>) = $%02X <C:%s>%s", reg.PC - 4, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RR(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2425,11 +2347,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SLA (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] SLA (IX+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLA(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2479,11 +2400,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SRA (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] SRA (IX+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRA(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2533,11 +2453,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SRL (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] SRL (IX+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRL(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2588,11 +2507,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SLL (IX+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] SLL (IX+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLL(n);
         writeByte(addr, result, 3);
         if (rp) *rp = result;
-        reg.PC += 4;
         return 0;
     }
 
@@ -2623,11 +2541,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SLL (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] SLL (IY+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLL(n);
         writeByte(addr, result, 3);
         if (rp) *rp = result;
-        reg.PC += 4;
         return 0;
     }
 
@@ -2657,11 +2574,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RLC (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RLC (IY+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = RLC(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2671,11 +2587,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RRC (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RRC (IY+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = RRC(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2685,11 +2600,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RL (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC - 4, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RL(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2699,11 +2613,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SLA (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] SLA (IY+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = SLA(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2713,11 +2626,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RR (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RR (IY+d<$%04X>) = $%02X <C:%s>%s", reg.PC - 4, addr, n, isFlagC() ? "ON" : "OFF", extraLog ? extraLog : "");
         unsigned char result = RR(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2727,11 +2639,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SRA (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] SRA (IY+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRA(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2741,11 +2652,10 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SRL (IY+d<$%04X>) = $%02X%s", reg.PC, addr, n, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] SRL (IY+d<$%04X>) = $%02X%s", reg.PC - 4, addr, n, extraLog ? extraLog : "");
         unsigned char result = SRL(n);
         if (rp) *rp = result;
         writeByte(addr, result, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -2808,10 +2718,9 @@ class Z80
     static inline int ADD_A_2(Z80* ctx) { return ctx->ADD_R(0b111, 2); }
     inline int ADD_R(unsigned char r, int pc = 1)
     {
-        if (isDebug()) log("[%04X] ADD %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        if (isDebug()) log("[%04X] ADD %s, %s", reg.PC - pc, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
         addition8(*rp, 0);
-        reg.PC += pc;
         return 0;
     }
 
@@ -2819,9 +2728,8 @@ class Z80
     static inline int ADD_IXH_(Z80* ctx) { return ctx->ADD_IXH(); }
     inline int ADD_IXH()
     {
-        if (isDebug()) log("[%04X] ADD %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
+        if (isDebug()) log("[%04X] ADD %s, IXH<$%02X>", reg.PC - 2, registerDump(0b111), getIXH());
         addition8(getIXH(), 0);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2829,9 +2737,8 @@ class Z80
     static inline int ADD_IXL_(Z80* ctx) { return ctx->ADD_IXL(); }
     inline int ADD_IXL()
     {
-        if (isDebug()) log("[%04X] ADD %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
+        if (isDebug()) log("[%04X] ADD %s, IXL<$%02X>", reg.PC - 2, registerDump(0b111), getIXL());
         addition8(getIXL(), 0);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2839,9 +2746,8 @@ class Z80
     static inline int ADD_IYH_(Z80* ctx) { return ctx->ADD_IYH(); }
     inline int ADD_IYH()
     {
-        if (isDebug()) log("[%04X] ADD %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
+        if (isDebug()) log("[%04X] ADD %s, IYH<$%02X>", reg.PC - 2, registerDump(0b111), getIYH());
         addition8(getIYH(), 0);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2849,19 +2755,17 @@ class Z80
     static inline int ADD_IYL_(Z80* ctx) { return ctx->ADD_IYL(); }
     inline int ADD_IYL()
     {
-        if (isDebug()) log("[%04X] ADD %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
+        if (isDebug()) log("[%04X] ADD %s, IYL<$%02X>", reg.PC - 2, registerDump(0b111), getIYL());
         addition8(getIYL(), 0);
-        reg.PC += 2;
         return 0;
     }
 
     // Add value n to Acc.
     static inline int ADD_N(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] ADD %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        unsigned char n = ctx->fetch(3);
+        if (ctx->isDebug()) ctx->log("[%04X] ADD %s, $%02X", ctx->reg.PC - 2, ctx->registerDump(0b111), n);
         ctx->addition8(n, 0);
-        ctx->reg.PC += 2;
         return 0;
     }
 
@@ -2870,9 +2774,8 @@ class Z80
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] ADD %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        if (ctx->isDebug()) ctx->log("[%04X] ADD %s, (%s) = $%02X", ctx->reg.PC - 1, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->addition8(n, 0);
-        ctx->reg.PC += 1;
         return 0;
     }
 
@@ -2880,12 +2783,11 @@ class Z80
     static inline int ADD_IX_(Z80* ctx) { return ctx->ADD_IX(); }
     inline int ADD_IX()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] ADD %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        if (isDebug()) log("[%04X] ADD %s, (IX+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), addr, n);
         addition8(n, 0);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -2893,12 +2795,11 @@ class Z80
     static inline int ADD_IY_(Z80* ctx) { return ctx->ADD_IY(); }
     inline int ADD_IY()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] ADD %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        if (isDebug()) log("[%04X] ADD %s, (IY+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), addr, n);
         addition8(n, 0);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -2919,9 +2820,8 @@ class Z80
     {
         unsigned char* rp = getRegisterPointer(r);
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, %s <C:%s>", reg.PC - pc, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
         addition8(*rp, c);
-        reg.PC += pc;
         return 0;
     }
 
@@ -2930,9 +2830,8 @@ class Z80
     inline int ADC_IXH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] ADC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXH(), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, IXH<$%02X> <C:%s>", reg.PC - 2, registerDump(0b111), getIXH(), c ? "ON" : "OFF");
         addition8(getIXH(), c);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2941,9 +2840,8 @@ class Z80
     inline int ADC_IXL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] ADC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXL(), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, IXL<$%02X> <C:%s>", reg.PC - 2, registerDump(0b111), getIXL(), c ? "ON" : "OFF");
         addition8(getIXL(), c);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2952,9 +2850,8 @@ class Z80
     inline int ADC_IYH()
     {
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] ADC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYH(), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, IYH<$%02X> <C:%s>", reg.PC - 2, registerDump(0b111), getIYH(), c ? "ON" : "OFF");
         addition8(getIYH(), c);
-        reg.PC += 2;
         return 0;
     }
 
@@ -2963,20 +2860,18 @@ class Z80
     inline int ADC_IYL()
     {
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] ADC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYL(), c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, IYL<$%02X> <C:%s>", reg.PC - 2, registerDump(0b111), getIYL(), c ? "ON" : "OFF");
         addition8(getIYL(), c);
-        reg.PC += 2;
         return 0;
     }
 
     // Add immediate with carry
     static inline int ADC_N(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        unsigned char n = ctx->fetch(3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
-        if (ctx->isDebug()) ctx->log("[%04X] ADC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] ADC %s, $%02X <C:%s>", ctx->reg.PC - 2, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
         ctx->addition8(n, c);
-        ctx->reg.PC += 2;
         return 0;
     }
 
@@ -2986,9 +2881,8 @@ class Z80
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
         unsigned char c = ctx->isFlagC() ? 1 : 0;
-        if (ctx->isDebug()) ctx->log("[%04X] ADC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] ADC %s, (%s) = $%02X <C:%s>", ctx->reg.PC - 1, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
         ctx->addition8(n, c);
-        ctx->reg.PC += 1;
         return 0;
     }
 
@@ -2996,13 +2890,12 @@ class Z80
     static inline int ADC_IX_(Z80* ctx) { return ctx->ADC_IX(); }
     inline int ADC_IX()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] ADC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC - 3, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         addition8(n, c);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -3010,13 +2903,12 @@ class Z80
     static inline int ADC_IY_(Z80* ctx) { return ctx->ADC_IY(); }
     inline int ADC_IY()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
         unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] ADC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC - 3, registerDump(0b111), addr, n, c ? "ON" : "OFF");
         addition8(n, c);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -3036,10 +2928,9 @@ class Z80
     inline int INC_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] INC %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] INC %s", reg.PC - pc, registerDump(r));
         setFlagByIncrement(*rp);
         (*rp)++;
-        reg.PC += pc;
         return 0;
     }
 
@@ -3048,10 +2939,9 @@ class Z80
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr);
-        if (ctx->isDebug()) ctx->log("[%04X] INC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
+        if (ctx->isDebug()) ctx->log("[%04X] INC (%s) = $%02X", ctx->reg.PC - 1, ctx->registerPairDump(0b10), n);
         ctx->setFlagByIncrement(n);
         ctx->writeByte(addr, n + 1, 3);
-        ctx->reg.PC += 1;
         return 0;
     }
 
@@ -3059,13 +2949,12 @@ class Z80
     static inline int INC_IX_(Z80* ctx) { return ctx->INC_IX(); }
     inline int INC_IX()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] INC (IX+d<$%04X>) = $%02X", reg.PC - 3, addr, n);
         setFlagByIncrement(n);
         writeByte(addr, n + 1);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -3074,10 +2963,9 @@ class Z80
     inline int INC_IXH()
     {
         unsigned char ixh = getIXH();
-        if (isDebug()) log("[%04X] INC IXH<$%02X>", reg.PC, ixh);
+        if (isDebug()) log("[%04X] INC IXH<$%02X>", reg.PC - 2, ixh);
         setFlagByIncrement(ixh++);
         setIXH(ixh);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3086,10 +2974,9 @@ class Z80
     inline int INC_IXL()
     {
         unsigned char ixl = getIXL();
-        if (isDebug()) log("[%04X] INC IXL<$%02X>", reg.PC, ixl);
+        if (isDebug()) log("[%04X] INC IXL<$%02X>", reg.PC - 2, ixl);
         setFlagByIncrement(ixl++);
         setIXL(ixl);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3097,13 +2984,12 @@ class Z80
     static inline int INC_IY_(Z80* ctx) { return ctx->INC_IY(); }
     inline int INC_IY()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] INC (IY+d<$%04X>) = $%02X", reg.PC - 3, addr, n);
         setFlagByIncrement(n);
         writeByte(addr, n + 1);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -3112,10 +2998,9 @@ class Z80
     inline int INC_IYH()
     {
         unsigned char iyh = getIYH();
-        if (isDebug()) log("[%04X] INC IYH<$%02X>", reg.PC, iyh);
+        if (isDebug()) log("[%04X] INC IYH<$%02X>", reg.PC - 2, iyh);
         setFlagByIncrement(iyh++);
         setIYH(iyh);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3124,10 +3009,9 @@ class Z80
     inline int INC_IYL()
     {
         unsigned char iyl = getIYL();
-        if (isDebug()) log("[%04X] INC IYL<$%02X>", reg.PC, iyl);
+        if (isDebug()) log("[%04X] INC IYL<$%02X>", reg.PC - 2, iyl);
         setFlagByIncrement(iyl++);
         setIYL(iyl);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3146,10 +3030,9 @@ class Z80
     static inline int SUB_A_2(Z80* ctx) { return ctx->SUB_R(0b111, 2); }
     inline int SUB_R(unsigned char r, int pc = 1)
     {
-        if (isDebug()) log("[%04X] SUB %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        if (isDebug()) log("[%04X] SUB %s, %s", reg.PC - pc, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
         subtract8(*rp, 0);
-        reg.PC += pc;
         return 0;
     }
 
@@ -3157,9 +3040,8 @@ class Z80
     static inline int SUB_IXH_(Z80* ctx) { return ctx->SUB_IXH(); }
     inline int SUB_IXH()
     {
-        if (isDebug()) log("[%04X] SUB %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
+        if (isDebug()) log("[%04X] SUB %s, IXH<$%02X>", reg.PC - 2, registerDump(0b111), getIXH());
         subtract8(getIXH(), 0);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3167,9 +3049,8 @@ class Z80
     static inline int SUB_IXL_(Z80* ctx) { return ctx->SUB_IXL(); }
     inline int SUB_IXL()
     {
-        if (isDebug()) log("[%04X] SUB %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
+        if (isDebug()) log("[%04X] SUB %s, IXL<$%02X>", reg.PC - 2, registerDump(0b111), getIXL());
         subtract8(getIXL(), 0);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3177,9 +3058,8 @@ class Z80
     static inline int SUB_IYH_(Z80* ctx) { return ctx->SUB_IYH(); }
     inline int SUB_IYH()
     {
-        if (isDebug()) log("[%04X] SUB %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
+        if (isDebug()) log("[%04X] SUB %s, IYH<$%02X>", reg.PC - 2, registerDump(0b111), getIYH());
         subtract8(getIYH(), 0);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3187,19 +3067,17 @@ class Z80
     static inline int SUB_IYL_(Z80* ctx) { return ctx->SUB_IYL(); }
     inline int SUB_IYL()
     {
-        if (isDebug()) log("[%04X] SUB %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
+        if (isDebug()) log("[%04X] SUB %s, IYL<$%02X>", reg.PC - 2, registerDump(0b111), getIYL());
         subtract8(getIYL(), 0);
-        reg.PC += 2;
         return 0;
     }
 
     // Subtract immediate
     static inline int SUB_N(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] SUB %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        unsigned char n = ctx->fetch(3);
+        if (ctx->isDebug()) ctx->log("[%04X] SUB %s, $%02X", ctx->reg.PC - 2, ctx->registerDump(0b111), n);
         ctx->subtract8(n, 0);
-        ctx->reg.PC += 2;
         return 0;
     }
 
@@ -3208,9 +3086,8 @@ class Z80
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] SUB %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        if (ctx->isDebug()) ctx->log("[%04X] SUB %s, (%s) = $%02X", ctx->reg.PC - 1, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->subtract8(n, 0);
-        ctx->reg.PC += 1;
         return 0;
     }
 
@@ -3218,12 +3095,11 @@ class Z80
     static inline int SUB_IX_(Z80* ctx) { return ctx->SUB_IX(); }
     inline int SUB_IX()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SUB %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        if (isDebug()) log("[%04X] SUB %s, (IX+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), addr, n);
         subtract8(n, 0);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -3231,12 +3107,11 @@ class Z80
     static inline int SUB_IY_(Z80* ctx) { return ctx->SUB_IY(); }
     inline int SUB_IY()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SUB %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        if (isDebug()) log("[%04X] SUB %s, (IY+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), addr, n);
         subtract8(n, 0);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -3255,11 +3130,8 @@ class Z80
     static inline int SBC_A_2(Z80* ctx) { return ctx->SBC_R(0b111, 2); }
     inline int SBC_R(unsigned char r, int pc = 1)
     {
-        unsigned char* rp = getRegisterPointer(r);
-        unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerDump(0b111), registerDump(r), c ? "ON" : "OFF");
-        subtract8(*rp, c);
-        reg.PC += pc;
+        if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC - pc, registerDump(0b111), registerDump(r), isFlagC() ? "ON" : "OFF");
+        subtract8(getRegister(r), isFlagC() ? 1 : 0);
         return 0;
     }
 
@@ -3267,10 +3139,8 @@ class Z80
     static inline int SBC_IXH_(Z80* ctx) { return ctx->SBC_IXH(); }
     inline int SBC_IXH()
     {
-        unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, IXH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXH(), c ? "ON" : "OFF");
-        subtract8(getIXH(), c);
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] SBC %s, IXH<$%02X> <C:%s>", reg.PC - 2, registerDump(0b111), getIXH(), isFlagC() ? "ON" : "OFF");
+        subtract8(getIXH(), isFlagC() ? 1 : 0);
         return 0;
     }
 
@@ -3278,10 +3148,8 @@ class Z80
     static inline int SBC_IXL_(Z80* ctx) { return ctx->SBC_IXL(); }
     inline int SBC_IXL()
     {
-        unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, IXL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIXL(), c ? "ON" : "OFF");
-        subtract8(getIXL(), c);
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] SBC %s, IXL<$%02X> <C:%s>", reg.PC - 2, registerDump(0b111), getIXL(), isFlagC() ? "ON" : "OFF");
+        subtract8(getIXL(), isFlagC() ? 1 : 0);
         return 0;
     }
 
@@ -3289,10 +3157,8 @@ class Z80
     static inline int SBC_IYH_(Z80* ctx) { return ctx->SBC_IYH(); }
     inline int SBC_IYH()
     {
-        unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, IYH<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYH(), c ? "ON" : "OFF");
-        subtract8(getIYH(), c);
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] SBC %s, IYH<$%02X> <C:%s>", reg.PC - 2, registerDump(0b111), getIYH(), isFlagC() ? "ON" : "OFF");
+        subtract8(getIYH(), isFlagC() ? 1 : 0);
         return 0;
     }
 
@@ -3300,33 +3166,26 @@ class Z80
     static inline int SBC_IYL_(Z80* ctx) { return ctx->SBC_IYL(); }
     inline int SBC_IYL()
     {
-        unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, IYL<$%02X> <C:%s>", reg.PC, registerDump(0b111), getIYL(), c ? "ON" : "OFF");
-        subtract8(getIYL(), c);
-        reg.PC += 2;
+        if (isDebug()) log("[%04X] SBC %s, IYL<$%02X> <C:%s>", reg.PC - 2, registerDump(0b111), getIYL(), isFlagC() ? "ON" : "OFF");
+        subtract8(getIYL(), isFlagC() ? 1 : 0);
         return 0;
     }
 
     // Subtract immediate with carry
     static inline int SBC_N(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
-        unsigned char c = ctx->isFlagC() ? 1 : 0;
-        if (ctx->isDebug()) ctx->log("[%04X] SBC %s, $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), n, c ? "ON" : "OFF");
-        ctx->subtract8(n, c);
-        ctx->reg.PC += 2;
+        unsigned char n = ctx->fetch(3);
+        if (ctx->isDebug()) ctx->log("[%04X] SBC %s, $%02X <C:%s>", ctx->reg.PC - 2, ctx->registerDump(0b111), n, ctx->isFlagC() ? "ON" : "OFF");
+        ctx->subtract8(n, ctx->isFlagC() ? 1 : 0);
         return 0;
     }
 
     // Subtract memory with carry
     static inline int SBC_HL(Z80* ctx)
     {
-        unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->readByte(addr, 3);
-        unsigned char c = ctx->isFlagC() ? 1 : 0;
-        if (ctx->isDebug()) ctx->log("[%04X] SBC %s, (%s) = $%02X <C:%s>", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, c ? "ON" : "OFF");
-        ctx->subtract8(n, c);
-        ctx->reg.PC += 1;
+        unsigned char n = ctx->readByte(ctx->getHL(), 3);
+        if (ctx->isDebug()) ctx->log("[%04X] SBC %s, (%s) = $%02X <C:%s>", ctx->reg.PC - 1, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n, ctx->isFlagC() ? "ON" : "OFF");
+        ctx->subtract8(n, ctx->isFlagC() ? 1 : 0);
         return 0;
     }
 
@@ -3334,13 +3193,10 @@ class Z80
     static inline int SBC_IX_(Z80* ctx) { return ctx->SBC_IX(); }
     inline int SBC_IX()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = (unsigned short)(reg.IX + d);
-        unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
-        subtract8(n, c);
-        reg.PC += 3;
+        signed char d = (signed char)fetch(4);
+        unsigned char n = readByte((unsigned short)(reg.IX + d));
+        if (isDebug()) log("[%04X] SBC %s, (IX+d<$%04X>) = $%02X <C:%s>", reg.PC - 3, registerDump(0b111), (unsigned short)(reg.IX + d), n, isFlagC() ? "ON" : "OFF");
+        subtract8(n, isFlagC() ? 1 : 0);
         return consumeClock(3);
     }
 
@@ -3348,13 +3204,10 @@ class Z80
     static inline int SBC_IY_(Z80* ctx) { return ctx->SBC_IY(); }
     inline int SBC_IY()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = (unsigned short)(reg.IY + d);
-        unsigned char n = readByte(addr);
-        unsigned char c = isFlagC() ? 1 : 0;
-        if (isDebug()) log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC, registerDump(0b111), addr, n, c ? "ON" : "OFF");
-        subtract8(n, c);
-        reg.PC += 3;
+        signed char d = (signed char)fetch(4);
+        unsigned char n = readByte((unsigned short)(reg.IY + d));
+        if (isDebug()) log("[%04X] SBC %s, (IY+d<$%04X>) = $%02X <C:%s>", reg.PC - 3, registerDump(0b111), (unsigned short)(reg.IY + d), n, isFlagC() ? "ON" : "OFF");
+        subtract8(n, isFlagC() ? 1 : 0);
         return consumeClock(3);
     }
 
@@ -3374,10 +3227,9 @@ class Z80
     inline int DEC_R(unsigned char r, int pc = 1)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] DEC %s", reg.PC, registerDump(r));
+        if (isDebug()) log("[%04X] DEC %s", reg.PC - pc, registerDump(r));
         setFlagByDecrement(*rp);
         (*rp)--;
-        reg.PC += pc;
         return 0;
     }
 
@@ -3386,10 +3238,9 @@ class Z80
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr);
-        if (ctx->isDebug()) ctx->log("[%04X] DEC (%s) = $%02X", ctx->reg.PC, ctx->registerPairDump(0b10), n);
+        if (ctx->isDebug()) ctx->log("[%04X] DEC (%s) = $%02X", ctx->reg.PC - 1, ctx->registerPairDump(0b10), n);
         ctx->setFlagByDecrement(n);
         ctx->writeByte(addr, n - 1, 3);
-        ctx->reg.PC += 1;
         return 0;
     }
 
@@ -3397,13 +3248,12 @@ class Z80
     static inline int DEC_IX_(Z80* ctx) { return ctx->DEC_IX(); }
     inline int DEC_IX()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] DEC (IX+d<$%04X>) = $%02X", reg.PC - 3, addr, n);
         setFlagByDecrement(n);
         writeByte(addr, n - 1);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -3412,10 +3262,9 @@ class Z80
     inline int DEC_IXH()
     {
         unsigned char ixh = getIXH();
-        if (isDebug()) log("[%04X] DEC IXH<$%02X>", reg.PC, ixh);
+        if (isDebug()) log("[%04X] DEC IXH<$%02X>", reg.PC - 2, ixh);
         setFlagByDecrement(ixh--);
         setIXH(ixh);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3424,10 +3273,9 @@ class Z80
     inline int DEC_IXL()
     {
         unsigned char ixl = getIXL();
-        if (isDebug()) log("[%04X] DEC IXL<$%02X>", reg.PC, ixl);
+        if (isDebug()) log("[%04X] DEC IXL<$%02X>", reg.PC - 2, ixl);
         setFlagByDecrement(ixl--);
         setIXL(ixl);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3435,13 +3283,12 @@ class Z80
     static inline int DEC_IY_(Z80* ctx) { return ctx->DEC_IY(); }
     inline int DEC_IY()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
+        signed char d = (signed char)fetch(4);
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC, addr, n);
+        if (isDebug()) log("[%04X] DEC (IY+d<$%04X>) = $%02X", reg.PC - 3, addr, n);
         setFlagByDecrement(n);
         writeByte(addr, n - 1);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -3450,10 +3297,9 @@ class Z80
     inline int DEC_IYH()
     {
         unsigned char iyh = getIYH();
-        if (isDebug()) log("[%04X] DEC IYH<$%02X>", reg.PC, iyh);
+        if (isDebug()) log("[%04X] DEC IYH<$%02X>", reg.PC - 2, iyh);
         setFlagByDecrement(iyh--);
         setIYH(iyh);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3462,10 +3308,9 @@ class Z80
     inline int DEC_IYL()
     {
         unsigned char iyl = getIYL();
-        if (isDebug()) log("[%04X] DEC IYL<$%02X>", reg.PC, iyl);
+        if (isDebug()) log("[%04X] DEC IYL<$%02X>", reg.PC - 2, iyl);
         setFlagByDecrement(iyl--);
         setIYL(iyl);
-        reg.PC += 2;
         return 0;
     }
 
@@ -3502,13 +3347,12 @@ class Z80
     static inline int ADD_HL_SP(Z80* ctx) { return ctx->ADD_HL_RP(0b11); }
     inline int ADD_HL_RP(unsigned char rp)
     {
-        if (isDebug()) log("[%04X] ADD %s, %s", reg.PC, registerPairDump(0b10), registerPairDump(rp));
+        if (isDebug()) log("[%04X] ADD %s, %s", reg.PC - 1, registerPairDump(0b10), registerPairDump(rp));
         unsigned short hl = getHL();
         unsigned short nn = getRP(rp);
         reg.WZ = nn + 1;
         setFlagByAdd16(hl, nn);
         setHL(hl + nn);
-        reg.PC++;
         return consumeClock(7);
     }
 
@@ -3519,14 +3363,13 @@ class Z80
     static inline int ADC_HL_SP(Z80* ctx) { return ctx->ADC_HL_RP(0b11); }
     inline int ADC_HL_RP(unsigned char rp)
     {
-        if (isDebug()) log("[%04X] ADC %s, %s <C:%s>", reg.PC, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] ADC %s, %s <C:%s>", reg.PC - 2, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
         unsigned short hl = getHL();
         unsigned short nn = getRP(rp);
         unsigned char c = isFlagC() ? 1 : 0;
         reg.WZ = hl + 1;
         setFlagByAdc16(hl, c + nn);
         setHL(hl + c + nn);
-        reg.PC += 2;
         return consumeClock(7);
     }
 
@@ -3537,11 +3380,10 @@ class Z80
     static inline int ADD_IX_SP(Z80* ctx) { return ctx->ADD_IX_RP(0b11); }
     inline int ADD_IX_RP(unsigned char rp)
     {
-        if (isDebug()) log("[%04X] ADD IX<$%04X>, %s", reg.PC, reg.IX, registerPairDumpIX(rp));
+        if (isDebug()) log("[%04X] ADD IX<$%04X>, %s", reg.PC - 2, reg.IX, registerPairDumpIX(rp));
         unsigned short nn = getRPIX(rp);
         setFlagByAdd16(reg.IX, nn);
         reg.IX += nn;
-        reg.PC += 2;
         return consumeClock(7);
     }
 
@@ -3552,11 +3394,10 @@ class Z80
     static inline int ADD_IY_SP(Z80* ctx) { return ctx->ADD_IY_RP(0b11); }
     inline int ADD_IY_RP(unsigned char rp)
     {
-        if (isDebug()) log("[%04X] ADD IY<$%04X>, %s", reg.PC, reg.IY, registerPairDumpIY(rp));
+        if (isDebug()) log("[%04X] ADD IY<$%04X>, %s", reg.PC - 2, reg.IY, registerPairDumpIY(rp));
         unsigned short nn = getRPIY(rp);
         setFlagByAdd16(reg.IY, nn);
         reg.IY += nn;
-        reg.PC += 2;
         return consumeClock(7);
     }
 
@@ -3567,10 +3408,8 @@ class Z80
     static inline int INC_RP_SP(Z80* ctx) { return ctx->INC_RP(0b11); }
     inline int INC_RP(unsigned char rp)
     {
-        if (isDebug()) log("[%04X] INC %s", reg.PC, registerPairDump(rp));
-        unsigned short nn = getRP(rp);
-        setRP(rp, nn + 1);
-        reg.PC++;
+        if (isDebug()) log("[%04X] INC %s", reg.PC - 1, registerPairDump(rp));
+        setRP(rp, getRP(rp) + 1);
         return consumeClock(2);
     }
 
@@ -3578,9 +3417,8 @@ class Z80
     static inline int INC_IX_reg_(Z80* ctx) { return ctx->INC_IX_reg(); }
     inline int INC_IX_reg()
     {
-        if (isDebug()) log("[%04X] INC IX<$%04X>", reg.PC, reg.IX);
+        if (isDebug()) log("[%04X] INC IX<$%04X>", reg.PC - 2, reg.IX);
         reg.IX++;
-        reg.PC += 2;
         return consumeClock(2);
     }
 
@@ -3588,9 +3426,8 @@ class Z80
     static inline int INC_IY_reg_(Z80* ctx) { return ctx->INC_IY_reg(); }
     inline int INC_IY_reg()
     {
-        if (isDebug()) log("[%04X] INC IY<$%04X>", reg.PC, reg.IY);
+        if (isDebug()) log("[%04X] INC IY<$%04X>", reg.PC - 2, reg.IY);
         reg.IY++;
-        reg.PC += 2;
         return consumeClock(2);
     }
 
@@ -3601,10 +3438,8 @@ class Z80
     static inline int DEC_RP_SP(Z80* ctx) { return ctx->DEC_RP(0b11); }
     inline int DEC_RP(unsigned char rp)
     {
-        if (isDebug()) log("[%04X] DEC %s", reg.PC, registerPairDump(rp));
-        unsigned short nn = getRP(rp);
-        setRP(rp, nn - 1);
-        reg.PC++;
+        if (isDebug()) log("[%04X] DEC %s", reg.PC - 1, registerPairDump(rp));
+        setRP(rp, getRP(rp) - 1);
         return consumeClock(2);
     }
 
@@ -3612,9 +3447,8 @@ class Z80
     static inline int DEC_IX_reg_(Z80* ctx) { return ctx->DEC_IX_reg(); }
     inline int DEC_IX_reg()
     {
-        if (isDebug()) log("[%04X] DEC IX<$%04X>", reg.PC, reg.IX);
+        if (isDebug()) log("[%04X] DEC IX<$%04X>", reg.PC - 2, reg.IX);
         reg.IX--;
-        reg.PC += 2;
         return consumeClock(2);
     }
 
@@ -3622,9 +3456,8 @@ class Z80
     static inline int DEC_IY_reg_(Z80* ctx) { return ctx->DEC_IY_reg(); }
     inline int DEC_IY_reg()
     {
-        if (isDebug()) log("[%04X] DEC IY<$%04X>", reg.PC, reg.IY);
+        if (isDebug()) log("[%04X] DEC IY<$%04X>", reg.PC - 2, reg.IY);
         reg.IY--;
-        reg.PC += 2;
         return consumeClock(2);
     }
 
@@ -3649,14 +3482,13 @@ class Z80
     static inline int SBC_HL_SP(Z80* ctx) { return ctx->SBC_HL_RP(0b11); }
     inline int SBC_HL_RP(unsigned char rp)
     {
-        if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
+        if (isDebug()) log("[%04X] SBC %s, %s <C:%s>", reg.PC - 2, registerPairDump(0b10), registerPairDump(rp), isFlagC() ? "ON" : "OFF");
         unsigned short hl = getHL();
         unsigned short nn = getRP(rp);
         unsigned char c = isFlagC() ? 1 : 0;
         reg.WZ = hl + 1;
         setFlagBySbc16(hl, c + nn);
         setHL(hl - c - nn);
-        reg.PC += 2;
         return consumeClock(7);
     }
 
@@ -3671,25 +3503,22 @@ class Z80
         setFlagC(false);
     }
 
-    inline void and8(unsigned char n, int pc)
+    inline void and8(unsigned char n)
     {
         reg.pair.A &= n;
         setFlagByLogical(true);
-        reg.PC += pc;
     }
 
-    inline void or8(unsigned char n, int pc)
+    inline void or8(unsigned char n)
     {
         reg.pair.A |= n;
         setFlagByLogical(false);
-        reg.PC += pc;
     }
 
-    inline void xor8(unsigned char n, int pc)
+    inline void xor8(unsigned char n)
     {
         reg.pair.A ^= n;
         setFlagByLogical(false);
-        reg.PC += pc;
     }
 
     // AND Register
@@ -3707,9 +3536,8 @@ class Z80
     static inline int AND_A_2(Z80* ctx) { return ctx->AND_R(0b111, 2); }
     inline int AND_R(unsigned char r, int pc = 1)
     {
-        unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] AND %s, %s", reg.PC, registerDump(0b111), registerDump(r));
-        and8(*rp, pc);
+        if (isDebug()) log("[%04X] AND %s, %s", reg.PC - pc, registerDump(0b111), registerDump(r));
+        and8(getRegister(r));
         return 0;
     }
 
@@ -3717,8 +3545,8 @@ class Z80
     static inline int AND_IXH_(Z80* ctx) { return ctx->AND_IXH(); }
     inline int AND_IXH()
     {
-        if (isDebug()) log("[%04X] AND %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
-        and8(getIXH(), 2);
+        if (isDebug()) log("[%04X] AND %s, IXH<$%02X>", reg.PC - 2, registerDump(0b111), getIXH());
+        and8(getIXH());
         return 0;
     }
 
@@ -3726,8 +3554,8 @@ class Z80
     static inline int AND_IXL_(Z80* ctx) { return ctx->AND_IXL(); }
     inline int AND_IXL()
     {
-        if (isDebug()) log("[%04X] AND %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
-        and8(getIXL(), 2);
+        if (isDebug()) log("[%04X] AND %s, IXL<$%02X>", reg.PC - 2, registerDump(0b111), getIXL());
+        and8(getIXL());
         return 0;
     }
 
@@ -3735,8 +3563,8 @@ class Z80
     static inline int AND_IYH_(Z80* ctx) { return ctx->AND_IYH(); }
     inline int AND_IYH()
     {
-        if (isDebug()) log("[%04X] AND %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
-        and8(getIYH(), 2);
+        if (isDebug()) log("[%04X] AND %s, IYH<$%02X>", reg.PC - 2, registerDump(0b111), getIYH());
+        and8(getIYH());
         return 0;
     }
 
@@ -3744,17 +3572,17 @@ class Z80
     static inline int AND_IYL_(Z80* ctx) { return ctx->AND_IYL(); }
     inline int AND_IYL()
     {
-        if (isDebug()) log("[%04X] AND %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
-        and8(getIYL(), 2);
+        if (isDebug()) log("[%04X] AND %s, IYL<$%02X>", reg.PC - 2, registerDump(0b111), getIYL());
+        and8(getIYL());
         return 0;
     }
 
     // AND immediate
     static inline int AND_N(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] AND %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
-        ctx->and8(n, 2);
+        unsigned char n = ctx->fetch(3);
+        if (ctx->isDebug()) ctx->log("[%04X] AND %s, $%02X", ctx->reg.PC - 2, ctx->registerDump(0b111), n);
+        ctx->and8(n);
         return 0;
     }
 
@@ -3763,8 +3591,8 @@ class Z80
     {
         unsigned short addr = ctx->getHL();
         unsigned char n = ctx->readByte(addr, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] AND %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
-        ctx->and8(n, 1);
+        if (ctx->isDebug()) ctx->log("[%04X] AND %s, (%s) = $%02X", ctx->reg.PC - 1, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        ctx->and8(n);
         return 0;
     }
 
@@ -3772,11 +3600,10 @@ class Z80
     static inline int AND_IX_(Z80* ctx) { return ctx->AND_IX(); }
     inline int AND_IX()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = (unsigned short)(reg.IX + d);
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
-        and8(n, 3);
+        signed char d = (signed char)fetch(4);
+        unsigned char n = readByte((unsigned short)(reg.IX + d));
+        if (isDebug()) log("[%04X] AND %s, (IX+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), (unsigned short)(reg.IX + d), reg.pair.A & n);
+        and8(n);
         return consumeClock(3);
     }
 
@@ -3784,11 +3611,10 @@ class Z80
     static inline int AND_IY_(Z80* ctx) { return ctx->AND_IY(); }
     inline int AND_IY()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = (unsigned short)(reg.IY + d);
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A & n);
-        and8(n, 3);
+        signed char d = (signed char)fetch(4);
+        unsigned char n = readByte((unsigned short)(reg.IY + d));
+        if (isDebug()) log("[%04X] AND %s, (IY+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), (unsigned short)(reg.IY + d), reg.pair.A & n);
+        and8(n);
         return consumeClock(3);
     }
 
@@ -3807,9 +3633,8 @@ class Z80
     static inline int OR_A_2(Z80* ctx) { return ctx->OR_R(0b111, 2); }
     inline int OR_R(unsigned char r, int pc = 1)
     {
-        unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] OR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
-        or8(*rp, pc);
+        if (isDebug()) log("[%04X] OR %s, %s", reg.PC - pc, registerDump(0b111), registerDump(r));
+        or8(getRegister(r));
         return 0;
     }
 
@@ -3817,8 +3642,8 @@ class Z80
     static inline int OR_IXH_(Z80* ctx) { return ctx->OR_IXH(); }
     inline int OR_IXH()
     {
-        if (isDebug()) log("[%04X] OR %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
-        or8(getIXH(), 2);
+        if (isDebug()) log("[%04X] OR %s, IXH<$%02X>", reg.PC - 2, registerDump(0b111), getIXH());
+        or8(getIXH());
         return 0;
     }
 
@@ -3826,8 +3651,8 @@ class Z80
     static inline int OR_IXL_(Z80* ctx) { return ctx->OR_IXL(); }
     inline int OR_IXL()
     {
-        if (isDebug()) log("[%04X] OR %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
-        or8(getIXL(), 2);
+        if (isDebug()) log("[%04X] OR %s, IXL<$%02X>", reg.PC - 2, registerDump(0b111), getIXL());
+        or8(getIXL());
         return 0;
     }
 
@@ -3835,8 +3660,8 @@ class Z80
     static inline int OR_IYH_(Z80* ctx) { return ctx->OR_IYH(); }
     inline int OR_IYH()
     {
-        if (isDebug()) log("[%04X] OR %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
-        or8(getIYH(), 2);
+        if (isDebug()) log("[%04X] OR %s, IYH<$%02X>", reg.PC - 2, registerDump(0b111), getIYH());
+        or8(getIYH());
         return 0;
     }
 
@@ -3844,27 +3669,26 @@ class Z80
     static inline int OR_IYL_(Z80* ctx) { return ctx->OR_IYL(); }
     inline int OR_IYL()
     {
-        if (isDebug()) log("[%04X] OR %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
-        or8(getIYL(), 2);
+        if (isDebug()) log("[%04X] OR %s, IYL<$%02X>", reg.PC - 2, registerDump(0b111), getIYL());
+        or8(getIYL());
         return 0;
     }
 
     // OR immediate
     static inline int OR_N(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] OR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
-        ctx->or8(n, 2);
+        unsigned char n = ctx->fetch(3);
+        if (ctx->isDebug()) ctx->log("[%04X] OR %s, $%02X", ctx->reg.PC - 2, ctx->registerDump(0b111), n);
+        ctx->or8(n);
         return 0;
     }
 
     // OR Memory
     static inline int OR_HL(Z80* ctx)
     {
-        unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->readByte(addr, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] OR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A | n);
-        ctx->or8(n, 1);
+        unsigned char n = ctx->readByte(ctx->getHL(), 3);
+        if (ctx->isDebug()) ctx->log("[%04X] OR %s, (%s) = $%02X", ctx->reg.PC - 1, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A | n);
+        ctx->or8(n);
         return 0;
     }
 
@@ -3872,11 +3696,10 @@ class Z80
     static inline int OR_IX_(Z80* ctx) { return ctx->OR_IX(); }
     inline int OR_IX()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = (unsigned short)(reg.IX + d);
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
-        or8(n, 3);
+        signed char d = (signed char)fetch(4);
+        unsigned char n = readByte((unsigned short)(reg.IX + d));
+        if (isDebug()) log("[%04X] OR %s, (IX+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), (unsigned short)(reg.IX + d), reg.pair.A | n);
+        or8(n);
         return consumeClock(3);
     }
 
@@ -3884,11 +3707,10 @@ class Z80
     static inline int OR_IY_(Z80* ctx) { return ctx->OR_IY(); }
     inline int OR_IY()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = (unsigned short)(reg.IY + d);
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A | n);
-        or8(n, 3);
+        signed char d = (signed char)fetch(4);
+        unsigned char n = readByte((unsigned short)(reg.IY + d));
+        if (isDebug()) log("[%04X] OR %s, (IY+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), (unsigned short)(reg.IY + d), reg.pair.A | n);
+        or8(n);
         return consumeClock(3);
     }
 
@@ -3907,9 +3729,8 @@ class Z80
     static inline int XOR_A_2(Z80* ctx) { return ctx->XOR_R(0b111, 2); }
     inline int XOR_R(unsigned char r, int pc = 1)
     {
-        unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] XOR %s, %s", reg.PC, registerDump(0b111), registerDump(r));
-        xor8(*rp, pc);
+        if (isDebug()) log("[%04X] XOR %s, %s", reg.PC - pc, registerDump(0b111), registerDump(r));
+        xor8(getRegister(r));
         return 0;
     }
 
@@ -3917,8 +3738,8 @@ class Z80
     static inline int XOR_IXH_(Z80* ctx) { return ctx->XOR_IXH(); }
     inline int XOR_IXH()
     {
-        if (isDebug()) log("[%04X] XOR %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
-        xor8(getIXH(), 2);
+        if (isDebug()) log("[%04X] XOR %s, IXH<$%02X>", reg.PC - 2, registerDump(0b111), getIXH());
+        xor8(getIXH());
         return 0;
     }
 
@@ -3926,8 +3747,8 @@ class Z80
     static inline int XOR_IXL_(Z80* ctx) { return ctx->XOR_IXL(); }
     inline int XOR_IXL()
     {
-        if (isDebug()) log("[%04X] XOR %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
-        xor8(getIXL(), 2);
+        if (isDebug()) log("[%04X] XOR %s, IXL<$%02X>", reg.PC - 2, registerDump(0b111), getIXL());
+        xor8(getIXL());
         return 0;
     }
 
@@ -3935,8 +3756,8 @@ class Z80
     static inline int XOR_IYH_(Z80* ctx) { return ctx->XOR_IYH(); }
     inline int XOR_IYH()
     {
-        if (isDebug()) log("[%04X] XOR %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
-        xor8(getIYH(), 2);
+        if (isDebug()) log("[%04X] XOR %s, IYH<$%02X>", reg.PC - 2, registerDump(0b111), getIYH());
+        xor8(getIYH());
         return 0;
     }
 
@@ -3944,27 +3765,26 @@ class Z80
     static inline int XOR_IYL_(Z80* ctx) { return ctx->XOR_IYL(); }
     inline int XOR_IYL()
     {
-        if (isDebug()) log("[%04X] XOR %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
-        xor8(getIYL(), 2);
+        if (isDebug()) log("[%04X] XOR %s, IYL<$%02X>", reg.PC - 2, registerDump(0b111), getIYL());
+        xor8(getIYL());
         return 0;
     }
 
     // XOR immediate
     static inline int XOR_N(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] XOR %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
-        ctx->xor8(n, 2);
+        unsigned char n = ctx->fetch(3);
+        if (ctx->isDebug()) ctx->log("[%04X] XOR %s, $%02X", ctx->reg.PC - 2, ctx->registerDump(0b111), n);
+        ctx->xor8(n);
         return 0;
     }
 
     // XOR Memory
     static inline int XOR_HL(Z80* ctx)
     {
-        unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->readByte(addr, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] XOR %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A ^ n);
-        ctx->xor8(n, 1);
+        unsigned char n = ctx->readByte(ctx->getHL(), 3);
+        if (ctx->isDebug()) ctx->log("[%04X] XOR %s, (%s) = $%02X", ctx->reg.PC - 1, ctx->registerDump(0b111), ctx->registerPairDump(0b10), ctx->reg.pair.A ^ n);
+        ctx->xor8(n);
         return 0;
     }
 
@@ -3972,11 +3792,10 @@ class Z80
     static inline int XOR_IX_(Z80* ctx) { return ctx->XOR_IX(); }
     inline int XOR_IX()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = (unsigned short)(reg.IX + d);
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
-        xor8(n, 3);
+        signed char d = (signed char)fetch(4);
+        unsigned char n = readByte((unsigned short)(reg.IX + d));
+        if (isDebug()) log("[%04X] XOR %s, (IX+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), (unsigned short)(reg.IX + d), reg.pair.A ^ n);
+        xor8(n);
         return consumeClock(3);
     }
 
@@ -3984,23 +3803,21 @@ class Z80
     static inline int XOR_IY_(Z80* ctx) { return ctx->XOR_IY(); }
     inline int XOR_IY()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = (unsigned short)(reg.IY + d);
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, reg.pair.A ^ n);
-        xor8(n, 3);
+        signed char d = (signed char)fetch(4);
+        unsigned char n = readByte((unsigned short)(reg.IY + d));
+        if (isDebug()) log("[%04X] XOR %s, (IY+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), (unsigned short)(reg.IY + d), reg.pair.A ^ n);
+        xor8(n);
         return consumeClock(3);
     }
 
     // Complement acc. (1's Comp.)
     static inline int CPL(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] CPL %s", ctx->reg.PC, ctx->registerDump(0b111));
+        if (ctx->isDebug()) ctx->log("[%04X] CPL %s", ctx->reg.PC - 1, ctx->registerDump(0b111));
         ctx->reg.pair.A = ~ctx->reg.pair.A;
         ctx->setFlagH(true);
         ctx->setFlagN(true);
         ctx->setFlagXY(ctx->reg.pair.A);
-        ctx->reg.PC++;
         return 0;
     }
 
@@ -4008,35 +3825,32 @@ class Z80
     static inline int NEG_(Z80* ctx) { return ctx->NEG(); }
     inline int NEG()
     {
-        if (isDebug()) log("[%04X] NEG %s", reg.PC, registerDump(0b111));
+        if (isDebug()) log("[%04X] NEG %s", reg.PC - 2, registerDump(0b111));
         unsigned char a = reg.pair.A;
         reg.pair.A = 0;
         subtract8(a, 0);
-        reg.PC += 2;
         return 0;
     }
 
     //　Complement Carry Flag
     static inline int CCF(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] CCF <C:%s -> %s>", ctx->reg.PC, ctx->isFlagC() ? "ON" : "OFF", !ctx->isFlagC() ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] CCF <C:%s -> %s>", ctx->reg.PC - 1, ctx->isFlagC() ? "ON" : "OFF", !ctx->isFlagC() ? "ON" : "OFF");
         ctx->setFlagH(ctx->isFlagC());
         ctx->setFlagN(false);
         ctx->setFlagC(!ctx->isFlagC());
         ctx->setFlagXY(ctx->reg.pair.A);
-        ctx->reg.PC++;
         return 0;
     }
 
     // Set Carry Flag
     static inline int SCF(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] SCF <C:%s -> ON>", ctx->reg.PC, ctx->isFlagC() ? "ON" : "OFF");
+        if (ctx->isDebug()) ctx->log("[%04X] SCF <C:%s -> ON>", ctx->reg.PC - 1, ctx->isFlagC() ? "ON" : "OFF");
         ctx->setFlagH(false);
         ctx->setFlagN(false);
         ctx->setFlagC(true);
         ctx->setFlagXY(ctx->reg.pair.A);
-        ctx->reg.PC++;
         return 0;
     }
 
@@ -4100,7 +3914,7 @@ class Z80
     inline int BIT_R(unsigned char r, unsigned char bit)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] BIT %s of bit-%d", reg.PC, registerDump(r), bit);
+        if (isDebug()) log("[%04X] BIT %s of bit-%d", reg.PC - 2, registerDump(r), bit);
         unsigned char n = 0;
         switch (bit) {
             case 0: n = *rp & 0b00000001; break;
@@ -4112,13 +3926,12 @@ class Z80
             case 6: n = *rp & 0b01000000; break;
             case 7: n = *rp & 0b10000000; break;
         }
-        setFlagZ(!n);
+        setFlagZ(n ? false : true);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
         setFlagH(true);
         setFlagN(false);
         setFlagXY(*rp);
-        reg.PC += 2;
         return 0;
     }
 
@@ -4133,9 +3946,8 @@ class Z80
     static inline int BIT_HL_7(Z80* ctx) { return ctx->BIT_HL(7); }
     inline int BIT_HL(unsigned char bit)
     {
-        unsigned short addr = getHL();
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] BIT (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
+        unsigned char n = readByte(getHL());
+        if (isDebug()) log("[%04X] BIT (%s) = $%02X of bit-%d", reg.PC - 2, registerPairDump(0b10), n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
             case 1: n &= 0b00000010; break;
@@ -4152,7 +3964,6 @@ class Z80
         setFlagH(true);
         setFlagN(false);
         setFlagXY((reg.WZ & 0xFF00) >> 8);
-        reg.PC += 2;
         return 0;
     }
 
@@ -4167,9 +3978,8 @@ class Z80
     static inline int BIT_IX_7(Z80* ctx, signed char d) { return ctx->BIT_IX(d, 7); }
     inline int BIT_IX(signed char d, unsigned char bit)
     {
-        unsigned short addr = (unsigned short)(reg.IX + d);
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] BIT (IX+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        unsigned char n = readByte((unsigned short)(reg.IX + d));
+        if (isDebug()) log("[%04X] BIT (IX+d<$%04X>) = $%02X of bit-%d", reg.PC - 4, (unsigned short)(reg.IX + d), n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
             case 1: n &= 0b00000010; break;
@@ -4186,7 +3996,6 @@ class Z80
         setFlagH(true);
         setFlagN(false);
         setFlagXY((reg.WZ & 0xFF00) >> 8);
-        reg.PC += 4;
         return 0;
     }
 
@@ -4201,9 +4010,8 @@ class Z80
     static inline int BIT_IY_7(Z80* ctx, signed char d) { return ctx->BIT_IY(d, 7); }
     inline int BIT_IY(signed char d, unsigned char bit)
     {
-        unsigned short addr = (unsigned short)(reg.IY + d);
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] BIT (IY+d<$%04X>) = $%02X of bit-%d", reg.PC, addr, n, bit);
+        unsigned char n = readByte((unsigned short)(reg.IY + d));
+        if (isDebug()) log("[%04X] BIT (IY+d<$%04X>) = $%02X of bit-%d", reg.PC - 4, (unsigned short)(reg.IY + d), n, bit);
         switch (bit) {
             case 0: n &= 0b00000001; break;
             case 1: n &= 0b00000010; break;
@@ -4220,7 +4028,6 @@ class Z80
         setFlagH(true);
         setFlagN(false);
         setFlagXY((reg.WZ & 0xFF00) >> 8);
-        reg.PC += 4;
         return 0;
     }
 
@@ -4284,7 +4091,7 @@ class Z80
     inline int SET_R(unsigned char r, unsigned char bit)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] SET %s of bit-%d", reg.PC, registerDump(r), bit);
+        if (isDebug()) log("[%04X] SET %s of bit-%d", reg.PC - 2, registerDump(r), bit);
         switch (bit) {
             case 0: *rp |= 0b00000001; break;
             case 1: *rp |= 0b00000010; break;
@@ -4295,7 +4102,6 @@ class Z80
             case 6: *rp |= 0b01000000; break;
             case 7: *rp |= 0b10000000; break;
         }
-        reg.PC += 2;
         return 0;
     }
 
@@ -4312,7 +4118,7 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SET (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
+        if (isDebug()) log("[%04X] SET (%s) = $%02X of bit-%d", reg.PC - 2, registerPairDump(0b10), n, bit);
         switch (bit) {
             case 0: n |= 0b00000001; break;
             case 1: n |= 0b00000010; break;
@@ -4324,7 +4130,6 @@ class Z80
             case 7: n |= 0b10000000; break;
         }
         writeByte(addr, n, 3);
-        reg.PC += 2;
         return 0;
     }
 
@@ -4341,7 +4146,7 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d%s", reg.PC - 4, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
             case 0: n |= 0b00000001; break;
             case 1: n |= 0b00000010; break;
@@ -4354,7 +4159,6 @@ class Z80
         }
         if (rp) *rp = n;
         writeByte(addr, n, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -4440,7 +4244,7 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC - 4, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
             case 0: n |= 0b00000001; break;
             case 1: n |= 0b00000010; break;
@@ -4453,7 +4257,6 @@ class Z80
         }
         if (rp) *rp = n;
         writeByte(addr, n, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -4586,7 +4389,7 @@ class Z80
     inline int RES_R(unsigned char r, unsigned char bit)
     {
         unsigned char* rp = getRegisterPointer(r);
-        if (isDebug()) log("[%04X] RES %s of bit-%d", reg.PC, registerDump(r), bit);
+        if (isDebug()) log("[%04X] RES %s of bit-%d", reg.PC - 2, registerDump(r), bit);
         switch (bit) {
             case 0: *rp &= 0b11111110; break;
             case 1: *rp &= 0b11111101; break;
@@ -4597,7 +4400,6 @@ class Z80
             case 6: *rp &= 0b10111111; break;
             case 7: *rp &= 0b01111111; break;
         }
-        reg.PC += 2;
         return 0;
     }
 
@@ -4614,7 +4416,7 @@ class Z80
     {
         unsigned short addr = getHL();
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RES (%s) = $%02X of bit-%d", reg.PC, registerPairDump(0b10), n, bit);
+        if (isDebug()) log("[%04X] RES (%s) = $%02X of bit-%d", reg.PC - 2, registerPairDump(0b10), n, bit);
         switch (bit) {
             case 0: n &= 0b11111110; break;
             case 1: n &= 0b11111101; break;
@@ -4626,7 +4428,6 @@ class Z80
             case 7: n &= 0b01111111; break;
         }
         writeByte(addr, n, 3);
-        reg.PC += 2;
         return 0;
     }
 
@@ -4643,7 +4444,7 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IX + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RES (IX+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RES (IX+d<$%04X>) = $%02X of bit-%d%s", reg.PC - 4, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
             case 0: n &= 0b11111110; break;
             case 1: n &= 0b11111101; break;
@@ -4656,7 +4457,6 @@ class Z80
         }
         if (rp) *rp = n;
         writeByte(addr, n, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -4811,7 +4611,7 @@ class Z80
     {
         unsigned short addr = (unsigned short)(reg.IY + d);
         unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] RES (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC, addr, n, bit, extraLog ? extraLog : "");
+        if (isDebug()) log("[%04X] RES (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC - 4, addr, n, bit, extraLog ? extraLog : "");
         switch (bit) {
             case 0: n &= 0b11111110; break;
             case 1: n &= 0b11111101; break;
@@ -4824,7 +4624,6 @@ class Z80
         }
         if (rp) *rp = n;
         writeByte(addr, n, 3);
-        reg.PC += 4;
         return 0;
     }
 
@@ -4836,9 +4635,9 @@ class Z80
         unsigned char n = readByte(hl);
         if (isDebug()) {
             if (isIncHL) {
-                log("[%04X] %s ... %s, %s = $%02X, %s", reg.PC, isRepeat ? "CPIR" : "CPI", registerDump(0b111), registerPairDump(0b10), n, registerPairDump(0b00));
+                log("[%04X] %s ... %s, %s = $%02X, %s", reg.PC - 2, isRepeat ? "CPIR" : "CPI", registerDump(0b111), registerPairDump(0b10), n, registerPairDump(0b00));
             } else {
-                log("[%04X] %s ... %s, %s = $%02X, %s", reg.PC, isRepeat ? "CPDR" : "CPD", registerDump(0b111), registerPairDump(0b10), n, registerPairDump(0b00));
+                log("[%04X] %s ... %s, %s = $%02X, %s", reg.PC - 2, isRepeat ? "CPDR" : "CPD", registerDump(0b111), registerPairDump(0b10), n, registerPairDump(0b00));
             }
         }
         subtract8(n, 0, false, false);
@@ -4853,9 +4652,8 @@ class Z80
         setFlagPV(0 != bc);
         consumeClock(4);
         if (isRepeat && !isFlagZ() && 0 != getBC()) {
+            reg.PC -= 2;
             consumeClock(5);
-        } else {
-            reg.PC += 2;
         }
         reg.WZ += isIncHL ? 1 : -1;
         return 0;
@@ -4880,10 +4678,9 @@ class Z80
     static inline int CP_A_2(Z80* ctx) { return ctx->CP_R(0b111, 2); }
     inline int CP_R(unsigned char r, int pc = 1)
     {
-        if (isDebug()) log("[%04X] CP %s, %s", reg.PC, registerDump(0b111), registerDump(r));
+        if (isDebug()) log("[%04X] CP %s, %s", reg.PC - pc, registerDump(0b111), registerDump(r));
         unsigned char* rp = getRegisterPointer(r);
         subtract8(*rp, 0, true, false);
-        reg.PC += pc;
         return 0;
     }
 
@@ -4891,9 +4688,8 @@ class Z80
     static inline int CP_IXH_(Z80* ctx) { return ctx->CP_IXH(); }
     inline int CP_IXH()
     {
-        if (isDebug()) log("[%04X] CP %s, IXH<$%02X>", reg.PC, registerDump(0b111), getIXH());
+        if (isDebug()) log("[%04X] CP %s, IXH<$%02X>", reg.PC - 2, registerDump(0b111), getIXH());
         subtract8(getIXH(), 0, true, false);
-        reg.PC += 2;
         return 0;
     }
 
@@ -4901,9 +4697,8 @@ class Z80
     static inline int CP_IXL_(Z80* ctx) { return ctx->CP_IXL(); }
     inline int CP_IXL()
     {
-        if (isDebug()) log("[%04X] CP %s, IXL<$%02X>", reg.PC, registerDump(0b111), getIXL());
+        if (isDebug()) log("[%04X] CP %s, IXL<$%02X>", reg.PC - 2, registerDump(0b111), getIXL());
         subtract8(getIXL(), 0, true, false);
-        reg.PC += 2;
         return 0;
     }
 
@@ -4911,9 +4706,8 @@ class Z80
     static inline int CP_IYH_(Z80* ctx) { return ctx->CP_IYH(); }
     inline int CP_IYH()
     {
-        if (isDebug()) log("[%04X] CP %s, IYH<$%02X>", reg.PC, registerDump(0b111), getIYH());
+        if (isDebug()) log("[%04X] CP %s, IYH<$%02X>", reg.PC - 2, registerDump(0b111), getIYH());
         subtract8(getIYH(), 0, true, false);
-        reg.PC += 2;
         return 0;
     }
 
@@ -4921,30 +4715,26 @@ class Z80
     static inline int CP_IYL_(Z80* ctx) { return ctx->CP_IYL(); }
     inline int CP_IYL()
     {
-        if (isDebug()) log("[%04X] CP %s, IYL<$%02X>", reg.PC, registerDump(0b111), getIYL());
+        if (isDebug()) log("[%04X] CP %s, IYL<$%02X>", reg.PC - 2, registerDump(0b111), getIYL());
         subtract8(getIYL(), 0, true, false);
-        reg.PC += 2;
         return 0;
     }
 
     // Compare immediate
     static inline int CP_N(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] CP %s, $%02X", ctx->reg.PC, ctx->registerDump(0b111), n);
+        unsigned char n = ctx->fetch(3);
+        if (ctx->isDebug()) ctx->log("[%04X] CP %s, $%02X", ctx->reg.PC - 2, ctx->registerDump(0b111), n);
         ctx->subtract8(n, 0, true, false);
-        ctx->reg.PC += 2;
         return 0;
     }
 
     // Compare memory
     static inline int CP_HL(Z80* ctx)
     {
-        unsigned short addr = ctx->getHL();
-        unsigned char n = ctx->readByte(addr, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] CP %s, (%s) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
+        unsigned char n = ctx->readByte(ctx->getHL(), 3);
+        if (ctx->isDebug()) ctx->log("[%04X] CP %s, (%s) = $%02X", ctx->reg.PC - 1, ctx->registerDump(0b111), ctx->registerPairDump(0b10), n);
         ctx->subtract8(n, 0, true, false);
-        ctx->reg.PC += 1;
         return 0;
     }
 
@@ -4952,12 +4742,10 @@ class Z80
     static inline int CP_IX_(Z80* ctx) { return ctx->CP_IX(); }
     inline int CP_IX()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = (unsigned short)(reg.IX + d);
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] CP %s, (IX+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        signed char d = (signed char)fetch(4);
+        unsigned char n = readByte((unsigned short)(reg.IX + d));
+        if (isDebug()) log("[%04X] CP %s, (IX+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), (unsigned short)(reg.IX + d), n);
         subtract8(n, 0, true, false);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
@@ -4965,22 +4753,18 @@ class Z80
     static inline int CP_IY_(Z80* ctx) { return ctx->CP_IY(); }
     inline int CP_IY()
     {
-        signed char d = (signed char)readByte(reg.PC + 2);
-        unsigned short addr = (unsigned short)(reg.IY + d);
-        unsigned char n = readByte(addr);
-        if (isDebug()) log("[%04X] CP %s, (IY+d<$%04X>) = $%02X", reg.PC, registerDump(0b111), addr, n);
+        signed char d = (signed char)fetch(4);
+        unsigned char n = readByte((unsigned short)(reg.IY + d));
+        if (isDebug()) log("[%04X] CP %s, (IY+d<$%04X>) = $%02X", reg.PC - 3, registerDump(0b111), (unsigned short)(reg.IY + d), n);
         subtract8(n, 0, true, false);
-        reg.PC += 3;
         return consumeClock(3);
     }
 
     // Jump
     static inline int JP_NN(Z80* ctx)
     {
-        unsigned char nL = ctx->readByte(ctx->reg.PC + 1, 3);
-        unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = ctx->make16BitsFromLE(nL, nH);
-        if (ctx->isDebug()) ctx->log("[%04X] JP $%04X", ctx->reg.PC, addr);
+        unsigned short addr = ctx->make16BitsFromLE(ctx->fetch(3), ctx->fetch(3));
+        if (ctx->isDebug()) ctx->log("[%04X] JP $%04X", ctx->reg.PC - 3, addr);
         ctx->reg.PC = addr;
         ctx->reg.WZ = addr;
         return 0;
@@ -4997,15 +4781,11 @@ class Z80
     static inline int JP_C7_NN(Z80* ctx) { return ctx->JP_C_NN(7); }
     inline int JP_C_NN(unsigned char c)
     {
-        unsigned char nL = readByte(reg.PC + 1, 3);
-        unsigned char nH = readByte(reg.PC + 2, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        if (isDebug()) log("[%04X] JP %s, $%04X", reg.PC, conditionDump(c), addr);
-        if (checkConditionFlag(c)) {
-            reg.PC = addr;
-        } else {
-            reg.PC += 3;
-        }
+        unsigned char l = fetch(3);
+        unsigned char h = fetch(3);
+        unsigned short addr = make16BitsFromLE(l, h);
+        if (isDebug()) log("[%04X] JP %s, $%04X", reg.PC - 3, conditionDump(c), addr);
+        if (checkConditionFlag(c)) reg.PC = addr;
         reg.WZ = addr;
         return 0;
     }
@@ -5013,65 +4793,24 @@ class Z80
     // Jump Relative to PC+e
     static inline int JR_E(Z80* ctx)
     {
-        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1);
-        if (ctx->isDebug()) ctx->log("[%04X] JR %s", ctx->reg.PC, ctx->relativeDump(e));
+        signed char e = (signed char)ctx->fetch(3);
+        if (ctx->isDebug()) ctx->log("[%04X] JR %s", ctx->reg.PC - 2, ctx->relativeDump(ctx->reg.PC - 2, e));
         ctx->reg.PC += e;
-        ctx->reg.PC += 2;
-        return ctx->consumeClock(4);
+        return ctx->consumeClock(5);
     }
 
-    // Jump Relative to PC+e, if carry
-    static inline int JR_C_E(Z80* ctx)
+    // Jump Relative to PC+e, if condition
+    static inline int JR_NZ_E(Z80* ctx) { return ctx->JR_CND_E(0); }
+    static inline int JR_Z_E(Z80* ctx) { return ctx->JR_CND_E(1); }
+    static inline int JR_NC_E(Z80* ctx) { return ctx->JR_CND_E(2); }
+    static inline int JR_C_E(Z80* ctx) { return ctx->JR_CND_E(3); }
+    inline int JR_CND_E(unsigned char cnd)
     {
-        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1, 3);
-        bool execute = ctx->isFlagC();
-        if (ctx->isDebug()) ctx->log("[%04X] JR C, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
-        ctx->reg.PC += 2;
-        if (execute) {
-            ctx->reg.PC += e;
-            ctx->consumeClock(5);
-        }
-        return 0;
-    }
-
-    // Jump Relative to PC+e, if not carry
-    static inline int JR_NC_E(Z80* ctx)
-    {
-        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1, 3);
-        bool execute = !ctx->isFlagC();
-        if (ctx->isDebug()) ctx->log("[%04X] JR NC, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
-        ctx->reg.PC += 2;
-        if (execute) {
-            ctx->reg.PC += e;
-            ctx->consumeClock(5);
-        }
-        return 0;
-    }
-
-    // Jump Relative to PC+e, if zero
-    static inline int JR_Z_E(Z80* ctx)
-    {
-        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1, 3);
-        bool execute = ctx->isFlagZ();
-        if (ctx->isDebug()) ctx->log("[%04X] JR Z, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
-        ctx->reg.PC += 2;
-        if (execute) {
-            ctx->reg.PC += e;
-            ctx->consumeClock(5);
-        }
-        return 0;
-    }
-
-    // Jump Relative to PC+e, if zero
-    static inline int JR_NZ_E(Z80* ctx)
-    {
-        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1, 3);
-        bool execute = !ctx->isFlagZ();
-        if (ctx->isDebug()) ctx->log("[%04X] JR NZ, %s <%s>", ctx->reg.PC, ctx->relativeDump(e), execute ? "YES" : "NO");
-        ctx->reg.PC += 2;
-        if (execute) {
-            ctx->reg.PC += e;
-            ctx->consumeClock(5);
+        signed char e = (signed char)fetch(3);
+        if (isDebug()) log("[%04X] JR %s, %s <%s>", reg.PC - 2, conditionDump(cnd), relativeDump(reg.PC - 2, e), checkConditionFlag(cnd) ? "YES" : "NO");
+        if (checkConditionFlag(cnd)) {
+            reg.PC += e;
+            consumeClock(5);
         }
         return 0;
     }
@@ -5079,36 +4818,33 @@ class Z80
     // Jump to HL
     static inline int JP_HL(Z80* ctx)
     {
-        if (ctx->isDebug()) ctx->log("[%04X] JP %s", ctx->reg.PC, ctx->registerPairDump(0b10));
+        if (ctx->isDebug()) ctx->log("[%04X] JP %s", ctx->reg.PC - 1, ctx->registerPairDump(0b10));
         ctx->reg.PC = ctx->getHL();
         return 0;
     }
 
     // Jump to IX
-    static inline int JP_IX_(Z80* ctx) { return ctx->JP_IX(); }
-    inline int JP_IX()
+    static inline int JP_IX(Z80* ctx)
     {
-        if (isDebug()) log("[%04X] JP IX<$%04X>", reg.PC, reg.IX);
-        reg.PC = reg.IX;
+        if (ctx->isDebug()) ctx->log("[%04X] JP IX<$%04X>", ctx->reg.PC - 2, ctx->reg.IX);
+        ctx->reg.PC = ctx->reg.IX;
         return 0;
     }
 
     // Jump to IY
-    static inline int JP_IY_(Z80* ctx) { return ctx->JP_IY(); }
-    inline int JP_IY()
+    static inline int JP_IY(Z80* ctx)
     {
-        if (isDebug()) log("[%04X] JP IY<$%04X>", reg.PC, reg.IY);
-        reg.PC = reg.IY;
+        if (ctx->isDebug()) ctx->log("[%04X] JP IY<$%04X>", ctx->reg.PC - 2, ctx->reg.IY);
+        ctx->reg.PC = ctx->reg.IY;
         return 0;
     }
 
     // 	Decrement B and Jump relative if B=0
     static inline int DJNZ_E(Z80* ctx)
     {
-        signed char e = (signed char)ctx->readByte(ctx->reg.PC + 1);
-        if (ctx->isDebug()) ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC, ctx->relativeDump(e), ctx->registerDump(0b000));
+        signed char e = (signed char)ctx->fetch(4);
+        if (ctx->isDebug()) ctx->log("[%04X] DJNZ %s (%s)", ctx->reg.PC - 2, ctx->relativeDump(ctx->reg.PC - 2, e), ctx->registerDump(0b000));
         ctx->reg.pair.B--;
-        ctx->reg.PC += 2;
         if (ctx->reg.pair.B) {
             ctx->reg.PC += e;
             ctx->consumeClock(5);
@@ -5119,16 +4855,14 @@ class Z80
     // Call
     static inline int CALL_NN(Z80* ctx)
     {
-        unsigned char nL = ctx->readByte(ctx->reg.PC + 1);
-        unsigned char nH = ctx->readByte(ctx->reg.PC + 2, 3);
-        unsigned short addr = ctx->make16BitsFromLE(nL, nH);
-        if (ctx->isDebug()) ctx->log("[%04X] CALL $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
-        ctx->reg.PC += 3;
-        ctx->writeByte(ctx->reg.SP - 1, ctx->getPCH(), 3);
-        ctx->writeByte(ctx->reg.SP - 2, ctx->getPCL(), 3);
-        ctx->reg.SP -= 2;
-        ctx->reg.WZ = addr;
-        ctx->reg.PC = addr;
+        unsigned short addrL = ctx->fetch(4);
+        unsigned short addrH = ctx->fetch(3);
+        if (ctx->isDebug()) ctx->log("[%04X] CALL $%04X (%s)", ctx->reg.PC - 3, ctx->make16BitsFromLE(addrL, addrH), ctx->registerPairDump(0b11));
+        ctx->push(ctx->getPCH(), 3);
+        ctx->setPCH(addrH);
+        ctx->push(ctx->getPCL(), 3);
+        ctx->setPCL(addrL);
+        ctx->reg.WZ = ctx->reg.PC;
         ctx->invokeCallHandlers();
         return 0;
     }
@@ -5137,13 +4871,12 @@ class Z80
     static inline int RET(Z80* ctx)
     {
         ctx->invokeReturnHandlers();
-        unsigned char nL = ctx->readByte(ctx->reg.SP, 3);
-        unsigned char nH = ctx->readByte(ctx->reg.SP + 1, 3);
-        unsigned short addr = ctx->make16BitsFromLE(nL, nH);
-        if (ctx->isDebug()) ctx->log("[%04X] RET to $%04X (%s)", ctx->reg.PC, addr, ctx->registerPairDump(0b11));
-        ctx->reg.SP += 2;
-        ctx->reg.PC = addr;
-        ctx->reg.WZ = addr;
+        unsigned short pc = ctx->reg.PC - 1;
+        const char* dump = ctx->isDebug() ? ctx->registerPairDump(0b11) : "";
+        ctx->setPCL(ctx->pop(3));
+        ctx->setPCH(ctx->pop(3));
+        ctx->reg.WZ = ctx->reg.PC;
+        if (ctx->isDebug()) ctx->log("[%04X] RET to $%04X (%s)", pc, ctx->reg.PC, dump);
         return 0;
     }
 
@@ -5159,19 +4892,17 @@ class Z80
     inline int CALL_C_NN(unsigned char c)
     {
         bool execute = checkConditionFlag(c);
-        unsigned char nL = readByte(reg.PC + 1, 3);
-        unsigned char nH = readByte(reg.PC + 2, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        if (isDebug()) log("[%04X] CALL %s, $%04X (%s) <execute:%s>", reg.PC, conditionDump(c), addr, registerPairDump(0b11), execute ? "YES" : "NO");
-        reg.PC += 3;
+        unsigned char nL = fetch(3);
+        unsigned char nH = fetch(3);
+        if (isDebug()) log("[%04X] CALL %s, $%04X (%s) <execute:%s>", reg.PC - 3, conditionDump(c), make16BitsFromLE(nL, nH), registerPairDump(0b11), execute ? "YES" : "NO");
         if (execute) {
-            writeByte(reg.SP - 1, getPCH());
-            writeByte(reg.SP - 2, getPCL(), 3);
-            reg.SP -= 2;
-            reg.PC = addr;
+            push(getPCH(), 4);
+            setPCH(nH);
+            push(getPCL(), 3);
+            setPCL(nL);
             invokeCallHandlers();
         }
-        reg.WZ = addr;
+        reg.WZ = reg.PC;
         return 0;
     }
 
@@ -5187,18 +4918,16 @@ class Z80
     inline int RET_C(unsigned char c)
     {
         if (!checkConditionFlag(c)) {
-            if (isDebug()) log("[%04X] RET %s <execute:NO>", reg.PC, conditionDump(c));
-            reg.PC++;
+            if (isDebug()) log("[%04X] RET %s <execute:NO>", reg.PC - 1, conditionDump(c));
             return consumeClock(1);
         }
         invokeReturnHandlers();
-        unsigned char nL = readByte(reg.SP);
-        unsigned char nH = readByte(reg.SP + 1, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        if (isDebug()) log("[%04X] RET %s to $%04X (%s) <execute:YES>", reg.PC, conditionDump(c), addr, registerPairDump(0b11));
-        reg.SP += 2;
-        reg.PC = addr;
-        reg.WZ = addr;
+        unsigned short pc = reg.PC;
+        unsigned short sp = reg.SP;
+        setPCL(pop(4));
+        setPCH(pop(3));
+        reg.WZ = reg.PC;
+        if (isDebug()) log("[%04X] RET %s to $%04X (SP<$%04X>) <execute:YES>", pc - 1, conditionDump(c), reg.PC, sp);
         return 0;
     }
 
@@ -5207,14 +4936,13 @@ class Z80
     inline int RETI()
     {
         invokeReturnHandlers();
-        unsigned char nL = readByte(reg.SP, 3);
-        unsigned char nH = readByte(reg.SP + 1, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        if (isDebug()) log("[%04X] RETI to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
-        reg.SP += 2;
-        reg.PC = addr;
-        reg.WZ = addr;
+        unsigned short pc = reg.PC;
+        unsigned short sp = reg.SP;
+        setPCL(pop(3));
+        setPCH(pop(3));
+        reg.WZ = reg.PC;
         reg.IFF &= ~IFF_IRQ();
+        if (isDebug()) log("[%04X] RETI to $%04X (SP<$%04X>)", pc - 2, reg.PC, sp);
         return 0;
     }
 
@@ -5223,13 +4951,11 @@ class Z80
     inline int RETN()
     {
         invokeReturnHandlers();
-        unsigned char nL = readByte(reg.SP, 3);
-        unsigned char nH = readByte(reg.SP + 1, 3);
-        unsigned short addr = make16BitsFromLE(nL, nH);
-        if (isDebug()) log("[%04X] RETN to $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
-        reg.SP += 2;
-        reg.PC = addr;
-        reg.WZ = addr;
+        unsigned short pc = reg.PC;
+        unsigned short sp = reg.SP;
+        setPCL(pop(3));
+        setPCH(pop(3));
+        reg.WZ = reg.PC;
         reg.IFF &= ~IFF_NMI();
         if (!((reg.IFF & IFF1()) && (reg.IFF & IFF2()))) {
             reg.IFF |= IFF1();
@@ -5240,6 +4966,7 @@ class Z80
                 reg.IFF &= ~IFF1();
             }
         }
+        if (isDebug()) log("[%04X] RETN to $%04X (SP<$%04X>)", pc - 2, reg.PC, sp);
         return 0;
     }
 
@@ -5252,16 +4979,17 @@ class Z80
     static inline int RST28(Z80* ctx) { return ctx->RST(5, true); }
     static inline int RST30(Z80* ctx) { return ctx->RST(6, true); }
     static inline int RST38(Z80* ctx) { return ctx->RST(7, true); }
-    inline int RST(unsigned char t, bool incrementPC)
+    inline int RST(unsigned char t, bool isOperand)
     {
         unsigned short addr = t * 8;
-        if (isDebug()) log("[%04X] RST $%04X (%s)", reg.PC, addr, registerPairDump(0b11));
-        if (incrementPC) reg.PC++;
-        writeByte(reg.SP - 1, getPCH());
-        writeByte(reg.SP - 2, getPCL(), 3);
-        reg.SP -= 2;
-        reg.WZ = addr;
+        unsigned short sp = reg.SP;
+        unsigned short pc = reg.PC;
+        push(getPCH(), 4);
+        setPCH(0);
+        push(getPCL(), 3);
         reg.PC = addr;
+        reg.WZ = addr;
+        if (isDebug()) log("[%04X] RST $%04X (SP<$%04X>)", pc - (isOperand ? 1 : 0), addr, sp);
         invokeCallHandlers();
         return 0;
     }
@@ -5269,11 +4997,10 @@ class Z80
     // Input a byte form device n to accu.
     static inline int IN_A_N(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
+        unsigned char n = ctx->fetch(3);
         unsigned char i = ctx->inPort(n);
-        if (ctx->isDebug()) ctx->log("[%04X] IN %s, ($%02X) = $%02X", ctx->reg.PC, ctx->registerDump(0b111), n, i);
+        if (ctx->isDebug()) ctx->log("[%04X] IN %s, ($%02X) = $%02X", ctx->reg.PC - 2, ctx->registerDump(0b111), n, i);
         ctx->reg.pair.A = i;
-        ctx->reg.PC += 2;
         return 0;
     }
 
@@ -5291,10 +5018,10 @@ class Z80
         unsigned char* rp = setRegister ? getRegisterPointer(r) : nullptr;
         unsigned char i = inPort(reg.pair.C);
         if (rp) {
-            if (isDebug()) log("[%04X] IN %s, (%s) = $%02X", reg.PC, registerDump(r), registerDump(0b001), i);
+            if (isDebug()) log("[%04X] IN %s, (%s) = $%02X", reg.PC - 2, registerDump(r), registerDump(0b001), i);
             *rp = i;
         } else {
-            if (isDebug()) log("[%04X] IN (%s) = $%02X", reg.PC, registerDump(0b001), i);
+            if (isDebug()) log("[%04X] IN (%s) = $%02X", reg.PC - 2, registerDump(0b001), i);
         }
         setFlagS(i & 0x80);
         setFlagZ(i == 0);
@@ -5302,7 +5029,6 @@ class Z80
         setFlagPV(isEvenNumberBits(i));
         setFlagN(false);
         setFlagXY(i);
-        reg.PC += 2;
         return 0;
     }
 
@@ -5327,9 +5053,9 @@ class Z80
         unsigned short hl = getHL();
         if (isDebug()) {
             if (isIncHL) {
-                log("[%04X] %s ... (%s) <- p(%s) = $%02X [%s]", reg.PC, isRepeat ? "INIR" : "INI", registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+                log("[%04X] %s ... (%s) <- p(%s) = $%02X [%s]", reg.PC - 2, isRepeat ? "INIR" : "INI", registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
             } else {
-                log("[%04X] %s ... (%s) <- p(%s) = $%02X [%s]", reg.PC, isRepeat ? "INDR" : "IND", registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
+                log("[%04X] %s ... (%s) <- p(%s) = $%02X [%s]", reg.PC - 2, isRepeat ? "INDR" : "IND", registerPairDump(0b10), registerDump(0b001), i, registerDump(0b000));
             }
         }
         writeByte(hl, i);
@@ -5342,9 +5068,8 @@ class Z80
         setFlagH(isFlagC());                                              // NOTE: undocumented
         setFlagPV((i + (((reg.pair.C + 1) & 0xFF) & 0x07)) ^ reg.pair.B); // NOTE: undocumented
         if (isRepeat && 0 != reg.pair.B) {
+            reg.PC -= 2;
             consumeClock(5);
-        } else {
-            reg.PC += 2;
         }
         return 0;
     }
@@ -5356,10 +5081,9 @@ class Z80
     // Load Output port (n) with Acc.
     static inline int OUT_N_A(Z80* ctx)
     {
-        unsigned char n = ctx->readByte(ctx->reg.PC + 1, 3);
-        if (ctx->isDebug()) ctx->log("[%04X] OUT ($%02X), %s", ctx->reg.PC, n, ctx->registerDump(0b111));
+        unsigned char n = ctx->fetch(3);
+        if (ctx->isDebug()) ctx->log("[%04X] OUT ($%02X), %s", ctx->reg.PC - 2, n, ctx->registerDump(0b111));
         ctx->outPort(n, ctx->reg.pair.A);
-        ctx->reg.PC += 2;
         return 0;
     }
 
@@ -5375,43 +5099,38 @@ class Z80
     inline int OUT_C_R(unsigned char r, bool zero = false)
     {
         if (zero) {
-            if (isDebug()) log("[%04X] OUT (%s), 0", reg.PC, registerDump(0b001));
+            if (isDebug()) log("[%04X] OUT (%s), 0", reg.PC - 2, registerDump(0b001));
             outPort(reg.pair.C, 0);
         } else {
-            unsigned char* rp = getRegisterPointer(r);
-            if (isDebug()) log("[%04X] OUT (%s), %s", reg.PC, registerDump(0b001), registerDump(r));
-            outPort(reg.pair.C, *rp);
+            if (isDebug()) log("[%04X] OUT (%s), %s", reg.PC - 2, registerDump(0b001), registerDump(r));
+            outPort(reg.pair.C, getRegister(r));
         }
-        reg.PC += 2;
         return 0;
     }
 
     // Load Output port (C) with location (HL), increment/decrement HL and decrement B
     inline int repeatOUT(bool isIncHL, bool isRepeat)
     {
-        unsigned short hl = getHL();
-        unsigned char o = readByte(hl);
+        unsigned char o = readByte(getHL());
         if (isDebug()) {
             if (isIncHL) {
-                log("[%04X] %s ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, isRepeat ? "OUTIR" : "OUTI", registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
+                log("[%04X] %s ... p(%s) <- (%s) <$%02x> [%s]", reg.PC - 2, isRepeat ? "OUTIR" : "OUTI", registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
             } else {
-                log("[%04X] %s ... p(%s) <- (%s) <$%02x> [%s]", reg.PC, isRepeat ? "OUTDR" : "OUTD", registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
+                log("[%04X] %s ... p(%s) <- (%s) <$%02x> [%s]", reg.PC - 2, isRepeat ? "OUTDR" : "OUTD", registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
             }
         }
         outPort(reg.pair.C, o);
         decrementB_forRepeatIO();
         reg.WZ = (unsigned short)(getBC() + (isIncHL ? 1 : -1));
-        hl += isIncHL ? 1 : -1;
-        setHL(hl);
+        setHL(getHL() + (isIncHL ? 1 : -1));
         setFlagZ(reg.pair.B == 0);
         setFlagN(o & 0x80);                                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagC(isFlagH());                               // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagPV(((reg.pair.H + o) & 0x07) ^ reg.pair.B); // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         if (isRepeat && 0 != reg.pair.B) {
+            reg.PC -= 2;
             consumeClock(5);
-        } else {
-            reg.PC += 2;
         }
         return 0;
     }
@@ -5435,9 +5154,8 @@ class Z80
         setFlagH((a ^ reg.pair.A) & flagH());
         setFlagPV(isEvenNumberBits(a));
         setFlagC(c | ac);
-        if (isDebug()) log("[%04X] DAA ... A: $%02X -> $%02X", reg.PC, reg.pair.A, a);
+        if (isDebug()) log("[%04X] DAA ... A: $%02X -> $%02X", reg.PC - 1, reg.pair.A, a);
         reg.pair.A = a;
-        reg.PC++;
         return 0;
     }
     static inline int DAA(Z80* ctx) { return ctx->daa(); }
@@ -5455,7 +5173,7 @@ class Z80
         unsigned char beforeA = reg.pair.A;
         unsigned char afterA = (aH << 4) | nH;
         unsigned char afterN = (nL << 4) | aL;
-        if (isDebug()) log("[%04X] RLD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC, beforeA, afterA, hl, beforeN, afterN);
+        if (isDebug()) log("[%04X] RLD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC - 2, beforeA, afterA, hl, beforeN, afterN);
         reg.pair.A = afterA;
         writeByte(hl, afterN);
         setFlagS(reg.pair.A & 0x80);
@@ -5464,7 +5182,6 @@ class Z80
         setFlagH(false);
         setFlagPV(isEvenNumberBits(reg.pair.A));
         setFlagN(false);
-        reg.PC += 2;
         return consumeClock(2);
     }
 
@@ -5481,7 +5198,7 @@ class Z80
         unsigned char beforeA = reg.pair.A;
         unsigned char afterA = (aH << 4) | nL;
         unsigned char afterN = (aL << 4) | nH;
-        if (isDebug()) log("[%04X] RRD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC, beforeA, afterA, hl, beforeN, afterN);
+        if (isDebug()) log("[%04X] RRD ... A: $%02X -> $%02X, ($%04X): $%02X -> $%02X", reg.PC - 2, beforeA, afterA, hl, beforeN, afterN);
         reg.pair.A = afterA;
         writeByte(hl, afterN);
         setFlagS(reg.pair.A & 0x80);
@@ -5490,7 +5207,6 @@ class Z80
         setFlagH(false);
         setFlagPV(isEvenNumberBits(reg.pair.A));
         setFlagN(false);
-        reg.PC += 2;
         return consumeClock(2);
     }
 
@@ -5647,7 +5363,7 @@ class Z80
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
         nullptr, POP_IX_, nullptr, EX_SP_IX_, nullptr, PUSH_IX_, nullptr, nullptr,
-        nullptr, JP_IX_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, JP_IX, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
         nullptr, LD_SP_IX_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     int (*opSetIY[256])(Z80* ctx) = {
@@ -5680,7 +5396,7 @@ class Z80
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
         nullptr, POP_IY_, nullptr, EX_SP_IY_, nullptr, PUSH_IY_, nullptr, nullptr,
-        nullptr, JP_IY_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, JP_IY, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
         nullptr, LD_SP_IY_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     int (*opSetIX4[256])(Z80* ctx, signed char d) = {
@@ -5768,9 +5484,8 @@ class Z80
             reg.R = ((reg.R + 1) & 0x7F) | (reg.R & 0x80);
             reg.IFF |= IFF_NMI();
             reg.IFF &= ~IFF1();
-            writeByte(reg.SP - 1, getPCH());
-            writeByte(reg.SP - 2, getPCL());
-            reg.SP -= 2;
+            push(getPCH(), 4);
+            push(getPCL(), 4);
             reg.PC = reg.interruptAddrN;
             consumeClock(11);
             invokeCallHandlers();
@@ -6138,6 +5853,13 @@ class Z80
         reg.interruptAddrN = addr;
     }
 
+    inline unsigned char fetch(int clocks)
+    {
+        unsigned char result = readByte(reg.PC, clocks);
+        reg.PC++;
+        return result;
+    }
+
     inline int execute(int clock)
     {
         int executed = 0;
@@ -6149,10 +5871,10 @@ class Z80
                 reg.execEI = 0;
                 readByte(reg.PC); // NOTE: read and discard (to be consumed 4Hz)
             } else {
-                if (wtc.fretch) consumeClock(wtc.fretch);
+                if (wtc.fetch) consumeClock(wtc.fetch);
                 checkBreakPoint();
                 reg.execEI = 0;
-                int operandNumber = readByte(reg.PC, 2);
+                int operandNumber = fetch(2);
                 updateRefreshRegister();
                 checkBreakOperand(operandNumber);
                 if (opSet1[operandNumber](this) < 0) {
