@@ -5,11 +5,12 @@ int main()
     unsigned short expectIndex = 0;
     int expectAF[] = {
         0xFFFF, 0xFFFF, 0xFFFF,
-        0xFFFF, 0xFFFF, 0xFFFF,
-        0xFFFF, 0xFFFF, 0xFFFF,
-        0xFFFF, 0xFFFF, 0xFFFF,
-        0xFFFF, 0xFFFF, 0xFFFF,
-        0xFFFF, 0xFFFF, 0xFFFF,
+        0x00FF, 0x00FF, 0x00FF,
+        0x00FF, 0x00FF, 0x00FF,
+        0x00FF, 0x00FF, 0x00FF,
+        0x00FF, 0x00FF, 0x00FF,
+        0x00FF, 0x00FF, 0x00FF,
+        0x00FF, 0x00FF, 0x00FF, 0x00FF,
         -1};
     int expectBC[] = {
         0x0000, 0x0000, 0x0000,
@@ -18,6 +19,7 @@ int main()
         0x8003, 0x8003, 0x8003,
         0x8003, 0x8003, 0x8003,
         0x8003, 0x8003, 0x8003,
+        0x8003, 0x8003, 0x8003, 0x8003,
         -1};
     int expectDE[] = {
         0x0000, 0x0000, 0x0000,
@@ -26,6 +28,7 @@ int main()
         0x0000, 0x0000, 0x0004,
         0x8004, 0x8004, 0x8004,
         0x8004, 0x8004, 0x8004,
+        0x8004, 0x8004, 0x8004, 0x8004,
         -1};
     int expectHL[] = {
         0x0000, 0x0000, 0x0000,
@@ -34,6 +37,7 @@ int main()
         0x0000, 0x0000, 0x0000,
         0x0000, 0x0000, 0x0005,
         0x8005, 0x8005, 0x8005,
+        0x8005, 0x8005, 0x8005, 0x8005,
         -1};
     int expectPC[] = {
         0x0000, 0x0001, 0x0002,
@@ -42,6 +46,7 @@ int main()
         0x0009, 0x000A, 0x000B,
         0x000C, 0x000D, 0x000E,
         0x000F, 0x0010, 0x0011,
+        0x0012, 0x0013, 0x0014, 0x0015,
         -1};
     int expectSP[] = {
         0xFFFF, 0xFFFF, 0xFFFF,
@@ -50,6 +55,7 @@ int main()
         0xFFFF, 0xFFFF, 0xFFFF,
         0xFFFF, 0xFFFF, 0xFFFF,
         0xFFFF, 0xFFFF, 0xFF06,
+        0x8006, 0x8006, 0x8006, 0x8006,
         -1};
     int expectIX[] = {
         0x0000, 0x0000, 0x0000,
@@ -58,6 +64,7 @@ int main()
         0x0000, 0x0000, 0x0000,
         0x0000, 0x0000, 0x0000,
         0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000, 0x0000,
         -1};
     int expectIY[] = {
         0x0000, 0x0000, 0x0000,
@@ -66,6 +73,7 @@ int main()
         0x0000, 0x0000, 0x0000,
         0x0000, 0x0000, 0x0000,
         0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000, 0x0000,
         -1};
     unsigned char rom[256] = {
         0x3A, 0x01, 0x80, // LD A, (NN)
@@ -74,9 +82,11 @@ int main()
         0x11, 0x04, 0x80, // LD DE, NN
         0x21, 0x05, 0x80, // LD HL, NN
         0x31, 0x06, 0x80, // LD SP, NN
+        0xDD, 0x36, 0x7F, 0xBB, // LD (IX+d), N
+        0x00, // NOP (end test)
     };
     Z80 z80([=, &expectIndex](void* arg, unsigned short addr) {
-        if (addr < 0x100) {
+        if (addr < 0x100 && -1 != expectAF[expectIndex]) {
             unsigned short sp = ((Z80*)arg)->reg.SP;
             unsigned short pc = ((Z80*)arg)->reg.PC;
             unsigned short af = (unsigned short)(((Z80*)arg)->reg.pair.A * 256 + ((Z80*)arg)->reg.pair.F);
@@ -109,18 +119,14 @@ int main()
             expectIndex++;
             return rom[addr];
         } 
-        return (unsigned char)0xFF;
+        return (unsigned char)0x00;
     }, [](void* arg, unsigned char addr, unsigned char value) {
     }, [](void* arg, unsigned short port) {
         return 0x00;
     }, [](void* arg, unsigned short port, unsigned char value) {
     }, &z80);
     z80.setDebugMessage([](void* arg, const char* msg) { puts(msg); });
-    z80.execute(1);
-    z80.execute(1);
-    z80.execute(1);
-    z80.execute(1);
-    z80.execute(1);
-    z80.execute(1);
+    z80.addBreakOperand(0x00, [](void* arg, unsigned char* op, int len) { exit(0); });
+    z80.execute(INT_MAX);
     return 0;
 }
