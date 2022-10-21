@@ -5122,7 +5122,7 @@ class Z80
         outPort(reg.pair.C, o);
         decrementB_forRepeatIO();
         reg.WZ = (unsigned short)(getBC() + (isIncHL ? 1 : -1));
-        setHL(getHL() + (isIncHL ? 1 : -1));
+        setHL((unsigned short)(getHL() + (isIncHL ? 1 : -1)));
         setFlagZ(reg.pair.B == 0);
         setFlagN(o & 0x80);                                // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
         setFlagH(reg.pair.L + o > 0xFF);                   // NOTE: ACTUAL FLAG CONDITION IS UNKNOWN
