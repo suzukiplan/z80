@@ -565,6 +565,7 @@ class Z80
     static inline void OP_ED(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4);
+        if (!ctx->opSetED[operandNumber]) throw std::runtime_error("detect an unknown operand (ED)");
         ctx->checkBreakOperandED(operandNumber);
         ctx->opSetED[operandNumber](ctx);
     }
@@ -572,6 +573,7 @@ class Z80
     static inline void OP_IX(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4);
+        if (!ctx->opSetIX[operandNumber]) throw std::runtime_error("detect an unknown operand (DD)");
         ctx->checkBreakOperandIX(operandNumber);
         ctx->opSetIX[operandNumber](ctx);
     }
@@ -579,6 +581,7 @@ class Z80
     static inline void OP_IY(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4);
+        if (!ctx->opSetIY[operandNumber]) throw std::runtime_error("detect an unknown operand (FD)");
         ctx->checkBreakOperandIY(operandNumber);
         ctx->opSetIY[operandNumber](ctx);
     }
@@ -587,6 +590,7 @@ class Z80
     {
         signed char op3 = (signed char)ctx->fetch(4);
         unsigned char op4 = ctx->fetch(4);
+        if (!ctx->opSetIX4[operandNumber]) throw std::runtime_error("detect an unknown operand (DDCB)");
         ctx->checkBreakOperandIX4(op4);
         ctx->opSetIX4[op4](ctx, op3);
     }
@@ -595,6 +599,7 @@ class Z80
     {
         signed char op3 = (signed char)ctx->fetch(4);
         unsigned char op4 = ctx->fetch(4);
+        if (!ctx->opSetIY4[operandNumber]) throw std::runtime_error("detect an unknown operand (FDCB)");
         ctx->checkBreakOperandIY4(op4);
         ctx->opSetIY4[op4](ctx, op3);
     }
