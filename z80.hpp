@@ -680,7 +680,9 @@ class Z80
     // Load HL with location (nn).
     static inline int LD_HL_ADDR(Z80* ctx)
     {
-        unsigned short addr = ctx->make16BitsFromLE(ctx->fetch(3), ctx->fetch(3));
+        unsigned char l = ctx->fetch(3);
+        unsigned char h = ctx->fetch(3);
+        unsigned short addr = ctx->make16BitsFromLE(l, h);
         unsigned short hl = ctx->getHL();
         ctx->reg.pair.L = ctx->readByte(addr, 3);
         ctx->reg.pair.H = ctx->readByte(addr + 1, 3);
@@ -691,7 +693,9 @@ class Z80
     // Load location (nn) with HL.
     static inline int LD_ADDR_HL(Z80* ctx)
     {
-        unsigned short addr = ctx->make16BitsFromLE(ctx->fetch(3), ctx->fetch(3));
+        unsigned char l = ctx->fetch(3);
+        unsigned char h = ctx->fetch(3);
+        unsigned short addr = ctx->make16BitsFromLE(l, h);
         if (ctx->isDebug()) ctx->log("[%04X] LD ($%04X), %s", ctx->reg.PC - 3, addr, ctx->registerPairDump(0b10));
         ctx->writeByte(addr, ctx->reg.pair.L, 3);
         ctx->writeByte(addr + 1, ctx->reg.pair.H, 3);
@@ -4763,7 +4767,9 @@ class Z80
     // Jump
     static inline int JP_NN(Z80* ctx)
     {
-        unsigned short addr = ctx->make16BitsFromLE(ctx->fetch(3), ctx->fetch(3));
+        unsigned char l = ctx->fetch(3);
+        unsigned char h = ctx->fetch(3);
+        unsigned short addr = ctx->make16BitsFromLE(l, h);
         if (ctx->isDebug()) ctx->log("[%04X] JP $%04X", ctx->reg.PC - 3, addr);
         ctx->reg.PC = addr;
         ctx->reg.WZ = addr;
