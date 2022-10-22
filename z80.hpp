@@ -565,7 +565,11 @@ class Z80
     static inline void OP_ED(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4);
-        if (!ctx->opSetED[operandNumber]) throw std::runtime_error("detect an unknown operand (ED)");
+        if (!ctx->opSetED[operandNumber]) {
+            char buf[80];
+            snprintf(buf, sizeof(buf), "detect an unknown operand (ED,%02X)", operandNumber);
+            throw std::runtime_error(buf);
+        }
         ctx->checkBreakOperandED(operandNumber);
         ctx->opSetED[operandNumber](ctx);
     }
@@ -573,7 +577,11 @@ class Z80
     static inline void OP_IX(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4);
-        if (!ctx->opSetIX[operandNumber]) throw std::runtime_error("detect an unknown operand (DD)");
+        if (!ctx->opSetIX[operandNumber]) {
+            char buf[80];
+            snprintf(buf, sizeof(buf), "detect an unknown operand (DD,%02X)", operandNumber);
+            throw std::runtime_error(buf);
+        }
         ctx->checkBreakOperandIX(operandNumber);
         ctx->opSetIX[operandNumber](ctx);
     }
@@ -581,7 +589,11 @@ class Z80
     static inline void OP_IY(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4);
-        if (!ctx->opSetIY[operandNumber]) throw std::runtime_error("detect an unknown operand (FD)");
+        if (!ctx->opSetIY[operandNumber]) {
+            char buf[80];
+            snprintf(buf, sizeof(buf), "detect an unknown operand (FD,%02X)", operandNumber);
+            throw std::runtime_error(buf);
+        }
         ctx->checkBreakOperandIY(operandNumber);
         ctx->opSetIY[operandNumber](ctx);
     }
@@ -590,7 +602,11 @@ class Z80
     {
         signed char op3 = (signed char)ctx->fetch(4);
         unsigned char op4 = ctx->fetch(4);
-        if (!ctx->opSetIX4[op4]) throw std::runtime_error("detect an unknown operand (DDCB)");
+        if (!ctx->opSetIX4[op4]) {
+            char buf[80];
+            snprintf(buf, sizeof(buf), "detect an unknown operand (DD,CB,%02X,%02X)", (unsigned char)op3, op4);
+            throw std::runtime_error(buf);
+        }
         ctx->checkBreakOperandIX4(op4);
         ctx->opSetIX4[op4](ctx, op3);
     }
@@ -599,7 +615,11 @@ class Z80
     {
         signed char op3 = (signed char)ctx->fetch(4);
         unsigned char op4 = ctx->fetch(4);
-        if (!ctx->opSetIY4[op4]) throw std::runtime_error("detect an unknown operand (FDCB)");
+        if (!ctx->opSetIY4[op4]) {
+            char buf[80];
+            snprintf(buf, sizeof(buf), "detect an unknown operand (FD,CB,%02X,%02X)", (unsigned char)op3, op4);
+            throw std::runtime_error(buf);
+        }
         ctx->checkBreakOperandIY4(op4);
         ctx->opSetIY4[op4](ctx, op3);
     }
