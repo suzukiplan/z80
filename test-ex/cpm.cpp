@@ -8,7 +8,6 @@ class CPM {
     unsigned char linePointer = 0;
     unsigned char memory[0x10000];
     bool halted;
-    bool error;
     bool checkError;
     void (*lineCallback)(CPM*, char*);
 
@@ -36,7 +35,6 @@ class CPM {
         fclose(fp);
         initBios();
         halted = false;
-        error = false;
         checkError = false;
         clearLineBuffer();
         lineCallback = NULL;
@@ -126,13 +124,11 @@ int main(int argc, char* argv[])
         return -1;
     }
     cpm.checkError = checkError;
-    cpm.error = true;
     z80.reg.PC = 0x0100;
     z80.addBreakOperandFP(0x76, [](void* arg, unsigned char* opcode, int opcodeLength) {
         ((CPM*)arg)->halted = true;
     });
     z80.addBreakPointFP(0xFF04, [](void* arg) {
-        ((CPM*)arg)->error = false;
         ((CPM*)arg)->halted = true;
     });
     if (verboseMode) {
@@ -149,10 +145,12 @@ int main(int argc, char* argv[])
     int anime = 0;
     long  totalClocks = 0;
     auto start = std::chrono::steady_clock::now();
+    bool error = true;
     do {
         totalClocks += (long)z80.execute(35795450); // 10sec in Z80A
         if (cpm.halted) {
             auto end = std::chrono::steady_clock::now();
+            error = z80.reg.PC != 0xFF04;
             printf("CPM halted at $%04X (total: %ldHz ... about %ld seconds in Z80A)\n", z80.reg.PC, totalClocks, totalClocks / 3579545);
             long us = (long)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
             long pw = totalClocks * 100000000 / 3579545 / us;
@@ -164,5 +162,5 @@ int main(int argc, char* argv[])
             putc(0x08, stdout);
         }
     } while (!cpm.halted);
-    return cpm.error ? -1 : 0;
+    return error ? -1 : 0;
 }
