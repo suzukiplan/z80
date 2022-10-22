@@ -26,6 +26,7 @@
  */
 #ifndef INCLUDE_Z80_HPP
 #define INCLUDE_Z80_HPP
+#include <exception>
 #include <functional>
 #include <limits.h>
 #include <map>
