@@ -26,11 +26,11 @@
  */
 #ifndef INCLUDE_Z80_HPP
 #define INCLUDE_Z80_HPP
-#include <exception>
 #include <functional>
 #include <limits.h>
 #include <map>
 #include <stdarg.h>
+#include <stdexcept>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
