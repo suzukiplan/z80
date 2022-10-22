@@ -602,11 +602,6 @@ class Z80
     {
         signed char op3 = (signed char)ctx->fetch(4);
         unsigned char op4 = ctx->fetch(4);
-        if (!ctx->opSetIX4[op4]) {
-            char buf[80];
-            snprintf(buf, sizeof(buf), "detect an unknown operand (DD,CB,%02X,%02X)", (unsigned char)op3, op4);
-            throw std::runtime_error(buf);
-        }
         ctx->checkBreakOperandIX4(op4);
         ctx->opSetIX4[op4](ctx, op3);
     }
@@ -615,11 +610,6 @@ class Z80
     {
         signed char op3 = (signed char)ctx->fetch(4);
         unsigned char op4 = ctx->fetch(4);
-        if (!ctx->opSetIY4[op4]) {
-            char buf[80];
-            snprintf(buf, sizeof(buf), "detect an unknown operand (FD,CB,%02X,%02X)", (unsigned char)op3, op4);
-            throw std::runtime_error(buf);
-        }
         ctx->checkBreakOperandIY4(op4);
         ctx->opSetIY4[op4](ctx, op3);
     }
