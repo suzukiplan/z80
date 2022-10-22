@@ -590,7 +590,7 @@ class Z80
     {
         signed char op3 = (signed char)ctx->fetch(4);
         unsigned char op4 = ctx->fetch(4);
-        if (!ctx->opSetIX4[operandNumber]) throw std::runtime_error("detect an unknown operand (DDCB)");
+        if (!ctx->opSetIX4[op4]) throw std::runtime_error("detect an unknown operand (DDCB)");
         ctx->checkBreakOperandIX4(op4);
         ctx->opSetIX4[op4](ctx, op3);
     }
@@ -599,7 +599,7 @@ class Z80
     {
         signed char op3 = (signed char)ctx->fetch(4);
         unsigned char op4 = ctx->fetch(4);
-        if (!ctx->opSetIY4[operandNumber]) throw std::runtime_error("detect an unknown operand (FDCB)");
+        if (!ctx->opSetIY4[op4]) throw std::runtime_error("detect an unknown operand (FDCB)");
         ctx->checkBreakOperandIY4(op4);
         ctx->opSetIY4[op4](ctx, op3);
     }
