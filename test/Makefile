@@ -7,6 +7,8 @@ CFLAGS=-I../ \
 	-Wsign-conversion \
 	-Wclass-varargs \
 	-Wtype-limits \
+	-Wsequence-point \
+	-Wunsequenced \
 	-Werror
 
 all:
