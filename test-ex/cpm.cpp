@@ -126,11 +126,13 @@ int main(int argc, char* argv[])
         return -1;
     }
     cpm.checkError = checkError;
+    cpm.error = true;
     z80.reg.PC = 0x0100;
     z80.addBreakOperandFP(0x76, [](void* arg, unsigned char* opcode, int opcodeLength) {
         ((CPM*)arg)->halted = true;
     });
     z80.addBreakPointFP(0xFF04, [](void* arg) {
+        ((CPM*)arg)->error = false;
         ((CPM*)arg)->halted = true;
     });
     if (verboseMode) {
@@ -141,7 +143,6 @@ int main(int argc, char* argv[])
     cpm.lineCallback = [](CPM* cpmPtr, char* line) {
         if (cpmPtr->checkError && strstr(line, "ERROR")) {
             cpmPtr->halted = true;
-            cpmPtr->error = true;
         }
     };
     char animePattern[] = { '/', '-', '\\', '|' };
@@ -150,9 +151,7 @@ int main(int argc, char* argv[])
     auto start = std::chrono::steady_clock::now();
     do {
         totalClocks += (long)z80.execute(35795450); // 10sec in Z80A
-        if (cpm.error) {
-            printf("\rCPM detected an error at $%04X\n", z80.reg.PC);
-        } else if (cpm.halted) {
+        if (cpm.halted) {
             auto end = std::chrono::steady_clock::now();
             printf("CPM halted at $%04X (total: %ldHz ... about %ld seconds in Z80A)\n", z80.reg.PC, totalClocks, totalClocks / 3579545);
             long us = (long)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -164,6 +163,6 @@ int main(int argc, char* argv[])
             fflush(stdout);
             putc(0x08, stdout);
         }
-    } while (!cpm.halted && !cpm.error);
+    } while (!cpm.halted);
     return cpm.error ? -1 : 0;
 }
