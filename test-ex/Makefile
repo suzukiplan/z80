@@ -1,5 +1,4 @@
-CFLAGS=-I../ \
-	-std=c++11 \
+COMMON_FLAGS=-I../ \
 	-O2 \
 	-Wall \
 	-Wfloat-equal \
@@ -15,7 +14,7 @@ clean:
 	-rm cpm
 
 cpm: cpm.cpp ../z80.hpp
-	clang $(CFLAGS) cpm.cpp -lstdc++ -o cpm
+	clang -std=c++17 $(COMMON_FLAGS) cpm.cpp -lstdc++ -o cpm
 
 zexdoc: cpm
 	./cpm -e zexdoc.cim
@@ -24,8 +23,12 @@ zexall: cpm
 	./cpm -e zexall.cim
 
 ci:
-	g++-10 $(CFLAGS) -Wclass-memaccess cpm.cpp -lstdc++ -o cpm
+	@echo Test zexall with gcc
+	g++-10 -std=c++2a $(COMMON_FLAGS) -Wclass-memaccess cpm.cpp -lstdc++ -o cpm
 	./cpm -e -n zexall.cim
+	@echo Test zexdoc with clang
+	clang -std=c++17 $(COMMON_FLAGS) cpm.cpp -lstdc++ -o cpm
+	./cpm -e -n zexdoc.cim
 
 full: cpm
 	./cpm zexall.cim

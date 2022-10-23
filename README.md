@@ -110,7 +110,7 @@ void outPort(void* arg, unsigned short port, unsigned char value)
 
 Note that by default, only the lower 8 bits of the port number can be obtained in the callback argument, and the upper 8 bits must be referenced from register B.
 
-If you want to get it in 16 bits from the beginning, please initialize with 6th argument to `true` as follows:
+If you want to get it in 16 bits from the beginning, please initialize with `returnPortAs16Bits` (6th argument) to `true` as follows:
 
 ```c++
     Z80 z80(&mmu, readByte, writeByte, inPort, outPort, true);
@@ -122,29 +122,106 @@ Normally, `std::function` is used for callbacks, but in more performance-sensiti
 
 ```c++
     Z80 z80(&mmu);
-    z80.setupCallbackFP([](void* arg, unsigned short addr) {
-        return 0x00; // read procedure
-    }, [](void* arg, unsigned char addr, unsigned char value) {
-        // write procedure
-    }, [](void* arg, unsigned short port) {
-        return 0x00; // input port procedure
-    }, [](void* arg, unsigned short port, unsigned char value) {
-        // output port procedure
-    });
+    z80.setupCallbackFP(readByte, writeByte, inPort, outPort);
 ```
 
 However, using function pointers causes inconveniences such as the inability to specify a capture in a lambda expression.
 In most cases, optimization with the `-O2` option will not cause performance problems, but in case environments where more severe performance is required, `setupCallbackFP` is recommended.
 
-The following article (in Japanese) provides a performance comparison between function pointers and `std::function`:
-
-https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
+> The following article (in Japanese) provides a performance comparison between function pointers and `std::function`:
+>
+> https://qiita.com/suzukiplan/items/e459bf47f6c659acc74d
+>
+> The above article gives an example of the time it took to execute 100 million times call of function-pointer and three patterns of `std::function` calls (`bind`, `direct`, `lambda`)  as following:
+>
+> |Optimization Option|function pointer|`bind`|`direct`|`lambda`|
+> |:-:|-:|-:|-:|-:|
+> |none|228,894μs|6,459,751μs|2,958,097μs|2,782,300μs|
+> |-O|191,496μs|2,482,582μs|960868μs|668010μs|
+> |-O2|100,359μs|287,467μs|313,414μs|222,633μs|
+> |-Ofast|91,904μs|27,9341μs|285,927μs|188,635μs|
 
 ### 4. Execute
 
 ```c++
     // when executing about 1234Hz
     int actualExecuteClocks = z80.execute(1234);
+```
+
+#### 4-1. Actual execute clocks
+
+- The `execute` method repeats the execution of an instruction until the total number of clocks from the time of the call is greater than or equal to the value specified in the "clocks" argument.
+- If a value less than or equal to 0 is specified, no instruction is executed at all.
+- If you want single operand execution, you can specify 1.
+
+#### 4-2. Interruption of execution
+
+Execution of the `requestBreak` method can abort the `execute` at an arbitrary time.
+
+> A typical 8-bit game console emulator implementation that I envision:
+>
+> - Implement synchronization with Video Display Processor (VDP) and other devices (sound modules, etc.) in `consumeClock` callback.
+> - Call `requestBreak` when V-SYNC signal is received from VDP.
+> - Call `execute` with a large value such as `INT_MAX`.
+
+#### 4-3. Example
+
+Code: [test/test-execute.cpp](test/test-execute.cpp)
+
+```c++
+#include "z80.hpp"
+
+int main()
+{
+    unsigned char rom[256] = {
+        0x01, 0x34, 0x12, // LD BC, $1234
+        0x3E, 0x01,       // LD A, $01
+        0xED, 0x79,       // OUT (C), A
+        0xED, 0x78,       // IN A, (C)
+        0xc3, 0x09, 0x00, // JMP $0009
+    };
+    Z80 z80([=](void* arg, unsigned short addr) { return rom[addr & 0xFF]; },
+            [](void* arg, unsigned short addr, unsigned char value) {},
+            [](void* arg, unsigned short port) { return 0x00; },
+            [](void* arg, unsigned short port, unsigned char value) {
+                // request break the execute function after output port operand has executed.
+                ((Z80*)arg)->requestBreak();
+            }, &z80);
+    z80.setDebugMessage([](void* arg, const char* msg) { puts(msg); });
+    z80.setConsumeClockCallback([](void* arg, int clocks) { printf("consume %dHz\n", clocks); });
+    puts("===== execute(0) =====");
+    printf("actualExecuteClocks = %dHz\n", z80.execute(0));
+    puts("===== execute(1) =====");
+    printf("actualExecuteClocks = %dHz\n", z80.execute(1));
+    puts("===== execute(0x7FFFFFFF) =====");
+    printf("actualExecuteClocks = %dHz\n", z80.execute(0x7FFFFFFF));
+    return 0;
+}
+```
+
+Result is following:
+
+```
+===== execute(0) =====
+actualExecuteClocks = 0Hz ... 0 is specified, no instruction is executed at all
+===== execute(1) =====
+consume 2Hz
+consume 2Hz
+consume 3Hz
+consume 3Hz
+[0000] LD BC<$0000>, $1234
+actualExecuteClocks = 10Hz ... specify 1 to single step execution
+===== execute(0x7FFFFFFF) =====
+consume 2Hz
+consume 2Hz
+consume 3Hz
+[0003] LD A<$FF>, $01
+consume 2Hz
+consume 2Hz
+consume 4Hz
+[0005] OUT (C<$34>), A<$01>
+consume 4Hz
+actualExecuteClocks = 19Hz ... 2147483647Hz+ is not executed but interrupted after completion of OUT due to requestBreak during OUT execution
 ```
 
 ### 5. Generate interrupt
@@ -193,8 +270,9 @@ If you want to execute processing just before executing an instruction of specif
     });
 ```
 
-- `addBreakPoint` can set multiple breakpoints.
+- `addBreakPoint` can set multiple breakpoints for the same address.
 - call `removeBreakPoint` or `removeAllBreakPoints` if you want to remove the break point(s).
+- call `addBreakPointFP` if you want to use the function pointer.
 
 ### Use break operand
 
@@ -224,8 +302,9 @@ If you want to execute processing just before executing an instruction of specif
 ```
 
 - the opcode and length at break are stored in `opcode` and `opcodeLength` when the callback is made.
-- `addBreakOperand` can set multiple breakpoints.
+- `addBreakOperand` can set multiple breakpoints for the same operand.
 - call `removeBreakOperand` or `removeAllBreakOperands` if you want to remove the break operand(s).
+- call `addBreakOperandFP` if you want to use the function pointer.
 
 ### Detect clock consuming
 
@@ -277,6 +356,7 @@ CallHandler will be called back immediately **after** a branch by a CALL instruc
 
 - `addCallHandler` can set multiple CallHandlers.
 - call `removeAllCallHandlers` if you want to remove the CallHandler(s).
+- call `addCallHandlerFP` if you want to use the function pointer.
 - CallHandler also catches branches caused by interrupts.
 - In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
 
@@ -301,6 +381,7 @@ ReturnHandler will be called back immediately **before** a branch by a RET instr
 
 - `addReturnHandler` can set multiple ReturnHandlers.
 - call `removeAllReturnHandlers` if you want to remove the ReturnHandler(s).
+- call `addReturnHandlerFP` if you want to use the function pointer.
 - In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
 
 ## License

@@ -8,7 +8,7 @@ Executed a CALL instruction:
 - Return to: $0007
  2 ** [0011] LD A<$FF>, $01
 Detected a RET instruction:
-- Branch from: $0013
+- Branch from: $0014
 - Return to: $0007
  1 * [0013] RET to $0007 (SP<$FFFB>)
  1 * [0007] CP A<$01>, $FF
@@ -18,12 +18,12 @@ Executed a CALL instruction:
 - Return to: $000C
  2 ** [0014] LD A<$01>, $02
 Detected a RET instruction:
-- Branch from: $0016
+- Branch from: $0017
 - Return to: $000C
  1 * [0016] RET to $000C (SP<$FFFB>)
  1 * [000C] CALL NC, $0017 (SP<$FFFD>) <execute:NO>
  1 * [000F] RET Z <execute:NO>
 Detected a RET instruction:
-- Branch from: $0010
+- Branch from: $0011
 - Return to: $0003
  0 [0010] RET NZ to $0003 (SP<$FFFD>) <execute:YES>

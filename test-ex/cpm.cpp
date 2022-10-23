@@ -1,4 +1,5 @@
 #include "../z80.hpp"
+#include <chrono>
 
 // CP/M Emulator (minimum implementation)
 class CPM {
@@ -7,7 +8,6 @@ class CPM {
     unsigned char linePointer = 0;
     unsigned char memory[0x10000];
     bool halted;
-    bool error;
     bool checkError;
     void (*lineCallback)(CPM*, char*);
 
@@ -35,7 +35,6 @@ class CPM {
         fclose(fp);
         initBios();
         halted = false;
-        error = false;
         checkError = false;
         clearLineBuffer();
         lineCallback = NULL;
@@ -126,38 +125,42 @@ int main(int argc, char* argv[])
     }
     cpm.checkError = checkError;
     z80.reg.PC = 0x0100;
-    z80.addBreakOperand(0x76, [](void* arg, unsigned char* opcode, int opcodeLength) {
+    z80.addBreakOperandFP(0x76, [](void* arg, unsigned char* opcode, int opcodeLength) {
         ((CPM*)arg)->halted = true;
     });
-    z80.addBreakPoint(0xFF04, [](void* arg) {
+    z80.addBreakPointFP(0xFF04, [](void* arg) {
         ((CPM*)arg)->halted = true;
     });
     if (verboseMode) {
-        z80.setDebugMessage([](void* arg, const char* msg) {
+        z80.setDebugMessageFP([](void* arg, const char* msg) {
             puts(msg);
         });
     }
     cpm.lineCallback = [](CPM* cpmPtr, char* line) {
         if (cpmPtr->checkError && strstr(line, "ERROR")) {
             cpmPtr->halted = true;
-            cpmPtr->error = true;
         }
     };
     char animePattern[] = { '/', '-', '\\', '|' };
     int anime = 0;
-    unsigned long totalClocks = 0;
+    long  totalClocks = 0;
+    auto start = std::chrono::steady_clock::now();
+    bool error = true;
     do {
-        totalClocks += (unsigned long)z80.execute(35795450); // 10sec in Z80A
-        if (cpm.error) {
-            printf("\rCPM detected an error at $%04X\n", z80.reg.PC);
-        } else if (cpm.halted) {
-            printf("CPM halted at $%04X (total: %luHz ... about %lu seconds in Z80A)\n", z80.reg.PC, totalClocks, totalClocks / 3579545);
+        totalClocks += (long)z80.execute(35795450); // 10sec in Z80A
+        if (cpm.halted) {
+            auto end = std::chrono::steady_clock::now();
+            error = z80.reg.PC != 0xFF04;
+            printf("CPM halted at $%04X (total: %ldHz ... about %ld seconds in Z80A)\n", z80.reg.PC, totalClocks, totalClocks / 3579545);
+            long us = (long)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+            long pw = totalClocks * 100000000 / 3579545 / us;
+            printf("Actual execution time: %ld.%ld seconds (x%ld.%ld times higher performance than Z80A)\n", us / 1000000, us % 1000000, pw / 100, pw % 100);
         } else if (!noAnimation) {
             putc(animePattern[anime++], stdout);
             anime &= 3;
             fflush(stdout);
             putc(0x08, stdout);
         }
-    } while (!cpm.halted && !cpm.error);
-    return cpm.error ? -1 : 0;
+    } while (!cpm.halted);
+    return error ? -1 : 0;
 }

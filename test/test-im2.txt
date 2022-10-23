@@ -19,7 +19,7 @@ Executed a CALL instruction:
 - Branched to: $8002
 - Return to: $0007
 Detected a RET instruction:
-- Branch from: $8002
+- Branch from: $8004
 - Return to: $0007
 [8002] RETI to $0007 (SP<$FFFD>)
 [0007] NOP

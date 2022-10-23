@@ -1,5 +1,22 @@
 # Change log
 
+## Version 1.8.0 (Oct 23, 2022 JST)
+
+- Make strict the registers conditions at callback time (NOTE: **Destructive** change specification)
+  - see the details: https://github.com/suzukiplan/z80/issues/49
+- When a runtime error occurs, such as executing an instruction that not exists, a crash used to occur, but now it throws a `std::runtime_error` exception.
+- add new FP methods:
+  - `addBreakPointFP`
+  - `addBreakOperandFP`
+  - `addReturnHandlerFP`
+  - `addCallHandlerFP`
+- add new setCallback methods:
+  - `setupMemoryCallback` (split from setupCallback)
+  - `setupDeviceCallback` (split from setupCallback)
+  - `setupMemoryCallbackFP` (split from setupCallbackFP)
+  - `setupDeviceCallbackFP` (split from setupCallbackFP)
+- Implicit call the callback setter methods (`with FP`), when a function pointer that is not template is explicitly specified when a callback setter methods (`without FP`) was called.
+
 ## Version 1.7.1 (Oct 18, 2022, JST)
 
 - A bug that prevented `addBreakOperand` from working as expected has been addressed.
