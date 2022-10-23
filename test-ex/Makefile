@@ -23,8 +23,12 @@ zexall: cpm
 	./cpm -e zexall.cim
 
 ci:
+	@echo Test zexall with gcc
 	g++-10 -std=c++2a $(COMMON_FLAGS) -Wclass-memaccess cpm.cpp -lstdc++ -o cpm
 	./cpm -e -n zexall.cim
+	@echo Test zexdoc with clang
+	clang -std=c++17 $(COMMON_FLAGS) cpm.cpp -lstdc++ -o cpm
+	./cpm -e -n zexdoc.cim
 
 full: cpm
 	./cpm zexall.cim
