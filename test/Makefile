@@ -20,11 +20,17 @@ all:
 	make test-branch
 	make test-out
 	make test-remove-break
+	make test-unknown 
 
 test-execute:
 	clang $(CFLAGS) test-execute.cpp -lstdc++
 	./a.out > test-execute.txt
 	cat test-execute.txt
+
+test-unknown:
+	clang $(CFLAGS) test-unknown.cpp -lstdc++
+	./a.out > test-unknown.txt
+	cat test-unknown.txt
 
 test-clock:
 	clang $(CFLAGS) test-clock.cpp -lstdc++
