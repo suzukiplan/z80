@@ -1,7 +1,10 @@
 # Change log
 
-## Version 1.8.0
+## Version 1.8.0 (Oct 23, 2022 JST)
 
+- Make strict the registers conditions at callback time (NOTE: **Destructive** change specification)
+  - see the details: https://github.com/suzukiplan/z80/issues/49
+- When a runtime error occurs, such as executing an instruction that not exists, a crash used to occur, but now it throws a `std::runtime_error` exception.
 - add new FP methods:
   - `addBreakPointFP`
   - `addBreakOperandFP`
