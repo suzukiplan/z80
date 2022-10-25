@@ -113,7 +113,7 @@ Note that by default, only the lower 8 bits of the port number can be obtained i
 If you want to get it in 16 bits from the beginning, please initialize with `returnPortAs16Bits` (6th argument) to `true` as follows:
 
 ```c++
-    Z80 z80(&mmu, readByte, writeByte, inPort, outPort, true);
+    Z80 z80(readByte, writeByte, inPort, outPort, &mmu, true);
 ```
 
 #### 3-2. Cases when performance-sensitive
