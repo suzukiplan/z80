@@ -145,10 +145,10 @@ In most cases, optimization with the `-O2` option will not cause performance pro
 
 ```c++
     // when executing about 1234Hz
-    int actualExecuteClocks = z80.execute(1234);
+    int actualExecutedClocks = z80.execute(1234);
 ```
 
-#### 4-1. Actual execute clocks
+#### 4-1. Actual executed clocks
 
 - The `execute` method repeats the execution of an instruction until the total number of clocks from the time of the call is greater than or equal to the value specified in the "clocks" argument.
 - If a value less than or equal to 0 is specified, no instruction is executed at all.
