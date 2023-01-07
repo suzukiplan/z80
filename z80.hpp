@@ -4875,8 +4875,8 @@ class Z80
     inline void repeatIN(bool isIncHL, bool isRepeat)
     {
         reg.WZ = (unsigned short)(getBC() + (isIncHL ? 1 : -1));
-        decrementB_forRepeatIO();
         unsigned char i = inPort(reg.pair.C);
+        decrementB_forRepeatIO();
         unsigned short hl = getHL();
         if (isDebug()) {
             if (isIncHL) {

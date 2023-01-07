@@ -1,5 +1,11 @@
 # Change log
 
+## Version 1.9.1 (Jan 7, 2023 JST)
+
+- Corrected a degrade in version 1.9.0
+  - `INI`, `INIR`, `IND` and `INDR` -> post decrement the B register (revert to 1.8.0)
+  - `OUTI`, `OTIR`, `OUTD` and `OTDR` -> pre-decrement the B register (keep 1.9.0)
+
 ## Version 1.9.0 (Jan 7, 2023 JST)
 
 - Modify the timing of decrementing the B register with the repeat I/O operands (`INI`, `INIR`, `IND`, `INDR`, `OUTI`, `OTIR`, `OUTD` and `OTDR`). _(NOTE: **Destructive** change)_
