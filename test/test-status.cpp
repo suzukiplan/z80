@@ -48,7 +48,7 @@ const char* statusText(unsigned char f, char* buf)
     bit[2] = (f & 0b00000100) ? 1 : 0;
     bit[1] = (f & 0b00000010) ? 1 : 0;
     bit[0] = (f & 0b00000001) ? 1 : 0;
-    sprintf(buf, "%d%d%d%d%d%d%d%d", bit[7], bit[6], bit[5], bit[4], bit[3], bit[2], bit[1], bit[0]);
+    snprintf(buf, 9, "%d%d%d%d%d%d%d%d", bit[7], bit[6], bit[5], bit[4], bit[3], bit[2], bit[1], bit[0]);
     return buf;
 }
 
@@ -112,9 +112,9 @@ void stockOpcode(void* arg, unsigned char* opcode, int opcodeLength)
     for (int i = 0; i < opcodeLength; i++) {
         char buf[80];
         if (i) {
-            sprintf(buf, ",%02X", opcode[i]);
+            snprintf(buf, sizeof(buf), ",%02X", opcode[i]);
         } else {
-            sprintf(buf, "%02X", opcode[i]);
+            snprintf(buf, sizeof(buf), "%02X", opcode[i]);
         }
         strcat(g_opBuf, buf);
     }

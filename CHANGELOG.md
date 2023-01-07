@@ -1,5 +1,15 @@
 # Change log
 
+## Version 1.9.0 (Jan 7, 2023 JST)
+
+- Modify the timing of decrementing the B register with the repeat I/O operands (`INI`, `INIR`, `IND`, `INDR`, `OUTI`, `OTIR`, `OUTD` and `OTDR`). _(NOTE: **Destructive** change)_
+  - before
+    - execute IN/OUT
+    - B = B - 1
+  - after
+    - B = B - 1
+    - execute IN/OUT
+
 ## Version 1.8.0 (Oct 23, 2022 JST)
 
 - Make strict the registers conditions at callback time (NOTE: **Destructive** change specification)

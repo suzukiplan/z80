@@ -21,6 +21,7 @@ all:
 	make test-out
 	make test-remove-break
 	make test-unknown 
+	make test-repio
 
 test-execute:
 	clang $(CFLAGS) test-execute.cpp -lstdc++
@@ -54,6 +55,11 @@ test-out:
 	clang $(CFLAGS) test-out.cpp -lstdc++
 	./a.out > test-out.txt
 	cat test-out.txt
+
+test-repio:
+	clang $(CFLAGS) test-repio.cpp -lstdc++
+	./a.out > test-repio.txt
+	cat test-repio.txt
 
 test-remove-break:
 	clang $(CFLAGS) test-remove-break.cpp -lstdc++
