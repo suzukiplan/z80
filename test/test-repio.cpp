@@ -21,12 +21,12 @@ int main()
         0xED, 0xBB,       // OTDR
     };
     unsigned short expectPorts[] = {
-        0x0210,
+        0x0310,
+        0x0220,
         0x0120,
-        0x0020,
-        0x0230,
+        0x0330,
+        0x0240,
         0x0140,
-        0x0040,
         0x0250,
         0x0160,
         0x0060,
