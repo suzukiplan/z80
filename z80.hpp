@@ -4875,6 +4875,7 @@ class Z80
     inline void repeatIN(bool isIncHL, bool isRepeat)
     {
         reg.WZ = (unsigned short)(getBC() + (isIncHL ? 1 : -1));
+        decrementB_forRepeatIO();
         unsigned char i = inPort(reg.pair.C);
         unsigned short hl = getHL();
         if (isDebug()) {
@@ -4885,7 +4886,6 @@ class Z80
             }
         }
         writeByte(hl, i);
-        decrementB_forRepeatIO();
         hl += isIncHL ? 1 : -1;
         setHL(hl);
         setFlagZ(reg.pair.B == 0);
@@ -4942,8 +4942,8 @@ class Z80
                 log("[%04X] %s ... p(%s) <- (%s) <$%02x> [%s]", reg.PC - 2, isRepeat ? "OUTDR" : "OUTD", registerDump(0b001), registerPairDump(0b10), o, registerDump(0b000));
             }
         }
-        outPort(reg.pair.C, o);
         decrementB_forRepeatIO();
+        outPort(reg.pair.C, o);
         reg.WZ = (unsigned short)(getBC() + (isIncHL ? 1 : -1));
         setHL((unsigned short)(getHL() + (isIncHL ? 1 : -1)));
         setFlagZ(reg.pair.B == 0);
