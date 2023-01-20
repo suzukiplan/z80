@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.9.2 (Jan 20, 2023 JST)
+
+- The value of the upper 8 bits of the port number of the immediate I/O operands (`IN A, (n)` and `OUT (n), A`) when executed in 16-bit port mode has been changed from register B to A.
+
 ## Version 1.9.1 (Jan 7, 2023 JST)
 
 - Corrected a degrade in version 1.9.0

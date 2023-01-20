@@ -7,6 +7,10 @@ int main()
         0x3E, 0x01,       // LD A, $01
         0xED, 0x79,       // OUT (C), A
         0xED, 0x78,       // IN A, (C)
+        0x3E, 0x56,       // LD A, $56
+        0xDB, 0x78,       // OUT (0x78), A
+        0x3E, 0x9A,       // LD A, $9A
+        0xDB, 0xBC,       // IN A, (0xBC)
         0xc3, 0x09, 0x00, // JMP $0009
     };
 
@@ -17,20 +21,18 @@ int main()
         }, [](void* arg, unsigned char addr, unsigned char value) {
             // nothing to do
         }, [](void* arg, unsigned short port) {
-            printf("IN port A <- $%02X%02X\n",
-                ((Z80*)arg)->reg.pair.B, // the top half (A8 through A15) of the address bus (reg.B)
+            printf("IN port A <- $%04X\n",
                 port // the bottom half (A0 through A7) of the address bus to select the I/O device at one of 256 possible ports
             );
             return 0x00;
         }, [](void* arg, unsigned short port, unsigned char value) {
-            printf("OUT port $%02X%02X <- $%02X\n",
-                ((Z80*)arg)->reg.pair.B, // the top half (A8 through A15) of the address bus (reg.B)
+            printf("OUT port $%02X <- $%04X\n",
                 port, // the bottom half (A0 through A7) of the address bus to select the I/O device at one of 256 possible ports
                 value
             );
         }, &z80, false);
         z80.setDebugMessage([](void* arg, const char* msg) { puts(msg); });
-        z80.execute(50);
+        z80.execute(80);
     }
 
     {
@@ -51,7 +53,7 @@ int main()
             );
         }, &z80, true);
         z80.setDebugMessage([](void* arg, const char* msg) { puts(msg); });
-        z80.execute(50);
+        z80.execute(80);
     }
     return 0;
 }
