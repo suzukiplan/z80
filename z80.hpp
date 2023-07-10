@@ -270,7 +270,9 @@ class Z80
 #endif
         CoExistenceCallback<void(void*, int)> consumeClock;
         bool consumeClockEnabled;
+#ifndef Z80_DISABLE_BREAKPOINT
         std::map<int, std::vector<BreakPoint*>*> breakPoints;
+#endif
         std::map<int, std::vector<BreakOperand*>*> breakOperands;
         std::vector<SimpleHandler*> returnHandlers;
         std::vector<SimpleHandler*> callHandlers;
@@ -279,6 +281,7 @@ class Z80
 
     bool requestBreakFlag;
 
+#ifndef Z80_DISABLE_BREAKPOINT
     inline void checkBreakPoint()
     {
         auto it = CB.breakPoints.find(reg.PC);
@@ -287,6 +290,7 @@ class Z80
             bp->callback(CB.arg);
         }
     }
+#endif
 
     inline void readFullOpcode(BreakOperand* operand, unsigned char* opcode, int* opcodeLength)
     {
@@ -6124,7 +6128,9 @@ class Z80
     ~Z80()
     {
         removeAllBreakOperands();
+#ifndef Z80_DISABLE_BREAKPOINT
         removeAllBreakPoints();
+#endif
         removeAllCallHandlers();
         removeAllReturnHandlers();
     }
@@ -6169,6 +6175,7 @@ class Z80
         *low = value & 0xFF;
     }
 
+#ifndef Z80_DISABLE_BREAKPOINT
     template <typename Functor>
     void addBreakPoint(unsigned short addr, Functor callback)
     {
@@ -6208,6 +6215,7 @@ class Z80
             removeBreakPoint(key);
         }
     }
+#endif
 
     void addBreakOperand_(int prefixNumber, int operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
@@ -6378,7 +6386,9 @@ class Z80
                 readByte(reg.PC); // NOTE: read and discard (to be consumed 4Hz)
             } else {
                 if (wtc.fetch) consumeClock(wtc.fetch);
+#ifndef Z80_DISABLE_BREAKPOINT
                 checkBreakPoint();
+#endif
                 reg.execEI = 0;
                 int operandNumber = fetch(2);
                 updateRefreshRegister();

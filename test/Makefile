@@ -67,6 +67,6 @@ test-remove-break:
 	cat test-remove-break.txt
 
 test-checkreg-on-callback:
-	clang $(CFLAGS) test-checkreg-on-callback.cpp -lstdc++
+	clang $(CFLAGS) -DZ80_DISABLE_BREAKPOINT test-checkreg-on-callback.cpp -lstdc++
 	./a.out > test-checkreg-on-callback.txt
 	cat test-checkreg-on-callback.txt
