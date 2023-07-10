@@ -482,11 +482,10 @@ class Z80
         return (on & 1) == 0;
     }
 
-    inline int consumeClock(int hz)
+    inline void consumeClock(int hz)
     {
         reg.consumeClockCounter += hz;
         if (CB.consumeClockEnabled && hz) CB.consumeClock(CB.arg, hz);
-        return hz;
     }
 
     inline unsigned short getPort16WithB(unsigned char c) { return make16BitsFromLE(c, reg.pair.B); }
