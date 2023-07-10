@@ -222,6 +222,7 @@ class Z80
     };
 #endif
 
+#ifndef Z80_DISABLE_NESTCHECK
     class SimpleHandler
     {
       public:
@@ -259,6 +260,7 @@ class Z80
             handler->callback(this->CB.arg);
         }
     }
+#endif
 
     struct Callback {
         CoExistenceCallback<unsigned char(void*, unsigned short)> read;
@@ -276,8 +278,10 @@ class Z80
         std::map<int, std::vector<BreakPoint*>*> breakPoints;
         std::map<int, std::vector<BreakOperand*>*> breakOperands;
 #endif
+#ifndef Z80_DISABLE_NESTCHECK
         std::vector<SimpleHandler*> returnHandlers;
         std::vector<SimpleHandler*> callHandlers;
+#endif
         void* arg;
     } CB;
 
@@ -5338,13 +5342,17 @@ class Z80
         ctx->push(ctx->getPCL(), 3);
         ctx->setPCL(addrL);
         ctx->reg.WZ = ctx->reg.PC;
+#ifndef Z80_DISABLE_NESTCHECK
         ctx->invokeCallHandlers();
+#endif
     }
 
     // Return
     static inline void RET(Z80* ctx)
     {
+#ifndef Z80_DISABLE_NESTCHECK
         ctx->invokeReturnHandlers();
+#endif
 #ifndef Z80_DISABLE_DEBUG
         unsigned short pc = ctx->reg.PC - 1;
         const char* dump = ctx->isDebug() ? ctx->registerPairDump(0b11) : "";
@@ -5379,7 +5387,9 @@ class Z80
             setPCH(nH);
             push(getPCL(), 3);
             setPCL(nL);
+#ifndef Z80_DISABLE_NESTCHECK
             invokeCallHandlers();
+#endif
         }
         reg.WZ = reg.PC;
     }
@@ -5402,7 +5412,9 @@ class Z80
             consumeClock(1);
             return;
         }
+#ifndef Z80_DISABLE_NESTCHECK
         invokeReturnHandlers();
+#endif
 #ifndef Z80_DISABLE_DEBUG
         unsigned short pc = reg.PC;
         unsigned short sp = reg.SP;
@@ -5419,7 +5431,9 @@ class Z80
     static inline void RETI_(Z80* ctx) { ctx->RETI(); }
     inline void RETI()
     {
+#ifndef Z80_DISABLE_NESTCHECK
         invokeReturnHandlers();
+#endif
 #ifndef Z80_DISABLE_DEBUG
         unsigned short pc = reg.PC;
         unsigned short sp = reg.SP;
@@ -5437,7 +5451,9 @@ class Z80
     static inline void RETN_(Z80* ctx) { ctx->RETN(); }
     inline void RETN()
     {
+#ifndef Z80_DISABLE_NESTCHECK
         invokeReturnHandlers();
+#endif
 #ifndef Z80_DISABLE_DEBUG
         unsigned short pc = reg.PC;
         unsigned short sp = reg.SP;
@@ -5484,7 +5500,9 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (isDebug()) log("[%04X] RST $%04X (SP<$%04X>)", pc - (isOperand ? 1 : 0), addr, sp);
 #endif
+#ifndef Z80_DISABLE_NESTCHECK
         invokeCallHandlers();
+#endif
     }
 
     // Input a byte form device n to accu.
@@ -6004,7 +6022,9 @@ class Z80
             push(getPCL(), 4);
             reg.PC = reg.interruptAddrN;
             consumeClock(11);
+#ifndef Z80_DISABLE_NESTCHECK
             invokeCallHandlers();
+#endif
         } else if (reg.interrupt & 0b01000000) {
             // execute IRQ
             if (!(reg.IFF & IFF1())) {
@@ -6043,7 +6063,9 @@ class Z80
 #endif
                     reg.PC = pc;
                     consumeClock(3);
+#ifndef Z80_DISABLE_NESTCHECK
                     invokeCallHandlers();
+#endif
                     break;
                 }
             }
@@ -6147,8 +6169,10 @@ class Z80
         removeAllBreakOperands();
         removeAllBreakPoints();
 #endif
+#ifndef Z80_DISABLE_NESTCHECK
         removeAllCallHandlers();
         removeAllReturnHandlers();
+#endif
     }
 
 #ifndef Z80_DISABLE_DEBUG
@@ -6320,6 +6344,7 @@ class Z80
     }
 #endif
 
+#ifndef Z80_DISABLE_NESTCHECK
     template <typename Functor>
     void addReturnHandler(Functor callback)
     {
@@ -6351,8 +6376,12 @@ class Z80
         CB.consumeClockEnabled = true;
         CB.consumeClock.setupAsFunctionObject(consumeClock_);
     }
+#endif
 
-    void setConsumeClockCallback(void (*consumeClock_)(void* arg, int clocks)) { setConsumeClockCallbackFP(consumeClock_); }
+    void setConsumeClockCallback(void (*consumeClock_)(void* arg, int clocks))
+    {
+        setConsumeClockCallbackFP(consumeClock_);
+    }
     void setConsumeClockCallbackFP(void (*consumeClock_)(void* arg, int clocks))
     {
         CB.consumeClockEnabled = true;
