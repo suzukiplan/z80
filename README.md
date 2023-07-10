@@ -384,6 +384,14 @@ ReturnHandler will be called back immediately **before** a branch by a RET instr
 - call `addReturnHandlerFP` if you want to use the function pointer.
 - In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
 
+## Advanced Compile Flags
+
+There is a compile flag that disables certain features in order to adapt to environments with poor performance environments, i.e: Arduino or ESP32:
+
+- `-DZ80_DISABLE_DEBUG` ... disable `setDebugMessage` method
+- `-DZ80_DISABLE_BREAKPOINT` ... disable `addBreakPoint` and `addBreakOperand` methods
+- `-DZ80_DISABLE_NESTCHECK` ... disable `addCallHandler` and `addReturnHandler` methods
+
 ## License
 
 [MIT](LICENSE.txt)
