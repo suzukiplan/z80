@@ -7,6 +7,7 @@
   - `-DZ80_DISABLE_BREAKPOINT` ... disable `addBreakPoint` and `addBreakOperand` methods
   - `-DZ80_DISABLE_NESTCHECK` ... disable `addCallHandler` and `addReturnHandler` methods
 - The return value of `consumeClock` was returning the number of clocks consumed, but this was changed to `void` because it was redundant.
+- Add the constructor without arguments.
 
 ## Version 1.9.2 (Jan 20, 2023 JST)
 

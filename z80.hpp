@@ -6097,6 +6097,22 @@ class Z80
         initialize();
     }
 
+    Z80()
+    {
+        initialize();
+    }
+
+    void setupCallback(std::function<unsigned char(void*, unsigned short)> read,
+                       std::function<void(void*, unsigned short, unsigned char)> write,
+                       std::function<unsigned char(void*, unsigned short)> in,
+                       std::function<void(void*, unsigned short, unsigned char)> out,
+                       void* arg,
+                       bool returnPortAs16Bits = false)
+    {
+        CB.arg = arg;
+        setupCallback(read, write, in, out, returnPortAs16Bits);
+    }
+
     void setupCallback(std::function<unsigned char(void*, unsigned short)> read,
                        std::function<void(void*, unsigned short, unsigned char)> write,
                        std::function<unsigned char(void*, unsigned short)> in,
@@ -6121,6 +6137,17 @@ class Z80
         CB.in.setupAsFunctionObject(in);
         CB.out.setupAsFunctionObject(out);
         CB.returnPortAs16Bits = returnPortAs16Bits;
+    }
+
+    void setupCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
+                         void (*write)(void* arg, unsigned short addr, unsigned char value),
+                         unsigned char (*in)(void* arg, unsigned short port),
+                         void (*out)(void* arg, unsigned short port, unsigned char value),
+                         void* arg,
+                         bool returnPortAs16Bits = false)
+    {
+        CB.arg = arg;
+        setupCallbackFP(read, write, in, out, returnPortAs16Bits);
     }
 
     void setupCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
