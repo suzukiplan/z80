@@ -163,6 +163,7 @@ class Z80
         inline ReturnType operator()(ArgumentTypes... args) { return fp ? fp(args...) : fc(args...); }
     };
 
+#ifndef Z80_DISABLE_BREAKPOINT
     class BreakPoint
     {
       public:
@@ -219,6 +220,7 @@ class Z80
             this->callback.setupAsFunctionPointer(callback_);
         }
     };
+#endif
 
     class SimpleHandler
     {
@@ -272,8 +274,8 @@ class Z80
         bool consumeClockEnabled;
 #ifndef Z80_DISABLE_BREAKPOINT
         std::map<int, std::vector<BreakPoint*>*> breakPoints;
-#endif
         std::map<int, std::vector<BreakOperand*>*> breakOperands;
+#endif
         std::vector<SimpleHandler*> returnHandlers;
         std::vector<SimpleHandler*> callHandlers;
         void* arg;
@@ -290,7 +292,6 @@ class Z80
             bp->callback(CB.arg);
         }
     }
-#endif
 
     inline void readFullOpcode(BreakOperand* operand, unsigned char* opcode, int* opcodeLength)
     {
@@ -372,6 +373,7 @@ class Z80
     inline void checkBreakOperandIY(unsigned char operandNumber) { checkBreakOperand(0xFD00 | operandNumber); }
     inline void checkBreakOperandIX4(unsigned char operandNumber) { checkBreakOperand(0xDDCB00 | operandNumber); }
     inline void checkBreakOperandIY4(unsigned char operandNumber) { checkBreakOperand(0xFDCB00 | operandNumber); }
+#endif
 
 #ifndef Z80_DISABLE_DEBUG
     inline void log(const char* format, ...)
@@ -601,7 +603,9 @@ class Z80
     static inline void OP_CB(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4);
+#ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandCB(operandNumber);
+#endif
         ctx->opSetCB[operandNumber](ctx);
     }
 
@@ -613,7 +617,9 @@ class Z80
             snprintf(buf, sizeof(buf), "detect an unknown operand (ED,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
+#ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandED(operandNumber);
+#endif
         ctx->opSetED[operandNumber](ctx);
     }
 
@@ -625,7 +631,9 @@ class Z80
             snprintf(buf, sizeof(buf), "detect an unknown operand (DD,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
+#ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIX(operandNumber);
+#endif
         ctx->opSetIX[operandNumber](ctx);
     }
 
@@ -637,7 +645,9 @@ class Z80
             snprintf(buf, sizeof(buf), "detect an unknown operand (FD,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
+#ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIY(operandNumber);
+#endif
         ctx->opSetIY[operandNumber](ctx);
     }
 
@@ -645,7 +655,9 @@ class Z80
     {
         signed char op3 = (signed char)ctx->fetch(4);
         unsigned char op4 = ctx->fetch(4);
+#ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIX4(op4);
+#endif
         ctx->opSetIX4[op4](ctx, op3);
     }
 
@@ -653,7 +665,9 @@ class Z80
     {
         signed char op3 = (signed char)ctx->fetch(4);
         unsigned char op4 = ctx->fetch(4);
+#ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIY4(op4);
+#endif
         ctx->opSetIY4[op4](ctx, op3);
     }
 
@@ -5708,6 +5722,7 @@ class Z80
         consumeClock(2);
     }
 
+#ifndef Z80_DISABLE_BREAKPOINT
     int opLength1[256] = {
         1, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 00 ~ 0F
         2, 3, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1, // 10 ~ 1F
@@ -5762,6 +5777,7 @@ class Z80
         0, 2, 0, 2, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, // E0 ~ EF
         0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0  // F0 ~ FF
     };
+#endif
     void (*opSet1[256])(Z80* ctx) = {
         NOP, LD_BC_NN, LD_BC_A, INC_RP_BC, INC_B, DEC_B, LD_B_N, RLCA, EX_AF_AF2, ADD_HL_BC, LD_A_BC, DEC_RP_BC, INC_C, DEC_C, LD_C_N, RRCA,
         DJNZ_E, LD_DE_NN, LD_DE_A, INC_RP_DE, INC_D, DEC_D, LD_D_N, RLA, JR_E, ADD_HL_DE, LD_A_DE, DEC_RP_DE, INC_E, DEC_E, LD_E_N, RRA,
@@ -6127,8 +6143,8 @@ class Z80
 
     ~Z80()
     {
-        removeAllBreakOperands();
 #ifndef Z80_DISABLE_BREAKPOINT
+        removeAllBreakOperands();
         removeAllBreakPoints();
 #endif
         removeAllCallHandlers();
@@ -6215,7 +6231,6 @@ class Z80
             removeBreakPoint(key);
         }
     }
-#endif
 
     void addBreakOperand_(int prefixNumber, int operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
     {
@@ -6303,9 +6318,13 @@ class Z80
             removeBreakOperand(key);
         }
     }
+#endif
 
     template <typename Functor>
-    void addReturnHandler(Functor callback) { CB.returnHandlers.push_back(new SimpleHandlerFC(callback)); }
+    void addReturnHandler(Functor callback)
+    {
+        CB.returnHandlers.push_back(new SimpleHandlerFC(callback));
+    }
     void addReturnHandler(void (*callback)(void*)) { addReturnHandlerFP(callback); }
     void addReturnHandlerFP(void (*callback)(void*)) { CB.returnHandlers.push_back(new SimpleHandlerFP(callback)); }
 
@@ -6392,7 +6411,9 @@ class Z80
                 reg.execEI = 0;
                 int operandNumber = fetch(2);
                 updateRefreshRegister();
+#ifndef Z80_DISABLE_BREAKPOINT
                 checkBreakOperand(operandNumber);
+#endif
                 opSet1[operandNumber](this);
             }
             executed += reg.consumeClockCounter;
