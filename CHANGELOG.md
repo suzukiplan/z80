@@ -1,5 +1,12 @@
 # Change log
 
+## Version 1.9.3 (Jul 10, 2023 JST)
+
+- Add compile flags for performance:
+  - `-DZ80_DISABLE_DEBUG` ... disable `setDebugMessage` method
+  - `-DZ80_DISABLE_BREAKPOINT` ... disable `addBreakPoint` and `addBreakOperand` methods
+  - `-DZ80_DISABLE_NESTCHECK` ... disable `addCallHandler` and `addReturnHandler` methods
+
 ## Version 1.9.2 (Jan 20, 2023 JST)
 
 - The value of the upper 8 bits of the port number of the immediate I/O operands (`IN A, (n)` and `OUT (n), A`) when executed in 16-bit port mode has been changed from register B to A.
