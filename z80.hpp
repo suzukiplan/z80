@@ -740,7 +740,9 @@ class Z80
         unsigned char l = ctx->fetch(3);
         unsigned char h = ctx->fetch(3);
         unsigned short addr = ctx->make16BitsFromLE(l, h);
+#ifndef Z80_DISABLE_DEBUG
         unsigned short hl = ctx->getHL();
+#endif
         ctx->reg.pair.L = ctx->readByte(addr, 3);
         ctx->reg.pair.H = ctx->readByte(addr + 1, 3);
 #ifndef Z80_DISABLE_DEBUG
@@ -797,11 +799,13 @@ class Z80
 
     static inline void EX_SP_HL(Z80* ctx)
     {
+#ifndef Z80_DISABLE_DEBUG
         unsigned short sp = ctx->reg.SP;
+#endif
         unsigned char l = ctx->pop(4);
         unsigned char h = ctx->pop(4);
-        unsigned short hl = ctx->getHL();
 #ifndef Z80_DISABLE_DEBUG
+        unsigned short hl = ctx->getHL();
         if (ctx->isDebug()) ctx->log("[%04X] EX (SP<$%04X>) = $%02X%02X, HL<$%04X>", ctx->reg.PC - 1, sp, h, l, hl);
 #endif
         ctx->push(ctx->reg.pair.H, 4);
@@ -1538,7 +1542,9 @@ class Z80
                 break;
             case 0b11: {
                 // SP is not managed in pair structure, so calculate directly
+#ifndef Z80_DISABLE_DEBUG
                 unsigned short sp = reg.SP;
+#endif
                 setSPL(fetch(3));
                 setSPH(fetch(3));
 #ifndef Z80_DISABLE_DEBUG
@@ -1688,7 +1694,9 @@ class Z80
         unsigned char l = fetch(3);
         unsigned char h = fetch(3);
         unsigned short addr = make16BitsFromLE(l, h);
+#ifndef Z80_DISABLE_DEBUG
         unsigned short ix = reg.IX;
+#endif
         setIXL(readByte(addr, 3));
         setIXH(readByte(addr + 1, 3));
 #ifndef Z80_DISABLE_DEBUG
@@ -1703,7 +1711,9 @@ class Z80
         unsigned char l = fetch(3);
         unsigned char h = fetch(3);
         unsigned short addr = make16BitsFromLE(l, h);
+#ifndef Z80_DISABLE_DEBUG
         unsigned short iy = reg.IY;
+#endif
         setIYL(readByte(addr, 3));
         setIYH(readByte(addr + 1, 3));
 #ifndef Z80_DISABLE_DEBUG
@@ -1807,7 +1817,9 @@ class Z80
     static inline void EX_SP_IX_(Z80* ctx) { ctx->EX_SP_IX(); }
     inline void EX_SP_IX()
     {
+#ifndef Z80_DISABLE_DEBUG
         unsigned short sp = reg.SP;
+#endif
         unsigned char l = pop(4);
         unsigned char h = pop(4);
 #ifndef Z80_DISABLE_DEBUG
@@ -1823,7 +1835,9 @@ class Z80
     static inline void EX_SP_IY_(Z80* ctx) { ctx->EX_SP_IY(); }
     inline void EX_SP_IY()
     {
+#ifndef Z80_DISABLE_DEBUG
         unsigned short sp = reg.SP;
+#endif
         unsigned char l = pop(4);
         unsigned char h = pop(4);
 #ifndef Z80_DISABLE_DEBUG
@@ -1871,26 +1885,32 @@ class Z80
     static inline void POP_HL(Z80* ctx) { ctx->POP_RP(0b10); }
     inline void POP_RP(unsigned char rp)
     {
-        unsigned short sp = reg.SP;
 #ifndef Z80_DISABLE_DEBUG
+        unsigned short sp = reg.SP;
         const char* dump = isDebug() ? registerPairDump(rp) : "";
-#endif
         unsigned short after;
+#endif
         switch (rp) {
             case 0b00:
                 reg.pair.C = pop(3);
                 reg.pair.B = pop(3);
+#ifndef Z80_DISABLE_DEBUG
                 after = getBC();
+#endif
                 break;
             case 0b01:
                 reg.pair.E = pop(3);
                 reg.pair.D = pop(3);
+#ifndef Z80_DISABLE_DEBUG
                 after = getDE();
+#endif
                 break;
             case 0b10:
                 reg.pair.L = pop(3);
                 reg.pair.H = pop(3);
+#ifndef Z80_DISABLE_DEBUG
                 after = getHL();
+#endif
                 break;
             default:
 #ifndef Z80_DISABLE_DEBUG
@@ -1919,7 +1939,9 @@ class Z80
     static inline void POP_IX_(Z80* ctx) { ctx->POP_IX(); }
     inline void POP_IX()
     {
+#ifndef Z80_DISABLE_DEBUG
         unsigned short sp = reg.SP;
+#endif
         setIXL(pop(3));
         setIXH(pop(3));
 #ifndef Z80_DISABLE_DEBUG
@@ -1942,7 +1964,9 @@ class Z80
     static inline void POP_IY_(Z80* ctx) { ctx->POP_IY(); }
     inline void POP_IY()
     {
+#ifndef Z80_DISABLE_DEBUG
         unsigned short sp = reg.SP;
+#endif
         setIYL(pop(3));
         setIYH(pop(3));
 #ifndef Z80_DISABLE_DEBUG
@@ -5303,8 +5327,8 @@ class Z80
     static inline void RET(Z80* ctx)
     {
         ctx->invokeReturnHandlers();
-        unsigned short pc = ctx->reg.PC - 1;
 #ifndef Z80_DISABLE_DEBUG
+        unsigned short pc = ctx->reg.PC - 1;
         const char* dump = ctx->isDebug() ? ctx->registerPairDump(0b11) : "";
 #endif
         ctx->setPCL(ctx->pop(3));
@@ -5361,8 +5385,10 @@ class Z80
             return;
         }
         invokeReturnHandlers();
+#ifndef Z80_DISABLE_DEBUG
         unsigned short pc = reg.PC;
         unsigned short sp = reg.SP;
+#endif
         setPCL(pop(4));
         setPCH(pop(3));
         reg.WZ = reg.PC;
@@ -5376,8 +5402,10 @@ class Z80
     inline void RETI()
     {
         invokeReturnHandlers();
+#ifndef Z80_DISABLE_DEBUG
         unsigned short pc = reg.PC;
         unsigned short sp = reg.SP;
+#endif
         setPCL(pop(3));
         setPCH(pop(3));
         reg.WZ = reg.PC;
@@ -5392,8 +5420,10 @@ class Z80
     inline void RETN()
     {
         invokeReturnHandlers();
+#ifndef Z80_DISABLE_DEBUG
         unsigned short pc = reg.PC;
         unsigned short sp = reg.SP;
+#endif
         setPCL(pop(3));
         setPCH(pop(3));
         reg.WZ = reg.PC;
@@ -5424,8 +5454,10 @@ class Z80
     inline void RST(unsigned char t, bool isOperand)
     {
         unsigned short addr = t * 8;
+#ifndef Z80_DISABLE_DEBUG
         unsigned short sp = reg.SP;
         unsigned short pc = reg.PC;
+#endif
         push(getPCH(), 4);
         setPCH(0);
         push(getPCL(), 3);
@@ -5624,7 +5656,9 @@ class Z80
         unsigned char nL = beforeN & 0b00001111;
         unsigned char aH = (reg.pair.A & 0b11110000) >> 4;
         unsigned char aL = reg.pair.A & 0b00001111;
+#ifndef Z80_DISABLE_DEBUG
         unsigned char beforeA = reg.pair.A;
+#endif
         unsigned char afterA = (aH << 4) | nH;
         unsigned char afterN = (nL << 4) | aL;
 #ifndef Z80_DISABLE_DEBUG
@@ -5651,7 +5685,9 @@ class Z80
         unsigned char nL = beforeN & 0b00001111;
         unsigned char aH = (reg.pair.A & 0b11110000) >> 4;
         unsigned char aL = reg.pair.A & 0b00001111;
+#ifndef Z80_DISABLE_DEBUG
         unsigned char beforeA = reg.pair.A;
+#endif
         unsigned char afterA = (aH << 4) | nL;
         unsigned char afterN = (aL << 4) | nH;
 #ifndef Z80_DISABLE_DEBUG

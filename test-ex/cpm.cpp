@@ -90,7 +90,9 @@ int main(int argc, char* argv[])
 {
     char* cimPath = NULL;
     bool checkError = false;
+#ifndef Z80_DISABLE_DEBUG
     bool verboseMode = false;
+#endif
     bool noAnimation = false;
     for (int i = 1; i < argc; i++) {
         if ('-' == argv[i][0]) {
@@ -98,9 +100,11 @@ int main(int argc, char* argv[])
                 case 'e':
                     checkError = true;
                     break;
+#ifndef Z80_DISABLE_DEBUG
                 case 'v':
                     verboseMode = true;
                     break;
+#endif
                 case 'n':
                     noAnimation = true;
                     break;
@@ -131,11 +135,13 @@ int main(int argc, char* argv[])
     z80.addBreakPointFP(0xFF04, [](void* arg) {
         ((CPM*)arg)->halted = true;
     });
+#ifndef Z80_DISABLE_DEBUG
     if (verboseMode) {
         z80.setDebugMessageFP([](void* arg, const char* msg) {
             puts(msg);
         });
     }
+#endif
     cpm.lineCallback = [](CPM* cpmPtr, char* line) {
         if (cpmPtr->checkError && strstr(line, "ERROR")) {
             cpmPtr->halted = true;

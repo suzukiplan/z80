@@ -6,7 +6,8 @@ COMMON_FLAGS=-I../ \
 	-Wunused-variable \
 	-Wsign-conversion \
 	-Wtype-limits \
-	-Werror
+	-Werror \
+	-DZ80_DISABLE_DEBUG
 
 all: cpm zexdoc zexall
 
