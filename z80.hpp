@@ -885,41 +885,9 @@ class Z80
 #endif
     }
 
-    inline unsigned char* getRegisterPointer(unsigned char r)
-    {
-        switch (r) {
-            case 0b111: return &reg.pair.A;
-            case 0b000: return &reg.pair.B;
-            case 0b001: return &reg.pair.C;
-            case 0b010: return &reg.pair.D;
-            case 0b011: return &reg.pair.E;
-            case 0b100: return &reg.pair.H;
-            case 0b101: return &reg.pair.L;
-            case 0b110: return &reg.pair.F;
-        }
-#ifndef Z80_DISABLE_DEBUG
-        if (isDebug()) log("detected an unknown register number: $%02X", r);
-#endif
-        return nullptr;
-    }
-
-    inline unsigned char getRegister(unsigned char r)
-    {
-        switch (r) {
-            case 0b111: return reg.pair.A;
-            case 0b000: return reg.pair.B;
-            case 0b001: return reg.pair.C;
-            case 0b010: return reg.pair.D;
-            case 0b011: return reg.pair.E;
-            case 0b100: return reg.pair.H;
-            case 0b101: return reg.pair.L;
-            case 0b110: return reg.pair.F;
-        }
-#ifndef Z80_DISABLE_DEBUG
-        if (isDebug()) log("detected an unknown register number: $%02X", r);
-#endif
-        return 0xFF;
-    }
+    unsigned char* registerPointerTable[8] = {&reg.pair.B, &reg.pair.C, &reg.pair.D, &reg.pair.E, &reg.pair.H, &reg.pair.L, &reg.pair.F, &reg.pair.A};
+    inline unsigned char* getRegisterPointer(unsigned char r) { return registerPointerTable[r]; }
+    inline unsigned char getRegister(unsigned char r) { return *registerPointerTable[r]; }
 
 #ifndef Z80_DISABLE_DEBUG
     inline char* registerDump(unsigned char r)

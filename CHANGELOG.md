@@ -9,6 +9,7 @@
 - The return value of `consumeClock` was returning the number of clocks consumed, but this was changed to `void` because it was redundant.
 - Add the constructor without arguments.
 - Add an execute method without expected clocks
+- optimize acqauire register-pointer and register procedure
 
 ## Version 1.9.2 (Jan 20, 2023 JST)
 
