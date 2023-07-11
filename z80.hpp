@@ -6481,6 +6481,30 @@ class Z80
         return executed;
     }
 
+    inline void execute()
+    {
+        requestBreakFlag = false;
+        while (!requestBreakFlag) {
+            // execute NOP while halt
+            if (reg.IFF & IFF_HALT()) {
+                reg.execEI = 0;
+                readByte(reg.PC); // NOTE: read and discard (to be consumed 4Hz)
+            } else {
+#ifndef Z80_DISABLE_BREAKPOINT
+                checkBreakPoint();
+#endif
+                reg.execEI = 0;
+                int operandNumber = fetch(2 + wtc.fetch);
+                updateRefreshRegister();
+#ifndef Z80_DISABLE_BREAKPOINT
+                checkBreakOperand(operandNumber);
+#endif
+                opSet1[operandNumber](this);
+            }
+            checkInterrupt();
+        }
+    }
+
     int executeTick4MHz()
     {
         return execute(4194304 / 60);
