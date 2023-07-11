@@ -921,6 +921,7 @@ class Z80
         return 0xFF;
     }
 
+#ifndef Z80_DISABLE_DEBUG
     inline char* registerDump(unsigned char r)
     {
         static char A[16];
@@ -1046,6 +1047,7 @@ class Z80
             default: return unknown;
         }
     }
+#endif
 
     // Load Reg. r1 with Reg. r2
     static inline void LD_B_B(Z80* ctx) { ctx->LD_R1_R2(0b000, 0b000); }
