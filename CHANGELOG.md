@@ -11,6 +11,7 @@
 - Add an execute method without expected clocks
 - optimize acqauire register-pointer and register procedure
 - optimize bit calculation
+- optimize checkConditionFlags
 
 ## Version 1.9.2 (Jan 20, 2023 JST)
 

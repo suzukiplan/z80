@@ -128,19 +128,23 @@ class Z80
     inline bool isFlagN() { return reg.pair.F & flagN(); }
     inline bool isFlagC() { return reg.pair.F & flagC(); }
 
-    inline bool checkConditionFlag(unsigned char c)
+    enum class Condition {
+        Z = 0b0000000001000000,
+        C = 0b0000000000000001,
+        PV = 0b0000000000000100,
+        S = 0b0000000010000000,
+        NZ = 0b1111111101000000,
+        NC = 0b1111111100000001,
+        NPV = 0b1111111100000100,
+        NS = 0b1111111110000000,
+    };
+
+    inline bool checkConditionFlag(Condition c)
     {
-        switch (c) {
-            case 0: return !isFlagZ();
-            case 1: return isFlagZ();
-            case 2: return !isFlagC();
-            case 3: return isFlagC();
-            case 4: return !isFlagPV();
-            case 5: return isFlagPV();
-            case 6: return !isFlagS();
-            case 7: return isFlagS();
-            default: return false;
-        }
+        int ic = (int)c;
+        int n = ic & 0xFF00;
+        int bit = ic & reg.pair.F;
+        return n ? 0 == bit : 0 != bit;
     }
 
     inline unsigned char IFF1() { return 0b00000001; }
@@ -918,19 +922,18 @@ class Z80
         return unknown;
     }
 
-    inline char* conditionDump(unsigned char c)
+    inline char* conditionDump(Condition c)
     {
         static char CN[4];
         switch (c) {
-            case 0b000: strcpy(CN, "NZ"); break;
-            case 0b001: strcpy(CN, "Z"); break;
-            case 0b010: strcpy(CN, "NC"); break;
-            case 0b011: strcpy(CN, "C"); break;
-            case 0b100: strcpy(CN, "PO"); break;
-            case 0b101: strcpy(CN, "PE"); break;
-            case 0b110: strcpy(CN, "P"); break;
-            case 0b111: strcpy(CN, "M"); break;
-            default: strcpy(CN, "??");
+            case Condition::NZ: strcpy(CN, "NZ"); break;
+            case Condition::Z: strcpy(CN, "Z"); break;
+            case Condition::NC: strcpy(CN, "NC"); break;
+            case Condition::C: strcpy(CN, "C"); break;
+            case Condition::NPV: strcpy(CN, "PO"); break;
+            case Condition::PV: strcpy(CN, "PE"); break;
+            case Condition::NS: strcpy(CN, "P"); break;
+            case Condition::S: strcpy(CN, "M"); break;
         }
         return CN;
     }
@@ -5139,15 +5142,15 @@ class Z80
     }
 
     // Conditional Jump
-    static inline void JP_C0_NN(Z80* ctx) { ctx->JP_C_NN(0); }
-    static inline void JP_C1_NN(Z80* ctx) { ctx->JP_C_NN(1); }
-    static inline void JP_C2_NN(Z80* ctx) { ctx->JP_C_NN(2); }
-    static inline void JP_C3_NN(Z80* ctx) { ctx->JP_C_NN(3); }
-    static inline void JP_C4_NN(Z80* ctx) { ctx->JP_C_NN(4); }
-    static inline void JP_C5_NN(Z80* ctx) { ctx->JP_C_NN(5); }
-    static inline void JP_C6_NN(Z80* ctx) { ctx->JP_C_NN(6); }
-    static inline void JP_C7_NN(Z80* ctx) { ctx->JP_C_NN(7); }
-    inline void JP_C_NN(unsigned char c)
+    static inline void JP_C0_NN(Z80* ctx) { ctx->JP_C_NN(Condition::NZ); }
+    static inline void JP_C1_NN(Z80* ctx) { ctx->JP_C_NN(Condition::Z); }
+    static inline void JP_C2_NN(Z80* ctx) { ctx->JP_C_NN(Condition::NC); }
+    static inline void JP_C3_NN(Z80* ctx) { ctx->JP_C_NN(Condition::C); }
+    static inline void JP_C4_NN(Z80* ctx) { ctx->JP_C_NN(Condition::NPV); }
+    static inline void JP_C5_NN(Z80* ctx) { ctx->JP_C_NN(Condition::PV); }
+    static inline void JP_C6_NN(Z80* ctx) { ctx->JP_C_NN(Condition::NS); }
+    static inline void JP_C7_NN(Z80* ctx) { ctx->JP_C_NN(Condition::S); }
+    inline void JP_C_NN(Condition c)
     {
         unsigned char l = fetch(3);
         unsigned char h = fetch(3);
@@ -5171,11 +5174,11 @@ class Z80
     }
 
     // Jump Relative to PC+e, if condition
-    static inline void JR_NZ_E(Z80* ctx) { ctx->JR_CND_E(0); }
-    static inline void JR_Z_E(Z80* ctx) { ctx->JR_CND_E(1); }
-    static inline void JR_NC_E(Z80* ctx) { ctx->JR_CND_E(2); }
-    static inline void JR_C_E(Z80* ctx) { ctx->JR_CND_E(3); }
-    inline void JR_CND_E(unsigned char cnd)
+    static inline void JR_NZ_E(Z80* ctx) { ctx->JR_CND_E(Condition::NZ); }
+    static inline void JR_Z_E(Z80* ctx) { ctx->JR_CND_E(Condition::Z); }
+    static inline void JR_NC_E(Z80* ctx) { ctx->JR_CND_E(Condition::NC); }
+    static inline void JR_C_E(Z80* ctx) { ctx->JR_CND_E(Condition::C); }
+    inline void JR_CND_E(Condition cnd)
     {
         signed char e = (signed char)fetch(3);
 #ifndef Z80_DISABLE_DEBUG
@@ -5265,15 +5268,15 @@ class Z80
     }
 
     // Call with condition
-    static inline void CALL_C0_NN(Z80* ctx) { ctx->CALL_C_NN(0); }
-    static inline void CALL_C1_NN(Z80* ctx) { ctx->CALL_C_NN(1); }
-    static inline void CALL_C2_NN(Z80* ctx) { ctx->CALL_C_NN(2); }
-    static inline void CALL_C3_NN(Z80* ctx) { ctx->CALL_C_NN(3); }
-    static inline void CALL_C4_NN(Z80* ctx) { ctx->CALL_C_NN(4); }
-    static inline void CALL_C5_NN(Z80* ctx) { ctx->CALL_C_NN(5); }
-    static inline void CALL_C6_NN(Z80* ctx) { ctx->CALL_C_NN(6); }
-    static inline void CALL_C7_NN(Z80* ctx) { ctx->CALL_C_NN(7); }
-    inline void CALL_C_NN(unsigned char c)
+    static inline void CALL_C0_NN(Z80* ctx) { ctx->CALL_C_NN(Condition::NZ); }
+    static inline void CALL_C1_NN(Z80* ctx) { ctx->CALL_C_NN(Condition::Z); }
+    static inline void CALL_C2_NN(Z80* ctx) { ctx->CALL_C_NN(Condition::NC); }
+    static inline void CALL_C3_NN(Z80* ctx) { ctx->CALL_C_NN(Condition::C); }
+    static inline void CALL_C4_NN(Z80* ctx) { ctx->CALL_C_NN(Condition::NPV); }
+    static inline void CALL_C5_NN(Z80* ctx) { ctx->CALL_C_NN(Condition::PV); }
+    static inline void CALL_C6_NN(Z80* ctx) { ctx->CALL_C_NN(Condition::NS); }
+    static inline void CALL_C7_NN(Z80* ctx) { ctx->CALL_C_NN(Condition::S); }
+    inline void CALL_C_NN(Condition c)
     {
         bool execute = checkConditionFlag(c);
         unsigned char nL = fetch(3);
@@ -5294,15 +5297,15 @@ class Z80
     }
 
     //  with condition
-    static inline void RET_C0(Z80* ctx) { ctx->RET_C(0); }
-    static inline void RET_C1(Z80* ctx) { ctx->RET_C(1); }
-    static inline void RET_C2(Z80* ctx) { ctx->RET_C(2); }
-    static inline void RET_C3(Z80* ctx) { ctx->RET_C(3); }
-    static inline void RET_C4(Z80* ctx) { ctx->RET_C(4); }
-    static inline void RET_C5(Z80* ctx) { ctx->RET_C(5); }
-    static inline void RET_C6(Z80* ctx) { ctx->RET_C(6); }
-    static inline void RET_C7(Z80* ctx) { ctx->RET_C(7); }
-    inline void RET_C(unsigned char c)
+    static inline void RET_C0(Z80* ctx) { ctx->RET_C(Condition::NZ); }
+    static inline void RET_C1(Z80* ctx) { ctx->RET_C(Condition::Z); }
+    static inline void RET_C2(Z80* ctx) { ctx->RET_C(Condition::NC); }
+    static inline void RET_C3(Z80* ctx) { ctx->RET_C(Condition::C); }
+    static inline void RET_C4(Z80* ctx) { ctx->RET_C(Condition::NPV); }
+    static inline void RET_C5(Z80* ctx) { ctx->RET_C(Condition::PV); }
+    static inline void RET_C6(Z80* ctx) { ctx->RET_C(Condition::NS); }
+    static inline void RET_C7(Z80* ctx) { ctx->RET_C(Condition::S); }
+    inline void RET_C(Condition c)
     {
         if (!checkConditionFlag(c)) {
 #ifndef Z80_DISABLE_DEBUG
