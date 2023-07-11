@@ -102,6 +102,8 @@ class Z80
     }
 
   private: // Internal functions & variables
+    // bit table
+    const unsigned char bits[8] = {0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000};
     // flag setter
     inline void setFlagS(bool on) { on ? reg.pair.F |= flagS() : reg.pair.F &= ~flagS(); }
     inline void setFlagZ(bool on) { on ? reg.pair.F |= flagZ() : reg.pair.F &= ~flagZ(); }
@@ -4313,16 +4315,7 @@ class Z80
         if (isDebug()) log("[%04X] BIT %s of bit-%d", reg.PC - 2, registerDump(r), bit);
 #endif
         unsigned char n = 0;
-        switch (bit) {
-            case 0: n = *rp & 0b00000001; break;
-            case 1: n = *rp & 0b00000010; break;
-            case 2: n = *rp & 0b00000100; break;
-            case 3: n = *rp & 0b00001000; break;
-            case 4: n = *rp & 0b00010000; break;
-            case 5: n = *rp & 0b00100000; break;
-            case 6: n = *rp & 0b01000000; break;
-            case 7: n = *rp & 0b10000000; break;
-        }
+        n = *rp & bits[bit];
         setFlagZ(n ? false : true);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
@@ -4346,16 +4339,7 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (isDebug()) log("[%04X] BIT (%s) = $%02X of bit-%d", reg.PC - 2, registerPairDump(0b10), n, bit);
 #endif
-        switch (bit) {
-            case 0: n &= 0b00000001; break;
-            case 1: n &= 0b00000010; break;
-            case 2: n &= 0b00000100; break;
-            case 3: n &= 0b00001000; break;
-            case 4: n &= 0b00010000; break;
-            case 5: n &= 0b00100000; break;
-            case 6: n &= 0b01000000; break;
-            case 7: n &= 0b10000000; break;
-        }
+        n &= bits[bit];
         setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
@@ -4379,16 +4363,7 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (isDebug()) log("[%04X] BIT (IX+d<$%04X>) = $%02X of bit-%d", reg.PC - 4, (unsigned short)(reg.IX + d), n, bit);
 #endif
-        switch (bit) {
-            case 0: n &= 0b00000001; break;
-            case 1: n &= 0b00000010; break;
-            case 2: n &= 0b00000100; break;
-            case 3: n &= 0b00001000; break;
-            case 4: n &= 0b00010000; break;
-            case 5: n &= 0b00100000; break;
-            case 6: n &= 0b01000000; break;
-            case 7: n &= 0b10000000; break;
-        }
+        n &= bits[bit];
         setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
@@ -4412,16 +4387,7 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (isDebug()) log("[%04X] BIT (IY+d<$%04X>) = $%02X of bit-%d", reg.PC - 4, (unsigned short)(reg.IY + d), n, bit);
 #endif
-        switch (bit) {
-            case 0: n &= 0b00000001; break;
-            case 1: n &= 0b00000010; break;
-            case 2: n &= 0b00000100; break;
-            case 3: n &= 0b00001000; break;
-            case 4: n &= 0b00010000; break;
-            case 5: n &= 0b00100000; break;
-            case 6: n &= 0b01000000; break;
-            case 7: n &= 0b10000000; break;
-        }
+        n &= bits[bit];
         setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
@@ -4493,16 +4459,7 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (isDebug()) log("[%04X] SET %s of bit-%d", reg.PC - 2, registerDump(r), bit);
 #endif
-        switch (bit) {
-            case 0: *rp |= 0b00000001; break;
-            case 1: *rp |= 0b00000010; break;
-            case 2: *rp |= 0b00000100; break;
-            case 3: *rp |= 0b00001000; break;
-            case 4: *rp |= 0b00010000; break;
-            case 5: *rp |= 0b00100000; break;
-            case 6: *rp |= 0b01000000; break;
-            case 7: *rp |= 0b10000000; break;
-        }
+        *rp |= bits[bit];
     }
 
     // SET bit b of location (HL)
@@ -4521,16 +4478,7 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (isDebug()) log("[%04X] SET (%s) = $%02X of bit-%d", reg.PC - 2, registerPairDump(0b10), n, bit);
 #endif
-        switch (bit) {
-            case 0: n |= 0b00000001; break;
-            case 1: n |= 0b00000010; break;
-            case 2: n |= 0b00000100; break;
-            case 3: n |= 0b00001000; break;
-            case 4: n |= 0b00010000; break;
-            case 5: n |= 0b00100000; break;
-            case 6: n |= 0b01000000; break;
-            case 7: n |= 0b10000000; break;
-        }
+        n |= bits[bit];
         writeByte(addr, n, 3);
     }
 
@@ -4550,16 +4498,7 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (isDebug()) log("[%04X] SET (IX+d<$%04X>) = $%02X of bit-%d%s", reg.PC - 4, addr, n, bit, extraLog ? extraLog : "");
 #endif
-        switch (bit) {
-            case 0: n |= 0b00000001; break;
-            case 1: n |= 0b00000010; break;
-            case 2: n |= 0b00000100; break;
-            case 3: n |= 0b00001000; break;
-            case 4: n |= 0b00010000; break;
-            case 5: n |= 0b00100000; break;
-            case 6: n |= 0b01000000; break;
-            case 7: n |= 0b10000000; break;
-        }
+        n |= bits[bit];
         if (rp) *rp = n;
         writeByte(addr, n, 3);
     }
@@ -4653,16 +4592,7 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (isDebug()) log("[%04X] SET (IY+d<$%04X>) = $%02X of bit-%d%s", reg.PC - 4, addr, n, bit, extraLog ? extraLog : "");
 #endif
-        switch (bit) {
-            case 0: n |= 0b00000001; break;
-            case 1: n |= 0b00000010; break;
-            case 2: n |= 0b00000100; break;
-            case 3: n |= 0b00001000; break;
-            case 4: n |= 0b00010000; break;
-            case 5: n |= 0b00100000; break;
-            case 6: n |= 0b01000000; break;
-            case 7: n |= 0b10000000; break;
-        }
+        n |= bits[bit];
         if (rp) *rp = n;
         writeByte(addr, n, 3);
     }
