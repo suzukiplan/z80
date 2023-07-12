@@ -8,6 +8,7 @@
   - `Z80_UNSUPPORT_16BIT_PORT` ... Reduces extra branches by always assuming the port number to be 8 bits
 - optimize checkConditionFlag (do not use branch)
 - optimize rotate instructions
+- optimize flag set/reset
 
 ## Version 1.9.3 (Jul 10, 2023 JST)
 
