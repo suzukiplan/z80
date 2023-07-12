@@ -2017,7 +2017,7 @@ class Z80
 
     inline unsigned char SLA(unsigned char n)
     {
-        unsigned char c = n & 0x80 ? 1 : 0;
+        unsigned char c = (n & 0x80) >> 7;
         n &= 0b01111111;
         n <<= 1;
         setFlagByRotate(n, c);
@@ -2046,7 +2046,7 @@ class Z80
 
     inline unsigned char RLC(unsigned char n, bool isA = false)
     {
-        unsigned char c = n & 0x80 ? 1 : 0;
+        unsigned char c = (n & 0x80) >> 7;
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RL
@@ -2056,7 +2056,7 @@ class Z80
 
     inline unsigned char RL(unsigned char n, bool isA = false)
     {
-        unsigned char c = n & 0x80 ? 1 : 0;
+        unsigned char c = (n & 0x80) >> 7;
         n &= 0b01111111;
         n <<= 1;
         n |= isFlagC() ? 1 : 0; // differ with RLC
@@ -2066,7 +2066,7 @@ class Z80
 
     inline unsigned char RRC(unsigned char n, bool isA = false)
     {
-        unsigned char c = n & 1 ? 0x80 : 0;
+        unsigned char c = (n & 1) << 7;
         n &= 0b11111110;
         n >>= 1;
         n |= c; // differ with RR
@@ -2076,7 +2076,7 @@ class Z80
 
     inline unsigned char RR(unsigned char n, bool isA = false)
     {
-        unsigned char c = n & 1 ? 0x80 : 0;
+        unsigned char c = (n & 1) << 7;
         n &= 0b11111110;
         n >>= 1;
         n |= isFlagC() ? 0x80 : 0; // differ with RR

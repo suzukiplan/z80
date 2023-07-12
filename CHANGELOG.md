@@ -7,6 +7,7 @@
   - `Z80_CALLBACK_PER_INSTRUCTION` ... Calls `consumeClock` callback on an instruction-by-instruction basis (NOTE: two or more instructions when interrupting)
   - `Z80_UNSUPPORT_16BIT_PORT` ... Reduces extra branches by always assuming the port number to be 8 bits
 - optimize checkConditionFlag (do not use branch)
+- optimize rotate instructions
 
 ## Version 1.9.3 (Jul 10, 2023 JST)
 
