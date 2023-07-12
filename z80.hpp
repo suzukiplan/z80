@@ -491,7 +491,11 @@ class Z80
     inline void consumeClock(int hz)
     {
         reg.consumeClockCounter += hz;
+#ifdef Z80_CALLBACK_WITHOUT_CHECK
+        CB.consumeClock(CB.arg, hz);
+#else
         if (CB.consumeClockEnabled && hz) CB.consumeClock(CB.arg, hz);
+#endif
     }
 
     inline unsigned short getPort16WithB(unsigned char c) { return make16BitsFromLE(c, reg.pair.B); }

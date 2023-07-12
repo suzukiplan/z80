@@ -1,5 +1,10 @@
 # Change log
 
+## Version 1.9.4 (Jul 12, 2023 JST)
+
+- Add compile flags for performance:
+  - `Z80_CALLBACK_WITHOUT_CHECK` ... Omit the check process when calling `consumeClock` callback
+
 ## Version 1.9.3 (Jul 10, 2023 JST)
 
 - Add compile flags for performance:
