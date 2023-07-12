@@ -34,7 +34,7 @@ test-unknown:
 	cat test-unknown.txt
 
 test-clock:
-	clang $(CFLAGS) test-clock.cpp -lstdc++
+	clang $(CFLAGS) -DZ80_DISABLE_BREAKPOINT -DZ80_DISABLE_NESTCHECK test-clock.cpp -lstdc++
 	./a.out
 
 test-status:
