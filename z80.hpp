@@ -269,7 +269,9 @@ class Z80
     struct Callback {
         CoExistenceCallback<unsigned char(void*, unsigned short)> read;
         CoExistenceCallback<void(void*, unsigned short, unsigned char)> write;
+#ifndef Z80_UNSUPPORT_16BIT_PORT
         bool returnPortAs16Bits;
+#endif
         CoExistenceCallback<unsigned char(void*, unsigned short)> in;
         CoExistenceCallback<void(void*, unsigned short, unsigned char)> out;
 #ifndef Z80_DISABLE_DEBUG
@@ -503,27 +505,43 @@ class Z80
 
     inline unsigned char inPortWithB(unsigned char port, int clock = 4)
     {
+#ifdef Z80_UNSUPPORT_16BIT_PORT
+        unsigned char byte = CB.in(CB.arg, port);
+#else
         unsigned char byte = CB.in(CB.arg, CB.returnPortAs16Bits ? getPort16WithB(port) : port);
+#endif
         consumeClock(clock);
         return byte;
     }
 
     inline unsigned char inPortWithA(unsigned char port, int clock = 4)
     {
+#ifdef Z80_UNSUPPORT_16BIT_PORT
+        unsigned char byte = CB.in(CB.arg, port);
+#else
         unsigned char byte = CB.in(CB.arg, CB.returnPortAs16Bits ? getPort16WithA(port) : port);
+#endif
         consumeClock(clock);
         return byte;
     }
 
     inline void outPortWithB(unsigned char port, unsigned char value, int clock = 4)
     {
+#ifdef Z80_UNSUPPORT_16BIT_PORT
+        CB.out(CB.arg, port, value);
+#else
         CB.out(CB.arg, CB.returnPortAs16Bits ? getPort16WithB(port) : port, value);
+#endif
         consumeClock(clock);
     }
 
     inline void outPortWithA(unsigned char port, unsigned char value, int clock = 4)
     {
+#ifdef Z80_UNSUPPORT_16BIT_PORT
+        CB.out(CB.arg, port, value);
+#else
         CB.out(CB.arg, CB.returnPortAs16Bits ? getPort16WithA(port) : port, value);
+#endif
         consumeClock(clock);
     }
 
@@ -6043,7 +6061,9 @@ class Z80
     {
         CB.in.setupAsFunctionObject(in);
         CB.out.setupAsFunctionObject(out);
+#ifndef Z80_UNSUPPORT_16BIT_PORT
         CB.returnPortAs16Bits = returnPortAs16Bits;
+#endif
     }
 
     void setupCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
@@ -6080,7 +6100,9 @@ class Z80
     {
         CB.in.setupAsFunctionPointer(in);
         CB.out.setupAsFunctionPointer(out);
+#ifndef Z80_UNSUPPORT_16BIT_PORT
         CB.returnPortAs16Bits = returnPortAs16Bits;
+#endif
     }
 
     void initialize()
