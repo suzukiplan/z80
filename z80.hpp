@@ -491,10 +491,12 @@ class Z80
     inline void consumeClock(int hz)
     {
         reg.consumeClockCounter += hz;
+#ifndef Z80_CALLBACK_PER_INSTRUCTION
 #ifdef Z80_CALLBACK_WITHOUT_CHECK
         CB.consumeClock(CB.arg, hz);
 #else
         if (CB.consumeClockEnabled && hz) CB.consumeClock(CB.arg, hz);
+#endif
 #endif
     }
 
@@ -6380,8 +6382,18 @@ class Z80
             }
             executed += reg.consumeClockCounter;
             clock -= reg.consumeClockCounter;
+#ifdef Z80_CALLBACK_PER_INSTRUCTION
+            checkInterrupt();
+#ifdef Z80_CALLBACK_WITHOUT_CHECK
+            CB.consumeClock(CB.arg, reg.consumeClockCounter);
+#else
+            if (CB.consumeClockEnabled) CB.consumeClock(CB.arg, reg.consumeClockCounter);
+#endif
+            reg.consumeClockCounter = 0;
+#else
             reg.consumeClockCounter = 0;
             checkInterrupt();
+#endif
         }
         return executed;
     }
@@ -6390,6 +6402,9 @@ class Z80
     {
         requestBreakFlag = false;
         while (!requestBreakFlag) {
+#ifdef Z80_CALLBACK_PER_INSTRUCTION
+            reg.consumeClockCounter = 0;
+#endif
             // execute NOP while halt
             if (reg.IFF & IFF_HALT()) {
                 reg.execEI = 0;
@@ -6407,6 +6422,13 @@ class Z80
                 opSet1[operandNumber](this);
             }
             checkInterrupt();
+#ifdef Z80_CALLBACK_PER_INSTRUCTION
+#ifdef Z80_CALLBACK_WITHOUT_CHECK
+            CB.consumeClock(CB.arg, reg.consumeClockCounter);
+#else
+            if (CB.consumeClockEnabled) CB.consumeClock(CB.arg, reg.consumeClockCounter);
+#endif
+#endif
         }
     }
 
