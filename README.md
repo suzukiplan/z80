@@ -393,9 +393,9 @@ There is a compile flag that disables certain features in order to adapt to envi
 |`-DZ80_DISABLE_DEBUG`|disable `setDebugMessage` method|
 |`-DZ80_DISABLE_BREAKPOINT`|disable `addBreakPoint` and `addBreakOperand` methods|
 |`-DZ80_DISABLE_NESTCHECK`|disable `addCallHandler` and `addReturnHandler` methods|
-|`Z80_CALLBACK_WITHOUT_CHECK`|Omit the check process when calling `consumeClock` callback (NOTE: Crashes if `setConsumeClock`` is not done)|
-|`Z80_CALLBACK_PER_INSTRUCTION`|Calls `consumeClock` callback on an instruction-by-instruction basis (NOTE: two or more instructions when interrupting)|
-|`Z80_UNSUPPORT_16BIT_PORT`|Reduces extra branches by always assuming the port number to be 8 bits|
+|`-DZ80_CALLBACK_WITHOUT_CHECK`|Omit the check process when calling `consumeClock` callback (NOTE: Crashes if `setConsumeClock` is not done)|
+|`-DZ80_CALLBACK_PER_INSTRUCTION`|Calls `consumeClock` callback on an instruction-by-instruction basis (NOTE: two or more instructions when interrupting)|
+|`-DZ80_UNSUPPORT_16BIT_PORT`|Reduces extra branches by always assuming the port number to be 8 bits|
 
 ## License
 
