@@ -88,15 +88,21 @@ class Z80
 
     inline unsigned char readByte(unsigned short addr, int clock = 4)
     {
+#ifndef Z80_DISABLE_BREAKPOINT
         if (clock && wtc.read) consumeClock(wtc.read);
         unsigned char byte = CB.read(CB.arg, addr);
         if (clock) consumeClock(clock);
+#else
+        consumeClock(wtc.read);
+        unsigned char byte = CB.read(CB.arg, addr);
+        consumeClock(clock);
+#endif
         return byte;
     }
 
     inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
     {
-        if (wtc.write) consumeClock(wtc.write);
+        consumeClock(wtc.write);
         CB.write(CB.arg, addr, value);
         consumeClock(clock);
     }
