@@ -2,6 +2,7 @@
 
 ## Version 1.9.4 (Jul 12, 2023 JST)
 
+- Add `wtc.fetchM` and clock test case for MSX
 - Add compile flags for performance:
   - `Z80_CALLBACK_WITHOUT_CHECK` ... Omit the check process when calling `consumeClock` callback
   - `Z80_CALLBACK_PER_INSTRUCTION` ... Calls `consumeClock` callback on an instruction-by-instruction basis (NOTE: two or more instructions when interrupting)

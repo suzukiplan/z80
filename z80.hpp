@@ -41,9 +41,10 @@ class Z80
 {
   public: // Interface data types
     struct WaitClocks {
-        int fetch; // Wait T-cycle (Hz) before fetching instruction (default is 0 = no wait)
-        int read;  // Wait T-cycle (Hz) before to read memory (default is 0 = no wait)
-        int write; // Wait T-cycle (Hz) before to write memory (default is 0 = no wait)
+        int fetch;  // Wait T-cycle (Hz) before fetching instruction (default is 0 = no wait)
+        int fetchM; // Wait T-cycle (Hz) before fetching multi-bytes instruction (default is 0 = no wait)
+        int read;   // Wait T-cycle (Hz) before to read memory (default is 0 = no wait)
+        int write;  // Wait T-cycle (Hz) before to write memory (default is 0 = no wait)
     } wtc;
 
     struct RegisterPair {
@@ -655,7 +656,7 @@ class Z80
 
     static inline void OP_CB(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->fetch(4);
+        unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandCB(operandNumber);
 #endif
@@ -664,7 +665,7 @@ class Z80
 
     static inline void OP_ED(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->fetch(4);
+        unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
         if (!ctx->opSetED[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (ED,%02X)", operandNumber);
@@ -678,7 +679,7 @@ class Z80
 
     static inline void OP_IX(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->fetch(4);
+        unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
         if (!ctx->opSetIX[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (DD,%02X)", operandNumber);
@@ -692,7 +693,7 @@ class Z80
 
     static inline void OP_IY(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->fetch(4);
+        unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
         if (!ctx->opSetIY[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (FD,%02X)", operandNumber);
