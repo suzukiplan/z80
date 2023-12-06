@@ -28,7 +28,6 @@
 #define INCLUDE_Z80_HPP
 #include <limits.h>
 #include <stdarg.h>
-#include <stdexcept>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +40,10 @@
 
 #ifndef Z80_NO_FUNCTIONAL
 #include <functional>
+#endif
+
+#ifndef Z80_NO_EXCEPTION
+#include <stdexcept>
 #endif
 
 class Z80
@@ -646,11 +649,13 @@ class Z80
     static inline void OP_ED(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
+#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetED[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (ED,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
+#endif
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandED(operandNumber);
 #endif
@@ -660,11 +665,13 @@ class Z80
     static inline void OP_IX(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
+#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetIX[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (DD,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
+#endif
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIX(operandNumber);
 #endif
@@ -674,11 +681,13 @@ class Z80
     static inline void OP_IY(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
+#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetIY[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (FD,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
+#endif
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIY(operandNumber);
 #endif
@@ -1577,7 +1586,9 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
 #endif
+#ifndef Z80_NO_EXCEPTION
                 throw std::runtime_error("invalid register pair has specified");
+#endif
                 return;
         }
 #ifndef Z80_DISABLE_DEBUG
@@ -1653,7 +1664,9 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
 #endif
+#ifndef Z80_NO_EXCEPTION
                 throw std::runtime_error("invalid register pair has specified");
+#endif
                 return;
         }
 #ifndef Z80_DISABLE_DEBUG
@@ -1700,7 +1713,9 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
 #endif
+#ifndef Z80_NO_EXCEPTION
                 throw std::runtime_error("invalid register pair has specified");
+#endif
                 return;
         }
         writeByte(addr, l, 3);
@@ -1896,7 +1911,11 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
 #endif
+#ifdef Z80_NO_EXCEPTION
+                ;
+#else
                 throw std::runtime_error("invalid register pair has specified");
+#endif
         }
     }
 
@@ -1937,7 +1956,9 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
 #endif
+#ifndef Z80_NO_EXCEPTION
                 throw std::runtime_error("invalid register pair has specified");
+#endif
                 return;
         }
 #ifndef Z80_DISABLE_DEBUG

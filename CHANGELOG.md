@@ -8,6 +8,7 @@
   - If you defined `-DZ80_NO_FUNCTIONAL`, `std::function` should not be used, and use function pointer explicity.
     - _This is a remedy for the unavailability of std::function in the Baremetal environment of the RaspberryPi, etc._
     - _Alternatively, it may be desirable to define this in an environment with severe performance constraints._
+- Added compile option `-DZ80_NO_EXCEPTION` to not throw exceptions
 - Add `wtc.fetchM` and clock test case for MSX
 - Add compile flags for performance:
   - `Z80_CALLBACK_WITHOUT_CHECK` ... Omit the check process when calling `consumeClock` callback
