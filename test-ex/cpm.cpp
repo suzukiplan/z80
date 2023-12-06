@@ -122,22 +122,22 @@ int main(int argc, char* argv[])
     }
     CPM cpm;
     Z80 z80(&cpm);
-    z80.setupCallbackFP(readMemory, writeMemory, inPort, outPort);
+    z80.setupCallback(readMemory, writeMemory, inPort, outPort);
     if (!cpm.init(cimPath)) {
         puts("Cannot initialized");
         return -1;
     }
     cpm.checkError = checkError;
     z80.reg.PC = 0x0100;
-    z80.addBreakOperandFP(0x76, [](void* arg, unsigned char* opcode, int opcodeLength) {
+    z80.addBreakOperand(0x76, [](void* arg, unsigned char* opcode, int opcodeLength) {
         ((CPM*)arg)->halted = true;
     });
-    z80.addBreakPointFP(0xFF04, [](void* arg) {
+    z80.addBreakPoint(0xFF04, [](void* arg) {
         ((CPM*)arg)->halted = true;
     });
 #ifndef Z80_DISABLE_DEBUG
     if (verboseMode) {
-        z80.setDebugMessageFP([](void* arg, const char* msg) {
+        z80.setDebugMessage([](void* arg, const char* msg) {
             puts(msg);
         });
     }

@@ -26,7 +26,6 @@
  */
 #ifndef INCLUDE_Z80_HPP
 #define INCLUDE_Z80_HPP
-#include <functional>
 #include <limits.h>
 #include <map>
 #include <stdarg.h>
@@ -36,6 +35,10 @@
 #include <string.h>
 #include <time.h>
 #include <vector>
+
+#ifndef Z80_NO_FUNCTIONAL
+#include <functional>
+#endif
 
 class Z80
 {
@@ -174,47 +177,21 @@ class Z80
     inline unsigned char IFF_NMI() { return 0b01000000; }
     inline unsigned char IFF_HALT() { return 0b10000000; }
 
-    template <typename T>
-    class CoExistenceCallback;
-    template <typename ReturnType, typename... ArgumentTypes>
-    class CoExistenceCallback<ReturnType(ArgumentTypes...)>
-    {
-      private:
-        ReturnType (*fp)(ArgumentTypes...);
-        std::function<ReturnType(ArgumentTypes...)> fc;
-
-      public:
-        CoExistenceCallback() { fp = nullptr; }
-        void setupAsFunctionObject(const std::function<ReturnType(ArgumentTypes...)>& fc_) { fc = fc_; }
-        void setupAsFunctionPointer(ReturnType (*fp_)(ArgumentTypes...)) { fp = fp_; }
-        inline ReturnType operator()(ArgumentTypes... args) { return fp ? fp(args...) : fc(args...); }
-    };
-
 #ifndef Z80_DISABLE_BREAKPOINT
     class BreakPoint
     {
       public:
         unsigned short addr;
-        CoExistenceCallback<void(void*)> callback;
-    };
-
-    class BreakPointFC : public BreakPoint
-    {
-      public:
-        BreakPointFC(unsigned short addr_, const std::function<void(void*)>& callback_)
+#ifdef Z80_NO_FUNCTIONAL
+        void (*callback)(void*);
+        BreakPoint(unsigned short addr_, void (*callback_)(void*))
+#else
+        std::function<void(void*)> callback;
+        BreakPoint(unsigned short addr_, const std::function<void(void*)>& callback_)
+#endif
         {
             this->addr = addr_;
-            this->callback.setupAsFunctionObject(callback_);
-        }
-    };
-
-    class BreakPointFP : public BreakPoint
-    {
-      public:
-        BreakPointFP(unsigned short addr_, void (*callback_)(void*))
-        {
-            this->addr = addr_;
-            this->callback.setupAsFunctionPointer(callback_);
+            this->callback = callback_;
         }
     };
 
@@ -223,29 +200,23 @@ class Z80
       public:
         int prefixNumber;
         unsigned char operandNumber;
-        CoExistenceCallback<void(void*, unsigned char*, int)> callback;
-    };
-
-    class BreakOperandFC : public BreakOperand
-    {
-      public:
-        BreakOperandFC(int prefixNumber_, unsigned char operandNumber_, const std::function<void(void*, unsigned char*, int)>& callback_)
+#ifdef Z80_NO_FUNCTIONAL
+        void (*callback)(void*, unsigned char*, int);
+        BreakOperand(int prefixNumber_, unsigned char operandNumber_, void (*callback_)(void*, unsigned char*, int))
         {
             this->prefixNumber = prefixNumber_;
             this->operandNumber = operandNumber_;
-            this->callback.setupAsFunctionObject(callback_);
+            this->callback = callback_;
         }
-    };
-
-    class BreakOperandFP : public BreakOperand
-    {
-      public:
-        BreakOperandFP(int prefixNumber_, unsigned char operandNumber_, void (*callback_)(void*, unsigned char*, int))
+#else
+        std::function<void(void*, unsigned char*, int)> callback;
+        BreakOperand(int prefixNumber_, unsigned char operandNumber_, const std::function<void(void*, unsigned char*, int)>& callback_)
         {
             this->prefixNumber = prefixNumber_;
             this->operandNumber = operandNumber_;
-            this->callback.setupAsFunctionPointer(callback_);
+            this->callback = callback_;
         }
+#endif
     };
 #endif
 
@@ -253,24 +224,15 @@ class Z80
     class SimpleHandler
     {
       public:
-        CoExistenceCallback<void(void*)> callback;
-    };
-
-    class SimpleHandlerFC : public SimpleHandler
-    {
-      public:
-        SimpleHandlerFC(const std::function<void(void*)>& callback_)
+#ifdef Z80_NO_FUNCTIONAL
+        void (*callback)(void*);
+        SimpleHandler(void (*callback_)(void*))
+#else
+        std::function<void(void*)> callback;
+        SimpleHandler(const std::function<void(void*)>& callback_)
+#endif
         {
-            this->callback.setupAsFunctionObject(callback_);
-        }
-    };
-
-    class SimpleHandlerFP : public SimpleHandler
-    {
-      public:
-        SimpleHandlerFP(void (*callback_)(void*))
-        {
-            this->callback.setupAsFunctionPointer(callback_);
+            this->callback = callback_;
         }
     };
 
@@ -290,19 +252,33 @@ class Z80
 #endif
 
     struct Callback {
-        CoExistenceCallback<unsigned char(void*, unsigned short)> read;
-        CoExistenceCallback<void(void*, unsigned short, unsigned char)> write;
+#ifdef Z80_NO_FUNCTIONAL
+        unsigned char (*read)(void*, unsigned short);
+        void (*write)(void*, unsigned short, unsigned char);
+        unsigned char (*in)(void*, unsigned short);
+        void (*out)(void*, unsigned short, unsigned char);
+        void (*consumeClock)(void*, int);
+#else
+        std::function<unsigned char(void*, unsigned short)> read;
+        std::function<void(void*, unsigned short, unsigned char)> write;
+        std::function<unsigned char(void*, unsigned short)> in;
+        std::function<void(void*, unsigned short, unsigned char)> out;
+        std::function<void(void*, int)> consumeClock;
+#endif
+
 #ifndef Z80_UNSUPPORT_16BIT_PORT
         bool returnPortAs16Bits;
 #endif
-        CoExistenceCallback<unsigned char(void*, unsigned short)> in;
-        CoExistenceCallback<void(void*, unsigned short, unsigned char)> out;
+
 #ifndef Z80_DISABLE_DEBUG
-        CoExistenceCallback<void(void*, const char*)> debugMessage;
+#ifdef Z80_NO_FUNCTIONAL
+        void (*debugMessage)(void*, const char*);
+#else
+        std::function<void(void*, const char*)> debugMessage;
+#endif
         bool debugMessageEnabled;
 #endif
-        CoExistenceCallback<void(void*, int)> consumeClock;
-        bool consumeClockEnabled;
+
 #ifndef Z80_DISABLE_BREAKPOINT
         std::map<int, std::vector<BreakPoint*>*> breakPoints;
         std::map<int, std::vector<BreakOperand*>*> breakOperands;
@@ -311,6 +287,7 @@ class Z80
         std::vector<SimpleHandler*> returnHandlers;
         std::vector<SimpleHandler*> callHandlers;
 #endif
+        bool consumeClockEnabled;
         void* arg;
     } CB;
 
@@ -6028,12 +6005,21 @@ class Z80
     }
 
   public: // API functions
+#ifdef Z80_NO_FUNCTIONAL
+    Z80(unsigned char (*read)(void* arg, unsigned short addr),
+        void (*write)(void* arg, unsigned short addr, unsigned char value),
+        unsigned char (*in)(void* arg, unsigned short port),
+        void (*out)(void* arg, unsigned short port, unsigned char value),
+        void* arg,
+        bool returnPortAs16Bits = false)
+#else
     Z80(std::function<unsigned char(void*, unsigned short)> read,
         std::function<void(void*, unsigned short, unsigned char)> write,
         std::function<unsigned char(void*, unsigned short)> in,
         std::function<void(void*, unsigned short, unsigned char)> out,
         void* arg,
         bool returnPortAs16Bits = false)
+#endif
     {
         this->CB.arg = arg;
         initialize();
@@ -6052,6 +6038,7 @@ class Z80
         initialize();
     }
 
+#ifndef Z80_NO_FUNCTIONAL
     void setupCallback(std::function<unsigned char(void*, unsigned short)> read,
                        std::function<void(void*, unsigned short, unsigned char)> write,
                        std::function<unsigned char(void*, unsigned short)> in,
@@ -6076,59 +6063,61 @@ class Z80
     void setupMemoryCallback(std::function<unsigned char(void*, unsigned short)> read,
                              std::function<void(void*, unsigned short, unsigned char)> write)
     {
-        CB.read.setupAsFunctionObject(read);
-        CB.write.setupAsFunctionObject(write);
+        CB.read = read;
+        CB.write = write;
     }
 
     void setupDeviceCallback(std::function<unsigned char(void*, unsigned short)> in,
                              std::function<void(void*, unsigned short, unsigned char)> out,
                              bool returnPortAs16Bits)
     {
-        CB.in.setupAsFunctionObject(in);
-        CB.out.setupAsFunctionObject(out);
+        CB.in = in;
+        CB.out = out;
 #ifndef Z80_UNSUPPORT_16BIT_PORT
         CB.returnPortAs16Bits = returnPortAs16Bits;
 #endif
     }
 
-    void setupCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
-                         void (*write)(void* arg, unsigned short addr, unsigned char value),
-                         unsigned char (*in)(void* arg, unsigned short port),
-                         void (*out)(void* arg, unsigned short port, unsigned char value),
-                         void* arg,
-                         bool returnPortAs16Bits = false)
+#else
+    void setupCallback(unsigned char (*read)(void* arg, unsigned short addr),
+                       void (*write)(void* arg, unsigned short addr, unsigned char value),
+                       unsigned char (*in)(void* arg, unsigned short port),
+                       void (*out)(void* arg, unsigned short port, unsigned char value),
+                       void* arg,
+                       bool returnPortAs16Bits = false)
     {
         CB.arg = arg;
-        setupCallbackFP(read, write, in, out, returnPortAs16Bits);
+        setupCallback(read, write, in, out, returnPortAs16Bits);
     }
 
-    void setupCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
-                         void (*write)(void* arg, unsigned short addr, unsigned char value),
-                         unsigned char (*in)(void* arg, unsigned short port),
-                         void (*out)(void* arg, unsigned short port, unsigned char value),
-                         bool returnPortAs16Bits = false)
+    void setupCallback(unsigned char (*read)(void* arg, unsigned short addr),
+                       void (*write)(void* arg, unsigned short addr, unsigned char value),
+                       unsigned char (*in)(void* arg, unsigned short port),
+                       void (*out)(void* arg, unsigned short port, unsigned char value),
+                       bool returnPortAs16Bits = false)
     {
-        setupMemoryCallbackFP(read, write);
-        setupDeviceCallbackFP(in, out, returnPortAs16Bits);
+        setupMemoryCallback(read, write);
+        setupDeviceCallback(in, out, returnPortAs16Bits);
     }
 
-    void setupMemoryCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
-                               void (*write)(void* arg, unsigned short addr, unsigned char value))
+    void setupMemoryCallback(unsigned char (*read)(void* arg, unsigned short addr),
+                             void (*write)(void* arg, unsigned short addr, unsigned char value))
     {
-        CB.read.setupAsFunctionPointer(read);
-        CB.write.setupAsFunctionPointer(write);
+        CB.read = read;
+        CB.write = write;
     }
 
-    void setupDeviceCallbackFP(unsigned char (*in)(void* arg, unsigned short addr),
-                               void (*out)(void* arg, unsigned short addr, unsigned char value),
-                               bool returnPortAs16Bits)
+    void setupDeviceCallback(unsigned char (*in)(void* arg, unsigned short addr),
+                             void (*out)(void* arg, unsigned short addr, unsigned char value),
+                             bool returnPortAs16Bits)
     {
-        CB.in.setupAsFunctionPointer(in);
-        CB.out.setupAsFunctionPointer(out);
+        CB.in = in;
+        CB.out = out;
 #ifndef Z80_UNSUPPORT_16BIT_PORT
         CB.returnPortAs16Bits = returnPortAs16Bits;
 #endif
     }
+#endif
 
     void initialize()
     {
@@ -6156,23 +6145,22 @@ class Z80
     }
 
 #ifndef Z80_DISABLE_DEBUG
-    template <typename Functor>
-    void setDebugMessage(Functor debugMessage)
+#ifdef Z80_NO_FUNCTIONAL
+    void setDebugMessage(void (*debugMessage)(void* arg, const char* msg))
+#else
+    void setDebugMessage(std::function<void(void*, const char*)> debugMessage)
+#endif
     {
         CB.debugMessageEnabled = true;
-        CB.debugMessage.setupAsFunctionObject(debugMessage);
-    }
-
-    void setDebugMessage(void (*debugMessage)(void* arg, const char* msg)) { setDebugMessageFP(debugMessage); }
-    void setDebugMessageFP(void (*debugMessage)(void* arg, const char* msg))
-    {
-        CB.debugMessageEnabled = true;
-        CB.debugMessage.setupAsFunctionPointer(debugMessage);
+        CB.debugMessage = debugMessage;
     }
 
     void resetDebugMessage()
     {
         CB.debugMessageEnabled = false;
+#ifdef Z80_NO_FUNCTIONAL
+        CB.debugMessage = nullptr;
+#endif
     }
 
     inline bool isDebug()
@@ -6196,24 +6184,17 @@ class Z80
     }
 
 #ifndef Z80_DISABLE_BREAKPOINT
-    template <typename Functor>
-    void addBreakPoint(unsigned short addr, Functor callback)
+#ifdef Z80_NO_FUNCTIONAL
+    void addBreakPoint(unsigned short addr, void (*callback)(void*))
+#else
+    void addBreakPoint(unsigned short addr, std::function<void(void*)> callback)
+#endif
     {
         auto it = CB.breakPoints.find(addr);
         if (it == CB.breakPoints.end()) {
             CB.breakPoints[addr] = new std::vector<BreakPoint*>();
         }
-        CB.breakPoints[addr]->push_back(new BreakPointFC(addr, callback));
-    }
-
-    void addBreakPoint(unsigned short addr, void (*callback)(void*)) { addBreakPointFP(addr, callback); }
-    void addBreakPointFP(unsigned short addr, void (*callback)(void*))
-    {
-        auto it = CB.breakPoints.find(addr);
-        if (it == CB.breakPoints.end()) {
-            CB.breakPoints[addr] = new std::vector<BreakPoint*>();
-        }
-        CB.breakPoints[addr]->push_back(new BreakPointFP(addr, callback));
+        CB.breakPoints[addr]->push_back(new BreakPoint(addr, callback));
     }
 
     void removeBreakPoint(unsigned short addr)
@@ -6236,58 +6217,40 @@ class Z80
         }
     }
 
-    void addBreakOperand_(int prefixNumber, int operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+#ifdef Z80_NO_FUNCTIONAL
+    void addBreakOperand(int operandNumber, void (*callback)(void*, unsigned char*, int))
+#else
+    void addBreakOperand(int operandNumber, std::function<void(void*, unsigned char*, int)> callback)
+#endif
     {
-        auto it = CB.breakOperands.find(operandNumber);
+        addBreakOperand(0, operandNumber, callback);
+    }
+
+#ifdef Z80_NO_FUNCTIONAL
+    void addBreakOperand(int prefixNumber, int operandNumber, void (*callback)(void*, unsigned char*, int))
+#else
+    void addBreakOperand(int prefixNumber, int operandNumber, std::function<void(void*, unsigned char*, int)> callback)
+#endif
+    {
+        auto op = (prefixNumber << 8) | operandNumber;
+        auto it = CB.breakOperands.find(op);
         if (it == CB.breakOperands.end()) {
-            CB.breakOperands[operandNumber] = new std::vector<BreakOperand*>();
+            CB.breakOperands[op] = new std::vector<BreakOperand*>();
         }
-        CB.breakOperands[operandNumber]->push_back(new BreakOperandFC(prefixNumber, operandNumber, callback));
+        CB.breakOperands[op]->push_back(new BreakOperand(prefixNumber, operandNumber, callback));
     }
 
-    template <typename Functor>
-    void addBreakOperand(unsigned char operandNumber, Functor callback)
-    {
-        addBreakOperand_(0, (int)operandNumber, callback);
-    }
-
-    template <typename Functor>
-    void addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, Functor callback)
-    {
-        addBreakOperand_((int)prefixNumber, make16BitsFromLE(operandNumber, prefixNumber), callback);
-    }
-
-    template <typename Functor>
-    void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, Functor callback)
+#ifdef Z80_NO_FUNCTIONAL
+    void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int))
+#else
+    void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, std::function<void(void*, unsigned char*, int)> callback)
+#endif
     {
         int n = make16BitsFromLE(prefixNumber2, prefixNumber1);
         int prefixNumber = n;
         n <<= 8;
         n |= operandNumber;
-        addBreakOperand_(prefixNumber, n, callback);
-    }
-
-    void addBreakOperandFP_(int prefixNumber, int operandNumber, void (*callback)(void*, unsigned char*, int))
-    {
-        auto it = CB.breakOperands.find(operandNumber);
-        if (it == CB.breakOperands.end()) {
-            CB.breakOperands[operandNumber] = new std::vector<BreakOperand*>();
-        }
-        CB.breakOperands[operandNumber]->push_back(new BreakOperandFP(prefixNumber, operandNumber, callback));
-    }
-
-    void addBreakOperand(unsigned char operandNumber, void (*callback)(void*, unsigned char*, int)) { addBreakOperandFP(operandNumber, callback); }
-    void addBreakOperandFP(unsigned char operandNumber, void (*callback)(void*, unsigned char*, int)) { addBreakOperandFP_(0, (int)operandNumber, callback); }
-    void addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int)) { addBreakOperandFP(prefixNumber, operandNumber, callback); }
-    void addBreakOperandFP(unsigned char prefixNumber, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int)) { addBreakOperandFP_((int)prefixNumber, make16BitsFromLE(operandNumber, prefixNumber), callback); }
-    void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int)) { addBreakOperandFP(prefixNumber1, prefixNumber2, operandNumber, callback); }
-    void addBreakOperandFP(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int))
-    {
-        int n = make16BitsFromLE(prefixNumber2, prefixNumber1);
-        int prefixNumber = n;
-        n <<= 8;
-        n |= operandNumber;
-        addBreakOperandFP_(prefixNumber, n, callback);
+        addBreakOperand(prefixNumber, n, callback);
     }
 
     void removeBreakOperand(int operandNumber)
@@ -6325,13 +6288,14 @@ class Z80
 #endif
 
 #ifndef Z80_DISABLE_NESTCHECK
-    template <typename Functor>
-    void addReturnHandler(Functor callback)
+#ifdef Z80_NO_FUNCTIONAL
+    void addReturnHandler(void (*callback)(void*))
+#else
+    void addReturnHandler(std::function<void(void*)> callback)
+#endif
     {
-        CB.returnHandlers.push_back(new SimpleHandlerFC(callback));
+        CB.returnHandlers.push_back(new SimpleHandler(callback));
     }
-    void addReturnHandler(void (*callback)(void*)) { addReturnHandlerFP(callback); }
-    void addReturnHandlerFP(void (*callback)(void*)) { CB.returnHandlers.push_back(new SimpleHandlerFP(callback)); }
 
     void removeAllReturnHandlers()
     {
@@ -6339,38 +6303,38 @@ class Z80
         CB.returnHandlers.clear();
     }
 
-    template <typename Functor>
-    void addCallHandler(Functor callback) { CB.callHandlers.push_back(new SimpleHandlerFC(callback)); }
-    void addCallHandler(void (*callback)(void*)) { addCallHandlerFP(callback); }
-    void addCallHandlerFP(void (*callback)(void*)) { CB.callHandlers.push_back(new SimpleHandlerFP(callback)); }
+#ifdef Z80_NO_FUNCTIONAL
+    void addCallHandler(void (*callback)(void*))
+#else
+    void addCallHandler(std::function<void(void*)> callback)
+#endif
+    {
+        CB.callHandlers.push_back(new SimpleHandler(callback));
+    }
 
     void removeAllCallHandlers()
     {
         for (auto handler : CB.callHandlers) delete handler;
         CB.callHandlers.clear();
     }
-
-    template <typename Functor>
-    void setConsumeClockCallback(Functor consumeClock_)
-    {
-        CB.consumeClockEnabled = true;
-        CB.consumeClock.setupAsFunctionObject(consumeClock_);
-    }
 #endif
 
-    void setConsumeClockCallback(void (*consumeClock_)(void* arg, int clocks))
-    {
-        setConsumeClockCallbackFP(consumeClock_);
-    }
-    void setConsumeClockCallbackFP(void (*consumeClock_)(void* arg, int clocks))
+#ifdef Z80_NO_FUNCTIONAL
+    void setConsumeClockCallback(void (*consumeClock)(void* arg, int clocks))
+#else
+    void setConsumeClockCallback(std::function<void(void* arg, int clocks)> consumeClock)
+#endif
     {
         CB.consumeClockEnabled = true;
-        CB.consumeClock.setupAsFunctionPointer(consumeClock_);
+        CB.consumeClock = consumeClock;
     }
 
     void resetConsumeClockCallback()
     {
         CB.consumeClockEnabled = false;
+#ifdef Z80_NO_FUNCTIONAL
+        CB.consumeClock = nullptr;
+#endif
     }
 
     void requestBreak()
