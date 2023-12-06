@@ -27,14 +27,17 @@
 #ifndef INCLUDE_Z80_HPP
 #define INCLUDE_Z80_HPP
 #include <limits.h>
-#include <map>
 #include <stdarg.h>
 #include <stdexcept>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#if !defined(Z80_DISABLE_BREAKPOINT) || !defined(Z80_DISABLE_NESTCHECK)
+#include <map>
 #include <vector>
+#endif
 
 #ifndef Z80_NO_FUNCTIONAL
 #include <functional>
