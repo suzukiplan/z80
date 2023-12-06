@@ -6320,13 +6320,13 @@ class Z80
 #endif
 
 #ifdef Z80_NO_FUNCTIONAL
-    void setConsumeClockCallback(void (*consumeClock)(void* arg, int clocks))
+    void setConsumeClockCallback(void (*consumeClock_)(void* arg, int clocks))
 #else
-    void setConsumeClockCallback(std::function<void(void* arg, int clocks)> consumeClock)
+    void setConsumeClockCallback(std::function<void(void* arg, int clocks)> consumeClock_)
 #endif
     {
         CB.consumeClockEnabled = true;
-        CB.consumeClock = consumeClock;
+        CB.consumeClock = consumeClock_;
     }
 
     void resetConsumeClockCallback()
