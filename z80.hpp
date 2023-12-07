@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #if !defined(Z80_DISABLE_BREAKPOINT) || !defined(Z80_DISABLE_NESTCHECK)
 #include <map>
