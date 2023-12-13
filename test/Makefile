@@ -15,6 +15,7 @@ all:
 	make test-checkreg-on-callback
 	make test-execute
 	make test-clock
+	make test-clock-msx
 	make test-status
 	make test-im2
 	make test-branch
@@ -35,6 +36,10 @@ test-unknown:
 
 test-clock:
 	clang $(CFLAGS) -DZ80_DISABLE_BREAKPOINT -DZ80_DISABLE_NESTCHECK test-clock.cpp -lstdc++
+	./a.out
+
+test-clock-msx:
+	clang $(CFLAGS) -DZ80_DISABLE_BREAKPOINT -DZ80_DISABLE_NESTCHECK test-clock-msx.cpp -lstdc++
 	./a.out
 
 test-status:

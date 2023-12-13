@@ -118,15 +118,7 @@ If you want to get it in 16 bits from the beginning, please initialize with `ret
 
 #### 3-2. Cases when performance-sensitive
 
-Normally, `std::function` is used for callbacks, but in more performance-sensitive cases, a function pointer can be used.
-
-```c++
-    Z80 z80(&mmu);
-    z80.setupCallbackFP(readByte, writeByte, inPort, outPort);
-```
-
-However, using function pointers causes inconveniences such as the inability to specify a capture in a lambda expression.
-In most cases, optimization with the `-O2` option will not cause performance problems, but in case environments where more severe performance is required, `setupCallbackFP` is recommended.
+Normally, `std::function` is used for callbacks, but in more performance-sensitive cases or `std::function` is not exist environment (ex: RaspberryPi Baremetal), all can be replaced with function pointers by specifying the compile option `-DZ80_NO_FUNCTIONAL`.
 
 > The following article (in Japanese) provides a performance comparison between function pointers and `std::function`:
 >
@@ -388,9 +380,16 @@ ReturnHandler will be called back immediately **before** a branch by a RET instr
 
 There is a compile flag that disables certain features in order to adapt to environments with poor performance environments, i.e: Arduino or ESP32:
 
-- `-DZ80_DISABLE_DEBUG` ... disable `setDebugMessage` method
-- `-DZ80_DISABLE_BREAKPOINT` ... disable `addBreakPoint` and `addBreakOperand` methods
-- `-DZ80_DISABLE_NESTCHECK` ... disable `addCallHandler` and `addReturnHandler` methods
+|Compile Flag|Feature|
+|:-|:-|
+|`-DZ80_DISABLE_DEBUG`|disable `setDebugMessage` method|
+|`-DZ80_DISABLE_BREAKPOINT`|disable `addBreakPoint` and `addBreakOperand` methods|
+|`-DZ80_DISABLE_NESTCHECK`|disable `addCallHandler` and `addReturnHandler` methods|
+|`-DZ80_CALLBACK_WITHOUT_CHECK`|Omit the check process when calling `consumeClock` callback (NOTE: Crashes if `setConsumeClock` is not done)|
+|`-DZ80_CALLBACK_PER_INSTRUCTION`|Calls `consumeClock` callback on an instruction-by-instruction basis (NOTE: two or more instructions when interrupting)|
+|`-DZ80_UNSUPPORT_16BIT_PORT`|Reduces extra branches by always assuming the port number to be 8 bits|
+|`-DZ80_NO_FUNCTIONAL`|Do not use `std::function` in the callbacks (use function pointer)|
+|`-DZ80_NO_EXCEPTION`|Do not throw exceptions|
 
 ## License
 

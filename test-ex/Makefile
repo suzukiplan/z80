@@ -7,7 +7,11 @@ COMMON_FLAGS=-I../ \
 	-Wsign-conversion \
 	-Wtype-limits \
 	-Werror \
-	-DZ80_DISABLE_DEBUG
+	-DZ80_DISABLE_DEBUG \
+	-DZ80_DISABLE_NESTCHECK \
+	-DZ80_UNSUPPORT_16BIT_PORT \
+	-DZ80_CALLBACK_PER_INSTRUCTION\
+	-DZ80_NO_FUNCTIONAL
 
 all: cpm zexdoc zexall
 

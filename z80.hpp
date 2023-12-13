@@ -26,24 +26,33 @@
  */
 #ifndef INCLUDE_Z80_HPP
 #define INCLUDE_Z80_HPP
-#include <functional>
 #include <limits.h>
-#include <map>
 #include <stdarg.h>
-#include <stdexcept>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+
+#if !defined(Z80_DISABLE_BREAKPOINT) || !defined(Z80_DISABLE_NESTCHECK)
+#include <map>
 #include <vector>
+#endif
+
+#ifndef Z80_NO_FUNCTIONAL
+#include <functional>
+#endif
+
+#ifndef Z80_NO_EXCEPTION
+#include <stdexcept>
+#endif
 
 class Z80
 {
   public: // Interface data types
     struct WaitClocks {
-        int fetch; // Wait T-cycle (Hz) before fetching instruction (default is 0 = no wait)
-        int read;  // Wait T-cycle (Hz) before to read memory (default is 0 = no wait)
-        int write; // Wait T-cycle (Hz) before to write memory (default is 0 = no wait)
+        int fetch;  // Wait T-cycle (Hz) before fetching instruction (default is 0 = no wait)
+        int fetchM; // Wait T-cycle (Hz) before fetching multi-bytes instruction (default is 0 = no wait)
+        int read;   // Wait T-cycle (Hz) before to read memory (default is 0 = no wait)
+        int write;  // Wait T-cycle (Hz) before to write memory (default is 0 = no wait)
     } wtc;
 
     struct RegisterPair {
@@ -88,15 +97,21 @@ class Z80
 
     inline unsigned char readByte(unsigned short addr, int clock = 4)
     {
+#ifndef Z80_DISABLE_BREAKPOINT
         if (clock && wtc.read) consumeClock(wtc.read);
         unsigned char byte = CB.read(CB.arg, addr);
         if (clock) consumeClock(clock);
+#else
+        consumeClock(wtc.read);
+        unsigned char byte = CB.read(CB.arg, addr);
+        consumeClock(clock);
+#endif
         return byte;
     }
 
     inline void writeByte(unsigned short addr, unsigned char value, int clock = 4)
     {
-        if (wtc.write) consumeClock(wtc.write);
+        consumeClock(wtc.write);
         CB.write(CB.arg, addr, value);
         consumeClock(clock);
     }
@@ -105,14 +120,30 @@ class Z80
     // bit table
     const unsigned char bits[8] = {0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000};
     // flag setter
-    inline void setFlagS(bool on) { on ? reg.pair.F |= flagS() : reg.pair.F &= ~flagS(); }
-    inline void setFlagZ(bool on) { on ? reg.pair.F |= flagZ() : reg.pair.F &= ~flagZ(); }
-    inline void setFlagY(bool on) { on ? reg.pair.F |= flagY() : reg.pair.F &= ~flagY(); }
-    inline void setFlagH(bool on) { on ? reg.pair.F |= flagH() : reg.pair.F &= ~flagH(); }
-    inline void setFlagX(bool on) { on ? reg.pair.F |= flagX() : reg.pair.F &= ~flagX(); }
-    inline void setFlagPV(bool on) { on ? reg.pair.F |= flagPV() : reg.pair.F &= ~flagPV(); }
-    inline void setFlagN(bool on) { on ? reg.pair.F |= flagN() : reg.pair.F &= ~flagN(); }
-    inline void setFlagC(bool on) { on ? reg.pair.F |= flagC() : reg.pair.F &= ~flagC(); }
+    inline void setFlagS() { reg.pair.F |= flagS(); }
+    inline void setFlagZ() { reg.pair.F |= flagZ(); }
+    inline void setFlagY() { reg.pair.F |= flagY(); }
+    inline void setFlagH() { reg.pair.F |= flagH(); }
+    inline void setFlagX() { reg.pair.F |= flagX(); }
+    inline void setFlagPV() { reg.pair.F |= flagPV(); }
+    inline void setFlagN() { reg.pair.F |= flagN(); }
+    inline void setFlagC() { reg.pair.F |= flagC(); }
+    inline void resetFlagS() { reg.pair.F &= ~flagS(); }
+    inline void resetFlagZ() { reg.pair.F &= ~flagZ(); }
+    inline void resetFlagY() { reg.pair.F &= ~flagY(); }
+    inline void resetFlagH() { reg.pair.F &= ~flagH(); }
+    inline void resetFlagX() { reg.pair.F &= ~flagX(); }
+    inline void resetFlagPV() { reg.pair.F &= ~flagPV(); }
+    inline void resetFlagN() { reg.pair.F &= ~flagN(); }
+    inline void resetFlagC() { reg.pair.F &= ~flagC(); }
+    inline void setFlagS(bool on) { on ? setFlagS() : resetFlagS(); }
+    inline void setFlagZ(bool on) { on ? setFlagZ() : resetFlagZ(); }
+    inline void setFlagY(bool on) { on ? setFlagY() : resetFlagY(); }
+    inline void setFlagH(bool on) { on ? setFlagH() : resetFlagH(); }
+    inline void setFlagX(bool on) { on ? setFlagX() : resetFlagX(); }
+    inline void setFlagPV(bool on) { on ? setFlagPV() : resetFlagPV(); }
+    inline void setFlagN(bool on) { on ? setFlagN() : resetFlagN(); }
+    inline void setFlagC(bool on) { on ? setFlagC() : resetFlagC(); }
 
     inline void setFlagXY(unsigned char value)
     {
@@ -129,22 +160,20 @@ class Z80
     inline bool isFlagC() { return reg.pair.F & flagC(); }
 
     enum class Condition {
-        Z = 0b0000000001000000,
-        C = 0b0000000000000001,
-        PV = 0b0000000000000100,
-        S = 0b0000000010000000,
-        NZ = 0b1111111101000000,
-        NC = 0b1111111100000001,
-        NPV = 0b1111111100000100,
-        NS = 0b1111111110000000,
+        Z = 0x40,
+        C = 0x01,
+        PV = 0x04,
+        S = 0x80,
+        NZ = 0x4040,
+        NC = 0x0101,
+        NPV = 0x0404,
+        NS = 0x8080,
     };
 
     inline bool checkConditionFlag(Condition c)
     {
         int ic = (int)c;
-        int n = ic & 0xFF00;
-        int bit = ic & reg.pair.F;
-        return n ? 0 == bit : 0 != bit;
+        return (ic & reg.pair.F) ^ ((ic & 0xFF00) >> 8);
     }
 
     inline unsigned char IFF1() { return 0b00000001; }
@@ -153,47 +182,21 @@ class Z80
     inline unsigned char IFF_NMI() { return 0b01000000; }
     inline unsigned char IFF_HALT() { return 0b10000000; }
 
-    template <typename T>
-    class CoExistenceCallback;
-    template <typename ReturnType, typename... ArgumentTypes>
-    class CoExistenceCallback<ReturnType(ArgumentTypes...)>
-    {
-      private:
-        ReturnType (*fp)(ArgumentTypes...);
-        std::function<ReturnType(ArgumentTypes...)> fc;
-
-      public:
-        CoExistenceCallback() { fp = nullptr; }
-        void setupAsFunctionObject(const std::function<ReturnType(ArgumentTypes...)>& fc_) { fc = fc_; }
-        void setupAsFunctionPointer(ReturnType (*fp_)(ArgumentTypes...)) { fp = fp_; }
-        inline ReturnType operator()(ArgumentTypes... args) { return fp ? fp(args...) : fc(args...); }
-    };
-
 #ifndef Z80_DISABLE_BREAKPOINT
     class BreakPoint
     {
       public:
         unsigned short addr;
-        CoExistenceCallback<void(void*)> callback;
-    };
-
-    class BreakPointFC : public BreakPoint
-    {
-      public:
-        BreakPointFC(unsigned short addr_, const std::function<void(void*)>& callback_)
+#ifdef Z80_NO_FUNCTIONAL
+        void (*callback)(void*);
+        BreakPoint(unsigned short addr_, void (*callback_)(void*))
+#else
+        std::function<void(void*)> callback;
+        BreakPoint(unsigned short addr_, const std::function<void(void*)>& callback_)
+#endif
         {
             this->addr = addr_;
-            this->callback.setupAsFunctionObject(callback_);
-        }
-    };
-
-    class BreakPointFP : public BreakPoint
-    {
-      public:
-        BreakPointFP(unsigned short addr_, void (*callback_)(void*))
-        {
-            this->addr = addr_;
-            this->callback.setupAsFunctionPointer(callback_);
+            this->callback = callback_;
         }
     };
 
@@ -202,29 +205,23 @@ class Z80
       public:
         int prefixNumber;
         unsigned char operandNumber;
-        CoExistenceCallback<void(void*, unsigned char*, int)> callback;
-    };
-
-    class BreakOperandFC : public BreakOperand
-    {
-      public:
-        BreakOperandFC(int prefixNumber_, unsigned char operandNumber_, const std::function<void(void*, unsigned char*, int)>& callback_)
+#ifdef Z80_NO_FUNCTIONAL
+        void (*callback)(void*, unsigned char*, int);
+        BreakOperand(int prefixNumber_, unsigned char operandNumber_, void (*callback_)(void*, unsigned char*, int))
         {
             this->prefixNumber = prefixNumber_;
             this->operandNumber = operandNumber_;
-            this->callback.setupAsFunctionObject(callback_);
+            this->callback = callback_;
         }
-    };
-
-    class BreakOperandFP : public BreakOperand
-    {
-      public:
-        BreakOperandFP(int prefixNumber_, unsigned char operandNumber_, void (*callback_)(void*, unsigned char*, int))
+#else
+        std::function<void(void*, unsigned char*, int)> callback;
+        BreakOperand(int prefixNumber_, unsigned char operandNumber_, const std::function<void(void*, unsigned char*, int)>& callback_)
         {
             this->prefixNumber = prefixNumber_;
             this->operandNumber = operandNumber_;
-            this->callback.setupAsFunctionPointer(callback_);
+            this->callback = callback_;
         }
+#endif
     };
 #endif
 
@@ -232,24 +229,15 @@ class Z80
     class SimpleHandler
     {
       public:
-        CoExistenceCallback<void(void*)> callback;
-    };
-
-    class SimpleHandlerFC : public SimpleHandler
-    {
-      public:
-        SimpleHandlerFC(const std::function<void(void*)>& callback_)
+#ifdef Z80_NO_FUNCTIONAL
+        void (*callback)(void*);
+        SimpleHandler(void (*callback_)(void*))
+#else
+        std::function<void(void*)> callback;
+        SimpleHandler(const std::function<void(void*)>& callback_)
+#endif
         {
-            this->callback.setupAsFunctionObject(callback_);
-        }
-    };
-
-    class SimpleHandlerFP : public SimpleHandler
-    {
-      public:
-        SimpleHandlerFP(void (*callback_)(void*))
-        {
-            this->callback.setupAsFunctionPointer(callback_);
+            this->callback = callback_;
         }
     };
 
@@ -269,17 +257,33 @@ class Z80
 #endif
 
     struct Callback {
-        CoExistenceCallback<unsigned char(void*, unsigned short)> read;
-        CoExistenceCallback<void(void*, unsigned short, unsigned char)> write;
+#ifdef Z80_NO_FUNCTIONAL
+        unsigned char (*read)(void*, unsigned short);
+        void (*write)(void*, unsigned short, unsigned char);
+        unsigned char (*in)(void*, unsigned short);
+        void (*out)(void*, unsigned short, unsigned char);
+        void (*consumeClock)(void*, int);
+#else
+        std::function<unsigned char(void*, unsigned short)> read;
+        std::function<void(void*, unsigned short, unsigned char)> write;
+        std::function<unsigned char(void*, unsigned short)> in;
+        std::function<void(void*, unsigned short, unsigned char)> out;
+        std::function<void(void*, int)> consumeClock;
+#endif
+
+#ifndef Z80_UNSUPPORT_16BIT_PORT
         bool returnPortAs16Bits;
-        CoExistenceCallback<unsigned char(void*, unsigned short)> in;
-        CoExistenceCallback<void(void*, unsigned short, unsigned char)> out;
+#endif
+
 #ifndef Z80_DISABLE_DEBUG
-        CoExistenceCallback<void(void*, const char*)> debugMessage;
+#ifdef Z80_NO_FUNCTIONAL
+        void (*debugMessage)(void*, const char*);
+#else
+        std::function<void(void*, const char*)> debugMessage;
+#endif
         bool debugMessageEnabled;
 #endif
-        CoExistenceCallback<void(void*, int)> consumeClock;
-        bool consumeClockEnabled;
+
 #ifndef Z80_DISABLE_BREAKPOINT
         std::map<int, std::vector<BreakPoint*>*> breakPoints;
         std::map<int, std::vector<BreakOperand*>*> breakOperands;
@@ -288,6 +292,7 @@ class Z80
         std::vector<SimpleHandler*> returnHandlers;
         std::vector<SimpleHandler*> callHandlers;
 #endif
+        bool consumeClockEnabled;
         void* arg;
     } CB;
 
@@ -491,7 +496,13 @@ class Z80
     inline void consumeClock(int hz)
     {
         reg.consumeClockCounter += hz;
+#ifndef Z80_CALLBACK_PER_INSTRUCTION
+#ifdef Z80_CALLBACK_WITHOUT_CHECK
+        CB.consumeClock(CB.arg, hz);
+#else
         if (CB.consumeClockEnabled && hz) CB.consumeClock(CB.arg, hz);
+#endif
+#endif
     }
 
     inline unsigned short getPort16WithB(unsigned char c) { return make16BitsFromLE(c, reg.pair.B); }
@@ -499,27 +510,43 @@ class Z80
 
     inline unsigned char inPortWithB(unsigned char port, int clock = 4)
     {
+#ifdef Z80_UNSUPPORT_16BIT_PORT
+        unsigned char byte = CB.in(CB.arg, port);
+#else
         unsigned char byte = CB.in(CB.arg, CB.returnPortAs16Bits ? getPort16WithB(port) : port);
+#endif
         consumeClock(clock);
         return byte;
     }
 
     inline unsigned char inPortWithA(unsigned char port, int clock = 4)
     {
+#ifdef Z80_UNSUPPORT_16BIT_PORT
+        unsigned char byte = CB.in(CB.arg, port);
+#else
         unsigned char byte = CB.in(CB.arg, CB.returnPortAs16Bits ? getPort16WithA(port) : port);
+#endif
         consumeClock(clock);
         return byte;
     }
 
     inline void outPortWithB(unsigned char port, unsigned char value, int clock = 4)
     {
+#ifdef Z80_UNSUPPORT_16BIT_PORT
+        CB.out(CB.arg, port, value);
+#else
         CB.out(CB.arg, CB.returnPortAs16Bits ? getPort16WithB(port) : port, value);
+#endif
         consumeClock(clock);
     }
 
     inline void outPortWithA(unsigned char port, unsigned char value, int clock = 4)
     {
+#ifdef Z80_UNSUPPORT_16BIT_PORT
+        CB.out(CB.arg, port, value);
+#else
         CB.out(CB.arg, CB.returnPortAs16Bits ? getPort16WithA(port) : port, value);
+#endif
         consumeClock(clock);
     }
 
@@ -611,7 +638,7 @@ class Z80
 
     static inline void OP_CB(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->fetch(4);
+        unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandCB(operandNumber);
 #endif
@@ -620,12 +647,14 @@ class Z80
 
     static inline void OP_ED(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->fetch(4);
+        unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
+#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetED[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (ED,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
+#endif
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandED(operandNumber);
 #endif
@@ -634,12 +663,14 @@ class Z80
 
     static inline void OP_IX(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->fetch(4);
+        unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
+#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetIX[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (DD,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
+#endif
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIX(operandNumber);
 #endif
@@ -648,12 +679,14 @@ class Z80
 
     static inline void OP_IY(Z80* ctx)
     {
-        unsigned char operandNumber = ctx->fetch(4);
+        unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
+#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetIY[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (FD,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
+#endif
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIY(operandNumber);
 #endif
@@ -1552,7 +1585,9 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
 #endif
+#ifndef Z80_NO_EXCEPTION
                 throw std::runtime_error("invalid register pair has specified");
+#endif
                 return;
         }
 #ifndef Z80_DISABLE_DEBUG
@@ -1628,7 +1663,9 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
 #endif
+#ifndef Z80_NO_EXCEPTION
                 throw std::runtime_error("invalid register pair has specified");
+#endif
                 return;
         }
 #ifndef Z80_DISABLE_DEBUG
@@ -1675,7 +1712,9 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
 #endif
+#ifndef Z80_NO_EXCEPTION
                 throw std::runtime_error("invalid register pair has specified");
+#endif
                 return;
         }
         writeByte(addr, l, 3);
@@ -1793,9 +1832,9 @@ class Z80
         setBC(bc);
         setDE(de);
         setHL(hl);
-        setFlagH(false);
+        resetFlagH();
         setFlagPV(bc != 0);
-        setFlagN(false);
+        resetFlagN();
         unsigned char an = reg.pair.A + n;
         setFlagY(an & 0b00000010);
         setFlagX(an & 0b00001000);
@@ -1871,7 +1910,11 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
 #endif
+#ifdef Z80_NO_EXCEPTION
+                ;
+#else
                 throw std::runtime_error("invalid register pair has specified");
+#endif
         }
     }
 
@@ -1912,7 +1955,9 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
                 if (isDebug()) log("invalid register pair has specified: $%02X", rp);
 #endif
+#ifndef Z80_NO_EXCEPTION
                 throw std::runtime_error("invalid register pair has specified");
+#endif
                 return;
         }
 #ifndef Z80_DISABLE_DEBUG
@@ -1973,8 +2018,8 @@ class Z80
     inline void setFlagByRotate(unsigned char n, bool carry, bool isA = false)
     {
         setFlagC(carry);
-        setFlagH(false);
-        setFlagN(false);
+        resetFlagH();
+        resetFlagN();
         setFlagXY(n);
         if (!isA) {
             setFlagS(n & 0x80);
@@ -1995,7 +2040,7 @@ class Z80
 
     inline unsigned char SLA(unsigned char n)
     {
-        unsigned char c = n & 0x80 ? 1 : 0;
+        unsigned char c = (n & 0x80) >> 7;
         n &= 0b01111111;
         n <<= 1;
         setFlagByRotate(n, c);
@@ -2024,7 +2069,7 @@ class Z80
 
     inline unsigned char RLC(unsigned char n, bool isA = false)
     {
-        unsigned char c = n & 0x80 ? 1 : 0;
+        unsigned char c = (n & 0x80) >> 7;
         n &= 0b01111111;
         n <<= 1;
         n |= c; // differ with RL
@@ -2034,7 +2079,7 @@ class Z80
 
     inline unsigned char RL(unsigned char n, bool isA = false)
     {
-        unsigned char c = n & 0x80 ? 1 : 0;
+        unsigned char c = (n & 0x80) >> 7;
         n &= 0b01111111;
         n <<= 1;
         n |= isFlagC() ? 1 : 0; // differ with RLC
@@ -2044,7 +2089,7 @@ class Z80
 
     inline unsigned char RRC(unsigned char n, bool isA = false)
     {
-        unsigned char c = n & 1 ? 0x80 : 0;
+        unsigned char c = (n & 1) << 7;
         n &= 0b11111110;
         n >>= 1;
         n |= c; // differ with RR
@@ -2054,7 +2099,7 @@ class Z80
 
     inline unsigned char RR(unsigned char n, bool isA = false)
     {
-        unsigned char c = n & 1 ? 0x80 : 0;
+        unsigned char c = (n & 1) << 7;
         n &= 0b11111110;
         n >>= 1;
         n |= isFlagC() ? 0x80 : 0; // differ with RR
@@ -2961,7 +3006,7 @@ class Z80
     inline void setFlagByIncrement(unsigned char before)
     {
         unsigned char finalResult = before + 1;
-        setFlagN(false);
+        resetFlagN();
         setFlagZ(0 == finalResult);
         setFlagS(0x80 & finalResult);
         setFlagH((finalResult & 0x0F) == 0x00);
@@ -2972,7 +3017,7 @@ class Z80
     inline void setFlagByDecrement(unsigned char before)
     {
         unsigned char finalResult = before - 1;
-        setFlagN(true);
+        setFlagN();
         setFlagZ(0 == finalResult);
         setFlagS(0x80 & finalResult);
         setFlagH((finalResult & 0x0F) == 0x0F);
@@ -3659,7 +3704,7 @@ class Z80
     {
         int result = before + addition;
         int carrybits = before ^ addition ^ result;
-        setFlagN(false);
+        resetFlagN();
         setFlagXY((result & 0xFF00) >> 8);
         setFlagC((carrybits & 0x10000) != 0);
         setFlagH((carrybits & 0x1000) != 0);
@@ -3671,7 +3716,7 @@ class Z80
         int carrybits = before ^ addition ^ result;
         unsigned short finalResult = (unsigned short)(result);
         // same as ADD
-        setFlagN(false);
+        resetFlagN();
         setFlagXY((finalResult & 0xFF00) >> 8);
         setFlagC((carrybits & 0x10000) != 0);
         setFlagH((carrybits & 0x1000) != 0);
@@ -3827,7 +3872,7 @@ class Z80
         int result = before - subtract;
         int carrybits = before ^ subtract ^ result;
         unsigned short finalResult = (unsigned short)result;
-        setFlagN(true);
+        setFlagN();
         setFlagXY((finalResult & 0xFF00) >> 8);
         setFlagC((carrybits & 0x10000) != 0);
         setFlagH((carrybits & 0x1000) != 0);
@@ -3855,33 +3900,35 @@ class Z80
         consumeClock(7);
     }
 
-    inline void setFlagByLogical(bool h)
+    inline void setFlagByLogical()
     {
         setFlagS(reg.pair.A & 0x80);
         setFlagZ(reg.pair.A == 0);
         setFlagXY(reg.pair.A);
-        setFlagH(h);
         setFlagPV(isEvenNumberBits(reg.pair.A));
-        setFlagN(false);
-        setFlagC(false);
+        resetFlagN();
+        resetFlagC();
     }
 
     inline void and8(unsigned char n)
     {
         reg.pair.A &= n;
-        setFlagByLogical(true);
+        setFlagByLogical();
+        setFlagH();
     }
 
     inline void or8(unsigned char n)
     {
         reg.pair.A |= n;
-        setFlagByLogical(false);
+        setFlagByLogical();
+        resetFlagH();
     }
 
     inline void xor8(unsigned char n)
     {
         reg.pair.A ^= n;
-        setFlagByLogical(false);
+        setFlagByLogical();
+        resetFlagH();
     }
 
     // AND Register
@@ -4213,8 +4260,8 @@ class Z80
         if (ctx->isDebug()) ctx->log("[%04X] CPL %s", ctx->reg.PC - 1, ctx->registerDump(0b111));
 #endif
         ctx->reg.pair.A = ~ctx->reg.pair.A;
-        ctx->setFlagH(true);
-        ctx->setFlagN(true);
+        ctx->setFlagH();
+        ctx->setFlagN();
         ctx->setFlagXY(ctx->reg.pair.A);
     }
 
@@ -4237,7 +4284,7 @@ class Z80
         if (ctx->isDebug()) ctx->log("[%04X] CCF <C:%s -> %s>", ctx->reg.PC - 1, ctx->isFlagC() ? "ON" : "OFF", !ctx->isFlagC() ? "ON" : "OFF");
 #endif
         ctx->setFlagH(ctx->isFlagC());
-        ctx->setFlagN(false);
+        ctx->resetFlagN();
         ctx->setFlagC(!ctx->isFlagC());
         ctx->setFlagXY(ctx->reg.pair.A);
     }
@@ -4248,9 +4295,9 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (ctx->isDebug()) ctx->log("[%04X] SCF <C:%s -> ON>", ctx->reg.PC - 1, ctx->isFlagC() ? "ON" : "OFF");
 #endif
-        ctx->setFlagH(false);
-        ctx->setFlagN(false);
-        ctx->setFlagC(true);
+        ctx->resetFlagH();
+        ctx->resetFlagN();
+        ctx->setFlagC();
         ctx->setFlagXY(ctx->reg.pair.A);
     }
 
@@ -4322,8 +4369,8 @@ class Z80
         setFlagZ(n ? false : true);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
-        setFlagH(true);
-        setFlagN(false);
+        setFlagH();
+        resetFlagN();
         setFlagXY(*rp);
     }
 
@@ -4346,8 +4393,8 @@ class Z80
         setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
-        setFlagH(true);
-        setFlagN(false);
+        setFlagH();
+        resetFlagN();
         setFlagXY((reg.WZ & 0xFF00) >> 8);
     }
 
@@ -4370,8 +4417,8 @@ class Z80
         setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
-        setFlagH(true);
-        setFlagN(false);
+        setFlagH();
+        resetFlagN();
         setFlagXY((reg.WZ & 0xFF00) >> 8);
     }
 
@@ -4394,8 +4441,8 @@ class Z80
         setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
-        setFlagH(true);
-        setFlagN(false);
+        setFlagH();
+        resetFlagN();
         setFlagXY((reg.WZ & 0xFF00) >> 8);
     }
 
@@ -5443,9 +5490,9 @@ class Z80
 #endif
         setFlagS(i & 0x80);
         setFlagZ(i == 0);
-        setFlagH(false);
+        resetFlagH();
         setFlagPV(isEvenNumberBits(i));
-        setFlagN(false);
+        resetFlagN();
         setFlagXY(i);
     }
 
@@ -5454,7 +5501,7 @@ class Z80
         reg.pair.B--;
         reg.pair.F = 0;
         setFlagC(isFlagC());
-        setFlagN(true);
+        setFlagN();
         setFlagZ(reg.pair.B == 0);
         setFlagXY(reg.pair.B);
         setFlagS(reg.pair.B & 0x80);
@@ -5607,9 +5654,9 @@ class Z80
         setFlagS(reg.pair.A & 0x80);
         setFlagXY(reg.pair.A);
         setFlagZ(reg.pair.A == 0);
-        setFlagH(false);
+        resetFlagH();
         setFlagPV(isEvenNumberBits(reg.pair.A));
-        setFlagN(false);
+        resetFlagN();
         consumeClock(2);
     }
 
@@ -5636,9 +5683,9 @@ class Z80
         setFlagS(reg.pair.A & 0x80);
         setFlagXY(reg.pair.A);
         setFlagZ(reg.pair.A == 0);
-        setFlagH(false);
+        resetFlagH();
         setFlagPV(isEvenNumberBits(reg.pair.A));
-        setFlagN(false);
+        resetFlagN();
         consumeClock(2);
     }
 
@@ -5981,12 +6028,21 @@ class Z80
     }
 
   public: // API functions
+#ifdef Z80_NO_FUNCTIONAL
+    Z80(unsigned char (*read)(void* arg, unsigned short addr),
+        void (*write)(void* arg, unsigned short addr, unsigned char value),
+        unsigned char (*in)(void* arg, unsigned short port),
+        void (*out)(void* arg, unsigned short port, unsigned char value),
+        void* arg,
+        bool returnPortAs16Bits = false)
+#else
     Z80(std::function<unsigned char(void*, unsigned short)> read,
         std::function<void(void*, unsigned short, unsigned char)> write,
         std::function<unsigned char(void*, unsigned short)> in,
         std::function<void(void*, unsigned short, unsigned char)> out,
         void* arg,
         bool returnPortAs16Bits = false)
+#endif
     {
         this->CB.arg = arg;
         initialize();
@@ -6005,6 +6061,7 @@ class Z80
         initialize();
     }
 
+#ifndef Z80_NO_FUNCTIONAL
     void setupCallback(std::function<unsigned char(void*, unsigned short)> read,
                        std::function<void(void*, unsigned short, unsigned char)> write,
                        std::function<unsigned char(void*, unsigned short)> in,
@@ -6029,55 +6086,61 @@ class Z80
     void setupMemoryCallback(std::function<unsigned char(void*, unsigned short)> read,
                              std::function<void(void*, unsigned short, unsigned char)> write)
     {
-        CB.read.setupAsFunctionObject(read);
-        CB.write.setupAsFunctionObject(write);
+        CB.read = read;
+        CB.write = write;
     }
 
     void setupDeviceCallback(std::function<unsigned char(void*, unsigned short)> in,
                              std::function<void(void*, unsigned short, unsigned char)> out,
                              bool returnPortAs16Bits)
     {
-        CB.in.setupAsFunctionObject(in);
-        CB.out.setupAsFunctionObject(out);
+        CB.in = in;
+        CB.out = out;
+#ifndef Z80_UNSUPPORT_16BIT_PORT
         CB.returnPortAs16Bits = returnPortAs16Bits;
+#endif
     }
 
-    void setupCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
-                         void (*write)(void* arg, unsigned short addr, unsigned char value),
-                         unsigned char (*in)(void* arg, unsigned short port),
-                         void (*out)(void* arg, unsigned short port, unsigned char value),
-                         void* arg,
-                         bool returnPortAs16Bits = false)
+#else
+    void setupCallback(unsigned char (*read)(void* arg, unsigned short addr),
+                       void (*write)(void* arg, unsigned short addr, unsigned char value),
+                       unsigned char (*in)(void* arg, unsigned short port),
+                       void (*out)(void* arg, unsigned short port, unsigned char value),
+                       void* arg,
+                       bool returnPortAs16Bits = false)
     {
         CB.arg = arg;
-        setupCallbackFP(read, write, in, out, returnPortAs16Bits);
+        setupCallback(read, write, in, out, returnPortAs16Bits);
     }
 
-    void setupCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
-                         void (*write)(void* arg, unsigned short addr, unsigned char value),
-                         unsigned char (*in)(void* arg, unsigned short port),
-                         void (*out)(void* arg, unsigned short port, unsigned char value),
-                         bool returnPortAs16Bits = false)
+    void setupCallback(unsigned char (*read)(void* arg, unsigned short addr),
+                       void (*write)(void* arg, unsigned short addr, unsigned char value),
+                       unsigned char (*in)(void* arg, unsigned short port),
+                       void (*out)(void* arg, unsigned short port, unsigned char value),
+                       bool returnPortAs16Bits = false)
     {
-        setupMemoryCallbackFP(read, write);
-        setupDeviceCallbackFP(in, out, returnPortAs16Bits);
+        setupMemoryCallback(read, write);
+        setupDeviceCallback(in, out, returnPortAs16Bits);
     }
 
-    void setupMemoryCallbackFP(unsigned char (*read)(void* arg, unsigned short addr),
-                               void (*write)(void* arg, unsigned short addr, unsigned char value))
+    void setupMemoryCallback(unsigned char (*read)(void* arg, unsigned short addr),
+                             void (*write)(void* arg, unsigned short addr, unsigned char value))
     {
-        CB.read.setupAsFunctionPointer(read);
-        CB.write.setupAsFunctionPointer(write);
+        CB.read = read;
+        CB.write = write;
     }
 
-    void setupDeviceCallbackFP(unsigned char (*in)(void* arg, unsigned short addr),
-                               void (*out)(void* arg, unsigned short addr, unsigned char value),
-                               bool returnPortAs16Bits)
+    void setupDeviceCallback(unsigned char (*in)(void* arg, unsigned short addr),
+                             void (*out)(void* arg, unsigned short addr, unsigned char value),
+                             bool returnPortAs16Bits)
     {
-        CB.in.setupAsFunctionPointer(in);
-        CB.out.setupAsFunctionPointer(out);
+        CB.in = in;
+        CB.out = out;
+#ifndef Z80_UNSUPPORT_16BIT_PORT
         CB.returnPortAs16Bits = returnPortAs16Bits;
+#endif
     }
+#endif
 
     void initialize()
     {
@@ -6105,23 +6168,22 @@ class Z80
     }
 
 #ifndef Z80_DISABLE_DEBUG
-    template <typename Functor>
-    void setDebugMessage(Functor debugMessage)
+#ifdef Z80_NO_FUNCTIONAL
+    void setDebugMessage(void (*debugMessage)(void* arg, const char* msg))
+#else
+    void setDebugMessage(std::function<void(void*, const char*)> debugMessage)
+#endif
     {
         CB.debugMessageEnabled = true;
-        CB.debugMessage.setupAsFunctionObject(debugMessage);
-    }
-
-    void setDebugMessage(void (*debugMessage)(void* arg, const char* msg)) { setDebugMessageFP(debugMessage); }
-    void setDebugMessageFP(void (*debugMessage)(void* arg, const char* msg))
-    {
-        CB.debugMessageEnabled = true;
-        CB.debugMessage.setupAsFunctionPointer(debugMessage);
+        CB.debugMessage = debugMessage;
     }
 
     void resetDebugMessage()
     {
         CB.debugMessageEnabled = false;
+#ifdef Z80_NO_FUNCTIONAL
+        CB.debugMessage = nullptr;
+#endif
     }
 
     inline bool isDebug()
@@ -6145,24 +6207,17 @@ class Z80
     }
 
 #ifndef Z80_DISABLE_BREAKPOINT
-    template <typename Functor>
-    void addBreakPoint(unsigned short addr, Functor callback)
+#ifdef Z80_NO_FUNCTIONAL
+    void addBreakPoint(unsigned short addr, void (*callback)(void*))
+#else
+    void addBreakPoint(unsigned short addr, std::function<void(void*)> callback)
+#endif
     {
         auto it = CB.breakPoints.find(addr);
         if (it == CB.breakPoints.end()) {
             CB.breakPoints[addr] = new std::vector<BreakPoint*>();
         }
-        CB.breakPoints[addr]->push_back(new BreakPointFC(addr, callback));
-    }
-
-    void addBreakPoint(unsigned short addr, void (*callback)(void*)) { addBreakPointFP(addr, callback); }
-    void addBreakPointFP(unsigned short addr, void (*callback)(void*))
-    {
-        auto it = CB.breakPoints.find(addr);
-        if (it == CB.breakPoints.end()) {
-            CB.breakPoints[addr] = new std::vector<BreakPoint*>();
-        }
-        CB.breakPoints[addr]->push_back(new BreakPointFP(addr, callback));
+        CB.breakPoints[addr]->push_back(new BreakPoint(addr, callback));
     }
 
     void removeBreakPoint(unsigned short addr)
@@ -6185,58 +6240,40 @@ class Z80
         }
     }
 
-    void addBreakOperand_(int prefixNumber, int operandNumber, const std::function<void(void*, unsigned char*, int)>& callback)
+#ifdef Z80_NO_FUNCTIONAL
+    void addBreakOperand(int operandNumber, void (*callback)(void*, unsigned char*, int))
+#else
+    void addBreakOperand(int operandNumber, std::function<void(void*, unsigned char*, int)> callback)
+#endif
     {
-        auto it = CB.breakOperands.find(operandNumber);
+        addBreakOperand(0, operandNumber, callback);
+    }
+
+#ifdef Z80_NO_FUNCTIONAL
+    void addBreakOperand(int prefixNumber, int operandNumber, void (*callback)(void*, unsigned char*, int))
+#else
+    void addBreakOperand(int prefixNumber, int operandNumber, std::function<void(void*, unsigned char*, int)> callback)
+#endif
+    {
+        auto op = (prefixNumber << 8) | operandNumber;
+        auto it = CB.breakOperands.find(op);
         if (it == CB.breakOperands.end()) {
-            CB.breakOperands[operandNumber] = new std::vector<BreakOperand*>();
+            CB.breakOperands[op] = new std::vector<BreakOperand*>();
         }
-        CB.breakOperands[operandNumber]->push_back(new BreakOperandFC(prefixNumber, operandNumber, callback));
+        CB.breakOperands[op]->push_back(new BreakOperand(prefixNumber, operandNumber, callback));
     }
 
-    template <typename Functor>
-    void addBreakOperand(unsigned char operandNumber, Functor callback)
-    {
-        addBreakOperand_(0, (int)operandNumber, callback);
-    }
-
-    template <typename Functor>
-    void addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, Functor callback)
-    {
-        addBreakOperand_((int)prefixNumber, make16BitsFromLE(operandNumber, prefixNumber), callback);
-    }
-
-    template <typename Functor>
-    void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, Functor callback)
+#ifdef Z80_NO_FUNCTIONAL
+    void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int))
+#else
+    void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, std::function<void(void*, unsigned char*, int)> callback)
+#endif
     {
         int n = make16BitsFromLE(prefixNumber2, prefixNumber1);
         int prefixNumber = n;
         n <<= 8;
         n |= operandNumber;
-        addBreakOperand_(prefixNumber, n, callback);
-    }
-
-    void addBreakOperandFP_(int prefixNumber, int operandNumber, void (*callback)(void*, unsigned char*, int))
-    {
-        auto it = CB.breakOperands.find(operandNumber);
-        if (it == CB.breakOperands.end()) {
-            CB.breakOperands[operandNumber] = new std::vector<BreakOperand*>();
-        }
-        CB.breakOperands[operandNumber]->push_back(new BreakOperandFP(prefixNumber, operandNumber, callback));
-    }
-
-    void addBreakOperand(unsigned char operandNumber, void (*callback)(void*, unsigned char*, int)) { addBreakOperandFP(operandNumber, callback); }
-    void addBreakOperandFP(unsigned char operandNumber, void (*callback)(void*, unsigned char*, int)) { addBreakOperandFP_(0, (int)operandNumber, callback); }
-    void addBreakOperand(unsigned char prefixNumber, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int)) { addBreakOperandFP(prefixNumber, operandNumber, callback); }
-    void addBreakOperandFP(unsigned char prefixNumber, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int)) { addBreakOperandFP_((int)prefixNumber, make16BitsFromLE(operandNumber, prefixNumber), callback); }
-    void addBreakOperand(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int)) { addBreakOperandFP(prefixNumber1, prefixNumber2, operandNumber, callback); }
-    void addBreakOperandFP(unsigned char prefixNumber1, unsigned char prefixNumber2, unsigned char operandNumber, void (*callback)(void*, unsigned char*, int))
-    {
-        int n = make16BitsFromLE(prefixNumber2, prefixNumber1);
-        int prefixNumber = n;
-        n <<= 8;
-        n |= operandNumber;
-        addBreakOperandFP_(prefixNumber, n, callback);
+        addBreakOperand(prefixNumber, n, callback);
     }
 
     void removeBreakOperand(int operandNumber)
@@ -6274,13 +6311,14 @@ class Z80
 #endif
 
 #ifndef Z80_DISABLE_NESTCHECK
-    template <typename Functor>
-    void addReturnHandler(Functor callback)
+#ifdef Z80_NO_FUNCTIONAL
+    void addReturnHandler(void (*callback)(void*))
+#else
+    void addReturnHandler(std::function<void(void*)> callback)
+#endif
     {
-        CB.returnHandlers.push_back(new SimpleHandlerFC(callback));
+        CB.returnHandlers.push_back(new SimpleHandler(callback));
     }
-    void addReturnHandler(void (*callback)(void*)) { addReturnHandlerFP(callback); }
-    void addReturnHandlerFP(void (*callback)(void*)) { CB.returnHandlers.push_back(new SimpleHandlerFP(callback)); }
 
     void removeAllReturnHandlers()
     {
@@ -6288,38 +6326,38 @@ class Z80
         CB.returnHandlers.clear();
     }
 
-    template <typename Functor>
-    void addCallHandler(Functor callback) { CB.callHandlers.push_back(new SimpleHandlerFC(callback)); }
-    void addCallHandler(void (*callback)(void*)) { addCallHandlerFP(callback); }
-    void addCallHandlerFP(void (*callback)(void*)) { CB.callHandlers.push_back(new SimpleHandlerFP(callback)); }
+#ifdef Z80_NO_FUNCTIONAL
+    void addCallHandler(void (*callback)(void*))
+#else
+    void addCallHandler(std::function<void(void*)> callback)
+#endif
+    {
+        CB.callHandlers.push_back(new SimpleHandler(callback));
+    }
 
     void removeAllCallHandlers()
     {
         for (auto handler : CB.callHandlers) delete handler;
         CB.callHandlers.clear();
     }
-
-    template <typename Functor>
-    void setConsumeClockCallback(Functor consumeClock_)
-    {
-        CB.consumeClockEnabled = true;
-        CB.consumeClock.setupAsFunctionObject(consumeClock_);
-    }
 #endif
 
+#ifdef Z80_NO_FUNCTIONAL
     void setConsumeClockCallback(void (*consumeClock_)(void* arg, int clocks))
-    {
-        setConsumeClockCallbackFP(consumeClock_);
-    }
-    void setConsumeClockCallbackFP(void (*consumeClock_)(void* arg, int clocks))
+#else
+    void setConsumeClockCallback(std::function<void(void* arg, int clocks)> consumeClock_)
+#endif
     {
         CB.consumeClockEnabled = true;
-        CB.consumeClock.setupAsFunctionPointer(consumeClock_);
+        CB.consumeClock = consumeClock_;
     }
 
     void resetConsumeClockCallback()
     {
         CB.consumeClockEnabled = false;
+#ifdef Z80_NO_FUNCTIONAL
+        CB.consumeClock = nullptr;
+#endif
     }
 
     void requestBreak()
@@ -6376,8 +6414,18 @@ class Z80
             }
             executed += reg.consumeClockCounter;
             clock -= reg.consumeClockCounter;
+#ifdef Z80_CALLBACK_PER_INSTRUCTION
+            checkInterrupt();
+#ifdef Z80_CALLBACK_WITHOUT_CHECK
+            CB.consumeClock(CB.arg, reg.consumeClockCounter);
+#else
+            if (CB.consumeClockEnabled) CB.consumeClock(CB.arg, reg.consumeClockCounter);
+#endif
+            reg.consumeClockCounter = 0;
+#else
             reg.consumeClockCounter = 0;
             checkInterrupt();
+#endif
         }
         return executed;
     }
@@ -6386,6 +6434,9 @@ class Z80
     {
         requestBreakFlag = false;
         while (!requestBreakFlag) {
+#ifdef Z80_CALLBACK_PER_INSTRUCTION
+            reg.consumeClockCounter = 0;
+#endif
             // execute NOP while halt
             if (reg.IFF & IFF_HALT()) {
                 reg.execEI = 0;
@@ -6403,6 +6454,13 @@ class Z80
                 opSet1[operandNumber](this);
             }
             checkInterrupt();
+#ifdef Z80_CALLBACK_PER_INSTRUCTION
+#ifdef Z80_CALLBACK_WITHOUT_CHECK
+            CB.consumeClock(CB.arg, reg.consumeClockCounter);
+#else
+            if (CB.consumeClockEnabled) CB.consumeClock(CB.arg, reg.consumeClockCounter);
+#endif
+#endif
         }
     }
 

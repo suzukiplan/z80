@@ -6,7 +6,6 @@ BreakBeforeBraces: Linux
 ObjCBlockIndentWidth: 4
 ObjCSpaceAfterProperty: true 
 ObjCSpaceBeforeProtocolList: true
-AllowShortFunctionsOnASingleLine: true 
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: true

@@ -1,5 +1,23 @@
 # Change log
 
+## Version 1.10.0 (Dec 6, 2023 JST)
+
+- Abolish FP functions _(NOTE: **Destructive** change)_
+  - Eliminate `FP` methods that register callback functions as explicit function pointers
+  - In principle, `std::function` should be used
+  - If you defined `-DZ80_NO_FUNCTIONAL`, `std::function` should not be used, and use function pointer explicity.
+    - _This is a remedy for the unavailability of std::function in the Baremetal environment of the RaspberryPi, etc._
+    - _Alternatively, it may be desirable to define this in an environment with severe performance constraints._
+- Added compile option `-DZ80_NO_EXCEPTION` to not throw exceptions
+- Add `wtc.fetchM` and clock test case for MSX
+- Add compile flags for performance:
+  - `Z80_CALLBACK_WITHOUT_CHECK` ... Omit the check process when calling `consumeClock` callback
+  - `Z80_CALLBACK_PER_INSTRUCTION` ... Calls `consumeClock` callback on an instruction-by-instruction basis (NOTE: two or more instructions when interrupting)
+  - `Z80_UNSUPPORT_16BIT_PORT` ... Reduces extra branches by always assuming the port number to be 8 bits
+- optimize checkConditionFlag (do not use branch)
+- optimize rotate instructions
+- optimize flag set/reset
+
 ## Version 1.9.3 (Jul 10, 2023 JST)
 
 - Add compile flags for performance:
