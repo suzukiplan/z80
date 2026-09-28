@@ -3710,9 +3710,9 @@ class Z80
         setFlagH((carrybits & 0x1000) != 0);
     }
 
-    inline void setFlagByAdc16(unsigned short before, unsigned short addition)
+    inline void setFlagByAdc16(unsigned short before, unsigned short addition, unsigned char carry)
     {
-        int result = before + addition;
+        int result = before + addition + carry;
         int carrybits = before ^ addition ^ result;
         unsigned short finalResult = (unsigned short)(result);
         // same as ADD
@@ -3758,7 +3758,7 @@ class Z80
         unsigned short nn = getRP(rp);
         unsigned char c = isFlagC() ? 1 : 0;
         reg.WZ = hl + 1;
-        setFlagByAdc16(hl, c + nn);
+        setFlagByAdc16(hl, nn, c);
         setHL(hl + c + nn);
         consumeClock(7);
     }
@@ -3867,9 +3867,9 @@ class Z80
         consumeClock(2);
     }
 
-    inline void setFlagBySbc16(unsigned short before, unsigned short subtract)
+    inline void setFlagBySbc16(unsigned short before, unsigned short subtract, unsigned char carry)
     {
-        int result = before - subtract;
+        int result = before - subtract - carry;
         int carrybits = before ^ subtract ^ result;
         unsigned short finalResult = (unsigned short)result;
         setFlagN();
@@ -3895,7 +3895,7 @@ class Z80
         unsigned short nn = getRP(rp);
         unsigned char c = isFlagC() ? 1 : 0;
         reg.WZ = hl + 1;
-        setFlagBySbc16(hl, c + nn);
+        setFlagBySbc16(hl, nn, c);
         setHL(hl - c - nn);
         consumeClock(7);
     }
