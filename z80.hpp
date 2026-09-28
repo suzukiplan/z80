@@ -116,15 +116,49 @@ class Z80
         consumeClock(clock);
     }
 
+  public: // Flag profile
+    // Zilog: documented and undocumented Zilog Z80 flag behaviour. This is the
+    // default and the existing behaviour.
+    // Upd9002: NEC uPD9002 Z80 emulation mode (PC-88VA V1/V2 mode). Rules
+    // R1-R7 are reproduced from ZEXDOC/ZEXALL runs on a real PC-88VA2;
+    // DAA/CPL/SCF/CCF are unresolved and keep Zilog behaviour.
+    enum class FlagProfile {
+        Zilog,
+        Upd9002
+    };
+    void setFlagProfile(FlagProfile profile)
+    {
+        flagProfile = profile;
+        maskUndocumentedFlags();
+    }
+    FlagProfile getFlagProfile() const { return flagProfile; }
+
   private: // Internal functions & variables
+    FlagProfile flagProfile = FlagProfile::Zilog;
+    inline bool isUpd9002() const { return flagProfile == FlagProfile::Upd9002; }
+    // R1 (storage variant): F bits 5/3 are never held. Whether POP AF can
+    // store them on real hardware is untested (probe P7).
+    inline void maskUndocumentedFlags()
+    {
+        if (isUpd9002()) {
+            reg.pair.F &= 0xD7;
+            reg.back.F &= 0xD7;
+        }
+    }
     // bit table
     const unsigned char bits[8] = {0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000};
     // flag setter
     inline void setFlagS() { reg.pair.F |= flagS(); }
     inline void setFlagZ() { reg.pair.F |= flagZ(); }
-    inline void setFlagY() { reg.pair.F |= flagY(); }
+    inline void setFlagY()
+    {
+        if (!isUpd9002()) reg.pair.F |= flagY(); // R1
+    }
     inline void setFlagH() { reg.pair.F |= flagH(); }
-    inline void setFlagX() { reg.pair.F |= flagX(); }
+    inline void setFlagX()
+    {
+        if (!isUpd9002()) reg.pair.F |= flagX(); // R1
+    }
     inline void setFlagPV() { reg.pair.F |= flagPV(); }
     inline void setFlagN() { reg.pair.F |= flagN(); }
     inline void setFlagC() { reg.pair.F |= flagC(); }
@@ -414,8 +448,16 @@ class Z80
     inline unsigned short getHL() { return make16BitsFromLE(reg.pair.L, reg.pair.H); }
     inline unsigned short getHL2() { return make16BitsFromLE(reg.back.L, reg.back.H); }
 
-    inline void setAF(unsigned short value) { splitTo8BitsPair(value, &reg.pair.A, &reg.pair.F); }
-    inline void setAF2(unsigned short value) { splitTo8BitsPair(value, &reg.back.A, &reg.back.F); }
+    inline void setAF(unsigned short value)
+    {
+        splitTo8BitsPair(value, &reg.pair.A, &reg.pair.F);
+        maskUndocumentedFlags(); // R1
+    }
+    inline void setAF2(unsigned short value)
+    {
+        splitTo8BitsPair(value, &reg.back.A, &reg.back.F);
+        maskUndocumentedFlags(); // R1
+    }
     inline void setBC(unsigned short value) { splitTo8BitsPair(value, &reg.pair.B, &reg.pair.C); }
     inline void setBC2(unsigned short value) { splitTo8BitsPair(value, &reg.back.B, &reg.back.C); }
     inline void setDE(unsigned short value) { splitTo8BitsPair(value, &reg.pair.D, &reg.pair.E); }
@@ -919,6 +961,7 @@ class Z80
     {
         ctx->reg.pair.F = ctx->pop(3);
         ctx->reg.pair.A = ctx->pop(3);
+        ctx->maskUndocumentedFlags(); // R1
 #ifndef Z80_DISABLE_DEBUG
         if (ctx->isDebug()) ctx->log("[%04X] POP AF <SP:$%04X> = $%04X", ctx->reg.PC - 1, ctx->reg.SP - 2, ctx->getAF());
 #endif
@@ -1832,9 +1875,9 @@ class Z80
         setBC(bc);
         setDE(de);
         setHL(hl);
-        resetFlagH();
+        if (!isUpd9002()) resetFlagH(); // R5
         setFlagPV(bc != 0);
-        resetFlagN();
+        if (!isUpd9002()) resetFlagN(); // R5
         unsigned char an = reg.pair.A + n;
         setFlagY(an & 0b00000010);
         setFlagX(an & 0b00001000);
@@ -2018,8 +2061,10 @@ class Z80
     inline void setFlagByRotate(unsigned char n, bool carry, bool isA = false)
     {
         setFlagC(carry);
-        resetFlagH();
-        resetFlagN();
+        if (!(isA && isUpd9002())) { // R4
+            resetFlagH();
+            resetFlagN();
+        }
         setFlagXY(n);
         if (!isA) {
             setFlagS(n & 0x80);
@@ -3707,7 +3752,7 @@ class Z80
         resetFlagN();
         setFlagXY((result & 0xFF00) >> 8);
         setFlagC((carrybits & 0x10000) != 0);
-        setFlagH((carrybits & 0x1000) != 0);
+        if (!isUpd9002()) setFlagH((carrybits & 0x1000) != 0); // R6
     }
 
     inline void setFlagByAdc16(unsigned short before, unsigned short addition, unsigned char carry)
@@ -3759,6 +3804,7 @@ class Z80
         unsigned char c = isFlagC() ? 1 : 0;
         reg.WZ = hl + 1;
         setFlagByAdc16(hl, nn, c);
+        if (isUpd9002()) setFlagH(((hl & 0xF) + (nn & 0xF) + c) > 0xF); // R7
         setHL(hl + c + nn);
         consumeClock(7);
     }
@@ -3896,6 +3942,7 @@ class Z80
         unsigned char c = isFlagC() ? 1 : 0;
         reg.WZ = hl + 1;
         setFlagBySbc16(hl, nn, c);
+        if (isUpd9002()) setFlagH((hl & 0xF) < ((nn & 0xF) + c)); // R7
         setHL(hl - c - nn);
         consumeClock(7);
     }
@@ -3914,7 +3961,7 @@ class Z80
     {
         reg.pair.A &= n;
         setFlagByLogical();
-        setFlagH();
+        setFlagH(!isUpd9002()); // R2
     }
 
     inline void or8(unsigned char n)
@@ -4369,7 +4416,7 @@ class Z80
         setFlagZ(n ? false : true);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
-        setFlagH();
+        setFlagH(!isUpd9002()); // R3
         resetFlagN();
         setFlagXY(*rp);
     }
@@ -4393,7 +4440,7 @@ class Z80
         setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
-        setFlagH();
+        setFlagH(!isUpd9002()); // R3
         resetFlagN();
         setFlagXY((reg.WZ & 0xFF00) >> 8);
     }
@@ -4417,7 +4464,7 @@ class Z80
         setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
-        setFlagH();
+        setFlagH(!isUpd9002()); // R3
         resetFlagN();
         setFlagXY((reg.WZ & 0xFF00) >> 8);
     }
@@ -4441,7 +4488,7 @@ class Z80
         setFlagZ(!n);
         setFlagPV(isFlagZ());
         setFlagS(!isFlagZ() && 7 == bit);
-        setFlagH();
+        setFlagH(!isUpd9002()); // R3
         resetFlagN();
         setFlagXY((reg.WZ & 0xFF00) >> 8);
     }
@@ -6152,6 +6199,7 @@ class Z80
         reg.pair.A = 0xff;
         reg.pair.F = 0xff;
         reg.SP = 0xffff;
+        maskUndocumentedFlags(); // R1
         memset(&wtc, 0, sizeof(wtc));
     }
 
