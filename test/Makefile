@@ -23,6 +23,7 @@ all:
 	make test-remove-break
 	make test-unknown 
 	make test-repio
+	make test-adc-sbc-16
 
 test-execute:
 	clang $(CFLAGS) test-execute.cpp -lstdc++
@@ -75,3 +76,7 @@ test-checkreg-on-callback:
 	clang $(CFLAGS) test-checkreg-on-callback.cpp -lstdc++
 	./a.out > test-checkreg-on-callback.txt
 	cat test-checkreg-on-callback.txt
+
+test-adc-sbc-16:
+	clang $(CFLAGS) test-adc-sbc-16.cpp -lstdc++
+	./a.out
