@@ -385,7 +385,7 @@ The NEC uPD9002 used in the PC-88VA has a Z80 emulation mode whose flags differ.
 [real PC-88VA2 measurements and analysis](https://github.com/nakatamaho/vaeg/blob/HEAD/docs/modernization/uPD9002-zex-results.md).
 The rules below reproduce byte for byte the ZEXDOC/ZEXALL results (all 67 groups of each suite,
 measured in V2 mode and again in V3 mode through BRKEM), direct single-instruction flag probes,
-and exhaustive DAA/CPL/SCF/CCF dumps; each rule was observed directly on the real machine:
+exhaustive DAA/CPL/SCF/CCF dumps, and DD/FD CB probes; each rule was observed directly on the real machine:
 
 | Rule | Instructions | uPD9002 behaviour |
 |:-|:-|:-|
@@ -400,6 +400,8 @@ and exhaustive DAA/CPL/SCF/CCF dumps; each rule was observed directly on the rea
 | R9 | `SCF` | only C is set (H and N are not changed) |
 | R10 | `CCF` | only C is complemented (H and N are not changed) |
 | R11 | `DAA` | see below |
+| R12 | `BIT n,(IX+d),r` / `(IY+d)` (DD/FD CB d 40–7F, low bits ≠ 6) | tests register r instead of memory |
+| R13 | `RES`/`SET n,(IX+d),r` / `(IY+d)` (DD/FD CB d 80–FF, low bits ≠ 6) | modifies register r only; memory is not written |
 
 R11 (`DAA`): the low step (±$06) runs when H=1 or the low nibble of A is above 9; the high step (±$60) runs when C=1 or A is above $99 (H=0) or above $9F (H=1), both tested on the original A; N selects add or subtract.
 S and Z come from the result, H is set when the low step ran, P/V is the signed overflow of A ± the adjustment (not parity), C is set when the high step ran, and N is not changed.

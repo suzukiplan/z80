@@ -120,8 +120,8 @@ class Z80
     // Zilog: documented and undocumented Zilog Z80 flag behaviour. This is the
     // default and the existing behaviour.
     // Upd9002: NEC uPD9002 Z80 emulation mode (PC-88VA V1/V2 mode). Rules
-    // R1-R11 were measured on a real PC-88VA2 (ZEXDOC/ZEXALL, direct flag
-    // probes and exhaustive DAA/CPL/SCF/CCF dumps).
+    // R1-R13 were measured on a real PC-88VA2 (ZEXDOC/ZEXALL, direct flag
+    // probes and exhaustive DAA/CPL/SCF/CCF and DDCB/FDCB probes).
     enum class FlagProfile {
         Zilog,
         Upd9002
@@ -743,6 +743,12 @@ class Z80
         ctx->checkBreakOperandIX4(op4);
 #endif
         ctx->reg.WZ = (unsigned short)(ctx->reg.IX + op3);
+        if (ctx->isUpd9002() && op4 >= 0x40 && (op4 & 0x07) != 0x06) {
+            // R12/R13: BIT/RES/SET n,(i+d),r act on register r only, like the
+            // unprefixed CB opcode; memory is not modified
+            ctx->opSetCB[op4](ctx);
+            return;
+        }
         ctx->opSetIX4[op4](ctx, op3);
     }
 
@@ -754,6 +760,12 @@ class Z80
         ctx->checkBreakOperandIY4(op4);
 #endif
         ctx->reg.WZ = (unsigned short)(ctx->reg.IY + op3);
+        if (ctx->isUpd9002() && op4 >= 0x40 && (op4 & 0x07) != 0x06) {
+            // R12/R13: BIT/RES/SET n,(i+d),r act on register r only, like the
+            // unprefixed CB opcode; memory is not modified
+            ctx->opSetCB[op4](ctx);
+            return;
+        }
         ctx->opSetIY4[op4](ctx, op3);
     }
 
