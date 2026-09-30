@@ -742,6 +742,7 @@ class Z80
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIX4(op4);
 #endif
+        ctx->reg.WZ = (unsigned short)(ctx->reg.IX + op3);
         ctx->opSetIX4[op4](ctx, op3);
     }
 
@@ -752,6 +753,7 @@ class Z80
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIY4(op4);
 #endif
+        ctx->reg.WZ = (unsigned short)(ctx->reg.IY + op3);
         ctx->opSetIY4[op4](ctx, op3);
     }
 

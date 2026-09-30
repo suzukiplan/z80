@@ -171,7 +171,11 @@ static int runProbe(const Probe& probe, Z80::FlagProfile profile)
     z80.reg.SP = 0xF000;
     z80.reg.IX = 0x2801;
     z80.reg.IY = 0x27FF;
-    z80.reg.WZ = 0x2800;
+    const bool indexedBit = probe.bodySize == 4 && probe.body[1] == 0xCB
+        && (probe.body[0] == 0xDD || probe.body[0] == 0xFD)
+        && (probe.body[3] & 0xC0) == 0x40;
+    // BIT (HL) uses the existing WZ; indexed BIT must establish its own WZ.
+    z80.reg.WZ = indexedBit ? 0x1000 : 0x2800;
     if (!runUntil(z80, end)) {
         std::cout << "NG: " << profileName(profile) << " " << probe.name
                   << " exceeded " << instructionLimit << " instructions: PC=" << z80.reg.PC
@@ -180,6 +184,11 @@ static int runProbe(const Probe& probe, Z80::FlagProfile profile)
     }
     unsigned char expectedF = profile == Z80::FlagProfile::Upd9002 ? probe.fUpd9002 : probe.fZilog;
     bool ok = z80.reg.pair.A == probe.a && z80.reg.pair.E == expectedF;
+    if (indexedBit && z80.reg.WZ != 0x2800) {
+        std::cout << "NG: " << profileName(profile) << " " << probe.name
+                  << " WZ=" << z80.reg.WZ << " (expected " << 0x2800 << ")\n";
+        ok = false;
+    }
     std::cout << (ok ? "OK" : "NG") << ": " << profileName(profile) << " " << probe.name;
     printFlags(z80.reg.pair.A, z80.reg.pair.E);
     std::cout << " (expected";
