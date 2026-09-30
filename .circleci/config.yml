@@ -5,7 +5,18 @@ jobs:
     docker:
       - image: cimg/base:stable
     steps:
-      - checkout
+      - run:
+          name: "Checkout public repository over HTTPS"
+          command: |
+            # Public sources do not need a CircleCI SSH checkout key.
+            # Fetch the pipeline revision, not the current branch tip.
+            : "${CIRCLE_SHA1:?CIRCLE_SHA1 must identify the pipeline revision}"
+            export GIT_TERMINAL_PROMPT=0
+            git init .
+            git remote add origin https://github.com/suzukiplan/z80.git
+            git fetch --depth=1 origin "$CIRCLE_SHA1"
+            git checkout --detach FETCH_HEAD
+            test "$(git rev-parse HEAD)" = "$CIRCLE_SHA1"
       - run:
           name: "Install Prerequests"
           command: "sudo apt-get update && sudo apt-get install -y clang g++-10"
