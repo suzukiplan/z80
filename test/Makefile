@@ -25,6 +25,7 @@ all:
 	make test-repio
 	make test-adc-sbc-16
 	make test-flag-profile
+	make test-undefined-opcodes
 
 test-execute:
 	clang $(CFLAGS) test-execute.cpp -lstdc++
@@ -84,4 +85,8 @@ test-adc-sbc-16:
 
 test-flag-profile:
 	clang $(CFLAGS) test-flag-profile.cpp -lstdc++
+	./a.out
+
+test-undefined-opcodes:
+	clang $(CFLAGS) test-undefined-opcodes.cpp -lstdc++
 	./a.out

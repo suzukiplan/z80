@@ -687,16 +687,64 @@ class Z80
         ctx->opSetCB[operandNumber](ctx);
     }
 
+#ifdef Z80_NO_EXCEPTION
+    // Without exceptions, an opcode that has no handler is executed as on a
+    // Zilog Z80 instead of calling a null handler: NEG, RETN and IM
+    // duplicates behave as the base instruction, and every other undefined
+    // ED opcode is a two-byte NOP (8 clocks, consumed by the two fetches).
+    inline void undefinedED(unsigned char operandNumber)
+    {
+        switch (operandNumber) {
+            case 0x4C:
+            case 0x54:
+            case 0x5C:
+            case 0x64:
+            case 0x6C:
+            case 0x74:
+            case 0x7C:
+                NEG();
+                return;
+            case 0x55:
+            case 0x5D:
+            case 0x65:
+            case 0x6D:
+            case 0x75:
+            case 0x7D:
+                RETN();
+                return;
+            case 0x4E:
+            case 0x66:
+            case 0x6E:
+                IM(0);
+                return;
+            case 0x76:
+                IM(1);
+                return;
+            case 0x7E:
+                IM(2);
+                return;
+            default:
+#ifndef Z80_DISABLE_DEBUG
+                if (isDebug()) log("[%04X] NOP (ED,%02X)", reg.PC - 2, operandNumber);
+#endif
+                return;
+        }
+    }
+#endif
+
     static inline void OP_ED(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
-#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetED[operandNumber]) {
+#ifndef Z80_NO_EXCEPTION
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (ED,%02X)", operandNumber);
             throw std::runtime_error(buf);
-        }
+#else
+            ctx->undefinedED(operandNumber);
+            return;
 #endif
+        }
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandED(operandNumber);
 #endif
@@ -706,13 +754,19 @@ class Z80
     static inline void OP_IX(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
-#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetIX[operandNumber]) {
+#ifndef Z80_NO_EXCEPTION
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (DD,%02X)", operandNumber);
             throw std::runtime_error(buf);
-        }
+#else
+            // Without exceptions: DD before an opcode that does not use HL
+            // is ignored, as on a Zilog Z80 (this also covers repeated
+            // prefixes and DD ED)
+            ctx->opSet1[operandNumber](ctx);
+            return;
 #endif
+        }
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIX(operandNumber);
 #endif
@@ -722,13 +776,19 @@ class Z80
     static inline void OP_IY(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
-#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetIY[operandNumber]) {
+#ifndef Z80_NO_EXCEPTION
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (FD,%02X)", operandNumber);
             throw std::runtime_error(buf);
-        }
+#else
+            // Without exceptions: FD before an opcode that does not use HL
+            // is ignored, as on a Zilog Z80 (this also covers repeated
+            // prefixes and FD ED)
+            ctx->opSet1[operandNumber](ctx);
+            return;
 #endif
+        }
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIY(operandNumber);
 #endif
