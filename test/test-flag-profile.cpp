@@ -2,6 +2,10 @@
 // uPD9002 Z80 emulation mode, rules R1-R7). F is loaded with PUSH BC / POP AF
 // and captured with PUSH AF / POP DE right after the instruction under test.
 #include "z80.hpp"
+#include <array>
+#include <functional>
+#include <iomanip>
+#include <iostream>
 
 struct Probe {
     const char* name;
@@ -52,108 +56,144 @@ static bool runUntil(Z80& z80, unsigned short end)
     return z80.reg.PC == end;
 }
 
+using Memory = std::array<unsigned char, 65536>;
+
+static void setupMemory(Z80& z80, Memory& memory)
+{
+    // Adapt the typed memory operations to the API's unused context argument.
+    z80.setupCallback(
+        std::bind([&memory](unsigned short addr) { return memory[addr]; }, std::placeholders::_2),
+        std::bind([&memory](unsigned short addr, unsigned char value) { memory[addr] = value; },
+                  std::placeholders::_2, std::placeholders::_3),
+        std::bind([]() { return static_cast<unsigned char>(0xFF); }),
+        std::bind([]() {
+            // No I/O devices are attached to this memory-only test machine.
+        }),
+        nullptr);
+}
+
 static int testInstructionLimit()
 {
-    unsigned char memory[65536] = {0xC3, 0x00, 0x00}; // JP $0000
-    Z80 z80([&memory](void* arg, unsigned short addr) { return memory[addr]; },
-            [&memory](void* arg, unsigned short addr, unsigned char value) { memory[addr] = value; },
-            [](void* arg, unsigned short port) { return (unsigned char)0xFF; },
-            [](void* arg, unsigned short port, unsigned char value) {},
-            nullptr);
+    Memory memory = {{0xC3, 0x00, 0x00}}; // JP $0000
+    Z80 z80;
+    setupMemory(z80, memory);
     bool stopped = !runUntil(z80, 3);
-    printf("%s: instruction limit rejects infinite loop\n", stopped ? "OK" : "NG");
+    std::cout << (stopped ? "OK" : "NG") << ": instruction limit rejects infinite loop\n";
     memory[0] = 0x00; // NOPs reach the endpoint on the final allowed instruction.
     z80.initialize();
     bool reached = runUntil(z80, (unsigned short)instructionLimit);
-    printf("%s: instruction limit accepts exact boundary\n", reached ? "OK" : "NG");
+    std::cout << (reached ? "OK" : "NG") << ": instruction limit accepts exact boundary\n";
     return (stopped ? 0 : 1) + (reached ? 0 : 1);
+}
+
+static const char* profileName(Z80::FlagProfile profile)
+{
+    return profile == Z80::FlagProfile::Upd9002 ? "Upd9002" : "Zilog";
+}
+
+static void printFlags(unsigned char a, unsigned char f)
+{
+    std::cout << std::hex << std::uppercase << std::setfill('0')
+              << " A=$" << std::setw(2) << static_cast<unsigned int>(a)
+              << " F=$" << std::setw(2) << static_cast<unsigned int>(f)
+              << std::dec << std::setfill(' ');
 }
 
 static int checkState(const char* name, const Z80& z80, Z80::FlagProfile profile,
                       unsigned char f, unsigned char f2)
 {
     bool ok = z80.getFlagProfile() == profile && z80.reg.pair.F == f && z80.reg.back.F == f2;
-    printf("%s: %s profile=%d F=$%02X F'=$%02X (expected profile=%d F=$%02X F'=$%02X)\n",
-           ok ? "OK" : "NG", name, (int)z80.getFlagProfile(), z80.reg.pair.F, z80.reg.back.F,
-           (int)profile, f, f2);
+    std::cout << (ok ? "OK" : "NG") << ": " << name
+              << " profile=" << profileName(z80.getFlagProfile())
+              << " F=" << static_cast<unsigned int>(z80.reg.pair.F)
+              << " F'=" << static_cast<unsigned int>(z80.reg.back.F)
+              << " (expected profile=" << profileName(profile)
+              << " F=" << static_cast<unsigned int>(f)
+              << " F'=" << static_cast<unsigned int>(f2) << ")\n";
     return ok ? 0 : 1;
 }
 
 static int testProfileLifecycle()
 {
+    const auto zilog = Z80::FlagProfile::Zilog;
+    const auto upd9002 = Z80::FlagProfile::Upd9002;
     Z80 z80;
-    int failures = checkState("default initialization", z80, Z80::FlagProfile::Zilog, 0xFF, 0x00);
+    int failures = checkState("default initialization", z80, zilog, 0xFF, 0x00);
     z80.reg.pair.F = 0xFF;
     z80.reg.back.F = 0xAB;
-    z80.setFlagProfile(Z80::FlagProfile::Upd9002);
-    failures += checkState("switch to Upd9002", z80, Z80::FlagProfile::Upd9002, 0xD7, 0x83);
+    z80.setFlagProfile(upd9002);
+    failures += checkState("switch to Upd9002", z80, upd9002, 0xD7, 0x83);
     Z80 other;
-    failures += checkState("independent instance", other, Z80::FlagProfile::Zilog, 0xFF, 0x00);
-    z80.setFlagProfile(Z80::FlagProfile::Zilog);
-    failures += checkState("switch back to Zilog", z80, Z80::FlagProfile::Zilog, 0xD7, 0x83);
+    failures += checkState("independent instance", other, zilog, 0xFF, 0x00);
+    z80.setFlagProfile(zilog);
+    failures += checkState("switch back to Zilog", z80, zilog, 0xD7, 0x83);
     z80.reg.pair.F = 0xFF;
     z80.reg.back.F = 0xAB;
-    z80.setFlagProfile(Z80::FlagProfile::Zilog);
-    failures += checkState("Zilog preserves bits 5/3", z80, Z80::FlagProfile::Zilog, 0xFF, 0xAB);
+    z80.setFlagProfile(zilog);
+    failures += checkState("Zilog preserves bits 5/3", z80, zilog, 0xFF, 0xAB);
     z80.initialize();
-    failures += checkState("initialize Zilog", z80, Z80::FlagProfile::Zilog, 0xFF, 0x00);
-    z80.setFlagProfile(Z80::FlagProfile::Upd9002);
+    failures += checkState("initialize Zilog", z80, zilog, 0xFF, 0x00);
+    z80.setFlagProfile(upd9002);
     z80.reg.back.F = 0xFF;
     z80.initialize();
-    failures += checkState("initialize keeps Upd9002", z80, Z80::FlagProfile::Upd9002, 0xD7, 0x00);
+    failures += checkState("initialize keeps Upd9002", z80, upd9002, 0xD7, 0x00);
     return failures;
+}
+
+static int runProbe(const Probe& probe, Z80::FlagProfile profile)
+{
+    Memory memory = {};
+    // Nonzero effective address bits 5/3 also exercise the Zilog XY flags.
+    memory[0x2800] = 0x80;
+    unsigned char* p = memory.data();
+    *p++ = 0x01; // LD BC,af
+    *p++ = (unsigned char)probe.af;
+    *p++ = (unsigned char)(probe.af >> 8);
+    *p++ = 0xC5; // PUSH BC
+    *p++ = 0xF1; // POP AF
+    *p++ = 0x01; // LD BC,bc
+    *p++ = (unsigned char)probe.bc;
+    *p++ = (unsigned char)(probe.bc >> 8);
+    *p++ = 0x21; // LD HL,hl
+    *p++ = (unsigned char)probe.hl;
+    *p++ = (unsigned char)(probe.hl >> 8);
+    *p++ = 0x11; // LD DE,$5000
+    *p++ = 0x00;
+    *p++ = 0x50;
+    memcpy(p, probe.body, (size_t)probe.bodySize);
+    p += probe.bodySize;
+    *p++ = 0xF5; // PUSH AF
+    *p++ = 0xD1; // POP DE
+    unsigned short end = (unsigned short)(p - memory.data());
+    Z80 z80;
+    setupMemory(z80, memory);
+    z80.setFlagProfile(profile);
+    z80.reg.SP = 0xF000;
+    z80.reg.IX = 0x2801;
+    z80.reg.IY = 0x27FF;
+    z80.reg.WZ = 0x2800;
+    if (!runUntil(z80, end)) {
+        std::cout << "NG: " << profileName(profile) << " " << probe.name
+                  << " exceeded " << instructionLimit << " instructions: PC=" << z80.reg.PC
+                  << " expected=" << end << "\n";
+        return 1;
+    }
+    unsigned char expectedF = profile == Z80::FlagProfile::Upd9002 ? probe.fUpd9002 : probe.fZilog;
+    bool ok = z80.reg.pair.A == probe.a && z80.reg.pair.E == expectedF;
+    std::cout << (ok ? "OK" : "NG") << ": " << profileName(profile) << " " << probe.name;
+    printFlags(z80.reg.pair.A, z80.reg.pair.E);
+    std::cout << " (expected";
+    printFlags(probe.a, expectedF);
+    std::cout << ")\n";
+    return ok ? 0 : 1;
 }
 
 int main()
 {
-    unsigned char memory[65536];
     int failures = testProfileLifecycle() + testInstructionLimit();
     for (int profile = 0; profile < 2; profile++) {
         for (const Probe& probe : probes) {
-            memset(memory, 0, sizeof(memory));
-            // Nonzero effective address bits 5/3 also exercise the Zilog XY flags.
-            memory[0x2800] = 0x80;
-            unsigned char* p = memory;
-            *p++ = 0x01; // LD BC,af
-            *p++ = (unsigned char)probe.af;
-            *p++ = (unsigned char)(probe.af >> 8);
-            *p++ = 0xC5; // PUSH BC
-            *p++ = 0xF1; // POP AF
-            *p++ = 0x01; // LD BC,bc
-            *p++ = (unsigned char)probe.bc;
-            *p++ = (unsigned char)(probe.bc >> 8);
-            *p++ = 0x21; // LD HL,hl
-            *p++ = (unsigned char)probe.hl;
-            *p++ = (unsigned char)(probe.hl >> 8);
-            *p++ = 0x11; // LD DE,$5000
-            *p++ = 0x00;
-            *p++ = 0x50;
-            memcpy(p, probe.body, (size_t)probe.bodySize);
-            p += probe.bodySize;
-            *p++ = 0xF5; // PUSH AF
-            *p++ = 0xD1; // POP DE
-            unsigned short end = (unsigned short)(p - memory);
-            Z80 z80([&memory](void* arg, unsigned short addr) { return memory[addr]; },
-                    [&memory](void* arg, unsigned short addr, unsigned char value) { memory[addr] = value; },
-                    [](void* arg, unsigned short port) { return (unsigned char)0xFF; },
-                    [](void* arg, unsigned short port, unsigned char value) {},
-                    &z80);
-            z80.setFlagProfile(profile ? Z80::FlagProfile::Upd9002 : Z80::FlagProfile::Zilog);
-            z80.reg.SP = 0xF000;
-            z80.reg.IX = 0x2801;
-            z80.reg.IY = 0x27FF;
-            z80.reg.WZ = 0x2800;
-            if (!runUntil(z80, end)) {
-                printf("NG: %s %s exceeded %d instructions: PC=$%04X expected=$%04X\n",
-                       profile ? "Upd9002" : "Zilog", probe.name, instructionLimit, z80.reg.PC, end);
-                failures++;
-                continue;
-            }
-            unsigned char expectedF = profile ? probe.fUpd9002 : probe.fZilog;
-            bool ok = z80.reg.pair.A == probe.a && z80.reg.pair.E == expectedF;
-            printf("%s: %-8s %-20s A=$%02X F=$%02X (expected A=$%02X F=$%02X)\n", ok ? "OK" : "NG",
-                   profile ? "Upd9002" : "Zilog", probe.name, z80.reg.pair.A, z80.reg.pair.E, probe.a, expectedF);
-            if (!ok) failures++;
+            failures += runProbe(probe, profile ? Z80::FlagProfile::Upd9002 : Z80::FlagProfile::Zilog);
         }
     }
     return failures ? -1 : 0;
