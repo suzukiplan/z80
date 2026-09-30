@@ -381,7 +381,10 @@ ReturnHandler will be called back immediately **before** a branch by a RET instr
 By default the flags follow the Zilog Z80, including the undocumented bits 5 and 3 (`Z80::FlagProfile::Zilog`).
 
 The NEC uPD9002 used in the PC-88VA has a Z80 emulation mode whose flags differ.
-`Z80::FlagProfile::Upd9002` reproduces the ZEXDOC/ZEXALL results measured on a real PC-88VA2 in V2 mode:
+`Z80::FlagProfile::Upd9002` is a **provisional compatibility profile**, based on
+[real PC-88VA2 V2-mode ZEXDOC/ZEXALL measurements and analysis](https://github.com/nakatamaho/vaeg/blob/HEAD/docs/modernization/uPD9002-zex-results.md).
+The following rules reproduce the reported CRCs except for the unresolved group below;
+they are inferred from test results, not individually confirmed hardware specifications:
 
 | Rule | Instructions | uPD9002 behaviour |
 |:-|:-|:-|
@@ -394,6 +397,9 @@ The NEC uPD9002 used in the PC-88VA has a Z80 emulation mode whose flags differ.
 | R7 | `ADC HL,rr` / `SBC HL,rr` | H is the carry/borrow out of bit 3 |
 
 `DAA`, `CPL`, `SCF` and `CCF` are not yet resolved and keep the Zilog behaviour.
+Whether real hardware can store F bits 5/3 through `POP AF` or `EX AF,AF'` is
+also unverified; clearing them on storage is an implementation assumption (R1).
+The profile may change as direct hardware probes resolve these uncertainties.
 
 ```c++
     z80.setFlagProfile(Z80::FlagProfile::Upd9002);
