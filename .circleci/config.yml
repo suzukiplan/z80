@@ -5,7 +5,30 @@ jobs:
     docker:
       - image: cimg/base:stable
     steps:
-      - checkout
+      - run:
+          name: "Checkout public repository over HTTPS"
+          command: |
+            # Public sources do not need a CircleCI SSH checkout key.
+            # Fetch the pipeline revision, not the current branch tip.
+            : "${CIRCLE_SHA1:?CIRCLE_SHA1 must identify the pipeline revision}"
+            # Fork PR commits belong to the source fork, not the target project.
+            if [ -n "${CIRCLE_PR_USERNAME:-}${CIRCLE_PR_REPONAME:-}" ]; then
+              checkout_owner="${CIRCLE_PR_USERNAME:?Missing fork repository owner}"
+              checkout_repo="${CIRCLE_PR_REPONAME:?Missing fork repository name}"
+            else
+              checkout_owner="${CIRCLE_PROJECT_USERNAME:?Missing project repository owner}"
+              checkout_repo="${CIRCLE_PROJECT_REPONAME:?Missing project repository name}"
+            fi
+            if [[ ! "$checkout_owner" =~ ^[A-Za-z0-9][A-Za-z0-9-]*$ || ! "$checkout_repo" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]*$ ]]; then
+              echo "Invalid GitHub repository owner or name" >&2
+              exit 1
+            fi
+            export GIT_TERMINAL_PROMPT=0
+            git init .
+            git remote add origin "https://github.com/${checkout_owner}/${checkout_repo}.git"
+            git fetch --depth=1 origin "$CIRCLE_SHA1"
+            git checkout --detach FETCH_HEAD
+            test "$(git rev-parse HEAD)" = "$CIRCLE_SHA1"
       - run:
           name: "Install Prerequests"
           command: "sudo apt-get update && sudo apt-get install -y clang g++-10"
