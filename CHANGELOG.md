@@ -1,5 +1,13 @@
 # Change log
 
+## Version 1.11.0 (Sep 30, 2026 JST)
+
+- Add an optional, provisional NEC uPD9002 flag profile while keeping Zilog behaviour as the default; document hardware measurements and unresolved behaviour.
+- Fix WZ updates for IX/IY-prefixed CB instructions so indexed BIT instructions use the effective address for undocumented flags.
+- Expand flag-profile tests to cover memory BIT instructions, ADC/SBC carry input, profile switching, initialization, and WZ updates; add an instruction limit to prevent hangs.
+- Refactor tests for maintainability and configure SonarCloud analysis for C++11 compatibility.
+- Use HTTPS checkout in CircleCI to avoid SSH key failures and verify the pipeline commit.
+
 ## Version 1.10.0 (Dec 6, 2023 JST)
 
 - Abolish FP functions _(NOTE: **Destructive** change)_
