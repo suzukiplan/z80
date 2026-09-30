@@ -24,6 +24,7 @@ all:
 	make test-unknown 
 	make test-repio
 	make test-adc-sbc-16
+	make test-flag-profile
 
 test-execute:
 	clang $(CFLAGS) test-execute.cpp -lstdc++
@@ -79,4 +80,8 @@ test-checkreg-on-callback:
 
 test-adc-sbc-16:
 	clang $(CFLAGS) test-adc-sbc-16.cpp -lstdc++
+	./a.out
+
+test-flag-profile:
+	clang $(CFLAGS) test-flag-profile.cpp -lstdc++
 	./a.out

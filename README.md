@@ -376,6 +376,29 @@ ReturnHandler will be called back immediately **before** a branch by a RET instr
 - call `addReturnHandlerFP` if you want to use the function pointer.
 - In the case of a condition-specified branch instruction, only the case where the branch is executed is callbacked.
 
+### Flag profile (NEC uPD9002 Z80 emulation mode)
+
+By default the flags follow the Zilog Z80, including the undocumented bits 5 and 3 (`Z80::FlagProfile::Zilog`).
+
+The NEC uPD9002 used in the PC-88VA has a Z80 emulation mode whose flags differ.
+`Z80::FlagProfile::Upd9002` reproduces the ZEXDOC/ZEXALL results measured on a real PC-88VA2 in V2 mode:
+
+| Rule | Instructions | uPD9002 behaviour |
+|:-|:-|:-|
+| R1 | all | F bits 5 and 3 are always 0 (also after `POP AF` and `EX AF,AF'`) |
+| R2 | `AND` | H = 0 |
+| R3 | `BIT n,r` / `(HL)` / `(IX+d)` / `(IY+d)` | H = 0 |
+| R4 | `RLCA` / `RRCA` / `RLA` / `RRA` | H and N are not changed |
+| R5 | `LDI` / `LDD` / `LDIR` / `LDDR` | H and N are not changed |
+| R6 | `ADD HL/IX/IY,rr` | H is not changed |
+| R7 | `ADC HL,rr` / `SBC HL,rr` | H is the carry/borrow out of bit 3 |
+
+`DAA`, `CPL`, `SCF` and `CCF` are not yet resolved and keep the Zilog behaviour.
+
+```c++
+    z80.setFlagProfile(Z80::FlagProfile::Upd9002);
+```
+
 ## Advanced Compile Flags
 
 There is a compile flag that disables certain features in order to adapt to environments with poor performance environments, i.e: Arduino or ESP32:
