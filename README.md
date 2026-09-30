@@ -381,10 +381,11 @@ ReturnHandler will be called back immediately **before** a branch by a RET instr
 By default the flags follow the Zilog Z80, including the undocumented bits 5 and 3 (`Z80::FlagProfile::Zilog`).
 
 The NEC uPD9002 used in the PC-88VA has a Z80 emulation mode whose flags differ.
-`Z80::FlagProfile::Upd9002` is a **provisional compatibility profile**, based on
-[real PC-88VA2 V2-mode ZEXDOC/ZEXALL measurements and analysis](https://github.com/nakatamaho/vaeg/blob/HEAD/docs/modernization/uPD9002-zex-results.md).
-The following rules reproduce the reported CRCs except for the unresolved group below;
-they are inferred from test results, not individually confirmed hardware specifications:
+`Z80::FlagProfile::Upd9002` is a compatibility profile based on
+[real PC-88VA2 measurements and analysis](https://github.com/nakatamaho/vaeg/blob/HEAD/docs/modernization/uPD9002-zex-results.md).
+The rules below reproduce byte for byte the ZEXDOC/ZEXALL results (all 67 groups of each suite,
+measured in V2 mode and again in V3 mode through BRKEM), direct single-instruction flag probes,
+and exhaustive DAA/CPL/SCF/CCF dumps; each rule was observed directly on the real machine:
 
 | Rule | Instructions | uPD9002 behaviour |
 |:-|:-|:-|
@@ -395,11 +396,16 @@ they are inferred from test results, not individually confirmed hardware specifi
 | R5 | `LDI` / `LDD` / `LDIR` / `LDDR` | H and N are not changed |
 | R6 | `ADD HL/IX/IY,rr` | H is not changed |
 | R7 | `ADC HL,rr` / `SBC HL,rr` | H is the carry/borrow out of bit 3 |
+| R8 | `CPL` | no flag changes |
+| R9 | `SCF` | only C is set (H and N are not changed) |
+| R10 | `CCF` | only C is complemented (H and N are not changed) |
+| R11 | `DAA` | see below |
 
-`DAA`, `CPL`, `SCF` and `CCF` are not yet resolved and keep the Zilog behaviour.
-Whether real hardware can store F bits 5/3 through `POP AF` or `EX AF,AF'` is
-also unverified; clearing them on storage is an implementation assumption (R1).
-The profile may change as direct hardware probes resolve these uncertainties.
+R11 (`DAA`): the low step (±$06) runs when H=1 or the low nibble of A is above 9; the high step (±$60) runs when C=1 or A is above $99 (H=0) or above $9F (H=1), both tested on the original A; N selects add or subtract.
+S and Z come from the result, H is set when the low step ran, P/V is the signed overflow of A ± the adjustment (not parity), C is set when the high step ran, and N is not changed.
+
+R1 is a storage rule: direct probes confirmed that bits 5/3 are not held through `POP AF` or `EX AF,AF'`.
+Instructions not covered by these rules keep the Zilog behaviour; the profile may be extended as further measurements resolve them.
 
 ```c++
     z80.setFlagProfile(Z80::FlagProfile::Upd9002);
