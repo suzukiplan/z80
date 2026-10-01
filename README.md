@@ -395,6 +395,8 @@ they are inferred from test results, not individually confirmed hardware specifi
 | R5 | `LDI` / `LDD` / `LDIR` / `LDDR` | H and N are not changed |
 | R6 | `ADD HL/IX/IY,rr` | H is not changed |
 | R7 | `ADC HL,rr` / `SBC HL,rr` | H is the carry/borrow out of bit 3 |
+| R12 | `BIT n,(IX+d),r` / `(IY+d)` (DD/FD CB d 40–7F, low bits ≠ 6) | tests register r instead of memory |
+| R13 | `RES`/`SET n,(IX+d),r` / `(IY+d)` (DD/FD CB d 80–FF, low bits ≠ 6) | modifies register r only; memory is not written |
 
 `DAA`, `CPL`, `SCF` and `CCF` are not yet resolved and keep the Zilog behaviour.
 Whether real hardware can store F bits 5/3 through `POP AF` or `EX AF,AF'` is
