@@ -5,13 +5,29 @@
 
 using Memory = std::array<unsigned char, 65536>;
 
+// C++11 callable adapters accept the API context without relying on void pointers
+// or generic lambdas; the memory is supplied directly by the test fixture.
+struct MemoryAccess {
+    Memory& memory;
+
+    template <typename Context>
+    unsigned char operator()(Context, unsigned short addr) const
+    {
+        return memory[addr];
+    }
+
+    template <typename Context>
+    void operator()(Context, unsigned short addr, unsigned char value) const
+    {
+        memory[addr] = value;
+    }
+};
+
 static void setupMemory(Z80& z80, Memory& memory)
 {
-    // Adapt the typed memory operations to the API's unused context argument.
     z80.setupCallback(
-        std::bind([&memory](unsigned short addr) { return memory[addr]; }, std::placeholders::_2),
-        std::bind([&memory](unsigned short addr, unsigned char value) { memory[addr] = value; },
-                  std::placeholders::_2, std::placeholders::_3),
+        MemoryAccess{memory},
+        MemoryAccess{memory},
         std::bind([]() { return static_cast<unsigned char>(0xFF); }),
         std::bind([]() {
             // No I/O devices are attached to this memory-only test machine.
