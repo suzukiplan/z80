@@ -1,5 +1,5 @@
 // FlagProfile test: Zilog (default) and Upd9002 (NEC
-// uPD9002 Z80 emulation mode, rules R1-R7). F is loaded with PUSH BC / POP AF
+// uPD9002 Z80 emulation mode, rules R1-R13). F is loaded with PUSH BC / POP AF
 // and captured with PUSH AF / POP DE right after the instruction under test.
 #include "z80.hpp"
 #include <array>
@@ -42,6 +42,24 @@ static const Probe probes[] = {
     {"SBC HL,FFFF (C=1)", 0x0001, 0xFFFF, 0x0000, {0xED, 0x42}, 2, 0x00, 0x53, 0x53},
     {"POP AF ($FFFF)", 0x0000, 0xFFFF, 0x0000, {0xC5, 0xF1}, 2, 0xFF, 0xFF, 0xD7}, // R1
     {"EX AF,AF' x2", 0x0000, 0xFFFF, 0x0000, {0xC5, 0xF1, 0x08, 0x08}, 4, 0xFF, 0xFF, 0xD7}, // R1
+    {"CPL", 0x0000, 0x0000, 0x0000, {0x2F}, 1, 0xFF, 0x3A, 0x00},                  // R8
+    {"CPL (F=$D7)", 0x00D7, 0x0000, 0x0000, {0x2F}, 1, 0xFF, 0xFF, 0xD7},          // R8
+    {"SCF (H,N set)", 0x0012, 0x0000, 0x0000, {0x37}, 1, 0x00, 0x01, 0x13},        // R9
+    {"CCF (C set)", 0x0013, 0x0000, 0x0000, {0x3F}, 1, 0x00, 0x10, 0x12},          // R10
+    {"CCF (C clear)", 0x0012, 0x0000, 0x0000, {0x3F}, 1, 0x00, 0x01, 0x13},        // R10
+    {"DAA A=$00", 0x0000, 0x0000, 0x0000, {0x27}, 1, 0x00, 0x44, 0x40},            // R11
+    {"DAA A=$7A", 0x7A00, 0x0000, 0x0000, {0x27}, 1, 0x80, 0x90, 0x94},            // R11
+};
+// DAA cases whose A result also differs between the profiles (R11: with H=1
+// the high step needs A > $9F instead of A > $99).
+struct DaaHighProbe {
+    Probe probe;            // probe.a and probe.fZilog are the Zilog results
+    unsigned char aUpd9002; // expected A, Upd9002
+};
+
+static const DaaHighProbe daaHighProbes[] = {
+    {{"DAA A=$9A H", 0x9A10, 0x0000, 0x0000, {0x27}, 1, 0x00, 0x55, 0x90}, 0xA0},
+    {{"DAA A=$9A H N", 0x9A12, 0x0000, 0x0000, {0x27}, 1, 0x34, 0x23, 0x92}, 0x94},
 };
 
 // Each probe needs fewer than 16 instructions; leave room for setup changes.
@@ -140,7 +158,8 @@ static int testProfileLifecycle()
     return failures;
 }
 
-static int runProbe(const Probe& probe, Z80::FlagProfile profile)
+static int runProbeExpecting(const Probe& probe, Z80::FlagProfile profile, unsigned char expectedA,
+                             unsigned char expectedF)
 {
     Memory memory = {};
     // Nonzero effective address bits 5/3 also exercise the Zilog XY flags.
@@ -182,8 +201,7 @@ static int runProbe(const Probe& probe, Z80::FlagProfile profile)
                   << " expected=" << end << "\n";
         return 1;
     }
-    unsigned char expectedF = profile == Z80::FlagProfile::Upd9002 ? probe.fUpd9002 : probe.fZilog;
-    bool ok = z80.reg.pair.A == probe.a && z80.reg.pair.E == expectedF;
+    bool ok = z80.reg.pair.A == expectedA && z80.reg.pair.E == expectedF;
     if (indexedBit && z80.reg.WZ != 0x2800) {
         std::cout << "NG: " << profileName(profile) << " " << probe.name
                   << " WZ=" << z80.reg.WZ << " (expected " << 0x2800 << ")\n";
@@ -192,8 +210,70 @@ static int runProbe(const Probe& probe, Z80::FlagProfile profile)
     std::cout << (ok ? "OK" : "NG") << ": " << profileName(profile) << " " << probe.name;
     printFlags(z80.reg.pair.A, z80.reg.pair.E);
     std::cout << " (expected";
-    printFlags(probe.a, expectedF);
+    printFlags(expectedA, expectedF);
     std::cout << ")\n";
+    return ok ? 0 : 1;
+}
+
+static int runProbe(const Probe& probe, Z80::FlagProfile profile)
+{
+    const bool upd9002 = profile == Z80::FlagProfile::Upd9002;
+    return runProbeExpecting(probe, profile, probe.a, upd9002 ? probe.fUpd9002 : probe.fZilog);
+}
+
+static int runDaaHighProbe(const DaaHighProbe& daa, Z80::FlagProfile profile)
+{
+    const bool upd9002 = profile == Z80::FlagProfile::Upd9002;
+    return runProbeExpecting(daa.probe, profile, upd9002 ? daa.aUpd9002 : daa.probe.a,
+                             upd9002 ? daa.probe.fUpd9002 : daa.probe.fZilog);
+}
+
+// R12/R13: DD CB d xx with a register operand (low three bits != 6).
+struct IndexedRegisterProbe {
+    const char* name;
+    unsigned char op;
+    unsigned char zilogB, zilogMemory, zilogF;
+    unsigned char upd9002B, upd9002Memory, upd9002F;
+};
+
+static const IndexedRegisterProbe indexedRegisterProbes[] = {
+    // B=$0B and (IX+2)=$81 before the instruction; A=F=$00
+    {"RES 0,(IX+2),B", 0x80, 0x80, 0x80, 0x00, 0x0A, 0x81, 0x00},
+    {"SET 7,(IX+2),B", 0xF8, 0x81, 0x81, 0x00, 0x8B, 0x81, 0x00},
+    {"BIT 0,(IX+2) [B]", 0x40, 0x0B, 0x81, 0x10, 0x0B, 0x81, 0x00}, // Zilog tests memory, Upd9002 tests B
+    {"BIT 2,(IX+2) [B]", 0x50, 0x0B, 0x81, 0x54, 0x0B, 0x81, 0x44},
+};
+
+static int runIndexedRegisterProbe(const IndexedRegisterProbe& probe, Z80::FlagProfile profile)
+{
+    Memory memory = {};
+    const unsigned char code[] = {0x06, 0x0B, 0xDD, 0xCB, 0x02, probe.op, 0xF5, 0xD1}; // LD B,$0B; op; PUSH AF; POP DE
+    memcpy(memory.data(), code, sizeof(code));
+    memory[0x5002] = 0x81;
+    Z80 z80;
+    setupMemory(z80, memory);
+    z80.setFlagProfile(profile);
+    z80.reg.SP = 0xF000;
+    z80.reg.IX = 0x5000;
+    z80.reg.pair.A = 0x00;
+    z80.reg.pair.F = 0x00;
+    if (!runUntil(z80, (unsigned short)sizeof(code))) {
+        std::cout << "NG: " << profileName(profile) << " " << probe.name << " did not finish\n";
+        return 1;
+    }
+    const bool upd9002 = profile == Z80::FlagProfile::Upd9002;
+    const unsigned char b = upd9002 ? probe.upd9002B : probe.zilogB;
+    const unsigned char mem = upd9002 ? probe.upd9002Memory : probe.zilogMemory;
+    const unsigned char f = upd9002 ? probe.upd9002F : probe.zilogF;
+    const bool ok = z80.reg.pair.B == b && memory[0x5002] == mem && z80.reg.pair.E == f;
+    std::cout << (ok ? "OK" : "NG") << ": " << profileName(profile) << " " << probe.name << std::hex
+              << std::uppercase << std::setfill('0') << " B=$" << std::setw(2)
+              << static_cast<unsigned int>(z80.reg.pair.B) << " (IX+2)=$" << std::setw(2)
+              << static_cast<unsigned int>(memory[0x5002]) << " F=$" << std::setw(2)
+              << static_cast<unsigned int>(z80.reg.pair.E) << " (expected B=$" << std::setw(2)
+              << static_cast<unsigned int>(b) << " (IX+2)=$" << std::setw(2) << static_cast<unsigned int>(mem)
+              << " F=$" << std::setw(2) << static_cast<unsigned int>(f) << ")" << std::dec
+              << std::setfill(' ') << "\n";
     return ok ? 0 : 1;
 }
 
@@ -203,6 +283,16 @@ int main()
     for (int profile = 0; profile < 2; profile++) {
         for (const Probe& probe : probes) {
             failures += runProbe(probe, profile ? Z80::FlagProfile::Upd9002 : Z80::FlagProfile::Zilog);
+        }
+    }
+    for (int profile = 0; profile < 2; profile++) {
+        for (const DaaHighProbe& daa : daaHighProbes) {
+            failures += runDaaHighProbe(daa, profile ? Z80::FlagProfile::Upd9002 : Z80::FlagProfile::Zilog);
+        }
+    }
+    for (int profile = 0; profile < 2; profile++) {
+        for (const IndexedRegisterProbe& probe : indexedRegisterProbes) {
+            failures += runIndexedRegisterProbe(probe, profile ? Z80::FlagProfile::Upd9002 : Z80::FlagProfile::Zilog);
         }
     }
     return failures ? -1 : 0;
