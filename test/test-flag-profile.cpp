@@ -2,6 +2,7 @@
 // uPD9002 Z80 emulation mode, rules R1-R13). F is loaded with PUSH BC / POP AF
 // and captured with PUSH AF / POP DE right after the instruction under test.
 #include "z80.hpp"
+#include <algorithm>
 #include <array>
 #include <functional>
 #include <iomanip>
@@ -231,7 +232,8 @@ static int runDaaHighProbe(const DaaHighProbe& daa, Z80::FlagProfile profile)
 // R12/R13: DD/FD CB d xx with a register operand (low three bits != 6).
 struct IndexedRegisterProbe {
     const char* name;
-    unsigned char prefix, op;
+    unsigned char prefix;
+    unsigned char op;
     unsigned char zilogB, zilogMemory, zilogF;
     unsigned char upd9002B, upd9002Memory, upd9002F;
 };
@@ -250,8 +252,8 @@ static const IndexedRegisterProbe indexedRegisterProbes[] = {
 static int runIndexedRegisterProbe(const IndexedRegisterProbe& probe, Z80::FlagProfile profile)
 {
     Memory memory = {};
-    const unsigned char code[] = {0x06, 0x0B, probe.prefix, 0xCB, 0x02, probe.op, 0xF5, 0xD1}; // LD B,$0B; op; PUSH AF; POP DE
-    memcpy(memory.data(), code, sizeof(code));
+    const std::array<unsigned char, 8> code = {{0x06, 0x0B, probe.prefix, 0xCB, 0x02, probe.op, 0xF5, 0xD1}}; // LD B,$0B; op; PUSH AF; POP DE
+    std::copy(code.begin(), code.end(), memory.begin());
     memory[0x5002] = 0x81;
     Z80 z80;
     setupMemory(z80, memory);
@@ -261,7 +263,7 @@ static int runIndexedRegisterProbe(const IndexedRegisterProbe& probe, Z80::FlagP
     z80.reg.IY = 0x5000;
     z80.reg.pair.A = 0x00;
     z80.reg.pair.F = 0x00;
-    if (!runUntil(z80, (unsigned short)sizeof(code))) {
+    if (!runUntil(z80, (unsigned short)code.size())) {
         std::cout << "NG: " << profileName(profile) << " " << probe.name << " did not finish\n";
         return 1;
     }
