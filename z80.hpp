@@ -120,9 +120,8 @@ class Z80
     // Zilog: documented and undocumented Zilog Z80 flag behaviour. This is the
     // default and the existing behaviour.
     // Upd9002: NEC uPD9002 Z80 emulation mode (PC-88VA V1/V2 mode). Rules
-    // R1-R7 and R12/R13 are reproduced from ZEXDOC/ZEXALL and DDCB/FDCB
-    // probes on a real PC-88VA2;
-    // DAA/CPL/SCF/CCF are unresolved and keep Zilog behaviour.
+    // R1-R13 were measured on a real PC-88VA2 (ZEXDOC/ZEXALL, direct flag
+    // probes and exhaustive DAA/CPL/SCF/CCF and DDCB/FDCB probes).
     enum class FlagProfile {
         Zilog,
         Upd9002
@@ -4322,6 +4321,7 @@ class Z80
         if (ctx->isDebug()) ctx->log("[%04X] CPL %s", ctx->reg.PC - 1, ctx->registerDump(0b111));
 #endif
         ctx->reg.pair.A = ~ctx->reg.pair.A;
+        if (ctx->isUpd9002()) return; // R8: no flag changes
         ctx->setFlagH();
         ctx->setFlagN();
         ctx->setFlagXY(ctx->reg.pair.A);
@@ -4345,6 +4345,10 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (ctx->isDebug()) ctx->log("[%04X] CCF <C:%s -> %s>", ctx->reg.PC - 1, ctx->isFlagC() ? "ON" : "OFF", !ctx->isFlagC() ? "ON" : "OFF");
 #endif
+        if (ctx->isUpd9002()) {
+            ctx->setFlagC(!ctx->isFlagC()); // R10: only C changes
+            return;
+        }
         ctx->setFlagH(ctx->isFlagC());
         ctx->resetFlagN();
         ctx->setFlagC(!ctx->isFlagC());
@@ -4357,6 +4361,10 @@ class Z80
 #ifndef Z80_DISABLE_DEBUG
         if (ctx->isDebug()) ctx->log("[%04X] SCF <C:%s -> ON>", ctx->reg.PC - 1, ctx->isFlagC() ? "ON" : "OFF");
 #endif
+        if (ctx->isUpd9002()) {
+            ctx->setFlagC(); // R9: only C changes
+            return;
+        }
         ctx->resetFlagH();
         ctx->resetFlagN();
         ctx->setFlagC();
@@ -5675,6 +5683,10 @@ class Z80
     static inline void DAA(Z80* ctx) { ctx->daa(); }
     inline void daa()
     {
+        if (isUpd9002()) {
+            daaUpd9002();
+            return;
+        }
         int a = reg.pair.A;
         bool c = isFlagC();
         bool ac = reg.pair.A > 0x99;
@@ -5691,6 +5703,34 @@ class Z80
         if (isDebug()) log("[%04X] DAA ... A: $%02X -> $%02X", reg.PC - 1, reg.pair.A, a);
 #endif
         reg.pair.A = a;
+    }
+
+    // R11: uPD9002 DAA. The low step (+/-06h) runs when H=1 or the low nibble
+    // of A is above 9. The high step (+/-60h) runs when C=1 or A is above 99h
+    // (H=0) or above 9Fh (H=1); both tests use the original A. N selects add
+    // or subtract. S/Z come from the result, H is set when the low step ran,
+    // P/V is the signed overflow of A +/- the adjustment, C is set when the
+    // high step ran, and N is not changed.
+    inline void daaUpd9002()
+    {
+        int a = reg.pair.A;
+        bool h = isFlagH();
+        bool low = h || (a & 0x0F) > 9;
+        bool high = isFlagC() || a > (h ? 0x9F : 0x99);
+        int adjust = (low ? 0x06 : 0x00) + (high ? 0x60 : 0x00);
+        int signedA = a & 0x80 ? a - 0x100 : a;
+        int signedResult = isFlagN() ? signedA - adjust : signedA + adjust;
+        int result = (isFlagN() ? a - adjust : a + adjust) & 0xFF;
+        setFlagS(result & 0x80);
+        setFlagXY(result);
+        setFlagZ(0 == result);
+        setFlagH(low);
+        setFlagPV(signedResult < -128 || 127 < signedResult);
+        setFlagC(high);
+#ifndef Z80_DISABLE_DEBUG
+        if (isDebug()) log("[%04X] DAA ... A: $%02X -> $%02X", reg.PC - 1, reg.pair.A, result);
+#endif
+        reg.pair.A = (unsigned char)result;
     }
 
     // Rotate digit Left and right between Acc. and location (HL)
