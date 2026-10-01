@@ -1,5 +1,12 @@
 # Change log
 
+## Version 1.12.0 (in-progress)
+
+- Extend the NEC uPD9002 profile with hardware-measured `CPL`, `SCF`, `CCF`, and `DAA` behaviour (R8–R11), including DAA overflow and adjustment rules; add regression tests and update the compatibility documentation (PR #64).
+- Implement uPD9002 DD/FD CB register forms (R12/R13): `BIT` tests the selected register, and `RES`/`SET` modify only that register without writing memory (PR #64).
+- Strengthen R12 regression tests with DD/FD `BIT 1` cases whose register and memory bits differ, detecting an incorrect operand source in both IX and IY forms.
+- Fix `ADD HL,rr` to set WZ to the pre-addition HL + 1, including wraparound; add regression coverage for all register pairs and subsequent `BIT n,(HL)` flags in both profiles.
+
 ## Version 1.11.0 (Sep 30, 2026 JST)
 
 - Add an optional, provisional NEC uPD9002 flag profile while keeping Zilog behaviour as the default; document hardware measurements and unresolved behaviour.
