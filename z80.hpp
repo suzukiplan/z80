@@ -3785,7 +3785,7 @@ class Z80
 #endif
         unsigned short hl = getHL();
         unsigned short nn = getRP(rp);
-        reg.WZ = nn + 1;
+        reg.WZ = hl + 1;
         setFlagByAdd16(hl, nn);
         setHL(hl + nn);
         consumeClock(7);

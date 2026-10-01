@@ -24,6 +24,7 @@ all:
 	make test-unknown 
 	make test-repio
 	make test-adc-sbc-16
+	make test-add-hl-wz
 	make test-flag-profile
 
 test-execute:
@@ -84,4 +85,8 @@ test-adc-sbc-16:
 
 test-flag-profile:
 	clang $(CFLAGS) test-flag-profile.cpp -lstdc++
+	./a.out
+
+test-add-hl-wz:
+	clang $(CFLAGS) test-add-hl-wz.cpp -lstdc++
 	./a.out

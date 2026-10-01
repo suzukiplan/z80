@@ -1,5 +1,9 @@
 # Change log
 
+## Version 1.12.0 (in-progress)
+
+- Fix `ADD HL,rr` to set WZ to the pre-addition HL + 1, including wraparound; add regression coverage for all register pairs and subsequent `BIT n,(HL)` flags in both profiles.
+
 ## Version 1.11.0 (Sep 30, 2026 JST)
 
 - Add an optional, provisional NEC uPD9002 flag profile while keeping Zilog behaviour as the default; document hardware measurements and unresolved behaviour.
