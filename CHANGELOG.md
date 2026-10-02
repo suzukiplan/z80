@@ -1,6 +1,6 @@
 # Change log
 
-## Version 1.12.0 (in-progress)
+## Version 1.12.0 (Oct 2, 2026 JST)
 
 - Fix null opcode-handler calls with `Z80_NO_EXCEPTION`: execute undefined ED opcodes as NOPs, implement ED NEG/RETN/IM aliases, and ignore inapplicable DD/FD prefixes while executing the following instruction. Decode repeated index prefixes without recursion and account for prefix refresh increments; preserve unknown-opcode exceptions in default builds.
 - Widen `reg.consumeClockCounter` from `unsigned char` to `int` to retain cycle counts for long prefix sequences, and reset it for each instruction in unbudgeted execution. This changes the public register structure layout.
