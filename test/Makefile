@@ -21,7 +21,8 @@ all:
 	make test-branch
 	make test-out
 	make test-remove-break
-	make test-unknown 
+	make test-unknown
+	make test-undefined
 	make test-repio
 	make test-adc-sbc-16
 	make test-add-hl-wz
@@ -89,4 +90,13 @@ test-flag-profile:
 
 test-add-hl-wz:
 	clang $(CFLAGS) test-add-hl-wz.cpp -lstdc++
+	./a.out
+
+.PHONY: test-undefined
+test-undefined:
+	clang $(CFLAGS) test-undefined.cpp -lstdc++
+	./a.out
+	clang $(CFLAGS) -DZ80_NO_EXCEPTION -fno-exceptions test-undefined.cpp -lstdc++
+	./a.out
+	clang $(CFLAGS) -DZ80_NO_EXCEPTION -fno-exceptions -DZ80_NO_FUNCTIONAL -DZ80_DISABLE_DEBUG -DZ80_DISABLE_BREAKPOINT -DZ80_DISABLE_NESTCHECK -DZ80_CALLBACK_PER_INSTRUCTION test-undefined.cpp -lstdc++
 	./a.out

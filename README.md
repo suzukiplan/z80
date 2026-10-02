@@ -426,7 +426,7 @@ There is a compile flag that disables certain features in order to adapt to envi
 |`-DZ80_CALLBACK_PER_INSTRUCTION`|Calls `consumeClock` callback on an instruction-by-instruction basis (NOTE: two or more instructions when interrupting)|
 |`-DZ80_UNSUPPORT_16BIT_PORT`|Reduces extra branches by always assuming the port number to be 8 bits|
 |`-DZ80_NO_FUNCTIONAL`|Do not use `std::function` in the callbacks (use function pointer)|
-|`-DZ80_NO_EXCEPTION`|Do not throw exceptions|
+|`-DZ80_NO_EXCEPTION`|Do not throw exceptions; use Zilog-compatible ED NOPs/aliases and ignored DD/FD prefix handling for otherwise unknown opcodes|
 
 ## License
 

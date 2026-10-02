@@ -1,7 +1,11 @@
 # Change log
 
-## Version 1.12.0 (in-progress)
+## Version 1.12.0 (Oct 2, 2026 JST)
 
+- Fix null opcode-handler calls with `Z80_NO_EXCEPTION`: execute undefined ED opcodes as NOPs, implement ED NEG/RETN/IM aliases, and ignore inapplicable DD/FD prefixes while executing the following instruction. Decode repeated index prefixes without recursion and account for prefix refresh increments; preserve unknown-opcode exceptions in default builds.
+- Widen `reg.consumeClockCounter` from `unsigned char` to `int` to retain cycle counts for long prefix sequences, and reset it for each instruction in unbudgeted execution. This changes the public register structure layout.
+- Avoid a signed left-shift of a negative value in 8-bit arithmetic overflow calculation, detected by sanitizer coverage of NEG aliases.
+- Fix RETN to restore IFF1 from IFF2, including when interrupts were disabled; cover documented and alias encodings with regression tests.
 - Extend the NEC uPD9002 profile with hardware-measured `CPL`, `SCF`, `CCF`, and `DAA` behaviour (R8–R11), including DAA overflow and adjustment rules; add regression tests and update the compatibility documentation (PR #64).
 - Implement uPD9002 DD/FD CB register forms (R12/R13): `BIT` tests the selected register, and `RES`/`SET` modify only that register without writing memory (PR #64).
 - Strengthen R12 regression tests with DD/FD `BIT 1` cases whose register and memory bits differ, detecting an incorrect operand source in both IX and IY forms.

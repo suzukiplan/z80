@@ -81,7 +81,7 @@ class Z80
         unsigned char I;
         unsigned char IFF;
         unsigned char interrupt; // NI-- --mm (N: NMI, I: IRQ, mm: mode)
-        unsigned char consumeClockCounter;
+        int consumeClockCounter; // Repeated prefixes can exceed 255 T-states.
         unsigned char execEI;
         unsigned char reserved8[2];
     } reg;
@@ -681,6 +681,9 @@ class Z80
     static inline void OP_CB(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
+#ifdef Z80_NO_EXCEPTION
+        ctx->incrementRefreshRegister();
+#endif
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandCB(operandNumber);
 #endif
@@ -690,6 +693,9 @@ class Z80
     static inline void OP_ED(Z80* ctx)
     {
         unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
+#ifdef Z80_NO_EXCEPTION
+        ctx->incrementRefreshRegister();
+#endif
 #ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetED[operandNumber]) {
             char buf[80];
@@ -700,39 +706,88 @@ class Z80
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandED(operandNumber);
 #endif
+#ifdef Z80_NO_EXCEPTION
+        if (!ctx->opSetED[operandNumber]) {
+            // ED aliases share the documented handlers; remaining holes are
+            // two-byte NOPs, whose eight T-states were consumed by fetching.
+            if ((operandNumber & 0xC7) == 0x44) {
+                NEG_(ctx);
+            } else if ((operandNumber & 0xC7) == 0x45) {
+                RETN_(ctx);
+            } else if ((operandNumber & 0xC7) == 0x46) {
+                const unsigned char modes[8] = {0, 0, 1, 2, 0, 0, 1, 2};
+                ctx->IM(modes[(operandNumber >> 3) & 7]);
+            } else {
+                NOP(ctx);
+            }
+            return;
+        }
+#endif
         ctx->opSetED[operandNumber](ctx);
     }
 
+#ifdef Z80_NO_EXCEPTION
+    static inline void OP_INDEX(Z80* ctx, bool iy)
+    {
+        // Decode repeated prefixes iteratively: the last DD/FD selects the
+        // index register, without growing the host stack for guest bytes.
+        for (;;) {
+            unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
+            ctx->incrementRefreshRegister();
+#ifndef Z80_DISABLE_BREAKPOINT
+            if (iy)
+                ctx->checkBreakOperandIY(operandNumber);
+            else
+                ctx->checkBreakOperandIX(operandNumber);
+#endif
+            if (operandNumber == 0xDD || operandNumber == 0xFD) {
+                iy = operandNumber == 0xFD;
+                continue;
+            }
+            auto handler = iy ? ctx->opSetIY[operandNumber] : ctx->opSetIX[operandNumber];
+            // An ignored prefix still costs an M1 cycle, but must not discard
+            // the following opcode or fetch it a second time.
+            if (!handler) handler = ctx->opSet1[operandNumber];
+            handler(ctx);
+            return;
+        }
+    }
+#endif
+
     static inline void OP_IX(Z80* ctx)
     {
+#ifdef Z80_NO_EXCEPTION
+        OP_INDEX(ctx, false);
+#else
         unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
-#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetIX[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (DD,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
-#endif
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIX(operandNumber);
 #endif
         ctx->opSetIX[operandNumber](ctx);
+#endif
     }
 
     static inline void OP_IY(Z80* ctx)
     {
+#ifdef Z80_NO_EXCEPTION
+        OP_INDEX(ctx, true);
+#else
         unsigned char operandNumber = ctx->fetch(4 + ctx->wtc.fetchM);
-#ifndef Z80_NO_EXCEPTION
         if (!ctx->opSetIY[operandNumber]) {
             char buf[80];
             snprintf(buf, sizeof(buf), "detect an unknown operand (FD,%02X)", operandNumber);
             throw std::runtime_error(buf);
         }
-#endif
 #ifndef Z80_DISABLE_BREAKPOINT
         ctx->checkBreakOperandIY(operandNumber);
 #endif
         ctx->opSetIY[operandNumber](ctx);
+#endif
     }
 
     static inline void OP_IX4(Z80* ctx)
@@ -3052,7 +3107,8 @@ class Z80
         setFlagN(negative);
         setFlagS(0x80 & finalResult);
         setFlagH(carryX & 0x10);
-        setFlagPV(((carryX << 1) ^ carryX) & 0x100);
+        // Mask before shifting: subtraction can make carryX negative.
+        setFlagPV((((carryX & 0x80) << 1) ^ carryX) & 0x100);
         if (setCarry) setFlagC(carryX & 0x100);
         if (setResult) {
             reg.pair.A = finalResult;
@@ -5481,15 +5537,11 @@ class Z80
         setPCH(pop(3));
         reg.WZ = reg.PC;
         reg.IFF &= ~IFF_NMI();
-        if (!((reg.IFF & IFF1()) && (reg.IFF & IFF2()))) {
+        // RETN restores the maskable interrupt enable from its saved value.
+        if (reg.IFF & IFF2())
             reg.IFF |= IFF1();
-        } else {
-            if (reg.IFF & IFF2()) {
-                reg.IFF |= IFF1();
-            } else {
-                reg.IFF &= ~IFF1();
-            }
-        }
+        else
+            reg.IFF &= ~IFF1();
 #ifndef Z80_DISABLE_DEBUG
         if (isDebug()) log("[%04X] RETN to $%04X (SP<$%04X>)", pc - 2, reg.PC, sp);
 #endif
@@ -6123,9 +6175,14 @@ class Z80
         }
     }
 
-    inline void updateRefreshRegister()
+    inline void incrementRefreshRegister()
     {
         reg.R = ((reg.R + 1) & 0x7F) | (reg.R & 0x80);
+    }
+
+    inline void updateRefreshRegister()
+    {
+        incrementRefreshRegister();
         consumeClock(2);
     }
 
@@ -6537,9 +6594,7 @@ class Z80
     {
         requestBreakFlag = false;
         while (!requestBreakFlag) {
-#ifdef Z80_CALLBACK_PER_INSTRUCTION
             reg.consumeClockCounter = 0;
-#endif
             // execute NOP while halt
             if (reg.IFF & IFF_HALT()) {
                 reg.execEI = 0;
