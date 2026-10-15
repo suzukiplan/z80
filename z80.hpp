@@ -342,6 +342,42 @@ class Z80
         }
     }
 
+#ifdef Z80_NO_EXCEPTION
+    std::vector<unsigned char> fetchedOpcode;
+
+    inline unsigned char operandByte(size_t offset)
+    {
+        if (offset < fetchedOpcode.size()) return fetchedOpcode[offset];
+        return readByte(static_cast<unsigned short>(reg.PC + offset - fetchedOpcode.size()), 0);
+    }
+
+    inline void readExecutableOpcode(std::vector<unsigned char>& opcode)
+    {
+        size_t prefixes = 0;
+        unsigned char instruction = operandByte(prefixes);
+        bool iy = false;
+        while (instruction == 0xDD || instruction == 0xFD) {
+            iy = instruction == 0xFD;
+            instruction = operandByte(++prefixes);
+        }
+        size_t length;
+        if (instruction == 0xED) {
+            unsigned char ed = operandByte(prefixes + 1);
+            // Match OP_ED's handler test, including aliases and holes with
+            // stale nonzero lengths in the legacy metadata.
+            length = prefixes + static_cast<size_t>(opSetED[ed] ? opLengthED[ed] : 2);
+        } else if (instruction == 0xCB) {
+            length = prefixes + (prefixes ? 3 : 2);
+        } else if (prefixes && (iy ? opSetIY[instruction] : opSetIX[instruction])) {
+            length = prefixes - 1 + static_cast<size_t>(opLengthIXY[instruction]);
+        } else {
+            length = prefixes + static_cast<size_t>(opLength1[instruction]);
+        }
+        opcode.reserve(length);
+        for (size_t i = 0; i < length; i++) opcode.push_back(operandByte(i));
+    }
+#endif
+
     inline void readFullOpcode(BreakOperand* operand, unsigned char* opcode, int* opcodeLength)
     {
         *opcodeLength = 0;
@@ -404,14 +440,23 @@ class Z80
         if (CB.breakOperands.empty()) return;
         auto it = CB.breakOperands.find(operandNumber);
         if (it == CB.breakOperands.end()) return;
+#ifdef Z80_NO_EXCEPTION
+        std::vector<unsigned char> bytes;
+        readExecutableOpcode(bytes);
+        unsigned char* opcode = bytes.data();
+        auto opcodeLength = static_cast<int>(bytes.size());
+#else
         unsigned char opcode[16];
         int opcodeLength = 16;
         bool first = true;
+#endif
         for (auto bo : *CB.breakOperands[operandNumber]) {
+#ifndef Z80_NO_EXCEPTION
             if (first) {
                 readFullOpcode(bo, opcode, &opcodeLength);
                 first = false;
             }
+#endif
             bo->callback(CB.arg, opcode, opcodeLength);
         }
     }
@@ -3986,7 +4031,7 @@ class Z80
     inline void setFlagBySbc16(unsigned short before, unsigned short subtract, unsigned char carry)
     {
         int result = before - subtract - carry;
-        int carrybits = before ^ subtract ^ result;
+        auto carrybits = static_cast<unsigned int>(before ^ subtract ^ result);
         unsigned short finalResult = (unsigned short)result;
         setFlagN();
         setFlagXY((finalResult & 0xFF00) >> 8);
@@ -6546,6 +6591,9 @@ class Z80
     {
         unsigned char result = readByte(reg.PC, clocks);
         reg.PC++;
+#if defined(Z80_NO_EXCEPTION) && !defined(Z80_DISABLE_BREAKPOINT)
+        if (!CB.breakOperands.empty()) fetchedOpcode.push_back(result);
+#endif
         return result;
     }
 
@@ -6565,6 +6613,9 @@ class Z80
                 checkBreakPoint();
 #endif
                 reg.execEI = 0;
+#if defined(Z80_NO_EXCEPTION) && !defined(Z80_DISABLE_BREAKPOINT)
+                fetchedOpcode.clear();
+#endif
                 int operandNumber = fetch(2);
                 updateRefreshRegister();
 #ifndef Z80_DISABLE_BREAKPOINT
@@ -6604,6 +6655,9 @@ class Z80
                 checkBreakPoint();
 #endif
                 reg.execEI = 0;
+#if defined(Z80_NO_EXCEPTION) && !defined(Z80_DISABLE_BREAKPOINT)
+                fetchedOpcode.clear();
+#endif
                 int operandNumber = fetch(2 + wtc.fetch);
                 updateRefreshRegister();
 #ifndef Z80_DISABLE_BREAKPOINT

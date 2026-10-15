@@ -23,6 +23,7 @@ all:
 	make test-remove-break
 	make test-unknown
 	make test-undefined
+	make test-break-operand
 	make test-repio
 	make test-adc-sbc-16
 	make test-add-hl-wz
@@ -99,4 +100,11 @@ test-undefined:
 	clang $(CFLAGS) -DZ80_NO_EXCEPTION -fno-exceptions test-undefined.cpp -lstdc++
 	./a.out
 	clang $(CFLAGS) -DZ80_NO_EXCEPTION -fno-exceptions -DZ80_NO_FUNCTIONAL -DZ80_DISABLE_DEBUG -DZ80_DISABLE_BREAKPOINT -DZ80_DISABLE_NESTCHECK -DZ80_CALLBACK_PER_INSTRUCTION test-undefined.cpp -lstdc++
+	./a.out
+
+.PHONY: test-break-operand
+test-break-operand:
+	clang $(CFLAGS) -DZ80_NO_EXCEPTION -fno-exceptions test-break-operand.cpp -lstdc++
+	./a.out
+	clang $(CFLAGS) -DZ80_NO_EXCEPTION -DZ80_NO_FUNCTIONAL -fno-exceptions test-break-operand.cpp -lstdc++
 	./a.out
