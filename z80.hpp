@@ -444,7 +444,7 @@ class Z80
         std::vector<unsigned char> bytes;
         readExecutableOpcode(bytes);
         unsigned char* opcode = bytes.data();
-        int opcodeLength = static_cast<int>(bytes.size());
+        auto opcodeLength = static_cast<int>(bytes.size());
 #else
         unsigned char opcode[16];
         int opcodeLength = 16;
@@ -4031,7 +4031,7 @@ class Z80
     inline void setFlagBySbc16(unsigned short before, unsigned short subtract, unsigned char carry)
     {
         int result = before - subtract - carry;
-        unsigned int carrybits = static_cast<unsigned int>(before ^ subtract ^ result);
+        auto carrybits = static_cast<unsigned int>(before ^ subtract ^ result);
         unsigned short finalResult = (unsigned short)result;
         setFlagN();
         setFlagXY((finalResult & 0xFF00) >> 8);
