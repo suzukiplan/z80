@@ -298,6 +298,10 @@ If you want to execute processing just before executing an instruction of specif
 - call `removeBreakOperand` or `removeAllBreakOperands` if you want to remove the break operand(s).
 - call `addBreakOperandFP` if you want to use the function pointer.
 
+With `Z80_NO_EXCEPTION`, operand callbacks receive the complete instruction, including every DD/FD prefix, displacement, and immediate byte. ED holes and aliases without a handler have length 2; documented four-byte ED instructions retain their length. The last DD/FD selects IX/IY, as in execution. Opcode storage grows with the instruction and is valid only during the callback; copy the bytes to retain them.
+
+Registration keys and callback timing are unchanged: the initial opcode key fires after the first fetch, each DD/FD pair key fires after its second byte is fetched (including intermediate prefixes), ED keys fire after the ED opcode fetch, and DDCB/FDCB keys fire after displacement and opcode fetches. For example, `DD FD 21 34 12` can notify keys `DD`, `DD FD`, and `FD 21`; each receives all five bytes, while PC at these callbacks is respectively start + 1, + 2, and + 3. Ignored-prefix fallback does not additionally fire an unprefixed opcode key. Clients that assumed a zero length or only the final prefix must accept the corrected full instruction. Notification lookahead uses zero-clock reads through the memory callback, which should support inspection without side effects. Builds without `Z80_NO_EXCEPTION` retain the existing decoding and unknown-opcode exceptions.
+
 ### Detect clock consuming
 
 If you want to implement stricter synchronization, you can capture the CPU clock consumption timing as follows:

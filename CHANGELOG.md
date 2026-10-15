@@ -1,5 +1,12 @@
 # Change log
 
+## Version 1.12.1 (in-progress)
+
+- Fix `addBreakOperand` opcode bytes and lengths with `Z80_NO_EXCEPTION`: report undefined ED NOPs and NEG/RETN/IM aliases as two-byte instructions while preserving documented four-byte ED instructions.
+- Report complete DD/FD-prefixed instructions, including ignored, repeated, and mixed prefixes, immediates, and indexed CB displacements. Preserve registration keys and callback timing, including intermediate-prefix notifications; these callbacks now receive the full instruction. Use dynamically sized opcode storage for sequences longer than 16 bytes and handle PC wraparound without adding clocks or changing execution behaviour.
+- Add operand-breakpoint regression tests for ED encodings, index-prefix fallback, long prefix sequences, PC wraparound, callback counts and timing, and execution-state equivalence; verify function-pointer and breakpoint-disabled configurations.
+- Avoid a signed left-shift of a negative value in 16-bit SBC overflow calculation, detected by sanitizer coverage of ED instructions.
+
 ## Version 1.12.0 (Oct 2, 2026 JST)
 
 - Fix null opcode-handler calls with `Z80_NO_EXCEPTION`: execute undefined ED opcodes as NOPs, implement ED NEG/RETN/IM aliases, and ignore inapplicable DD/FD prefixes while executing the following instruction. Decode repeated index prefixes without recursion and account for prefix refresh increments; preserve unknown-opcode exceptions in default builds.
